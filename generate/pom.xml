@@ -6,7 +6,7 @@
 
     <groupId>com.zarbosoft.internal</groupId>
     <artifactId>shoedemo-generate</artifactId>
-    <version>0.0.0</version>
+    <version>1.0.0</version>
     <build>
         <plugins>
             <plugin>
@@ -57,6 +57,21 @@
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
             <version>23.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.zarbosoft</groupId>
+            <artifactId>appdirsj</artifactId>
+            <version>0.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.zarbosoft</groupId>
+            <artifactId>interface</artifactId>
+            <version>1.1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.zarbosoft</groupId>
+            <artifactId>luxem</artifactId>
+            <version>1.0.1</version>
         </dependency>
     </dependencies>
 </project>

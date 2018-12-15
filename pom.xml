@@ -7,7 +7,7 @@
     <packaging>pom</packaging>
     <modules>
         <module>generate</module>
-        <module>package</module>
+        <module>app</module>
     </modules>
     <build>
         <plugins>
