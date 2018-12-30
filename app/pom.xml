@@ -89,11 +89,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.zarbosoft.rendaw</groupId>
-            <artifactId>common</artifactId>
-            <version>1.0.2</version>
-        </dependency>
-        <dependency>
             <groupId>com.zarbosoft</groupId>
             <artifactId>appdirsj</artifactId>
             <version>0.0.1</version>
@@ -117,6 +112,11 @@
             <groupId>com.zarbosoft.internal</groupId>
             <artifactId>shoedemo-generate</artifactId>
             <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.gojuno.morton</groupId>
+            <artifactId>morton-java</artifactId>
+            <version>1.0.1</version>
         </dependency>
     </dependencies>
 </project>

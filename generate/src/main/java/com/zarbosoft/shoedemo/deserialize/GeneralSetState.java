@@ -1,28 +1,15 @@
 package com.zarbosoft.shoedemo.deserialize;
 
 import com.zarbosoft.luxem.read.StackReader;
+import com.zarbosoft.rendaw.common.Assertion;
 
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.BiFunction;
 
-public class GeneralSetState extends StackReader.State {
+public abstract class GeneralSetState extends StackReader.State {
 	private final Set data = new HashSet();
-	private final GeneralStateBuilder builder;
-	private final int at;
-	private final GeneralStateBuilder.Converter convert;
 	private String type;
-
-	public GeneralSetState(GeneralStateBuilder builder, int at, GeneralStateBuilder.Converter convert) {
-		this.builder = builder;
-		this.at = at;
-		this.convert = convert;
-	}
-
-	@Override
-	public void value(final Object value) {
-		data.add(convert.convert(type, value));
-	}
 
 	@Override
 	public void type(final String value) {
@@ -36,11 +23,11 @@ public class GeneralSetState extends StackReader.State {
 
 	@Override
 	public StackReader.State array() {
-		return builder.next(at);
+		throw new Assertion();
 	}
 
 	@Override
 	public StackReader.State record() {
-		return builder.next(at);
+		throw new Assertion();
 	}
 }

@@ -3,10 +3,11 @@ package com.zarbosoft.shoedemo.model;
 import com.zarbosoft.interface1.Configuration;
 import org.apache.tools.ant.Project;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.zarbosoft.rendaw.common.Common.reversed;
 
 @Configuration
 public class ChangeStep {
@@ -21,23 +22,14 @@ public class ChangeStep {
 		changes.add(change);
 	}
 
-	public ChangeStep apply(ProjectBase project, long id) {
+	public ChangeStep apply(ProjectContextBase project, long id) {
 		this.id = id;
 		ChangeStep out = new ChangeStep(project.nextId++);
-		for (Change change : changes) change.apply(out);
+		for (Change change : reversed(changes)) change.apply(project, out);
 		return out;
 	}
 
-	public static Path path(Project project, int id) {
-		return project.tileDir.resolve(String.format("%s.luxem", id));
-	}
-
-	public static ChangeStep fromId(Project project, int id) {
-		return new ChangeStep(id, path(project, id).toString());
-	}
-
-	public void delete(Project project) {
-		changes.forEach(change -> change.delete(project));
-		Files.delete(path(project, id));
+	public void remove(ProjectContextBase context) {
+		for (Change c : changes) c.delete(context);
 	}
 }

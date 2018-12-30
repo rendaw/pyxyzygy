@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.Map;
 
 public class DeserializationContext {
+	public Map<Long, ProjectObject> objectMap = new HashMap<>();
+
 	/**
 	 * For elements with ids (mutable) serialized flat at the top output level, return true.
 	 * @param type

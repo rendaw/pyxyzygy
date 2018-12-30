@@ -1,9 +1,7 @@
 package com.zarbosoft.shoedemo.deserialize;
 
 import com.zarbosoft.luxem.read.StackReader;
-import com.zarbosoft.luxem.tree.Typed;
 import com.zarbosoft.rendaw.common.Assertion;
-import com.zarbosoft.shoedemo.model.Tile;
 
 import java.util.ArrayList;
 import java.util.HashSet;

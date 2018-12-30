@@ -1,33 +1,44 @@
 package com.zarbosoft.internal.shoedemo_generate;
 
+import com.google.common.collect.ImmutableList;
 import com.squareup.javapoet.*;
 import com.zarbosoft.interface1.Configuration;
 import com.zarbosoft.interface1.TypeInfo;
 import com.zarbosoft.interface1.Walk;
 import com.zarbosoft.luxem.read.StackReader;
-import com.zarbosoft.luxem.write.RawWriter;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.Pair;
-import com.zarbosoft.shoedemo.deserialize.DeserializationContext;
-import com.zarbosoft.shoedemo.deserialize.GeneralStateBuilder;
+import com.zarbosoft.shoedemo.deserialize.*;
 import com.zarbosoft.shoedemo.model.*;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
 import org.reflections.Reflections;
+import org.reflections.scanners.SubTypesScanner;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Type;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.Parameter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.zarbosoft.rendaw.common.Common.*;
 import static com.zarbosoft.shoedemo.deserialize.DeserializationContext.decideName;
 import static com.zarbosoft.shoedemo.deserialize.DeserializationContext.flattenPoint;
 import static javax.lang.model.element.Modifier.*;
 
+/**
+ * Serialization occurs on all fields and recurses collections of exactly 1 depth.  For greater depth you need to make
+ * an intermediate object that contains the next container level.  This way also simplifies mutation, which all can be
+ * described with a reference to an object, a field, and maybe 1 or two other values for the change.
+ * <p>
+ * Objects should be created either by their Deserializer or by their static create() method.
+ */
 public class GenerateTask extends Task {
 
 	// ANT STUFF
@@ -42,7 +53,7 @@ public class GenerateTask extends Task {
 	@Override
 	public void execute() throws BuildException {
 		uncheck(() -> Files.createDirectories(path));
-		whatever();
+		buildModel();
 	}
 
 	public static void main(final String[] args) {
@@ -53,256 +64,926 @@ public class GenerateTask extends Task {
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	public static Object CHANGE_TOKEN_NAME = new Object();
+	public static Reflections reflections = new Reflections("", new SubTypesScanner(false));
 
+	public static Method sigObjIncRef = findMethod(ProjectObjectInterface.class, "incRef");
+	public static Method sigObjDecRef = findMethod(ProjectObjectInterface.class, "decRef");
+	public static Method sigObjSerialize = findMethod(ProjectObjectInterface.class, "serialize");
+	public static Method sigChangeApply = findMethod(Change.class, "apply");
+	public static Method sigChangeDelete = findMethod(Change.class, "delete");
+	public static Method sigChangeSerialize = findMethod(Change.class, "serialize");
+	public static Method sigStateValue = findMethod(StackReader.State.class, "value");
+	public static Method sigStateArray = findMethod(StackReader.State.class, "array");
+	public static Method sigStateRecord = findMethod(StackReader.State.class, "record");
+	public static Method sigStateGet = findMethod(StackReader.State.class, "get");
+	public static Method sigFinisherFinish = findMethod(DeserializationContext.Finisher.class, "finish");
+
+	public Map<Class, Pair<ClassName, TypeSpec.Builder>> typeMap = new HashMap<>();
 	public ClassName deserializeHelperName = name("DeserializeHelper");
 	public TypeSpec.Builder deserializeHelper = TypeSpec.classBuilder(deserializeHelperName).addModifiers(PUBLIC);
-	public MethodSpec.Builder deserializeModel = MethodSpec
+	public MethodSpec.Builder globalModelDeserialize = MethodSpec
 			.methodBuilder("deserializeModel")
 			.addModifiers(PUBLIC, STATIC)
 			.returns(StackReader.State.class)
 			.addParameter(DeserializationContext.class, "context")
 			.addParameter(String.class, "type");
-	public MethodSpec.Builder deserializeChange = MethodSpec
+	public MethodSpec.Builder globalChangeDeserialize = MethodSpec
 			.methodBuilder("deserializeChange")
 			.addModifiers(PUBLIC, STATIC)
 			.returns(StackReader.State.class)
 			.addParameter(DeserializationContext.class, "context")
 			.addParameter(String.class, "type");
 
-	public class ChangeBuilder {
-		private final ClassName name;
-		private final MethodSpec.Builder invoke;
-		private final List<String> invokeForward = new ArrayList<>();
-		private final TypeSpec.Builder changeTypeSpec;
-		private final MethodSpec.Builder constructor;
-		private final MethodSpec.Builder apply;
-		private final CodeBlock.Builder applyCode;
-		private final MethodSpec.Builder serialize;
-		private final TypeSpec.Builder deserializerTypeSpec;
-
-		public ChangeBuilder(
-				ClassName changeStepName, ClassName target, Field field, String action
-		) {
-			name = ClassName.get("com.zarbosoft.shoedemo.model",
-					String.format("%s_%s_%s", target.simpleName(), field.getName(), capFirst(action))
+	public TypeName toPoet(TypeInfo type) {
+		TypeName base = Optional
+				.ofNullable(typeMap.get(type.type))
+				.map(p -> (TypeName) p.first)
+				.orElseGet(() -> TypeName.get(type.type));
+		if (type.parameters != null && type.parameters.length > 0) {
+			return ParameterizedTypeName.get((ClassName) base,
+					(TypeName[]) Arrays.stream(type.parameters).map(p -> toPoet(p)).toArray(TypeName[]::new)
 			);
-			changeTypeSpec = TypeSpec
-					.classBuilder(name)
-					.superclass(Change.class)
-					.addModifiers(PUBLIC)
-					.addField(FieldSpec.builder(target, "target").addModifiers(PUBLIC).build());
-			serialize = MethodSpec
-					.methodBuilder("serialize")
-					.addAnnotation(Override.class)
-					.addModifiers(PUBLIC)
-					.addParameter(RawWriter.class, "writer")
-					.addCode("writer.type(\"$L\").recordBegin();\n", name.simpleName())
-					.addCode("writer.key(\"target\").primitive($T.toString(target.id));\n", Objects.class);
-			deserializeChange.addCode("if (\"$L\".equals(type)) return new $T.Deserializer();\n",
-					name.simpleName(),
-					name
-			);
-			deserializerTypeSpec = TypeSpec
-					.classBuilder(name.nestedClass("Deserializer"))
-					.addModifiers(STATIC)
-					.superclass(StackReader.RecordState.class);
-			constructor =
-					MethodSpec.constructorBuilder().addParameter(target, "target").addCode("this.target = target;\n");
-			apply = MethodSpec
-					.methodBuilder("apply")
-					.addAnnotation(Override.class)
-					.addModifiers(PUBLIC)
-					.addParameter(ChangeStep.class, "changeStep");
-			applyCode = CodeBlock.builder();
-			invoke = MethodSpec
-					.methodBuilder(String.format("%s%s", action, capFirst(field.getName())))
-					.addModifiers(PUBLIC)
-					.returns(changeStepName);
-		}
-
-		public ClassName getName() {
-			return name;
-		}
-
-		public ChangeBuilder addParameter(Type type, String name) {
-			changeTypeSpec.addField(FieldSpec.builder(type, name).addModifiers(PUBLIC).build());
-			constructor.addParameter(type, name).addCode(String.format("this.%s = %s;\n", name, name));
-			invoke.addParameter(type, name);
-			invokeForward.add(name);
-			serialize.addCode("writer.key(\"$L\")", name);
-			if (ProjectNode.class.isAssignableFrom((Class) type) || Tile.class.isAssignableFrom((Class) type))
-				serialize.addCode(".primitive($T.toString($L.id));\n", Objects.class, name);
-			else
-				serialize.addCode(".primitive($T.toString($L));\n", Objects.class, name);
-			return this;
-		}
-
-		public ChangeBuilder addCode(CodeBlock code) {
-			applyCode.add(code);
-			return this;
-		}
-
-		public ChangeBuilder addCode(String format, Object... args) {
-			applyCode.add(CodeBlock
-					.builder()
-					.add(format, Arrays.stream(args).map(a -> a == CHANGE_TOKEN_NAME ? name : a).toArray())
-					.build());
-			return this;
-		}
-
-		public void finish(TypeSpec.Builder typeChangeBuilder) {
-			changeTypeSpec
-					.addMethod(constructor.build())
-					.addMethod(apply.addCode(applyCode.build()).build())
-					.addMethod(serialize.addCode("writer.recordEnd();\n").build())
-					.addType(deserializerTypeSpec.build());
-			write(name, changeTypeSpec.build());
-			typeChangeBuilder.addMethod(invoke.addCode("new $T(target, $L).apply(changeStep);\n",
-					name,
-					invokeForward.stream().collect(Collectors.joining(", "))
-			).addCode("return changeStep;\n").build());
-		}
-
-		public ChangeBuilder addCodeIf(boolean condition, String format, Object... args) {
-			if (!condition)
-				return this;
-			return addCode(format, args);
-		}
-
-		public ChangeBuilder indent() {
-			applyCode.indent();
-			return this;
-		}
-
-		public ChangeBuilder unindent() {
-			applyCode.unindent();
-			return this;
-		}
+		} else
+			return base;
 	}
 
 	public ClassName name(String... parts) {
 		return ClassName.get("com.zarbosoft.shoedemo.model", Arrays.stream(parts).collect(Collectors.joining("_")));
 	}
 
-	public void whatever() {
-		Reflections reflections = new Reflections("com.zarbosoft.internal.shoedemo_generate.premodel");
+	private CodeBlock generateScalarSerialize(TypeInfo fieldInfo, String key) {
+		if (fieldInfo.type == String.class) {
+			return CodeBlock.of("writer.primitive($L);\n", key);
+		} else if (fieldInfo.type == Integer.class || fieldInfo.type == int.class) {
+			return CodeBlock.of("writer.primitive($T.toString($L));\n", Objects.class, key);
+		} else if (fieldInfo.type == Long.class || fieldInfo.type == long.class) {
+			return CodeBlock.of("writer.primitive($T.toString($L));\n", Objects.class, key);
+		} else if (fieldInfo.type == Float.class || fieldInfo.type == float.class) {
+			return CodeBlock.of("writer.primitive($T.toString($L));\n", Objects.class, key);
+		} else if (fieldInfo.type == Double.class || fieldInfo.type == double.class) {
+			return CodeBlock.of("writer.primitive($T.toString($L));\n", Objects.class, key);
+		} else if (fieldInfo.type == Boolean.class || fieldInfo.type == boolean.class) {
+			return CodeBlock.of("writer.primitive($L ? \"true\" : \"false\");\n", key);
+		} else if (((Class<?>) fieldInfo.type).isEnum()) {
+			CodeBlock.Builder code = CodeBlock.builder();
+			code.add("switch ($L) {\n", key).indent();
+			for (Pair<Enum<?>, Field> v : Walk.enumValues((Class) fieldInfo.type)) {
+				code.add("case $E: writer.primitive(\"$L\"); break;\n", v.first, Walk.decideEnumName(v.first));
+			}
+			code.unindent().add("}\n");
+			return code.build();
+		} else if (((Class) fieldInfo.type).isAssignableFrom(ArrayList.class)) {
+			throw new Assertion();
+		} else if (((Class) fieldInfo.type).isAssignableFrom(HashSet.class)) {
+			throw new Assertion();
+		} else if (((Class) fieldInfo.type).isAssignableFrom(HashMap.class)) {
+			throw new Assertion();
+		} else if (flattenPoint(fieldInfo)) {
+			return CodeBlock.of("writer.primitive($T.toString((($T)$L).id()));\n",
+					Objects.class,
+					ProjectObjectInterface.class,
+					key
+			);
+		} else {
+			return CodeBlock.of("$L.serialize(writer);\n", key);
+		}
+	}
 
+	private CodeBlock generateScalarFromString(
+			TypeInfo fieldInfo, String name, CodeBlock.Builder valueCode, CodeBlock.Builder recordCode
+	) {
+		if (fieldInfo.type == String.class) {
+			return CodeBlock.of("($T) $L", String.class, name);
+		} else if (fieldInfo.type == Integer.class || fieldInfo.type == int.class) {
+			return CodeBlock.of("$T.valueOf(($T) $L)", Integer.class, String.class, name);
+		} else if (fieldInfo.type == Long.class || fieldInfo.type == long.class) {
+			return CodeBlock.of("$T.valueOf(($T) $L)", Long.class, String.class, name);
+		} else if (fieldInfo.type == Float.class || fieldInfo.type == float.class) {
+			return CodeBlock.of("$T.valueOf(($T) $L)", Float.class, String.class, name);
+		} else if (fieldInfo.type == Double.class || fieldInfo.type == double.class) {
+			return CodeBlock.of("$T.valueOf(($T) $L)", Double.class, String.class, name);
+		} else if (fieldInfo.type == Boolean.class || fieldInfo.type == boolean.class) {
+			return CodeBlock.of("\"true\".equals($L)", name);
+		} else if (((Class<?>) fieldInfo.type).isEnum()) {
+			valueCode.add("$T converted;\n", fieldInfo.type).add("switch (($T) $L) {\n", fieldInfo.type, name).indent();
+			for (Pair<Enum<?>, Field> v : Walk.enumValues((Class) fieldInfo.type))
+				valueCode.add("case \"$L\": converted = $E; break;\n",
+						Walk.decideEnumName(v.first),
+						fieldInfo.field.getName(),
+						v.first
+				);
+			valueCode
+					.add("default: throw new RuntimeError(\"Unknown value \" + ($T)$L);\n", String.class, name)
+					.unindent();
+			valueCode.unindent().add("}\n");
+			return CodeBlock.of("converted");
+		} else if (((Class) fieldInfo.type).isAssignableFrom(ArrayList.class)) {
+			throw new Assertion();
+		} else if (((Class) fieldInfo.type).isAssignableFrom(HashSet.class)) {
+			throw new Assertion();
+		} else if (((Class) fieldInfo.type).isAssignableFrom(HashMap.class)) {
+			throw new Assertion();
+		} else if (flattenPoint(fieldInfo)) {
+			// skip this case
+			return null;
+		} else {
+			if (Walk.isConcrete(fieldInfo)) {
+				recordCode.add("return new $T.Deserializer();\n", toPoet(fieldInfo));
+			} else {
+				recordCode.add("switch (key) {\n").indent();
+				Walk.getDerived(reflections, fieldInfo).forEach(p -> {
+					recordCode.add("case \"$L\": return new $T.Deserializer();\n", p.first, p.second);
+				});
+				recordCode
+						.add("default: throw new $T(String.format(\"Unknown type %s\", type));\n",
+								RuntimeException.class
+						)
+						.unindent()
+						.add("}\n");
+			}
+			return CodeBlock.of("($T) $L;\n", toPoet(fieldInfo), name);
+		}
+	}
+
+	public MethodSpec.Builder poetMethod(Method method) {
+		MethodSpec.Builder out = MethodSpec
+				.methodBuilder(method.getName())
+				.addAnnotation(Override.class)
+				.returns(toPoet(new TypeInfo(method)));
+		if (Modifier.isPublic(method.getModifiers()))
+			out.addModifiers(PUBLIC);
+		if (Modifier.isPrivate(method.getModifiers()))
+			out.addModifiers(PRIVATE);
+		if (Modifier.isProtected(method.getModifiers()))
+			out.addModifiers(PROTECTED);
+		for (Parameter parameter : method.getParameters())
+			out.addParameter(toPoet(new TypeInfo(parameter)), parameter.getName());
+		return out;
+	}
+
+	public static Method findMethod(Class klass, String name) {
+		return Arrays.stream(klass.getMethods()).filter(m -> name.equals(m.getName())).findFirst().get();
+	}
+
+	public void buildModel() {
 		// Prep type map
-		Map<Class, Pair<ClassName, TypeSpec.Builder>> typeMap = new HashMap<>();
-		for (Class klass : reflections.getSubTypesOf(ProjectObject.class)) {
+		for (Class klass : iterable(reflections
+				.getSubTypesOf(ProjectObject.class)
+				.stream()
+				.filter(c -> c.getPackage().getName().equals("com.zarbosoft.internal.shoedemo_generate.premodel")))) {
 			ClassName name = name(klass.getSimpleName());
 			typeMap.put(klass, new Pair<>(name, TypeSpec.classBuilder(ClassName.get(klass)).addModifiers(PUBLIC)));
 		}
 
-		// Clone types
+		// Build
+		ClassName changeStepName = ClassName.get(ChangeStep.class);
+		ClassName changeStepBuilderName = name("ChangeStepBuilder");
+		TypeSpec.Builder changeStepBuilder = TypeSpec
+				.classBuilder(changeStepBuilderName)
+				.addModifiers(PUBLIC)
+				.addField(FieldSpec.builder(ProjectContextBase.class, "context").addModifiers(PUBLIC, FINAL).build())
+				.addField(FieldSpec.builder(changeStepName, "changeStep").addModifiers(PUBLIC, FINAL).build())
+				.addMethod(MethodSpec
+						.constructorBuilder()
+						.addModifiers(PUBLIC)
+						.addParameter(ProjectContextBase.class, "context")
+						.addCode("this.context = context;\n")
+						.addCode("this.changeStep = new $T(context.nextId++);\n", ChangeStep.class)
+						.build());
+
 		for (Map.Entry<Class, Pair<ClassName, TypeSpec.Builder>> entry : typeMap.entrySet()) {
 			Class klass = entry.getKey();
-			final ClassName className = entry.getValue().first;
-			TypeSpec.Builder builder = entry.getValue().second;
-			builder.addModifiers(PUBLIC).addSuperinterface(ProjectObjectInterface.class);
-			if (klass.getSuperclass() != Object.class)
-				builder.superclass(klass.getSuperclass());
-			for (Class interface1 : klass.getInterfaces())
-				builder.addSuperinterface(interface1);
+			TypeInfo classInfo = new TypeInfo(klass);
 
-			deserializeModel.addCode("if (\"$L\".equals(type)) return new $T.Deserializer(context);\n",
+			// Set up clone core
+			final ClassName cloneName = entry.getValue().first;
+			TypeSpec.Builder clone = entry.getValue().second;
+			CodeBlock.Builder cloneSerialize =
+					CodeBlock.builder().add("writer.type(\"$L\");\n", decideName(klass)).add("writer.recordBegin();\n");
+			CodeBlock.Builder cloneDeserializeValue = CodeBlock.builder();
+			CodeBlock.Builder cloneDeserializeArray = CodeBlock.builder();
+			CodeBlock.Builder cloneDeserializeRecord = CodeBlock.builder();
+			CodeBlock.Builder cloneDeserializeFinish = CodeBlock.builder();
+			CodeBlock.Builder cloneDecRef =
+					CodeBlock.builder().add("refCount -= 1;\n").add("if (refCount > 0) return;\n");
+
+			globalModelDeserialize.addCode("if (\"$L\".equals(type)) return new $T.Deserializer(context);\n",
 					decideName(klass),
-					className
+					cloneName
 			);
-			MethodSpec.Builder deserializerValue = MethodSpec
-					.methodBuilder("value")
-					.addAnnotation(Override.class)
-					.addModifiers(PUBLIC)
-					.addParameter(Object.class, "value");
-			MethodSpec.Builder deserializerArray = MethodSpec
-					.methodBuilder("array")
-					.addAnnotation(Override.class)
-					.addModifiers(PUBLIC)
-					.returns(StackReader.State.class);
-			MethodSpec.Builder deserializerRecord = MethodSpec
-					.methodBuilder("record")
-					.addAnnotation(Override.class)
-					.addModifiers(PUBLIC)
-					.returns(StackReader.State.class);
-			MethodSpec.Builder deserializerFinish = MethodSpec
-					.methodBuilder("finish")
-					.addAnnotation(Override.class)
-					.addModifiers(PUBLIC)
-					.addParameter(DeserializationContext.class, "context");
 
-			MethodSpec.Builder serialize = MethodSpec
-					.methodBuilder("serialize")
-					.addAnnotation(Override.class)
+			ClassName typeChangeStepBuilderName = name(klass.getSimpleName(), "ChangeBuilder");
+			TypeSpec.Builder typeChangeStepBuilder =
+					TypeSpec.classBuilder(typeChangeStepBuilderName).addModifiers(PUBLIC);
+			typeChangeStepBuilder
+					.addField(FieldSpec
+							.builder(changeStepBuilderName, "changeStepBuilder")
+							.addModifiers(PUBLIC)
+							.build())
+					.addField(FieldSpec.builder(cloneName, "target").addModifiers(PUBLIC).build())
+					.addMethod(MethodSpec
+							.constructorBuilder()
+							.addModifiers(PUBLIC)
+							.addParameter(changeStepBuilderName, "changeStepBuilder")
+							.addParameter(cloneName, "target")
+							.addCode("this.changeStepBuilder = changeStepBuilder;\n")
+							.addCode("this.target = target;\n")
+							.build());
+			changeStepBuilder.addMethod(MethodSpec
+					.methodBuilder(lowerFirst(klass.getSimpleName()))
 					.addModifiers(PUBLIC)
-					.addParameter(RawWriter.class, "writer")
-					.addCode("writer.type(\"$L\").recordBegin();\n", decideName(klass));
+					.returns(typeChangeStepBuilderName)
+					.addParameter(cloneName, "target")
+					.addCode("return new $T(this, target);\n", typeChangeStepBuilderName)
+					.build());
 
-			CodeBlock.Builder refDecCode = null;
-			if (flattenPoint(new TypeInfo(klass)))
-				refDecCode = CodeBlock
-						.builder()
-						.add("refCount -= 1;\n")
-						.add("if (refCount == 0) {\n")
-						.indent()
-						.add("project.objectMap.remove(id);");
+			// Type-specific stuff
 			for (Pair<Configuration, TypeInfo> pair : iterable(Walk.getFields(klass))) {
-				System.out.format("field %s\n", pair.second);
-				Field field = pair.second.field;
 				TypeInfo fieldInfo = pair.second;
-				TypeName fieldType;
-				TypeName baseType = Optional
-						.ofNullable(typeMap.get(fieldInfo.type))
-						.map(o -> (TypeName) o.first)
-						.orElseGet(() -> ClassName.get(fieldInfo.type));
-				if (fieldInfo.parameters != null)
-					fieldType = ParameterizedTypeName.get((ClassName) baseType,
-							Arrays.stream(fieldInfo.parameters).map(p -> TypeName.get(p.type)).<TypeName>toArray(
-									TypeName[]::new)
+				String fieldName = pair.second.field.getName();
+
+				class ChangeBuilder {
+					private final ClassName changeName;
+					private final MethodSpec.Builder changeInvoke;
+					private final List<String> invokeForward = new ArrayList<>();
+					private final TypeSpec.Builder change;
+					private final MethodSpec.Builder changeConstructor;
+					private final CodeBlock.Builder changeApply;
+					private final CodeBlock.Builder changeApplyNotify;
+					private final MethodSpec.Builder changeDelete;
+					private final MethodSpec.Builder changeSerialize;
+					private final ClassName listenerName;
+					private final TypeSpec.Builder listener;
+					private final MethodSpec.Builder listenerAccept;
+					private final ClassName deserializerName;
+
+					public ChangeBuilder(
+							boolean flattenBase, String fieldName, String action
+					) {
+						listenerName = cloneName.nestedClass(String.format("%s%sListener",
+								capFirst(fieldName),
+								capFirst(action)
+						));
+						listener = TypeSpec
+								.interfaceBuilder(listenerName)
+								.addModifiers(PUBLIC)
+								.addAnnotation(FunctionalInterface.class);
+						listenerAccept = MethodSpec
+								.methodBuilder("accept")
+								.addModifiers(PUBLIC, ABSTRACT)
+								.addParameter(cloneName, "target");
+						String listenersFieldName = String.format("%s%sListeners", fieldName, capFirst(action));
+						clone.addField(FieldSpec
+								.builder(ParameterizedTypeName.get(ClassName.get(List.class), listenerName),
+										listenersFieldName
+								)
+								.addModifiers(PRIVATE, FINAL)
+								.initializer("new $T<>()", ArrayList.class)
+								.build());
+						clone.addMethod(MethodSpec
+								.methodBuilder(String.format("add%s", capFirst(listenersFieldName)))
+								.addModifiers(PUBLIC)
+								.addParameter(listenerName, "listener")
+								.addCode("$L.add(listener);\n", listenersFieldName)
+								.build());
+						clone.addMethod(MethodSpec
+								.methodBuilder(String.format("remove%s", capFirst(listenersFieldName)))
+								.addModifiers(PUBLIC)
+								.addParameter(listenerName, "listener")
+								.addCode("$L.remove(listener);\n", listenersFieldName)
+								.build());
+						// TODO deserializer
+						deserializerName = cloneName.nestedClass(String.format("%s%sDeserializer",
+								capFirst(fieldName),
+								capFirst(action)
+						));
+						changeName = cloneName.nestedClass(String.format("%s%sChange",
+								capFirst(fieldName),
+								capFirst(action)
+						));
+						change = TypeSpec
+								.classBuilder(changeName)
+								.superclass(Change.class)
+								.addModifiers(STATIC)
+								.addField(FieldSpec.builder(cloneName, "target").addModifiers(PUBLIC).build());
+						changeSerialize = poetMethod(sigChangeSerialize)
+								.addCode("writer.type(\"$L\").recordBegin();\n", changeName.simpleName())
+								.addCode("writer.key(\"target\").primitive($T.toString((($T)target).id()));\n",
+										Objects.class,
+										ProjectObjectInterface.class
+								);
+						globalChangeDeserialize.addCode("if (\"$L\".equals(type)) return new $T();\n",
+								changeName.simpleName(),
+								deserializerName
+						);
+						changeConstructor = MethodSpec
+								.constructorBuilder()
+								.addParameter(ProjectContextBase.class, "project")
+								.addParameter(cloneName, "target")
+								.addCode("this.target = target;\n");
+						if (flattenBase)
+							changeConstructor.addCode("this.target.incRef(project);\n");
+						changeApply = CodeBlock.builder();
+						changeApplyNotify = CodeBlock.builder().add(
+								"for ($T listener : target.$L) listener.accept(target",
+								listenerName,
+								listenersFieldName
+						);
+						changeDelete = poetMethod(sigChangeDelete);
+						if (flattenBase)
+							changeDelete.addCode("(($T) target).decRef(project);\n", ProjectObjectInterface.class);
+						changeInvoke = MethodSpec
+								.methodBuilder(String.format("%s%s", fieldName, capFirst(action)))
+								.addModifiers(PUBLIC)
+								.returns(changeStepBuilderName);
+					}
+
+					public ChangeBuilder apply(Consumer<ChangeBuilder> f) {
+						f.accept(this);
+						return this;
+					}
+
+					public ClassName getName() {
+						return changeName;
+					}
+
+					public ChangeBuilder addListParameter(TypeInfo type, String name, boolean inc) {
+						TypeName element = toPoet(type);
+						TypeName list = ParameterizedTypeName.get(ClassName.get(List.class), element);
+						listenerAccept.addParameter(list, name);
+						change.addField(FieldSpec.builder(list, name).addModifiers(PUBLIC).build());
+						changeConstructor
+								.addParameter(list, name)
+								.addCode(String.format("this.%s = %s;\n", name, name));
+						if (flattenPoint(type)) {
+							changeDelete
+									.addCode("for ($T e : $L) ", element, name)
+									.addCode("(($T) e).decRef(project);\n", ProjectObjectInterface.class);
+							if (inc)
+								changeApply
+										.add("for ($T e : $L) {", element, name)
+										.indent()
+										.add("(($T) e).incRef(project);\n", ProjectObjectInterface.class)
+										.add("(($T) e).incRef(project);\n", ProjectObjectInterface.class)
+										.unindent()
+										.add("};\n");
+						}
+						changeApplyNotify.add(String.format(", %s", name));
+						changeInvoke.addParameter(list, name);
+						invokeForward.add(name);
+						changeSerialize
+								.addCode("writer.key(\"$L\").arrayBegin();\n", name)
+								.addCode("for ($T e : $L) ", element, name);
+						if (ProjectNode.class.isAssignableFrom((Class) type.type) ||
+								Tile.class.isAssignableFrom((Class) type.type))
+							changeSerialize.addCode("writer.primitive($T.toString((($T)e).id()));\n",
+									Objects.class,
+									ProjectObjectInterface.class
+							);
+						else
+							changeSerialize.addCode("writer.primitive($T.toString(e));\n", Objects.class);
+						changeSerialize.addCode("writer.arrayEnd();\n");
+						return this;
+					}
+
+					public ChangeBuilder addParameter(TypeInfo type, String name, boolean inc) {
+						listenerAccept.addParameter(toPoet(type), name);
+						change.addField(FieldSpec.builder(toPoet(type), name).addModifiers(PUBLIC).build());
+						changeConstructor
+								.addParameter(toPoet(type), name)
+								.addCode(String.format("this.%s = %s;\n", name, name));
+						if (flattenPoint(type)) {
+							changeDelete.addCode("(($T) $L).decRef(project);\n", ProjectObjectInterface.class, name);
+							if (inc) {
+								changeApply.add("(($T) $L).incRef(project);\n", ProjectObjectInterface.class, name);
+								changeApply.add("(($T) $L).incRef(project);\n", ProjectObjectInterface.class, name);
+							}
+						}
+						changeApplyNotify.add(String.format(", %s", name));
+						changeInvoke.addParameter(toPoet(type), name);
+						invokeForward.add(name);
+						changeSerialize.addCode("writer.key(\"$L\")", name);
+						if (ProjectNode.class.isAssignableFrom((Class) type.type) ||
+								Tile.class.isAssignableFrom((Class) type.type))
+							changeSerialize.addCode(".primitive($T.toString((($T)$L).id()));\n",
+									Objects.class,
+									ProjectObjectInterface.class,
+									name
+							);
+						else
+							changeSerialize.addCode(".primitive($T.toString($L));\n", Objects.class, name);
+						return this;
+					}
+
+					public ChangeBuilder addCode(CodeBlock code) {
+						changeApply.add(code);
+						return this;
+					}
+
+					public ChangeBuilder addCode(String format, Object... args) {
+						changeApply.add(CodeBlock
+								.builder()
+								.add(format,
+										Arrays.stream(args).map(a -> a == CHANGE_TOKEN_NAME ? changeName : a).toArray()
+								)
+								.build());
+						return this;
+					}
+
+					public void finish() {
+						listener.addMethod(listenerAccept.build());
+						clone.addType(listener.build());
+						change
+								.addMethod(changeConstructor.build())
+								.addMethod(poetMethod(sigChangeApply)
+										.addCode(changeApply.build())
+										.addCode(changeApplyNotify.add(");\n").build())
+										.build())
+								.addMethod(changeSerialize.addCode("writer.recordEnd();\n").build())
+								.addMethod(changeDelete.build());
+						clone.addType(change.build());
+						clone.addType(TypeSpec
+								.classBuilder(deserializerName)
+								.addModifiers(STATIC)
+								.superclass(StackReader.RecordState.class)
+								.build());
+						typeChangeStepBuilder.addMethod(changeInvoke.addCode(
+								"new $T(changeStepBuilder.context, target$L).apply(changeStepBuilder.context, changeStepBuilder.changeStep);\n",
+								changeName,
+								invokeForward
+										.stream()
+										.map(n -> String.format(", %s", n))
+										.collect(Collectors.joining(""))
+						).addCode("return changeStepBuilder;\n").build());
+					}
+
+					public ChangeBuilder addCodeIf(boolean condition, String format, Object... args) {
+						if (!condition)
+							return this;
+						return addCode(format, args);
+					}
+
+					public ChangeBuilder indent() {
+						changeApply.indent();
+						return this;
+					}
+
+					public ChangeBuilder unindent() {
+						changeApply.unindent();
+						return this;
+					}
+				}
+				class GenerateScalar {
+					public void apply(TypeInfo field) {
+						// Getter
+						MethodSpec.Builder getter =
+								MethodSpec.methodBuilder(fieldName).returns(toPoet(field)).addModifiers(PUBLIC);
+						clone.addMethod(getter.addCode("return $L;\n", fieldName).build());
+
+						// Mutation
+						if (!Stream.of("id", "refCount").anyMatch(fieldName::equals)) {
+							new ChangeBuilder(flattenPoint(classInfo), fieldName, "set")
+									.addParameter(field, "value", false)
+									.addCode("changeStep.add(new $T(project, target, target.$L));\n",
+											CHANGE_TOKEN_NAME,
+											fieldName
+									)
+									.addCode("target.$L = value;\n", fieldName)
+									.finish();
+						}
+
+						// Serialize
+						cloneSerialize.add(generateScalarSerialize(field, fieldName));
+
+						// Deserialize
+						{
+							CodeBlock value = generateScalarFromString(field,
+									"value",
+									cloneDeserializeValue,
+									cloneDeserializeRecord
+							);
+							if (value != null)
+								cloneDeserializeValue.add("out.$L = ", fieldName).add(value).add(";\n");
+						}
+
+						// Dec ref
+						if (flattenPoint(field)) {
+							cloneDecRef.add("(($T) $L).decRef(project);\n", ProjectObjectInterface.class, fieldName);
+						}
+					}
+				}
+				GenerateScalar generateScalar = new GenerateScalar();
+
+				FieldSpec.Builder field = FieldSpec.builder(toPoet(fieldInfo), fieldName);
+				cloneDeserializeValue.add("if (\"$L\".equals(key)) {\n", fieldName).indent();
+				if (fieldInfo.type == String.class) {
+					generateScalar.apply(fieldInfo);
+				} else if (fieldInfo.type == Integer.class || fieldInfo.type == int.class) {
+					generateScalar.apply(fieldInfo);
+				} else if (fieldInfo.type == Long.class || fieldInfo.type == long.class) {
+					generateScalar.apply(fieldInfo);
+				} else if (fieldInfo.type == Float.class || fieldInfo.type == float.class) {
+					generateScalar.apply(fieldInfo);
+				} else if (fieldInfo.type == Double.class || fieldInfo.type == double.class) {
+					generateScalar.apply(fieldInfo);
+				} else if (fieldInfo.type == Boolean.class || fieldInfo.type == boolean.class) {
+					generateScalar.apply(fieldInfo);
+				} else if (((Class<?>) fieldInfo.type).isEnum()) {
+					generateScalar.apply(fieldInfo);
+				} else if (((Class) fieldInfo.type).isAssignableFrom(ArrayList.class)) {
+					field.initializer("new $T()", ArrayList.class);
+
+					// Getters
+					clone.addMethod(MethodSpec
+							.methodBuilder(fieldName + "Get")
+							.addModifiers(PUBLIC)
+							.returns(toPoet(fieldInfo.parameters[0]))
+							.addParameter(Integer.class, "index")
+							.addCode("return $L.get(index);\n", fieldName)
+							.build());
+					clone.addMethod(MethodSpec
+							.methodBuilder(fieldName + "Length")
+							.addModifiers(PUBLIC)
+							.returns(int.class)
+							.addCode("return $L.size();\n", fieldName)
+							.build());
+					clone.addMethod(MethodSpec
+							.methodBuilder(fieldName)
+							.addModifiers(PUBLIC)
+							.returns(toPoet(fieldInfo))
+							.addCode("return $T.unmodifiableList($L);\n", Collections.class, fieldName)
+							.build());
+
+					// Mutation
+					TypeInfo elementType = fieldInfo.parameters[0];
+					ChangeBuilder addBuilder = new ChangeBuilder(flattenPoint(classInfo), fieldName, "add");
+					ChangeBuilder removeBuilder = new ChangeBuilder(flattenPoint(classInfo), fieldName, "remove");
+					addBuilder
+							.addParameter(new TypeInfo(int.class), "at", false)
+							.addListParameter(elementType, "value", true)
+							.addCode("target.$L.addAll(at, value);\n", fieldName)
+							.addCode("changeStep.add(new $T(project, target, at, value.size()));\n",
+									removeBuilder.getName()
+							)
+							.finish();
+					TypeName listType = ParameterizedTypeName.get(ClassName.get(List.class), toPoet(elementType));
+					removeBuilder
+							.addParameter(new TypeInfo(int.class), "at", false)
+							.addParameter(new TypeInfo(int.class), "count", false)
+							.addCode("final $T sublist = target.$L.subList(at, at + count);\n", listType, fieldName)
+							.addCode("changeStep.add(new $T(project, target, at, new $T(sublist)));\n",
+									addBuilder.getName(),
+									ArrayList.class
+							)
+							.addCode("sublist.clear();\n")
+							.finish();
+					new ChangeBuilder(flattenPoint(classInfo), fieldName, "clear").addCode(
+							"changeStep.add(new $T(project, target, 0, new $T(target.$L)));\n",
+							addBuilder.getName(),
+							ArrayList.class,
+							fieldName
+					).addCode("target.$L.clear();\n", fieldName).finish();
+					typeChangeStepBuilder.addMethod(MethodSpec
+							.methodBuilder(String.format("%sAdd", fieldName))
+							.addModifiers(PUBLIC)
+							.returns(changeStepBuilderName)
+							.addParameter(int.class, "at")
+							.addParameter(toPoet(elementType), "value")
+							.addCode("return $LAdd(at, $T.<$T>of(value));\n",
+									fieldName,
+									ImmutableList.class,
+									toPoet(elementType)
+							)
+							.build());
+					typeChangeStepBuilder.addMethod(MethodSpec
+							.methodBuilder(String.format("%sAdd", fieldName))
+							.addModifiers(PUBLIC)
+							.returns(changeStepBuilderName)
+							.addParameter(toPoet(elementType), "value")
+							.addCode("return $LAdd(target.$LLength(), value);\n", fieldName, fieldName)
+							.build());
+					new ChangeBuilder(flattenPoint(classInfo), fieldName, "moveTo")
+							.addParameter(new TypeInfo(int.class), "source", false)
+							.addParameter(new TypeInfo(int.class), "count", false)
+							.addParameter(new TypeInfo(int.class), "dest", false)
+							.addCode("if (source == dest) return;\n")
+							.addCode(
+									"if (count >= target.$L.size()) throw new $T(\"Count is greater than size.\");\n",
+									fieldName,
+									Assertion.class
+							)
+							.addCode("source = $T.min(source, target.$L.size() - count);\n", Math.class, fieldName)
+							.addCode("changeStep.add(new $T(project, target, dest, count, source));\n",
+									CHANGE_TOKEN_NAME
+							)
+							.addCode("$T sublist = target.$L.subList(source, source + count);\n", listType, fieldName)
+							.addCode("for ($T e : sublist) (($T) e).incRef(project);\n",
+									toPoet(fieldInfo.parameters[0]),
+									ProjectObjectInterface.class
+							)
+							.addCode("$T readd = new $T(sublist);\n", listType, ArrayList.class)
+							.addCode("sublist.clear();\n")
+							.addCode("target.$L.addAll(dest, readd);\n", fieldName)
+							.finish();
+					typeChangeStepBuilder.addMethod(MethodSpec
+							.methodBuilder(String.format("%sMoveUp", capFirst(fieldName)))
+							.returns(changeStepBuilderName)
+							.addParameter(int.class, "at")
+							.addParameter(int.class, "count")
+							.addCode("if (at == 0) return changeStepBuilder;\n")
+							.addCode("return $LMoveTo(at, count, at - 1);\n", fieldName)
+							.build());
+					typeChangeStepBuilder.addMethod(MethodSpec
+							.methodBuilder(String.format("%sMoveDown", capFirst(fieldName)))
+							.returns(changeStepBuilderName)
+							.addParameter(int.class, "at")
+							.addParameter(int.class, "count")
+							.addCode("if (at == target.$L.size() - 1) return changeStepBuilder;\n", fieldName)
+							.addCode("return $LMoveTo(at, count, at + 1);\n", fieldName)
+							.build());
+
+					// Serialize
+					cloneSerialize
+							.add("writer.arrayBegin();\n")
+							.add("for ($T e : $L) {\n", toPoet(fieldInfo.parameters[0]), fieldName)
+							.indent()
+							.add(generateScalarSerialize(fieldInfo.parameters[0], "e"))
+							.unindent()
+							.add("}\n")
+							.add("writer.arrayEnd();\n");
+
+					// Deserialize
+					cloneDeserializeArray.add("if (\"$L\".equals(key)) return new ", fieldName);
+					if (flattenPoint(fieldInfo.parameters[0])) {
+						cloneDeserializeArray.add("$T();\n", IDListState.class);
+						cloneDecRef.add("for ($T e : $L) (($T) e).decRef(project);\n",
+								toPoet(fieldInfo.parameters[0]),
+								fieldName,
+								ProjectObjectInterface.class
+						);
+					} else {
+						cloneDeserializeArray
+								.add("$T() {\n", GeneralListState.class)
+								.indent()
+								.add("public void value(Object value) {\n")
+								.indent();
+						CodeBlock.Builder valueCode = CodeBlock.builder();
+						CodeBlock.Builder recordCode = CodeBlock.builder();
+						CodeBlock value =
+								generateScalarFromString(fieldInfo.parameters[0], "value", valueCode, recordCode);
+						cloneDeserializeArray.add("data.add(").add(value).add(");\n").unindent().add("}\n");
+						CodeBlock recordCode1 = recordCode.build();
+						if (!recordCode1.isEmpty())
+							cloneDeserializeArray
+									.add("public $T record() {\n", StackReader.State.class)
+									.indent()
+									.add(recordCode1)
+									.unindent()
+									.add("}\n");
+						cloneDeserializeArray.add("};\n");
+					}
+					cloneDeserializeValue.add("out.$L = ($T) value;\n", fieldName, toPoet(fieldInfo));
+				} else if (((Class) fieldInfo.type).isAssignableFrom(HashSet.class)) {
+					field.initializer("new $T()", HashSet.class);
+
+					// Getters
+					clone.addMethod(MethodSpec
+							.methodBuilder(fieldName + "Has")
+							.addModifiers(PUBLIC)
+							.returns(boolean.class)
+							.addParameter(toPoet(fieldInfo.parameters[0]), "value")
+							.addCode("return $L.contains(value);\n", fieldName)
+							.build());
+					clone.addMethod(MethodSpec
+							.methodBuilder(fieldName + "Length")
+							.addModifiers(PUBLIC)
+							.returns(int.class)
+							.addCode("return $L.size();\n", fieldName)
+							.build());
+					clone.addMethod(MethodSpec
+							.methodBuilder(fieldName)
+							.addModifiers(PUBLIC)
+							.returns(toPoet(fieldInfo))
+							.addCode("return $T.unmodifiableSet($L);\n", Collections.class, fieldName)
+							.build());
+
+					// Mutation
+					ChangeBuilder addBuilder = new ChangeBuilder(flattenPoint(classInfo), fieldName, "add");
+					ChangeBuilder removeBuilder = new ChangeBuilder(flattenPoint(classInfo), fieldName, "remove");
+					TypeInfo elementType = fieldInfo.parameters[0];
+					addBuilder
+							.addCode("if (target.$L.contains(value)) return;\n")
+							.addListParameter(elementType, "value", true)
+							.addCode("target.$L.addAll(value);\n", fieldName)
+							.addCode(("changeStep.add(new $T(project, target, value));\n"), removeBuilder.getName())
+							.finish();
+					removeBuilder
+							.addCode("if (!target.$L.remove(value)) return;\n", fieldName)
+							.addListParameter(elementType, "value", false)
+							.addCode(("changeStep.add(new $T(project, target, value));\n"), addBuilder.getName())
+							.finish();
+					new ChangeBuilder(flattenPoint(classInfo), fieldName, "clear").addCode(
+							"changeStep.add(new $T(project, target, 0, new $T($L)));\n",
+							addBuilder.getName(),
+							ArrayList.class
+					).addCode("target.$L.clear();\n", fieldName).finish();
+					typeChangeStepBuilder.addMethod(MethodSpec
+							.methodBuilder(String.format("%sAdd"))
+							.addModifiers(PUBLIC)
+							.addParameter(toPoet(elementType), "value")
+							.addCode("return $LAdd($T.of(value));\n", fieldName, ImmutableList.class)
+							.build());
+					typeChangeStepBuilder.addMethod(MethodSpec
+							.methodBuilder(String.format("%sRemove"))
+							.addModifiers(PUBLIC)
+							.addParameter(toPoet(elementType), "value")
+							.addCode("return $LRemove($T.of(value));\n", fieldName, ImmutableList.class)
+							.build());
+
+					// Serialize
+					cloneSerialize
+							.add("writer.arrayBegin();\n")
+							.add("for ($T e : $L) {\n", toPoet(fieldInfo.parameters[0]), fieldName)
+							.indent()
+							.add(generateScalarSerialize(fieldInfo.parameters[0], "e"))
+							.unindent()
+							.add("}\n")
+							.add("writer.arrayEnd();\n");
+
+					// Deserialize
+					cloneDeserializeArray.add("if (\"$L\".equals(key)) return new ", fieldName);
+					if (flattenPoint(fieldInfo.parameters[0])) {
+						cloneDeserializeArray.add("$T();\n", IDSetState.class);
+						cloneDecRef.add("for ($T e : $L) (($T) e).decRef(project);\n",
+								toPoet(fieldInfo.parameters[0]),
+								fieldName,
+								ProjectObjectInterface.class
+						);
+					} else {
+						cloneDeserializeArray
+								.add("$T() {\n", GeneralSetState.class)
+								.indent()
+								.add("public void value(Object value) {\n")
+								.indent();
+						CodeBlock.Builder valueCode = CodeBlock.builder();
+						CodeBlock.Builder recordCode = CodeBlock.builder();
+						CodeBlock value =
+								generateScalarFromString(fieldInfo.parameters[0], "value", valueCode, recordCode);
+						cloneDeserializeArray.add("data.add(").add(value).add(");\n").unindent().add("}\n");
+						CodeBlock recordCode1 = recordCode.build();
+						if (!recordCode1.isEmpty())
+							cloneDeserializeArray
+									.add("public $T record() {\n", StackReader.State.class)
+									.indent()
+									.add(recordCode1)
+									.unindent()
+									.add("}\n");
+						cloneDeserializeArray.add("};\n");
+					}
+					cloneDeserializeValue.add("out.$L = ($T) value;\n", fieldName, toPoet(fieldInfo));
+				} else if (((Class) fieldInfo.type).isAssignableFrom(HashMap.class)) {
+					field.initializer("new $T()", HashMap.class);
+
+					// Getters
+					clone.addMethod(MethodSpec
+							.methodBuilder(fieldName + "Get")
+							.addModifiers(PUBLIC)
+							.returns(toPoet(fieldInfo.parameters[1]))
+							.addParameter(fieldInfo.parameters[0].type, "key")
+							.addCode("return $L.get(key);\n", fieldName)
+							.build());
+					clone.addMethod(MethodSpec
+							.methodBuilder(fieldName + "Has")
+							.addModifiers(PUBLIC)
+							.returns(boolean.class)
+							.addParameter(toPoet(fieldInfo.parameters[0]), "key")
+							.addCode("return $L.containsKey(key);\n", fieldName)
+							.build());
+					clone.addMethod(MethodSpec
+							.methodBuilder(fieldName)
+							.addModifiers(PUBLIC)
+							.returns(toPoet(fieldInfo))
+							.addCode("return $T.unmodifiableMap($L);\n", Collections.class, fieldName)
+							.build());
+
+					// Mutation
+					ChangeBuilder putBuilder = new ChangeBuilder(flattenPoint(classInfo), fieldName, "put");
+					ChangeBuilder removeBuilder = new ChangeBuilder(flattenPoint(classInfo), fieldName, "remove");
+					putBuilder
+							.addParameter(fieldInfo.parameters[0], "key", false)
+							.addParameter(fieldInfo.parameters[1], "value", true)
+							.addCode(CodeBlock
+									.builder()
+									.add("if (target.$L.containsKey(key)) {\n", fieldName)
+									.indent()
+									.add("$T oldValue = target.$L.put(key, value);\n",
+											toPoet(fieldInfo.parameters[1]),
+											fieldName
+									)
+									.add(("changeStep.add(new $T(project, target, key, oldValue));\n"),
+											putBuilder.getName()
+									)
+									.unindent()
+									.add("} else {\n")
+									.indent()
+									.add("target.$L.put(key, value);\n", fieldName)
+									.add(("changeStep.add(new $T(project, target, key));\n"),
+											removeBuilder.getName()
+									)
+									.unindent()
+									.add("}\n")
+									.build())
+							.finish();
+					removeBuilder
+							.addParameter(fieldInfo.parameters[0], "key", false)
+							.addCode("if (!target.$L.containsKey(key)) return;\n", fieldName)
+							.addCode("$T oldValue = target.$L.remove(key);\n",
+									toPoet(fieldInfo.parameters[1]),
+									fieldName
+							)
+							.addCode(("changeStep.add(new $T(project, target, key, oldValue));\n"),
+									putBuilder.getName()
+							)
+							.finish();
+
+					// Serialize
+					cloneSerialize
+							.add("writer.recordBegin();\n")
+							.add("for (Map.Entry<$T, $T> p : $L.entrySet()) {\n",
+									toPoet(fieldInfo.parameters[0]),
+									toPoet(fieldInfo.parameters[1]),
+									fieldName
+							)
+							.indent()
+							.add("writer.key($T.toString(p.getKey()));\n", Objects.class)
+							.add(generateScalarSerialize(fieldInfo.parameters[1], "p.getValue()"))
+							.unindent()
+							.add("}\n")
+							.add("writer.recordEnd();\n");
+
+					// Deserialize
+					cloneDeserializeArray.add("if (\"$L\".equals(key)) return ", fieldName);
+					if (flattenPoint(fieldInfo.parameters[1])) {
+						cloneDeserializeArray.add("new $T();\n", IDMapState.class);
+						cloneDecRef.add(
+								"for (Map.Entry<$T, $T> e : $L.entrySet()) (($T) e.getValue()).decRef(project);\n",
+								toPoet(fieldInfo.parameters[0]),
+								toPoet(fieldInfo.parameters[1]),
+								fieldName,
+								ProjectObjectInterface.class
+						);
+					} else {
+						cloneDeserializeArray
+								.add("$T() {\n", GeneralMapState.class)
+								.indent()
+								.add("public void value(Object value) {\n")
+								.indent();
+						CodeBlock.Builder valueCode = CodeBlock.builder();
+						CodeBlock.Builder recordCode = CodeBlock.builder();
+						CodeBlock key = generateScalarFromString(fieldInfo.parameters[0], "key", valueCode, recordCode);
+						CodeBlock value =
+								generateScalarFromString(fieldInfo.parameters[1], "value", valueCode, recordCode);
+						cloneDeserializeArray
+								.add("data.put(")
+								.add(key)
+								.add(", ")
+								.add(value)
+								.add(");\n")
+								.unindent()
+								.add("}\n");
+						CodeBlock recordCode1 = recordCode.build();
+						if (!recordCode1.isEmpty())
+							cloneDeserializeArray
+									.add("public $T record() {\n", StackReader.State.class)
+									.indent()
+									.add(recordCode1)
+									.unindent()
+									.add("}\n");
+						cloneDeserializeArray.add("};\n");
+					}
+					cloneDeserializeValue.add("out.$L = ($T) value;\n", fieldName, toPoet(fieldInfo));
+				} else if (flattenPoint(fieldInfo)) {
+					generateScalar.apply(fieldInfo);
+
+					// Deserialize
+					cloneDeserializeValue.add("map.put(\"$L\", ($T)value);\n", fieldName, String.class);
+					cloneDeserializeFinish.add("out.$L = ($T) context.objectMap.get(map.get(\"$L\"));",
+							fieldName,
+							toPoet(fieldInfo),
+							fieldName
 					);
-				else
-					fieldType = baseType;
-				if (field.getDeclaringClass() == klass)
-					builder.addField(FieldSpec.builder(fieldType, field.getName()).build());
-				builder.addMethod(MethodSpec
-						.methodBuilder(field.getName())
-						.addModifiers(PUBLIC)
-						.returns(field.getType())
-						.addCode("return $L;\n", field.getName())
-						.build());
-				serialize.addCode(Walk.walkType(reflections, fieldInfo, 0, new SerializeVisitor()));
-				deserializerValue.addCode(CodeBlock
-						.builder()
-						.add("if (key.equals(\"$L\")) {\n", field.getName())
-						.indent()
-						.add(Walk.walkType(reflections, new TypeInfo(field), null, new DeserializerValueVisitor()))
-						.add("return;\n")
-						.unindent()
-						.add("}\n")
-						.build());
-				if (field.getType().isAssignableFrom(ArrayList.class) ||
-						field.getType().isAssignableFrom(HashSet.class))
-					deserializerArray.addCode(CodeBlock
-							.builder()
-							.add("if (key.equals(\"$L\")) return new $T()", field.getName(), GeneralStateBuilder.class)
-							.add(Walk.walkType(reflections, fieldInfo, null, new DeserializerNestVisitor()))
-							.add(".build();\n")
-							.build());
-				if (field.getType().getAnnotation(Configuration.class) != null &&
-						!DeserializationContext.flattenPoint(fieldInfo))
-					deserializerRecord.addCode(CodeBlock
-							.builder()
-							.add("if (key.equals(\"$L\")) return new $T()", field.getName(), GeneralStateBuilder.class)
-							.add(Walk.walkType(reflections, fieldInfo, null, new DeserializerNestVisitor()))
-							.add(".build();\n")
-							.build());
-				if (DeserializationContext.flattenPoint(fieldInfo))
-					deserializerFinish.addCode(Walk.walkType(reflections,
-							fieldInfo,
-							null,
-							new DeserializerFinishVisitor()
-					));
+				} else {
+					cloneDeserializeRecord.add("if (\"$L\".equals(key)) {\n", fieldName).indent();
+					generateScalar.apply(fieldInfo);
+					cloneDeserializeRecord.unindent().add("}\n");
+				}
+
+				cloneDeserializeValue.add("return;\n").unindent().add("};\n");
+				clone.addField(field.build());
 			}
-			ClassName deserializerName = className.nestedClass("Deserializer");
+
+			write(typeChangeStepBuilderName, typeChangeStepBuilder.build());
+			ClassName deserializerName = cloneName.nestedClass("Deserializer");
 			ClassName finisherName = deserializerName.nestedClass("Finisher");
 			TypeSpec.Builder deserializerBuilder = TypeSpec
 					.classBuilder(deserializerName)
@@ -312,11 +993,11 @@ public class GenerateTask extends Task {
 							.classBuilder(finisherName)
 							.superclass(DeserializationContext.Finisher.class)
 							.addModifiers(PUBLIC)
-							.addMethod(deserializerFinish.build())
+							.addMethod(poetMethod(sigFinisherFinish).addCode(cloneDeserializeFinish.build()).build())
 							.build())
 					.addField(DeserializationContext.class, "context", FINAL, PRIVATE)
 					.addField(Map.class, "map", FINAL, PRIVATE)
-					.addField(className, "out", FINAL, PRIVATE)
+					.addField(cloneName, "out", FINAL, PRIVATE)
 					.addMethod(MethodSpec
 							.constructorBuilder()
 							.addModifiers(PUBLIC)
@@ -324,187 +1005,76 @@ public class GenerateTask extends Task {
 							.addCode("this.context = context;\n")
 							.addCode("context.finishers.add(new Finisher());\n")
 							.addCode("map = new $T();\n", HashMap.class)
-							.addCode("out = new $T();\n", className)
+							.addCode("out = new $T();\n", cloneName)
 							.build())
-					.addMethod(deserializerValue.addCode("throw new $T();\n", Assertion.class).build())
-					.addMethod(deserializerArray.addCode("throw new $T();\n", Assertion.class).build())
-					.addMethod(deserializerRecord.addCode("throw new $T();\n", Assertion.class).build());
-			if (ProjectNode.class.isAssignableFrom(klass)) {
-				serialize.addCode("writer.key(\"id\").primitive($T.toString(id));\n", Objects.class);
-				deserializerBuilder.addMethod(MethodSpec
-						.methodBuilder("get")
-						.addModifiers(PUBLIC)
-						.addAnnotation(Override.class)
-						.returns(Object.class)
-						.addCode("context.objectMap.put(out.id, out);\n")
+					.addMethod(poetMethod(sigStateValue)
+							.addCode(cloneDeserializeValue.build())
+							.addCode("throw new $T(String.format(\"Unknown key (%s)\", key));\n",
+									RuntimeException.class
+							)
+							.build())
+					.addMethod(poetMethod(sigStateArray).addCode(cloneDeserializeArray.build()).addCode(
+							"throw new $T(String.format(\"Key (%s) is unknown or is not an array\", key));\n",
+							RuntimeException.class
+					).build())
+					.addMethod(poetMethod(sigStateRecord).addCode(cloneDeserializeRecord.build()).addCode(
+							"throw new $T(String.format(\"Key (%s) is unknown or is not an record\", key));\n",
+							RuntimeException.class
+					).build());
+			if (ProjectObject.class.isAssignableFrom(klass)) {
+				deserializerBuilder.addMethod(poetMethod(sigStateGet)
+						.addCode("context.objectMap.put((($T)out).id(), out);\n", ProjectObjectInterface.class)
 						.addCode("return super.get();\n")
 						.build());
-				builder
-						.addMethod(MethodSpec.constructorBuilder().build())
+				clone
 						.addMethod(MethodSpec
 								.methodBuilder("create")
 								.addModifiers(PUBLIC, STATIC)
-								.returns(className)
-								.addParameter(DeserializationContext.class, "context")
-								.addCode("$T out = new $T();\n", className, className)
-								.addCode("out.id = context.nextId++;\n")
+								.returns(cloneName)
+								.addParameter(ProjectContextBase.class, "project")
+								.addCode("$T out = new $T();\n", cloneName, cloneName)
+								.addCode("out.id = project.nextId++;\n")
 								.addCode("return out;\n")
 								.build())
-						.addMethod(MethodSpec
-								.methodBuilder("refDec")
-								.addAnnotation(Override.class)
-								.addParameter(ProjectBase.class, "project")
-								.addCode(refDecCode.unindent().add("}\n").build()).build());
+						.addMethod(poetMethod(sigObjIncRef).addCode("refCount += 1;\n").build())
+						.addMethod(poetMethod(sigObjDecRef).addCode(cloneDecRef.build()).build());
 			}
-			builder.addType(deserializerBuilder.build()).addMethod(serialize.addCode("writer.recordEnd();\n").build());
-			write(className, builder.build());
-		}
-
-		// Create change set/builder
-		ClassName changeStepName = ClassName.get(ChangeStep.class);
-		ClassName changeStepBuilderName = name("ChangeStepBuilder");
-		TypeSpec.Builder changeStepBuilder = TypeSpec
-				.classBuilder(changeStepBuilderName)
-				.addModifiers(PUBLIC)
-				.addField(FieldSpec.builder(changeStepName, "changeStep").addModifiers(PUBLIC).build())
-				.addMethod(MethodSpec
-						.constructorBuilder()
-						.addModifiers(PUBLIC)
-						.addCode("this.changeStep = new $T();", ChangeStep.class)
-						.build());
-
-		for (Map.Entry<Class, Pair<ClassName, TypeSpec.Builder>> entry : typeMap.entrySet()) {
-			Class klass = entry.getKey();
-			final ClassName className = entry.getValue().first;
-
-			// Create sub change builder for this klass
-			ClassName typeChangeName = name(klass.getSimpleName(), "ChangeBuilder");
-			TypeSpec.Builder typeChangeBuilder = TypeSpec.classBuilder(typeChangeName).addModifiers(PUBLIC);
-			typeChangeBuilder.addField(FieldSpec.builder(changeStepName, "changeStep").addModifiers(PUBLIC).build());
-			typeChangeBuilder.addField(FieldSpec.builder(className, "target").addModifiers(PUBLIC).build());
-			typeChangeBuilder.addMethod(MethodSpec
-					.constructorBuilder()
-					.addModifiers(PUBLIC)
-					.addParameter(changeStepName, "changeStep")
-					.addParameter(className, "target")
-					.addCode("this.changeStep = changeStep;\n")
-					.addCode("this.target = target;\n")
-					.build());
-
-			// Sub change builder state change
-			changeStepBuilder.addMethod(MethodSpec
-					.methodBuilder(klass.getSimpleName())
-					.addModifiers(PUBLIC)
-					.returns(typeChangeName)
-					.addParameter(className, "target")
-					.addCode("return new $T(changeStep, target);\n", typeChangeName)
-					.build());
-
-			// Create methods for modifying each field
-			Arrays.stream(klass.getFields()).forEach(field -> {
-				TypeInfo fieldInfo = new TypeInfo(field);
-				if (field.getAnnotation(Configuration.class) == null)
-					return;
-				if (field.getName().equals("id") && field.getDeclaringClass() == ProjectNode.class)
-					return;
-				if (List.class.isAssignableFrom(field.getType())) {
-					ChangeBuilder addBuilder = new ChangeBuilder(changeStepName, className, field, "add");
-					ChangeBuilder removeBuilder = new ChangeBuilder(changeStepName, className, field, "remove");
-					addBuilder
-							.addParameter(int.class, "at")
-							.addParameter(fieldInfo.parameters[0].type, "value")
-							.addCode("target.$L.add(at, value);\n", field.getName())
-							.addCodeIf(flattenPoint(fieldInfo.parameters[0]), "value.refInc(project, 2);\n")
-							.addCode(("changeStep.add(new $T(target, at));\n"), removeBuilder.getName())
-							.finish(typeChangeBuilder);
-					removeBuilder
-							.addParameter(int.class, "at")
-							.addCode("$T temp = target.$L.remove(at);\n", fieldInfo.parameters[0].type, field.getName())
-							.addCode(("changeStep.add(new $T(target, at, value));\n"), addBuilder.getName())
-							.finish(typeChangeBuilder);
-					new ChangeBuilder(changeStepName, className, field, "moveTo")
-							.addParameter(int.class, "source")
-							.addParameter(int.class, "dest")
-							.addCode("if (source == dest) return;\n")
-							.addCode("changeStep.add(new $T(target, dest, source));\n", CHANGE_TOKEN_NAME)
-							.addCode("target.$L.add(dest, target.$L.remove(source));\n",
-									field.getName(),
-									field.getName()
-							)
-							.finish(typeChangeBuilder);
-					typeChangeBuilder.addMethod(MethodSpec
-							.methodBuilder(String.format("moveUp%s", capFirst(field.getName())))
-							.addParameter(int.class, "at")
-							.addCode("if (at == 0) return;\n")
-							.addCode("moveTo(at, at - 1);\n")
-							.build());
-					typeChangeBuilder.addMethod(MethodSpec
-							.methodBuilder(String.format("moveDown%s", capFirst(field.getName())))
-							.addParameter(int.class, "at")
-							.addCode("if (at == target.$L.size() - 1) return;\n", field.getName())
-							.addCode("moveTo(at, at - 1);\n")
-							.build());
-					// ODO sort methods?
-				} else if (Set.class.isAssignableFrom(field.getType())) {
-					ChangeBuilder addBuilder = new ChangeBuilder(changeStepName, className, field, "add");
-					ChangeBuilder removeBuilder = new ChangeBuilder(changeStepName, className, field, "remove");
-					addBuilder
-							.addParameter(fieldInfo.parameters[0].type, "value")
-							.addCode("if (target.$L.contains(value)) return;\n", field.getName())
-							.addCode("target.$L.add(value);\n", field.getName())
-							.addCode(("changeStep.add(new $T(target, value));\n"), removeBuilder.getName())
-							.addCodeIf(flattenPoint(fieldInfo.parameters[0]), "value.refInc(project, 2);\n")
-							.finish(typeChangeBuilder);
-					removeBuilder
-							.addParameter(fieldInfo.parameters[0].type, "value")
-							.addCode("if (!target.$L.contains(value)) return;\n", field.getName())
-							.addCode("target.$L.add(value);\n", field.getName())
-							.addCode(("changeStep.add(new $T(target, at, value));\n"), addBuilder.getName())
-							.finish(typeChangeBuilder);
-				} else if (Map.class.isAssignableFrom(field.getType())) {
-					ChangeBuilder putBuilder = new ChangeBuilder(changeStepName, className, field, "put");
-					ChangeBuilder removeBuilder = new ChangeBuilder(changeStepName, className, field, "remove");
-					putBuilder
-							.addParameter(fieldInfo.parameters[0].type, "key")
-							.addParameter(fieldInfo.parameters[1].type, "value")
-							.addCode("$T old = target.$L.put(key, value);\n",
-									fieldInfo.parameters[1].type,
-									field.getName()
-							)
-							.addCode("if (old == null) changeStep.add(new $T(key));\n", removeBuilder.getName())
-							.addCode("else changeStep.add(new $T(target, key, old));\n", putBuilder.getName())
-							.addCodeIf(flattenPoint(fieldInfo.parameters[1]), "value.refInc(project, 2);\n")
-							.finish(typeChangeBuilder);
-					removeBuilder
-							.addParameter(fieldInfo.parameters[0].type, "key")
-							.addCode("$T old = target.$L.remove(key);\n", fieldInfo.parameters[1].type, field.getName())
-							.addCode("if (old == null) return;\n")
-							.addCode("changeStep.add(new $T(target, key, old));\n", removeBuilder.getName())
-							.finish(typeChangeBuilder);
-				} else {
-					new ChangeBuilder(changeStepName, className, field, "set")
-							.addParameter(field.getType(), "value")
-							.addCode("changeStep.add(new $T(target, target.$L));\n", CHANGE_TOKEN_NAME, field.getName())
-							.addCode("target.$L = value;\n", field.getName())
-							.addCodeIf(flattenPoint(fieldInfo), "value.refInc(project, 1);\n")
-							.finish(typeChangeBuilder);
-				}
-			});
-
-			TypeSpec typeChange = typeChangeBuilder.build();
-			write(typeChangeName, typeChange);
+			if (klass.getSuperclass() != Object.class)
+				clone.superclass(klass.getSuperclass());
+			for (Class interface1 : klass.getInterfaces())
+				clone.addSuperinterface(interface1);
+			write(cloneName,
+					clone
+							.addModifiers(PUBLIC)
+							.addSuperinterface(ProjectObjectInterface.class)
+							.addType(deserializerBuilder.build())
+							.addMethod(poetMethod(sigObjSerialize)
+									.addCode(cloneSerialize.add("writer.recordEnd();\n").build())
+									.build())
+							.build()
+			);
 		}
 
 		write(changeStepBuilderName, changeStepBuilder.build());
-		write(deserializeHelperName,
+		write(
+				deserializeHelperName,
 				deserializeHelper
-						.addMethod(deserializeModel.addCode("throw new $T();\n", Assertion.class).build())
-						.addMethod(deserializeChange.addCode("throw new $T();\n", Assertion.class).build())
+						.addMethod(globalModelDeserialize
+								.addCode(
+										"throw new $T(String.format(\"Unknown type %s\", type));\n",
+										RuntimeException.class
+								)
+								.build())
+						.addMethod(globalChangeDeserialize.addCode(
+								"throw new $T(String.format(\"Unknown change type %s\", type));\n",
+								RuntimeException.class
+						).build())
 						.build()
 		);
 	}
 
 	public void write(ClassName name, TypeSpec spec) {
+		System.out.format("Writing class %s\n", name);
 		uncheck(() -> JavaFile.builder(name.packageName(), spec).build().writeTo(path));
 	}
 

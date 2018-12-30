@@ -9,5 +9,5 @@ import com.zarbosoft.interface1.Configuration;
 public abstract class ProjectNode extends ProjectObject {
 
 	@Configuration
-	public String name;
+	String name;
 }

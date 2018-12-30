@@ -3,9 +3,11 @@ package com.zarbosoft.shoedemo.deserialize;
 import com.zarbosoft.luxem.read.StackReader;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.Pair;
-import com.zarbosoft.shoedemo.model.Tile;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class IDMapState extends StackReader.State {

@@ -15,5 +15,5 @@ public class ImageFrame extends ProjectObject {
 	@Configuration
 	public Vector offset;
 	@Configuration
-	public Map<String, Tile> tiles;
+	public Map<Long, Tile> tiles;
 }

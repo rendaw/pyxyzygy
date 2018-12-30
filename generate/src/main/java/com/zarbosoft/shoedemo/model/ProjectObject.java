@@ -4,8 +4,8 @@ import com.zarbosoft.interface1.Configuration;
 
 public class ProjectObject {
 	@Configuration
-	public long refCount;
+	long refCount;
 
 	@Configuration
-	public long id;
+	long id;
 }

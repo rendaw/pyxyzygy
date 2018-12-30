@@ -4,10 +4,10 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ProjectBase {
+public class ProjectContextBase {
 	public long nextId;
 
-	public Map<Long, ProjectNode> objectMap = new HashMap<>();
+	public Map<Long, ProjectObject> objectMap = new HashMap<>();
 	public Path root;
 	public Path tileDir;
 
