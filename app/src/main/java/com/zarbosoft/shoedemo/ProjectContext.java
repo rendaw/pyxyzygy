@@ -36,7 +36,7 @@ public class ProjectContext extends ProjectContextBase {
 		writer.key("nextId").primitive(Long.toString(nextId));
 		writer.key("objects").arrayBegin();
 		project.serialize(writer);
-		for (ProjectObject object : objectMap.values())
+		for (com.zarbosoft.internal.shoedemo_generate.premodel.ProjectObject object : objectMap.values())
 			((ProjectObjectInterface) object).serialize(writer);
 		writer.arrayEnd();
 		writer.recordEnd();
@@ -115,7 +115,7 @@ public class ProjectContext extends ProjectContextBase {
 			} else if ("objects".equals(key)) {
 				out.objectMap = ((List<ProjectObjectInterface>) value)
 						.stream()
-						.collect(Collectors.toMap(v -> v.id(), v -> (ProjectObject) v));
+						.collect(Collectors.toMap(v -> v.id(), v -> (com.zarbosoft.internal.shoedemo_generate.premodel.ProjectObject) v));
 			} else
 				throw new Assertion();
 		}

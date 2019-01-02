@@ -1,12 +1,13 @@
 package com.zarbosoft.internal.shoedemo_generate.premodel;
 
 import com.zarbosoft.interface1.Configuration;
-import com.zarbosoft.shoedemo.model.Vector;
+import com.zarbosoft.shoedemo.model.ModelRootType;
 
 @Configuration
-public class GroupPositionFrame extends ProjectObject {
+public abstract class ProjectObject extends ModelRootType  {
 	@Configuration
-	public int length;
+	long refCount;
+
 	@Configuration
-	public Vector offset;
+	long id;
 }

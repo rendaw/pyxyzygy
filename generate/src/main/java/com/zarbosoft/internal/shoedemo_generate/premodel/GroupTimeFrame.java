@@ -1,16 +1,17 @@
 package com.zarbosoft.internal.shoedemo_generate.premodel;
 
 import com.zarbosoft.interface1.Configuration;
-import com.zarbosoft.shoedemo.model.ProjectObject;
 
 @Configuration
 public class GroupTimeFrame extends ProjectObject {
-	@Configuration
-	public int offset;
+	/**
+	 * -1 = infinite length
+	 */
 	@Configuration
 	public int length;
+	/**
+	 * -1 = disabled
+	 */
 	@Configuration
 	public int innerOffset;
-	@Configuration
-	public int innerLength;
 }

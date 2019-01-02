@@ -1,9 +1,7 @@
 package com.zarbosoft.shoedemo.deserialize;
 
 import com.zarbosoft.interface1.TypeInfo;
-import com.zarbosoft.shoedemo.model.Change;
-import com.zarbosoft.shoedemo.model.ProjectNode;
-import com.zarbosoft.shoedemo.model.ProjectObject;
+import com.zarbosoft.internal.shoedemo_generate.premodel.ProjectObject;
 import com.zarbosoft.shoedemo.model.Tile;
 
 import java.util.ArrayList;
@@ -12,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 public class DeserializationContext {
-	public Map<Long, ProjectObject> objectMap = new HashMap<>();
+	public Map<Long, Object> objectMap = new HashMap<>();
 
 	/**
 	 * For elements with ids (mutable) serialized flat at the top output level, return true.

@@ -1,6 +1,8 @@
-package com.zarbosoft.shoedemo.model;
+package com.zarbosoft.internal.shoedemo_generate.premodel;
 
 import com.zarbosoft.interface1.Configuration;
+
+import java.util.Map;
 
 /**
  * Shared, mutable
@@ -10,4 +12,7 @@ public abstract class ProjectNode extends ProjectObject {
 
 	@Configuration
 	String name;
+
+	@Configuration
+	Map<String, String> metadata;
 }
