@@ -605,13 +605,20 @@ public class GenerateTask extends Task {
 											fieldName
 									)
 									.addCode("target.$L = value;\n", fieldName)
+									.listenersAdd("listener.accept(this, $L);\n", fieldName)
 									.finish();
+							CodeBlock.Builder initialSetCode = CodeBlock
+									.builder()
+									.add("if (refCount > 0) throw new $T();\n", Assertion.class)
+									.add("this.$L = value;\n", fieldName);
+							if (flattenPoint(field))
+								initialSetCode.add("value.incRef(project);\n");
 							clone.addMethod(MethodSpec
 									.methodBuilder(String.format("initial%sSet", capFirst(fieldName)))
 									.addModifiers(PUBLIC)
+									.addParameter(ProjectContextBase.class,"project" )
 									.addParameter(toPoet(field), "value")
-									.addCode("if (refCount > 0) throw new $T();\n", Assertion.class)
-									.addCode("this.$L = value;\n", fieldName)
+									.addCode(initialSetCode.build())
 									.build());
 						}
 					}
@@ -683,6 +690,21 @@ public class GenerateTask extends Task {
 
 						// Mutation
 						TypeInfo elementType = fieldInfo.parameters[0];
+
+						CodeBlock.Builder initialAddCode = CodeBlock
+								.builder()
+								.add("if (refCount > 0) throw new $T();\n", Assertion.class)
+								.add("this.$L.addAll(values);\n", fieldName);
+						if (flattenPoint(elementType))
+							initialAddCode.add("values.forEach(v -> v.incRef(project));\n");
+						clone.addMethod(MethodSpec
+								.methodBuilder(String.format("initial%sAdd", capFirst(fieldName)))
+								.addModifiers(PUBLIC)
+								.addParameter(ProjectContextBase.class,"project" )
+								.addParameter(ParameterizedTypeName.get(ClassName.get(List.class), toPoet(elementType)), "values")
+								.addCode(initialAddCode.build())
+								.build());
+
 						ChangeBuilder addBuilder = new ChangeBuilder(flattenPoint(classInfo), fieldName, "add");
 						ChangeBuilder removeBuilder = new ChangeBuilder(flattenPoint(classInfo), fieldName, "remove");
 						addBuilder
@@ -784,10 +806,13 @@ public class GenerateTask extends Task {
 								.addParameter(ParameterizedTypeName.get(ClassName.get(List.class),
 										TypeVariableName.get("T")
 								), "list")
-								.addParameter(ParameterizedTypeName.get(ClassName.get(Function.class),
-										toPoet(elementType),
-										TypeVariableName.get("T")
-								), "create")
+								.addParameter(
+										ParameterizedTypeName.get(ClassName.get(Function.class),
+												toPoet(elementType),
+												TypeVariableName.get("T")
+										),
+										"create"
+								)
 								.addParameter(ParameterizedTypeName.get(ClassName.get(Consumer.class),
 										TypeVariableName.get("T")
 								), "remove")
@@ -929,6 +954,23 @@ public class GenerateTask extends Task {
 								.build());
 
 						// Mutation
+						CodeBlock.Builder initialPutAllCode = CodeBlock
+								.builder()
+								.add("if (refCount > 0) throw new $T();\n", Assertion.class)
+								.add("this.$L.putAll(values);\n", fieldName);
+						if (flattenPoint(fieldInfo.parameters[1]))
+							initialPutAllCode.add("values.values().forEach(v -> v.incRef(project));\n");
+						clone.addMethod(MethodSpec
+								.methodBuilder(String.format("initial%sPutAll", capFirst(fieldName)))
+								.addModifiers(PUBLIC)
+								.addParameter(ProjectContextBase.class, "project")
+								.addParameter(ParameterizedTypeName.get(ClassName.get(Map.class),
+										toPoet(fieldInfo.parameters[0]),
+										toPoet(fieldInfo.parameters[1])
+								), "values")
+								.addCode(initialPutAllCode.build())
+								.build());
+
 						ChangeBuilder putBuilder = new ChangeBuilder(flattenPoint(classInfo), fieldName, "putAll");
 						putBuilder
 								.addMapParameter(fieldInfo.parameters[0], fieldInfo.parameters[1], "put", true)
@@ -1242,16 +1284,21 @@ public class GenerateTask extends Task {
 		}
 
 		write(changeStepBuilderName, changeStepBuilder.build());
-		write(deserializeHelperName, deserializeHelper
-				.addMethod(globalModelDeserialize
-						.addCode("throw new $T(String.format(\"Unknown type %s\", type));\n", RuntimeException.class)
-						.build())
-				.addMethod(globalChangeDeserialize
-						.addCode("throw new $T(String.format(\"Unknown change type %s\", type));\n",
+		write(
+				deserializeHelperName,
+				deserializeHelper
+						.addMethod(globalModelDeserialize
+								.addCode(
+										"throw new $T(String.format(\"Unknown type %s\", type));\n",
+										RuntimeException.class
+								)
+								.build())
+						.addMethod(globalChangeDeserialize.addCode(
+								"throw new $T(String.format(\"Unknown change type %s\", type));\n",
 								RuntimeException.class
-						)
-						.build())
-				.build());
+						).build())
+						.build()
+		);
 	}
 
 	public void write(ClassName name, TypeSpec spec) {

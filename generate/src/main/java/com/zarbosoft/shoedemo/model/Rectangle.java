@@ -16,4 +16,12 @@ public class Rectangle {
 	public boolean contains(int x, int y) {
 		return x >= this.x && y >= this.y && x < this.x + width && y < this.y + height;
 	}
+
+	public Rectangle divide(int val) {
+		return new Rectangle(x / val, y / val, width / val, height / val);
+	}
+
+	public Rectangle plus(Vector offset) {
+		return new Rectangle(x + offset.x, y+offset.y,width ,height );
+	}
 }

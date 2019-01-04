@@ -1,6 +1,7 @@
 package com.zarbosoft.shoedemo;
 
 import com.zarbosoft.shoedemo.model.Rectangle;
+import com.zarbosoft.shoedemo.model.Vector;
 
 public class DoubleRectangle {
 	final public double x;
@@ -28,5 +29,9 @@ public class DoubleRectangle {
 				width * scale,
 				height * scale
 		);
+	}
+
+	public DoubleRectangle plus(Vector offset) {
+		return new DoubleRectangle(x + offset.x,y + offset.y, width, height );
 	}
 }

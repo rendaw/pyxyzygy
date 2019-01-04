@@ -5,6 +5,7 @@ import com.zarbosoft.luxem.write.RawWriter;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.shoedemo.deserialize.DeserializationContext;
 import com.zarbosoft.shoedemo.model.*;
+import javafx.beans.property.SimpleObjectProperty;
 
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -22,6 +23,10 @@ public class ProjectContext extends ProjectContextBase {
 	private List<ChangeStep> undoHistory = new ArrayList<>();
 	private List<ChangeStep> redoHistory = new ArrayList<>();
 	public ChangeStepBuilder change = new ChangeStepBuilder(this);
+
+	public List<FrameMapEntry> timeMap;
+	public SimpleObjectProperty<Wrapper> selectedForEdit = new SimpleObjectProperty<>();
+	public SimpleObjectProperty<Wrapper> selectedForView = new SimpleObjectProperty<>();
 
 	public static ProjectContext create(Path path) {
 		ProjectContext out = new ProjectContext();
@@ -65,7 +70,8 @@ public class ProjectContext extends ProjectContextBase {
 		if (change.changeStep.changes.isEmpty())
 			return;
 		undoHistory.add(change.changeStep);
-		for (ChangeStep c : redoHistory) c.remove(this);
+		for (ChangeStep c : redoHistory)
+			c.remove(this);
 		redoHistory.clear();
 		change = new ChangeStepBuilder(this);
 		System.out.format("change done; undo %s, redo %s\n", undoHistory.size(), redoHistory.size());
@@ -73,9 +79,11 @@ public class ProjectContext extends ProjectContextBase {
 
 	public void clearHistory() {
 		finishChange();
-		for (ChangeStep c : undoHistory) c.remove(this);
+		for (ChangeStep c : undoHistory)
+			c.remove(this);
 		undoHistory.clear();
-		for (ChangeStep c : redoHistory) c.remove(this);
+		for (ChangeStep c : redoHistory)
+			c.remove(this);
 		redoHistory.clear();
 	}
 
@@ -115,7 +123,10 @@ public class ProjectContext extends ProjectContextBase {
 			} else if ("objects".equals(key)) {
 				out.objectMap = ((List<ProjectObjectInterface>) value)
 						.stream()
-						.collect(Collectors.toMap(v -> v.id(), v -> (com.zarbosoft.internal.shoedemo_generate.premodel.ProjectObject) v));
+						.collect(Collectors.toMap(
+								v -> v.id(),
+								v -> (com.zarbosoft.internal.shoedemo_generate.premodel.ProjectObject) v
+						));
 			} else
 				throw new Assertion();
 		}
