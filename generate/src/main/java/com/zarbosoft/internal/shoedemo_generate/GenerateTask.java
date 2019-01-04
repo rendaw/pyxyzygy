@@ -1001,6 +1001,7 @@ public class GenerateTask extends Task {
 										.add("remove.forEach(k -> target.$L.remove(k));\n", fieldName)
 										.add("target.$L.putAll(put);\n", fieldName)
 										.build())
+								.listenersAdd("listener.accept(this, $L, $T.of());\n", fieldName, ImmutableList.class)
 								.finish();
 						typeChangeStepBuilder.addMethod(MethodSpec
 								.methodBuilder(String.format("%sPut", fieldName))

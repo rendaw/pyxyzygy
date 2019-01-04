@@ -37,12 +37,18 @@ public class ImageNodeWrapper extends Wrapper {
 	class WrapTile {
 		private final ImageView widget;
 
-		WrapTile(ProjectContext context, Tile tile, int x, int y) {
-			widget = new ImageView(tile.data);
+		WrapTile(Tile tile, int x, int y) {
+			widget = new ImageView();
 			widget.setMouseTransparent(true);
-			widget.setViewport(new Rectangle2D(tile.dataOffsetX, tile.dataOffsetY, context.tileSize, context.tileSize));
+			System.out.format("wrap tile at %s %s\n", x, y);
 			widget.setLayoutX(x);
 			widget.setLayoutY(y);
+			update(tile);
+		}
+
+		public void update(Tile tile) {
+			widget.setImage(tile.data);
+			widget.setViewport(new Rectangle2D(tile.dataOffsetX, tile.dataOffsetY, context.tileSize, context.tileSize));
 		}
 	}
 
@@ -95,7 +101,8 @@ public class ImageNodeWrapper extends Wrapper {
 			for (int y = 0; y < oldBounds.height; ++y) {
 				if (newBounds.contains(x, y))
 					continue;
-				draw.getChildren().remove(wrapTiles.get(Main.morton.spack(oldBounds.x + x, oldBounds.y + y)));
+				long key = Main.morton.spack(oldBounds.x + x, oldBounds.y + y);
+				draw.getChildren().remove(wrapTiles.get(key));
 			}
 		}
 
@@ -108,7 +115,7 @@ public class ImageNodeWrapper extends Wrapper {
 				Tile tile = frame.tilesGet(key);
 				if (tile == null)
 					continue;
-				WrapTile wrapTile = new WrapTile(context,
+				WrapTile wrapTile = new WrapTile(
 						tile,
 						(newBounds.x + x) * context.tileSize,
 						(newBounds.y + y) * context.tileSize
@@ -129,20 +136,20 @@ public class ImageNodeWrapper extends Wrapper {
 			Rectangle checkBounds = bounds.scale(3).descaleIntOuter(context.tileSize);
 			for (Map.Entry<Long, Tile> entry : put.entrySet()) {
 				long key = entry.getKey();
+				long[] indexes = Main.morton.sunpack(key);
+				int x = (int) indexes[0];
+				int y = (int) indexes[1];
+				if (!checkBounds.contains(x, y))
+					continue;
 				Tile value = entry.getValue();
 				WrapTile old = wrapTiles.get(key);
-				if (old != null)
-					draw.getChildren().remove(old.widget);
-				long[] indexes = Main.morton.sunpack(key);
-				if (!checkBounds.contains((int) indexes[0], (int) indexes[1]))
-					continue;
-				WrapTile wrap = new WrapTile(context,
-						value,
-						(int) indexes[0] * context.tileSize,
-						(int) indexes[1] * context.tileSize
-				);
-				wrapTiles.put(key, wrap);
-				draw.getChildren().add(wrap.widget);
+				if (old != null) {
+					old.update(value);
+				} else {
+					WrapTile wrap = new WrapTile(value, x * context.tileSize, y * context.tileSize);
+					wrapTiles.put(key, wrap);
+					draw.getChildren().add(wrap.widget);
+				}
 			}
 		});
 	}
@@ -164,11 +171,49 @@ public class ImageNodeWrapper extends Wrapper {
 	public void destroyCanvas() {
 		frame.removeTilesPutAllListeners(tilesPutListener);
 		draw = null;
+		wrapTiles.clear();
 	}
 
 	@Override
 	public void markStart(ProjectContext context, DoubleVector start) {
 		// nop
+	}
+
+	@Override
+	public void mark(ProjectContext context, DoubleVector start, DoubleVector end) {
+		// Get frame-local coordinates
+		System.out.format("stroke start %s %s to %s %s\n", start.x, start.y, end.x, end.y);
+		start = Main.toLocal(this, start);
+		end = Main.toLocal(this, end);
+
+		// Calculate mark bounds
+		final double radius = 2;
+		Rectangle bounds =
+				new BoundsBuilder().circle(start, radius).circle(end, radius).quantize(context.tileSize).buildInt();
+
+		// Copy tiles to canvas
+		Canvas canvas = new Canvas();
+		canvas.setWidth(bounds.width);
+		canvas.setHeight(bounds.height);
+		GraphicsContext gc = canvas.getGraphicsContext2D();
+		Rectangle tileBounds = render(gc, frame, bounds);
+
+		// Do the stroke
+		System.out.format("stroke %s %s to %s %s\n", start.x, start.y, end.x, end.y);
+		gc.setLineCap(StrokeLineCap.ROUND);
+		gc.setStroke(Color.BLACK);
+		gc.setLineWidth(radius * 2);
+		gc.strokeLine(start.x - bounds.x, start.y - bounds.y, end.x - bounds.x, end.y - bounds.y);
+		WritableImage shot = snapshot(canvas);
+
+		// Replace tiles in frame
+		for (int x = 0; x < tileBounds.width; ++x) {
+			for (int y = 0; y < tileBounds.height; ++y) {
+				context.change.imageFrame(frame).tilesPut(Main.morton.spack(tileBounds.x + x, tileBounds.y + y),
+						new Tile(context, shot, x * context.tileSize, y * context.tileSize)
+				);
+			}
+		}
 	}
 
 	@Override
@@ -226,42 +271,6 @@ public class ImageNodeWrapper extends Wrapper {
 		SnapshotParameters parameters = new SnapshotParameters();
 		parameters.setFill(Color.TRANSPARENT);
 		return canvas.snapshot(parameters, null);
-	}
-
-	@Override
-	public void mark(ProjectContext context, DoubleVector start, DoubleVector end) {
-		// Get frame-local coordinates
-		start = Main.toLocal(this, start);
-		end = Main.toLocal(this, end);
-
-		// Calculate mark bounds
-		final double radius = 2;
-		Rectangle bounds =
-				new BoundsBuilder().circle(start, radius).circle(end, radius).quantize(context.tileSize).buildInt();
-
-		// Copy tiles to canvas
-		Canvas canvas = new Canvas();
-		canvas.setWidth(bounds.width);
-		canvas.setHeight(bounds.height);
-		GraphicsContext gc = canvas.getGraphicsContext2D();
-		Rectangle tileBounds = render(gc, frame, bounds);
-
-		// Do the stroke
-		System.out.format("stroke %s %s to %s %s\n",start.x,start.y,end.x,end.y);
-		gc.setLineCap(StrokeLineCap.ROUND);
-		gc.setStroke(Color.BLACK);
-		gc.setLineWidth(radius * 2);
-		gc.strokeLine(start.x - bounds.x, start.y - bounds.y, end.x - bounds.x, end.y - bounds.y);
-		WritableImage shot = snapshot(canvas);
-
-		// Replace tiles in frame
-		for (int x = 0; x < tileBounds.width; ++x) {
-			for (int y = 0; y < tileBounds.height; ++y) {
-				context.change.imageFrame(frame).tilesPut(Main.morton.spack(tileBounds.x + x, tileBounds.y + y),
-						new Tile(context, shot, x * context.tileSize, y * context.tileSize)
-				);
-			}
-		}
 	}
 
 	private ImageFrame findFrame(int frameNumber) {

@@ -152,7 +152,7 @@ public class CameraWrapper extends Wrapper {
 
 	@Override
 	public DoubleVector toInner(DoubleVector vector) {
-		return vector;
+		return vector.minus(node.offset());
 	}
 
 	@Override
@@ -207,7 +207,7 @@ public class CameraWrapper extends Wrapper {
 
 	@Override
 	public void mark(ProjectContext context, DoubleVector start, DoubleVector end) {
-		context.change.camera(node).offsetSet(end.minus(markStart).multiply(-1).plus(markStartOffset).toInt());
+		context.change.camera(node).offsetSet(end.minus(markStart).plus(markStartOffset).toInt());
 	}
 
 	@Override

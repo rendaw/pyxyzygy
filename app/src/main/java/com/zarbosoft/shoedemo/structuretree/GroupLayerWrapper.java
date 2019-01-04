@@ -30,8 +30,7 @@ public class GroupLayerWrapper extends Wrapper {
 	private Wrapper child;
 	private Group canvas;
 	private DoubleRectangle baseBounds;
-	private DoubleRectangle bounds;
-	private DoubleVector markStart;
+	private DoubleRectangle lastBounds;
 
 	public GroupLayerWrapper(ProjectContext context, Wrapper parent, int parentIndex, GroupLayer node) {
 		this.parent = parent;
@@ -52,7 +51,9 @@ public class GroupLayerWrapper extends Wrapper {
 				child = Main.createNode(context, GroupLayerWrapper.this, 0, value);
 				tree.bind(child.tree);
 				if (canvas != null) {
-					canvas.getChildren().add(child.buildCanvas(context, bounds));
+					Node childCanvas = child.buildCanvas(context, lastBounds);
+					updateChildCanvasPosition(null);
+					canvas.getChildren().add(childCanvas);
 				}
 			}
 		});
@@ -132,6 +133,10 @@ public class GroupLayerWrapper extends Wrapper {
 	}
 
 	private GroupPositionFrame findPosition(int frame) {
+		return findPosition(node, frame);
+	}
+
+	public static GroupPositionFrame findPosition(GroupLayer node, int frame) {
 		int at = 0;
 		for (GroupPositionFrame pos : node.positionFrames()) {
 			if (frame >= at && (pos.length() == -1 || frame < at + pos.length())) {
@@ -145,7 +150,7 @@ public class GroupLayerWrapper extends Wrapper {
 	@Override
 	public DoubleVector toInner(DoubleVector vector) {
 		GroupPositionFrame pos = findPosition();
-		return vector.plus(pos.offset());
+		return vector.minus(pos.offset());
 	}
 
 	@Override
@@ -161,24 +166,37 @@ public class GroupLayerWrapper extends Wrapper {
 		updatePosition(context);
 	}
 
+	private void updateChildCanvasPosition(GroupPositionFrame pos) {
+		if (pos == null)
+			pos = findPosition();
+		canvas.setLayoutX(pos.offset().x);
+		canvas.setLayoutY(pos.offset().y);
+	}
+
 	private void updatePosition(ProjectContext context) {
 		GroupPositionFrame pos = findPosition();
 		if (baseBounds == null)
 			return;
-		DoubleRectangle newBounds = baseBounds.plus(pos.offset());
-		if (child != null)
-			child.scroll(context, bounds.plus(pos.offset()), newBounds);
-		this.bounds = newBounds;
+		DoubleRectangle newBounds = baseBounds.minus(pos.offset());
+		if (child != null) {
+			if (canvas != null)
+				updateChildCanvasPosition(pos);
+			child.scroll(context, lastBounds, newBounds);
+		}
+		this.lastBounds = newBounds;
 	}
 
 	@Override
 	public Node buildCanvas(ProjectContext context, DoubleRectangle bounds) {
 		this.baseBounds = bounds;
 		GroupPositionFrame pos = findPosition();
-		this.bounds = baseBounds.plus(pos.offset());
+		this.lastBounds = baseBounds.minus(pos.offset());
 		canvas = new Group();
-		if (child != null)
-			canvas.getChildren().add(child.buildCanvas(context, this.bounds));
+		if (child != null) {
+			Node childCanvas = child.buildCanvas(context, this.lastBounds);
+			updateChildCanvasPosition(pos);
+			canvas.getChildren().add(childCanvas);
+		}
 		return canvas;
 	}
 
@@ -197,12 +215,17 @@ public class GroupLayerWrapper extends Wrapper {
 
 	@Override
 	public void markStart(ProjectContext context, DoubleVector start) {
-		this.markStart = start;
+		throw new Assertion();
+	}
+
+	@Override
+	public void mark(ProjectContext context, DoubleVector start, DoubleVector end) {
+		throw new Assertion();
 	}
 
 	@Override
 	public boolean addChildren(ProjectContext context, int at, List<ProjectNode> child) {
-		throw new Assertion();
+		return false;
 	}
 
 	@Override
@@ -229,12 +252,6 @@ public class GroupLayerWrapper extends Wrapper {
 			context.change.project(context.project).topRemove(parentIndex, 1);
 		else
 			parent.removeChild(context, parentIndex);
-	}
-
-	@Override
-	public void mark(ProjectContext context, DoubleVector start, DoubleVector end) {
-		GroupPositionFrame pos = findPosition();
-		context.change.groupPositionFrame(pos).offsetSet(end.minus(markStart).toInt());
 	}
 
 	@Override

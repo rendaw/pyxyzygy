@@ -7,7 +7,6 @@ import com.zarbosoft.shoedemo.model.Vector;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
 import javafx.geometry.Orientation;
 import javafx.scene.Node;
@@ -82,16 +81,17 @@ public class Structure {
 	}
 
 	private void prepareTreeItem(TreeItem<Wrapper> item) {
-		item.getChildren().addListener((ListChangeListener<? super TreeItem<Wrapper>>)c -> {
-			c.next();
-			if (!c.getAddedSubList().isEmpty()) {
-				item.setExpanded(true);
-				c.getAddedSubList().forEach(a -> {
-					prepareTreeItem(a);
-					treeItemAdded(a);
-				});
+		item.getChildren().addListener((ListChangeListener<? super TreeItem<Wrapper>>) c -> {
+			while (c.next()) {
+				if (!c.getAddedSubList().isEmpty()) {
+					item.setExpanded(true);
+					c.getAddedSubList().forEach(a -> {
+						prepareTreeItem(a);
+						treeItemAdded(a);
+					});
+				}
+				c.getRemoved().forEach(r -> treeItemRemoved(r));
 			}
-			c.getRemoved().forEach(r -> treeItemRemoved(r));
 		});
 	}
 
@@ -104,23 +104,42 @@ public class Structure {
 		treeView.setRoot(new TreeItem());
 		treeView.setMinHeight(0);
 		treeView.getSelectionModel().getSelectedItems().addListener((ListChangeListener<TreeItem<Wrapper>>) c -> {
-			c.next();
-			List<? extends TreeItem<Wrapper>> added = c.getAddedSubList();
-			if (added.isEmpty())
-				return;
-			TreeItem<Wrapper> first = added.get(0);
-			if (first.getValue() == null)
-				return;
-			selectForEdit(first.getValue());
+			while (c.next()) {
+				c.next();
+				List<? extends TreeItem<Wrapper>> added = c.getAddedSubList();
+				if (added.isEmpty())
+					return;
+				TreeItem<Wrapper> first = added.get(0);
+				if (first.getValue() == null)
+					return;
+				selectForEdit(first.getValue());
+			}
 		});
 		treeView.setCellFactory(new Callback<TreeView<Wrapper>, TreeCell<Wrapper>>() {
 			@Override
 			public TreeCell<Wrapper> call(TreeView<Wrapper> param) {
 				return new TreeCell<Wrapper>() {
-					final SimpleObjectProperty<Wrapper> wrapper = new SimpleObjectProperty<>(null);
-					final HBox graphic = new HBox();
 					final ImageView showViewing = new ImageView();
 					final ImageView showCopyState = new ImageView();
+					final SimpleObjectProperty<Wrapper> wrapper = new SimpleObjectProperty<>(null);
+					ChangeListener<Boolean> viewingListener = (observable, oldValue, newValue) -> {
+						if (newValue)
+							showViewing.setImage(icon("eye.svg"));
+						else
+							showViewing.setImage(null);
+					};
+					ChangeListener<Boolean> copyStateListener = (observable, oldValue, newValue) -> {
+						if (wrapper.get().tagCopied.get())
+							showCopyState.setImage(icon("content-copy.svg"));
+						else if (wrapper.get().tagLifted.get())
+							showCopyState.setImage(icon("content-cut.svg"));
+						else
+							showCopyState.setImage(null);
+					};
+					ProjectNode.NameSetListener nameSetListener = (target, value) -> {
+						setText(value);
+					};
+					final HBox graphic = new HBox();
 					Runnable cleanup;
 
 					{
@@ -135,6 +154,26 @@ public class Structure {
 						setView.disableProperty().bind(Bindings.isNull(wrapper));
 						setView.setOnAction(e -> {
 							selectForView(wrapper.getValue());
+						});
+						wrapper.addListener((observable, oldValue, newValue) -> {
+							if (oldValue != null) {
+								oldValue.tagViewing.removeListener(viewingListener);
+								oldValue.tagLifted.removeListener(copyStateListener);
+								oldValue.tagCopied.removeListener(copyStateListener);
+								((ProjectNode) oldValue.getValue()).removeNameSetListeners(nameSetListener);
+							}
+							if (newValue != null) {
+								newValue.tagViewing.addListener(viewingListener);
+								viewingListener.changed(null, null, newValue.tagViewing.get());
+								newValue.tagCopied.addListener(copyStateListener);
+								newValue.tagLifted.addListener(copyStateListener);
+								copyStateListener.changed(null, null, null);
+								((ProjectNode) newValue.getValue()).addNameSetListeners(nameSetListener);
+							} else {
+								setText("");
+								showViewing.setImage(null);
+								showCopyState.setImage(null);
+							}
 						});
 						setContextMenu(new ContextMenu(setView));
 						showViewing.setFitHeight(16);
@@ -153,34 +192,7 @@ public class Structure {
 							cleanup.run();
 							cleanup = null;
 						}
-						if (item == null) {
-							setText("");
-							showViewing.setImage(null);
-							showCopyState.setImage(null);
-							wrapper.set(null);
-						} else {
-							wrapper.set(item);
-							item.tagViewing.addListener((observable, oldValue, newValue) -> {
-								if (newValue)
-								showViewing.setImage(icon("eye.svg"));
-								else showViewing.setImage(null);
-							});
-							ChangeListener<Boolean> copyStateListener = (observable, oldValue, newValue) -> {
-								if (item.tagCopied.get())
-									showCopyState.setImage(icon("content-copy.svg"));
-								else if (item.tagLifted.get())
-									showCopyState.setImage(icon("content-cut.svg"));
-								else
-									showCopyState.setImage(null);
-							};
-							item.tagCopied.addListener(copyStateListener);
-							item.tagLifted.addListener(copyStateListener);
-							ProjectNode valueNode = (ProjectNode) item.getValue();
-							ProjectNode.NameSetListener listener = valueNode.addNameSetListeners((target, value) -> {
-								setText(value);
-							});
-							cleanup = () -> valueNode.removeNameSetListeners(listener);
-						}
+						wrapper.set(item);
 						super.updateItem(item, empty);
 					}
 				};
@@ -364,7 +376,7 @@ public class Structure {
 				copyButton,
 				pasteButton
 		);
-		layout.getChildren().addAll(treeScroll, toolbar);
+		layout.getChildren().addAll(toolbar, treeScroll);
 		VBox.setVgrow(treeScroll, Priority.ALWAYS);
 
 		split.setOrientation(Orientation.VERTICAL);
@@ -418,12 +430,13 @@ public class Structure {
 	private void add(ProjectNode node) {
 		Wrapper edit =
 				Optional.ofNullable(treeView.getSelectionModel().getSelectedItem()).map(t -> t.getValue()).orElse(null);
-		if (edit != null) {
-			if (edit.addChildren(context, 0, ImmutableList.of(node)))
+		Wrapper placeAt = edit;
+		int index = 0;
+		while (placeAt != null) {
+			if (placeAt.addChildren(context, index, ImmutableList.of(node)))
 				return;
-			if (edit.getParent() != null &&
-					edit.getParent().addChildren(context, edit.parentIndex + 1, ImmutableList.of(node)))
-				return;
+			index = placeAt.parentIndex + 1;
+			placeAt = placeAt.getParent();
 		}
 		context.change.project(context.project).topAdd(node);
 		context.finishChange();

@@ -1,12 +1,20 @@
 package com.zarbosoft.shoedemo;
 
 import javafx.beans.value.ChangeListener;
+import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.Pane;
+
+import java.awt.*;
+
+import static com.zarbosoft.shoedemo.Timeline.c;
 
 public class Editor {
 	private final ProjectContext context;
@@ -56,6 +64,7 @@ public class Editor {
 	public Editor(ProjectContext context) {
 		this.context = context;
 		canvas = new Pane();
+		canvas.setBackground(new Background(new BackgroundFill(c(new Color(99, 80, 97)), CornerRadii.EMPTY, Insets.EMPTY)));
 		canvas.setFocusTraversable(true);
 		canvasInner = new Group();
 		canvas.getChildren().add(canvasInner);

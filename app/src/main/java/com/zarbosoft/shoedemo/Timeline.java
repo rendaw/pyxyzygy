@@ -2,19 +2,28 @@ package com.zarbosoft.shoedemo;
 
 import com.google.common.collect.ImmutableList;
 import com.zarbosoft.rendaw.common.Assertion;
+import com.zarbosoft.rendaw.common.DeadCode;
 import com.zarbosoft.rendaw.common.Pair;
 import com.zarbosoft.shoedemo.model.*;
+import com.zarbosoft.shoedemo.structuretree.CameraWrapper;
+import com.zarbosoft.shoedemo.structuretree.GroupNodeWrapper;
+import com.zarbosoft.shoedemo.structuretree.ImageNodeWrapper;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.value.ObservableObjectValue;
 import javafx.beans.value.ObservableValue;
 import javafx.beans.value.ObservableValueBase;
+import javafx.collections.ListChangeListener;
 import javafx.event.EventHandler;
+import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.Pane;
@@ -30,6 +39,7 @@ import java.util.stream.Collectors;
 
 import static com.zarbosoft.rendaw.common.Common.last;
 import static com.zarbosoft.rendaw.common.Common.sublist;
+import static com.zarbosoft.shoedemo.Main.icon;
 import static javafx.scene.paint.Color.*;
 
 public class Timeline {
@@ -71,6 +81,8 @@ public class Timeline {
 		public abstract Object id();
 	}
 
+	private static SimpleObjectProperty<Image> emptyStateImage = new SimpleObjectProperty<>(null);
+
 	public abstract static class RowAdapter {
 		public abstract ObservableValue<String> getName();
 
@@ -79,10 +91,16 @@ public class Timeline {
 		public abstract boolean hasFrames();
 
 		public abstract boolean createFrame(int outer);
+
+		public abstract ObservableObjectValue<Image> getStateImage();
+
+		public abstract void deselected();
+
+		public abstract void selected();
 	}
 
 	TreeTableView<RowAdapter> tree = new TreeTableView<>();
-	TreeTableColumn<RowAdapter, String> nameColumn = new TreeTableColumn();
+	TreeTableColumn<RowAdapter, RowAdapter> nameColumn = new TreeTableColumn();
 	TreeTableColumn<RowAdapter, RowAdapter> framesColumn = new TreeTableColumn();
 	ScrollBar timeScroll = new ScrollBar();
 	private TimeHandleNode outerTimeHandle;
@@ -108,15 +126,28 @@ public class Timeline {
 		this.context = context;
 		tree.setRoot(new TreeItem<>());
 		tree.setShowRoot(false);
+		tree.getSelectionModel().getSelectedItems().addListener((ListChangeListener<TreeItem<RowAdapter>>) c -> {
+			while (c.next()) {
+				for (TreeItem<RowAdapter> removed : c.getRemoved()) {
+					if (removed.getValue() == null)
+						continue;
+					removed.getValue().deselected();
+				}
+				for (TreeItem<RowAdapter> added : c.getAddedSubList()) {
+					if (added.getValue() == null)
+						continue;
+					added.getValue().selected();
+				}
+			}
+		});
 		scrub.setBackground(Background.EMPTY);
 		scrub.setMinHeight(30);
 		scrub.getChildren().addAll(scrubElements);
 		EventHandler<MouseEvent> mouseEventEventHandler = e -> {
 			if (context.selectedForView.get() == null)
 				return;
-			context.selectedForView.get().frame.set(Math.max(0,
-					(int) ((e.getSceneX() - nameColumn.getWidth()) / zoom)
-			));
+			Point2D corner = scrubElements.getLocalToSceneTransform().transform(0, 0);
+			context.selectedForView.get().frame.set(Math.max(0, (int) ((e.getSceneX() - corner.getX()) / zoom)));
 			updateFrameMarker();
 		};
 		scrub.addEventFilter(MouseEvent.MOUSE_CLICKED, mouseEventEventHandler);
@@ -159,9 +190,31 @@ public class Timeline {
 			selected.frame.moveRight();
 		});
 		toolBar.getItems().addAll(add, left, right, remove, clear);
-		nameColumn.setCellValueFactory(p -> p.getValue().getValue() == null ?
-				new SimpleStringProperty() :
-				p.getValue().getValue().getName());
+		nameColumn.setCellValueFactory(p -> new SimpleObjectProperty<>(p.getValue().getValue()));
+		nameColumn.setCellFactory(param -> new TreeTableCell<RowAdapter, RowAdapter>() {
+			final ImageView showViewing = new ImageView();
+
+			{
+				showViewing.setFitWidth(16);
+				showViewing.setFitHeight(16);
+				showViewing.setPreserveRatio(true);
+				setGraphic(showViewing);
+			}
+
+			@Override
+			protected void updateItem(RowAdapter item, boolean empty) {
+				super.updateItem(item, empty);
+				if (item == null) {
+					showViewing.imageProperty().unbind();
+					textProperty().unbind();
+					setText("");
+					return;
+				}
+				textProperty().bind(item.getName());
+				showViewing.imageProperty().bind(item.getStateImage());
+				super.updateItem(item, empty);
+			}
+		});
 		nameColumn.setPrefWidth(200);
 		framesColumn.setCellValueFactory(p -> new SimpleObjectProperty<>(p.getValue().getValue()));
 		framesColumn.setCellFactory(new Callback<TreeTableColumn<RowAdapter, RowAdapter>, TreeTableCell<RowAdapter, RowAdapter>>() {
@@ -406,43 +459,75 @@ public class Timeline {
 		outerTimeHandle.updateTime(ImmutableList.of(new FrameMapEntry(-1, 0)));
 
 		// Prepare rows
-		ProjectNode editNode = (ProjectNode) edit.getValue();
 		if (false) {
-		} else if (editNode instanceof Camera) {
-		} else if (editNode instanceof GroupNode) {
-			abstract class GroupRowAdapter extends RowAdapter {
+			throw new DeadCode();
+		} else if (edit instanceof CameraWrapper) {
+		} else if (edit instanceof GroupNodeWrapper) {
+			class GroupLayerRowAdapter extends RowAdapter {
+				private final GroupLayer layer;
 				List<Runnable> cleanup = new ArrayList<>();
+				SimpleObjectProperty<Image> stateImage = new SimpleObjectProperty<>(null);
+
+				GroupLayerRowAdapter(GroupLayer layer) {
+					this.layer = layer;
+				}
+
+				@Override
+				public ObservableValue<String> getName() {
+					SimpleStringProperty out = new SimpleStringProperty(layer.inner().name());
+					ProjectNode.NameSetListener listener;
+					layer.inner().addNameSetListeners(listener = (target, value) -> out.setValue(value));
+					cleanup.add(() -> layer.inner().removeNameSetListeners(listener));
+					return out;
+				}
+
+				@Override
+				public List<RowAdapterFrame> getFrames() {
+					return null;
+				}
+
+				@Override
+				public boolean hasFrames() {
+					return false;
+				}
+
+				@Override
+				public boolean createFrame(int outer) {
+					throw new Assertion();
+				}
+
+				@Override
+				public ObservableObjectValue<Image> getStateImage() {
+					return stateImage;
+				}
+
+				@Override
+				public void deselected() {
+					treeDeselected();
+				}
+
+				@Override
+				public void selected() {
+					treeSelected();
+				}
+
+				public void treeDeselected() {
+					((GroupNodeWrapper)edit).setSpecificLayer(null);
+					stateImage.set(null);
+				}
+
+				public void treeSelected() {
+					((GroupNodeWrapper)edit).setSpecificLayer(layer);
+					stateImage.set(icon("cursor-move.svg"));
+				}
 			}
 			editHandle = new Runnable() {
 				List<Runnable> cleanup = new ArrayList<>();
 
 				{
-					cleanup.add(((GroupNode) editNode).mirrorLayers(tree.getRoot().getChildren(), layer -> {
-						TreeItem layerItem = new TreeItem(new GroupRowAdapter() {
-							@Override
-							public ObservableValue<String> getName() {
-								SimpleStringProperty out = new SimpleStringProperty(editNode.name());
-								ProjectNode.NameSetListener listener;
-								editNode.addNameSetListeners(listener = (target, value) -> out.setValue(value));
-								cleanup.add(() -> editNode.removeNameSetListeners(listener));
-								return out;
-							}
-
-							@Override
-							public List<RowAdapterFrame> getFrames() {
-								return null;
-							}
-
-							@Override
-							public boolean hasFrames() {
-								return false;
-							}
-
-							@Override
-							public boolean createFrame(int outer) {
-								throw new Assertion();
-							}
-						});
+					cleanup.add(((GroupNode) edit.getValue()).mirrorLayers(tree.getRoot().getChildren(), layer -> {
+						GroupLayerRowAdapter layerRowAdapter = new GroupLayerRowAdapter(layer);
+						TreeItem layerItem = new TreeItem(layerRowAdapter);
 						TreeItem timeFramesItem = new TreeItem(new RowAdapter() {
 							@Override
 							public ObservableValue<String> getName() {
@@ -564,6 +649,21 @@ public class Timeline {
 								}
 								throw new Assertion();
 							}
+
+							@Override
+							public ObservableObjectValue<Image> getStateImage() {
+								return emptyStateImage;
+							}
+
+							@Override
+							public void deselected() {
+								layerRowAdapter.treeDeselected();;
+							}
+
+							@Override
+							public void selected() {
+								layerRowAdapter.treeSelected();
+							}
 						});
 						layerItem.getChildren().add(timeFramesItem);
 						TreeItem positionFramesItem = new TreeItem(new RowAdapter() {
@@ -683,6 +783,21 @@ public class Timeline {
 								}
 								throw new Assertion();
 							}
+
+							@Override
+							public ObservableObjectValue<Image> getStateImage() {
+								return emptyStateImage;
+							}
+
+							@Override
+							public void deselected() {
+								layerRowAdapter.treeDeselected();
+							}
+
+							@Override
+							public void selected() {
+								layerRowAdapter.treeSelected();
+							}
 						});
 						layerItem.getChildren().add(positionFramesItem);
 
@@ -719,7 +834,7 @@ public class Timeline {
 						});
 
 						return layerItem;
-					}, item -> ((GroupRowAdapter) item.getValue()).cleanup.forEach(c -> c.run())));
+					}, item -> ((GroupLayerRowAdapter) item.getValue()).cleanup.forEach(c -> c.run())));
 				}
 
 				@Override
@@ -729,14 +844,15 @@ public class Timeline {
 							.getRoot()
 							.getChildren()
 							.stream()
-							.map(c -> (GroupRowAdapter) c.getValue())
+							.map(c -> (GroupLayerRowAdapter) c.getValue())
 							.forEach(v -> v.cleanup.forEach(c -> c.run()));
 				}
 			};
-		} else if (editNode instanceof ImageNode) {
+		} else if (edit instanceof ImageNodeWrapper) {
+			ImageNode editNode = (ImageNode) edit.getValue();
 			List<Runnable> frameCleanup = new ArrayList<>();
 			ImageNode.FramesAddListener framesAddListener =
-					((ImageNode) editNode).addFramesAddListeners((target, at, value) -> {
+					editNode.addFramesAddListeners((target, at, value) -> {
 						frameCleanup.addAll(at, value.stream().map(f -> {
 							ImageFrame.LengthSetListener listener =
 									f.addLengthSetListeners((target1, value1) -> updateTime());
@@ -745,7 +861,7 @@ public class Timeline {
 						updateTime();
 					});
 			ImageNode.FramesRemoveListener framesRemoveListener =
-					((ImageNode) editNode).addFramesRemoveListeners((target, at, count) -> {
+					editNode.addFramesRemoveListeners((target, at, count) -> {
 						System.out.format("Frames removed %s %s\n", at, count);
 						List<Runnable> temp = sublist(frameCleanup, at, at + count);
 						temp.forEach(c -> c.run());
@@ -753,12 +869,12 @@ public class Timeline {
 						updateTime();
 					});
 			ImageNode.FramesMoveToListener framesMoveToListener =
-					((ImageNode) editNode).addFramesMoveToListeners((target, source, count, dest) -> {
+					editNode.addFramesMoveToListeners((target, source, count, dest) -> {
 						moveTo(frameCleanup, source, count, dest);
 						updateTime();
 					});
 			ImageNode.FramesClearListener framesClearListener =
-					((ImageNode) editNode).addFramesClearListeners(target -> {
+					editNode.addFramesClearListeners(target -> {
 						frameCleanup.forEach(c -> c.run());
 						frameCleanup.clear();
 						updateTime();
@@ -772,9 +888,9 @@ public class Timeline {
 				@Override
 				public List<RowAdapterFrame> getFrames() {
 					List<RowAdapterFrame> out = new ArrayList<>();
-					for (int i0 = 0; i0 < ((ImageNode) editNode).framesLength(); ++i0) {
+					for (int i0 = 0; i0 < editNode.framesLength(); ++i0) {
 						final int i = i0;
-						ImageFrame f = ((ImageNode) editNode).framesGet(i);
+						ImageFrame f = editNode.framesGet(i);
 						out.add(new RowAdapterFrame() {
 							@Override
 							public Object id() {
@@ -795,9 +911,9 @@ public class Timeline {
 							public void remove() {
 								if (i == 0)
 									return;
-								context.change.imageNode((ImageNode) editNode).framesRemove(i, 1);
-								if (i == ((ImageNode) editNode).framesLength())
-									context.change.imageFrame(last(((ImageNode) editNode).frames())).lengthSet(-1);
+								context.change.imageNode(editNode).framesRemove(i, 1);
+								if (i == editNode.framesLength())
+									context.change.imageFrame(last(editNode.frames())).lengthSet(-1);
 							}
 
 							@Override
@@ -809,8 +925,8 @@ public class Timeline {
 							public void moveLeft() {
 								if (i == 0)
 									return;
-								ImageFrame frameBefore = ((ImageNode) editNode).framesGet(i - 1);
-								context.change.imageNode((ImageNode) editNode).framesMoveTo(i, 1, i - 1);
+								ImageFrame frameBefore = editNode.framesGet(i - 1);
+								context.change.imageNode(editNode).framesMoveTo(i, 1, i - 1);
 								final int lengthThis = f.length();
 								if (lengthThis == -1) {
 									final int lengthBefore = frameBefore.length();
@@ -821,10 +937,10 @@ public class Timeline {
 
 							@Override
 							public void moveRight() {
-								if (i == ((ImageNode) editNode).framesLength() - 1)
+								if (i == editNode.framesLength() - 1)
 									return;
-								ImageFrame frameAfter = ((ImageNode) editNode).framesGet(i + 1);
-								context.change.imageNode((ImageNode) editNode).framesMoveTo(i, 1, i + 1);
+								ImageFrame frameAfter = editNode.framesGet(i + 1);
+								context.change.imageNode(editNode).framesMoveTo(i, 1, i + 1);
 								final int lengthAfter = frameAfter.length();
 								if (lengthAfter == -1) {
 									final int lengthThis = f.length();
@@ -849,8 +965,8 @@ public class Timeline {
 					FrameMapEntry outerFrame = found.second;
 					int inner = outer - outerAt + outerFrame.innerOffset;
 					int innerAt = 0;
-					for (int i = 0; i < ((ImageNode) editNode).framesLength(); ++i) {
-						ImageFrame innerFrame = ((ImageNode) editNode).framesGet(i);
+					for (int i = 0; i < editNode.framesLength(); ++i) {
+						ImageFrame innerFrame = editNode.framesGet(i);
 						if (inner >= innerAt && (
 								innerFrame.length() == -1 || inner < innerAt + innerFrame.length()
 						)) {
@@ -865,20 +981,35 @@ public class Timeline {
 								newFrame.initialLengthSet(context, innerFrame.length() - offset);
 								context.change.imageFrame(innerFrame).lengthSet(offset);
 							}
-							context.change.imageNode((ImageNode) editNode).framesAdd(i + 1, newFrame);
+							context.change.imageNode(editNode).framesAdd(i + 1, newFrame);
 							return true;
 						}
 						innerAt += innerFrame.length();
 					}
 					throw new Assertion();
 				}
+
+				@Override
+				public ObservableObjectValue<Image> getStateImage() {
+					return emptyStateImage;
+				}
+
+				@Override
+				public void deselected() {
+
+				}
+
+				@Override
+				public void selected() {
+
+				}
 			});
 			tree.getRoot().getChildren().add(imageItem);
 			editHandle = () -> {
-				((ImageNode) editNode).removeFramesAddListeners(framesAddListener);
-				((ImageNode) editNode).removeFramesRemoveListeners(framesRemoveListener);
-				((ImageNode) editNode).removeFramesMoveToListeners(framesMoveToListener);
-				((ImageNode) editNode).removeFramesClearListeners(framesClearListener);
+				editNode.removeFramesAddListeners(framesAddListener);
+				editNode.removeFramesRemoveListeners(framesRemoveListener);
+				editNode.removeFramesMoveToListeners(framesMoveToListener);
+				editNode.removeFramesClearListeners(framesClearListener);
 				frameCleanup.forEach(c -> c.run());
 			};
 		}

@@ -15,20 +15,24 @@ public class DoubleVector {
 		return new DoubleVector(x - other.x, y - other.y);
 	}
 
+	public DoubleVector minus(Vector offset) {
+		return new DoubleVector(x - offset.x, y - offset.y);
+	}
+
 	public DoubleVector plus(DoubleVector other) {
 		return new DoubleVector(x + other.x, y + other.y);
 	}
 
-	public DoubleVector divide(double factor) {
-		return new DoubleVector(x / factor, y / factor);
-	}
-
 	public DoubleVector plus(Vector offset) {
-		return new DoubleVector(offset.x, offset.y);
+		return new DoubleVector(x + offset.x, y + offset.y);
 	}
 
 	public Vector toInt() {
 		return new Vector((int) x, (int) y);
+	}
+
+	public DoubleVector divide(double factor) {
+		return new DoubleVector(x / factor, y / factor);
 	}
 
 	public DoubleVector multiply(double factor) {

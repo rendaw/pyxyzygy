@@ -23,8 +23,7 @@ public class DoubleRectangle {
 	}
 
 	public DoubleRectangle scale(double scale) {
-		return new DoubleRectangle(
-				x - width * (scale - 1) / 2,
+		return new DoubleRectangle(x - width * (scale - 1) / 2,
 				y - height * (scale - 1) / 2,
 				width * scale,
 				height * scale
@@ -32,6 +31,10 @@ public class DoubleRectangle {
 	}
 
 	public DoubleRectangle plus(Vector offset) {
-		return new DoubleRectangle(x + offset.x,y + offset.y, width, height );
+		return new DoubleRectangle(x + offset.x, y + offset.y, width, height);
+	}
+
+	public DoubleRectangle minus(Vector offset) {
+		return new DoubleRectangle(x - offset.x, y - offset.y, width, height);
 	}
 }

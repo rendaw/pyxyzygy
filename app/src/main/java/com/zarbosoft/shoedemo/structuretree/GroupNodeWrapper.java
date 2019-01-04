@@ -29,6 +29,10 @@ public class GroupNodeWrapper extends Wrapper {
 	private Group canvas;
 	private DoubleRectangle bounds;
 	private TextField propertyName;
+	private GroupLayer specificLayer;
+	private DoubleVector markStart;
+	private Vector markStartOffset;
+	private int currentFrame = 0;
 
 	public GroupNodeWrapper(ProjectContext context, Wrapper parent, int parentIndex, GroupNode node) {
 		this.parentIndex = parentIndex;
@@ -118,6 +122,9 @@ public class GroupNodeWrapper extends Wrapper {
 	public Node buildCanvas(ProjectContext context, DoubleRectangle bounds) {
 		this.bounds = bounds;
 		canvas = new Group();
+		canvas
+				.getChildren()
+				.addAll(children.stream().map(c -> c.buildCanvas(context, bounds)).collect(Collectors.toList()));
 		return canvas;
 	}
 
@@ -129,28 +136,43 @@ public class GroupNodeWrapper extends Wrapper {
 	@Override
 	public void destroyCanvas() {
 		canvas = null;
+		children.forEach(c -> c.destroyCanvas());
 	}
 
 	@Override
 	public void markStart(ProjectContext context, DoubleVector start) {
-		// nop
+		if (specificLayer == null)
+			return;
+		this.markStart = start;
+		GroupPositionFrame pos = GroupLayerWrapper.findPosition(specificLayer, currentFrame);
+		this.markStartOffset = pos.offset();
+	}
+
+	@Override
+	public void mark(ProjectContext context, DoubleVector start, DoubleVector end) {
+		if (specificLayer == null)
+			return;
+		GroupPositionFrame pos = GroupLayerWrapper.findPosition(specificLayer, currentFrame);
+		context.change.groupPositionFrame(pos).offsetSet(end.minus(markStart).plus(markStartOffset).toInt());
 	}
 
 	@Override
 	public boolean addChildren(ProjectContext context, int at, List<ProjectNode> newChildren) {
-		context.change.groupNode(node).layersAdd(at == -1 ? node.layersLength() : at, newChildren.stream().map(child -> {
-			GroupLayer layer = GroupLayer.create(context);
-			layer.initialInnerSet(context, child);
-			GroupPositionFrame positionFrame = GroupPositionFrame.create(context);
-			positionFrame.initialLengthSet(context, -1);
-			positionFrame.initialOffsetSet(context, new Vector(0, 0));
-			layer.initialPositionFramesAdd(context, ImmutableList.of(positionFrame));
-			GroupTimeFrame timeFrame = GroupTimeFrame.create(context);
-			timeFrame.initialLengthSet(context, -1);
-			timeFrame.initialInnerOffsetSet(context, 0);
-			layer.initialTimeFramesAdd(context, ImmutableList.of(timeFrame));
-			return layer;
-		}).collect(Collectors.toList()));
+		context.change
+				.groupNode(node)
+				.layersAdd(at == -1 ? node.layersLength() : at, newChildren.stream().map(child -> {
+					GroupLayer layer = GroupLayer.create(context);
+					layer.initialInnerSet(context, child);
+					GroupPositionFrame positionFrame = GroupPositionFrame.create(context);
+					positionFrame.initialLengthSet(context, -1);
+					positionFrame.initialOffsetSet(context, new Vector(0, 0));
+					layer.initialPositionFramesAdd(context, ImmutableList.of(positionFrame));
+					GroupTimeFrame timeFrame = GroupTimeFrame.create(context);
+					timeFrame.initialLengthSet(context, -1);
+					timeFrame.initialInnerOffsetSet(context, 0);
+					layer.initialTimeFramesAdd(context, ImmutableList.of(timeFrame));
+					return layer;
+				}).collect(Collectors.toList()));
 		return true;
 	}
 
@@ -198,12 +220,8 @@ public class GroupNodeWrapper extends Wrapper {
 	}
 
 	@Override
-	public void mark(ProjectContext context, DoubleVector start, DoubleVector end) {
-		// nop
-	}
-
-	@Override
 	public void setFrame(ProjectContext context, int frameNumber) {
+		this.currentFrame = frameNumber;
 		children.forEach(c -> c.setFrame(context, frameNumber));
 	}
 
@@ -232,5 +250,9 @@ public class GroupNodeWrapper extends Wrapper {
 	@Override
 	public void destroyProperties() {
 		propertyName = null;
+	}
+
+	public void setSpecificLayer(GroupLayer layer) {
+		this.specificLayer = layer;
 	}
 }
