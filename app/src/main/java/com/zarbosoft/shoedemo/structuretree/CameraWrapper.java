@@ -23,6 +23,8 @@ import java.nio.file.Paths;
 import java.util.List;
 
 import static com.zarbosoft.rendaw.common.Common.uncheck;
+import static com.zarbosoft.shoedemo.Main.uniqueName;
+import static com.zarbosoft.shoedemo.Main.uniqueName1;
 import static com.zarbosoft.shoedemo.structuretree.ImageNodeWrapper.snapshot;
 
 public class CameraWrapper extends Wrapper {
@@ -212,6 +214,7 @@ public class CameraWrapper extends Wrapper {
 
 	@Override
 	public boolean addChildren(ProjectContext context, int at, List<ProjectNode> child) {
+		if (child.size() > 1) return false;
 		context.change.camera(node).innerSet(child.get(0));
 		return true;
 	}
@@ -227,7 +230,7 @@ public class CameraWrapper extends Wrapper {
 	@Override
 	public ProjectNode separateClone(ProjectContext context) {
 		Camera clone = Camera.create(this.context);
-		clone.initialNameSet(context, String.format("%s (clone)", node.name()));
+		clone.initialNameSet(context, uniqueName1(node.name()));
 		clone.initialWidthSet(context, node.width());
 		clone.initialHeightSet(context, node.height());
 		clone.initialFrameRateSet(context, node.frameRate());
@@ -247,6 +250,11 @@ public class CameraWrapper extends Wrapper {
 	@Override
 	public void removeChild(ProjectContext context, int index) {
 		context.change.camera(node).innerSet(null);
+	}
+
+	@Override
+	public TakesChildren takesChildren() {
+		return TakesChildren.ONE;
 	}
 
 	@Override

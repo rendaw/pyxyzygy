@@ -375,8 +375,9 @@ public class GenerateTask extends Task {
 							changeConstructor.addCode("this.target.incRef(project);\n");
 						changeApply = CodeBlock.builder();
 						changeApplyNotify = CodeBlock.builder().add(
-								"for ($T listener : target.$L) listener.accept(target",
+								"for ($T listener : new $T<>(target.$L)) listener.accept(target",
 								listenerName,
+								ArrayList.class,
 								listenersFieldName
 						);
 						changeDelete = poetMethod(sigChangeDelete);

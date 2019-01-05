@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.zarbosoft.shoedemo.Main.uniqueName1;
 import static com.zarbosoft.shoedemo.Timeline.moveTo;
 import static com.zarbosoft.shoedemo.Timeline.moveWrapperTo;
 
@@ -144,7 +145,7 @@ public class GroupNodeWrapper extends Wrapper {
 		if (specificLayer == null)
 			return;
 		this.markStart = start;
-		GroupPositionFrame pos = GroupLayerWrapper.findPosition(specificLayer, currentFrame);
+		GroupPositionFrame pos = GroupLayerWrapper.findPosition(specificLayer, currentFrame).frame;
 		this.markStartOffset = pos.offset();
 	}
 
@@ -152,8 +153,10 @@ public class GroupNodeWrapper extends Wrapper {
 	public void mark(ProjectContext context, DoubleVector start, DoubleVector end) {
 		if (specificLayer == null)
 			return;
-		GroupPositionFrame pos = GroupLayerWrapper.findPosition(specificLayer, currentFrame);
+		GroupPositionFrame pos = GroupLayerWrapper.findPosition(specificLayer, currentFrame).frame;
 		context.change.groupPositionFrame(pos).offsetSet(end.minus(markStart).plus(markStartOffset).toInt());
+		System.out.format("group offset changed\n");
+		specificLayer.positionFrames().forEach(f -> System.out.format("  pos %s %s,%s\n", f.length(), f.offset().x, f.offset().y));
 	}
 
 	@Override
@@ -187,7 +190,7 @@ public class GroupNodeWrapper extends Wrapper {
 	@Override
 	public ProjectNode separateClone(ProjectContext context) {
 		GroupNode clone = GroupNode.create(context);
-		clone.initialNameSet(context, String.format("%s (copy)", node.name()));
+		clone.initialNameSet(context, uniqueName1(node.name()));
 		clone.initialLayersAdd(context, node.layers().stream().map(layer -> {
 			GroupLayer newLayer = GroupLayer.create(context);
 			newLayer.initialInnerSet(context, layer.inner());
@@ -217,6 +220,11 @@ public class GroupNodeWrapper extends Wrapper {
 	@Override
 	public void removeChild(ProjectContext context, int index) {
 		context.change.groupNode(node).layersRemove(index, 1);
+	}
+
+	@Override
+	public TakesChildren takesChildren() {
+		return TakesChildren.ANY;
 	}
 
 	@Override

@@ -43,13 +43,32 @@ public class Main extends Application {
 	}
 
 	public static Map<String, Image> iconCache = new HashMap<>();
-	ProjectContext context;
-	Wrapper selectedRoot;
+	public static Map<String, Integer> names = new HashMap<>();
+
+	/**
+	 * Start at count 1 (unwritten) for machine generated names
+	 * @param name
+	 * @return
+	 */
+	public static String uniqueName(String name) {
+		int count = names.compute(name, (n, i) -> i == null ? 1 : i + 1);
+		return count == 1 ? name : String.format("%s (%s)", name, count);
+	}
+
+	/**
+	 * Start at count 2 if the first element is not in the map (user decided name)
+	 * @param name
+	 * @return
+	 */
+	public static String uniqueName1(String name) {
+		int count = names.compute(name, (n, i) -> i == null ? 2 : i + 1);
+		return count == 1 ? name : String.format("%s (%s)", name, count);
+	}
 
 	@Override
 	public void start(Stage primaryStage) throws Exception {
 		Path path = Paths.get(this.getParameters().getUnnamed().get(0));
-		context = ProjectContext.create(path);
+		ProjectContext context = ProjectContext.create(path);
 		ImageNode imageNode = ImageNode.create(context);
 		imageNode.initialNameSet(context, "Image");
 		ImageFrame imageFrame = ImageFrame.create(context);
@@ -81,9 +100,9 @@ public class Main extends Application {
 
 		scene.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
 			if (e.getCode() == KeyCode.U || (e.isControlDown() && e.getCode() == KeyCode.Z)) {
-				this.context.undo();
+				context.undo();
 			} else if (e.isControlDown() && (e.getCode() == KeyCode.R || e.getCode() == KeyCode.Y)) {
-				this.context.redo();
+				context.redo();
 			}
 		});
 
@@ -166,6 +185,7 @@ public class Main extends Application {
 	public static MenuItem menuItem(String icon) {
 		return new MenuItem(null, new ImageView(icon(icon)));
 	}
+
 	public static MenuButton menuButton(String icon) {
 		return new MenuButton(null, new ImageView(icon(icon)));
 	}

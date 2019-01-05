@@ -6,6 +6,7 @@ import com.zarbosoft.rendaw.common.DeadCode;
 import com.zarbosoft.rendaw.common.Pair;
 import com.zarbosoft.shoedemo.model.*;
 import com.zarbosoft.shoedemo.structuretree.CameraWrapper;
+import com.zarbosoft.shoedemo.structuretree.GroupLayerWrapper;
 import com.zarbosoft.shoedemo.structuretree.GroupNodeWrapper;
 import com.zarbosoft.shoedemo.structuretree.ImageNodeWrapper;
 import javafx.beans.property.SimpleObjectProperty;
@@ -35,6 +36,7 @@ import javafx.util.Callback;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.zarbosoft.rendaw.common.Common.last;
@@ -52,14 +54,20 @@ public class Timeline {
 
 	Pane scrub = new Pane();
 	Group scrubElements = new Group();
-	Rectangle frameMarker = new Rectangle(2, 0);
+	Rectangle frameMarker = new Rectangle(zoom, 0);
 	Color frameMarkerColor = c(new java.awt.Color(159, 123, 130));
 	List<Label> scrubOuterNumbers = new ArrayList<>();
 	List<Label> scrubInnerNumbers = new ArrayList<>();
 	List<Rectangle> scrubRegionMarkers = new ArrayList<>();
 	List<Canvas> scrubRegions = new ArrayList<>();
-	Frame selected = null;
+	Frame selectedFrameWidget = null;
 	Object selectedId = null;
+	private final Button add;
+	private final Button duplicate;
+	private final Button remove;
+	private final Button clear;
+	private final Button left;
+	private final Button right;
 
 	public Node getWidget() {
 		return foreground;
@@ -84,6 +92,8 @@ public class Timeline {
 	private static SimpleObjectProperty<Image> emptyStateImage = new SimpleObjectProperty<>(null);
 
 	public abstract static class RowAdapter {
+		public Optional<Row> row = Optional.empty();
+
 		public abstract ObservableValue<String> getName();
 
 		public abstract List<RowAdapterFrame> getFrames();
@@ -97,6 +107,8 @@ public class Timeline {
 		public abstract void deselected();
 
 		public abstract void selected();
+
+		public abstract boolean duplciateFrame(int outer);
 	}
 
 	TreeTableView<RowAdapter> tree = new TreeTableView<>();
@@ -107,15 +119,22 @@ public class Timeline {
 
 	List<Row> rows = new ArrayList<>();
 
-	public Optional<Pair<Integer, FrameMapEntry>> findTime(int outer) {
+	public Pair<Integer, FrameMapEntry> findTimeMapEntry(int outer) {
 		int outerAt = 0;
 		for (FrameMapEntry outerFrame : context.timeMap) {
 			if (outer >= outerAt && (outerFrame.length == -1 || outer < outerAt + outerFrame.length)) {
-				return Optional.of(new Pair<>(outerAt, outerFrame));
+				return new Pair<>(outerAt, outerFrame);
 			}
 			outerAt += outerFrame.length;
 		}
-		return Optional.empty();
+		throw new Assertion();
+	}
+
+	public int timeToInner(int outer) {
+		Pair<Integer, FrameMapEntry> entry = findTimeMapEntry(outer);
+		if (entry.second.innerOffset == -1)
+			return -1;
+		return entry.second.innerOffset + outer - entry.first;
 	}
 
 	public static Color c(java.awt.Color source) {
@@ -126,20 +145,6 @@ public class Timeline {
 		this.context = context;
 		tree.setRoot(new TreeItem<>());
 		tree.setShowRoot(false);
-		tree.getSelectionModel().getSelectedItems().addListener((ListChangeListener<TreeItem<RowAdapter>>) c -> {
-			while (c.next()) {
-				for (TreeItem<RowAdapter> removed : c.getRemoved()) {
-					if (removed.getValue() == null)
-						continue;
-					removed.getValue().deselected();
-				}
-				for (TreeItem<RowAdapter> added : c.getAddedSubList()) {
-					if (added.getValue() == null)
-						continue;
-					added.getValue().selected();
-				}
-			}
-		});
 		scrub.setBackground(Background.EMPTY);
 		scrub.setMinHeight(30);
 		scrub.getChildren().addAll(scrubElements);
@@ -152,7 +157,7 @@ public class Timeline {
 		};
 		scrub.addEventFilter(MouseEvent.MOUSE_CLICKED, mouseEventEventHandler);
 		scrub.addEventFilter(MouseEvent.MOUSE_DRAGGED, mouseEventEventHandler);
-		Button add = Main.button("plus.svg", "Add");
+		add = Main.button("plus.svg", "Add");
 		add.setOnAction(e -> {
 			if (context.selectedForView.get() == null)
 				return;
@@ -160,36 +165,51 @@ public class Timeline {
 					.getSelectionModel()
 					.getSelectedCells()
 					.stream()
-					.filter(c -> c.getTreeItem().getValue() != null &&
+					.filter(c -> c.getTreeItem() != null &&
+							c.getTreeItem().getValue() != null &&
 							c.getTreeItem().getValue().createFrame(context.selectedForView.get().frame.get()))
 					.findFirst();
 		});
-		Button remove = Main.button("minus.svg", "Remove");
+		duplicate = Main.button("content-copy.svg", "Duplicate");
+		duplicate.setOnAction(e -> {
+			if (context.selectedForView.get() == null)
+				return;
+			tree
+					.getSelectionModel()
+					.getSelectedCells()
+					.stream()
+					.filter(c -> c.getTreeItem() != null &&
+							c.getTreeItem().getValue() != null &&
+							c.getTreeItem().getValue().duplciateFrame(context.selectedForView.get().frame.get()))
+					.findFirst();
+		});
+		remove = Main.button("minus.svg", "Remove");
 		remove.setOnAction(e -> {
-			if (selected == null)
+			if (selectedFrameWidget == null)
 				return;
-			selected.frame.remove();
-			selected = null;
+			selectedFrameWidget.frame.remove();
+			selectedFrameWidget = null;
 		});
-		Button clear = Main.button("eraser-variant.svg", "Clear");
+		clear = Main.button("eraser-variant.svg", "Clear");
 		clear.setOnAction(e -> {
-			if (selected == null)
+			if (selectedFrameWidget == null)
 				return;
-			selected.frame.clear();
+			selectedFrameWidget.frame.clear();
 		});
-		Button left = Main.button("arrow-left.svg", "Left");
+		left = Main.button("arrow-left.svg", "Left");
 		left.setOnAction(e -> {
-			if (selected == null)
+			if (selectedFrameWidget == null)
 				return;
-			selected.frame.moveLeft();
+			selectedFrameWidget.frame.moveLeft();
 		});
-		Button right = Main.button("arrow-right.svg", "Right");
+		right = Main.button("arrow-right.svg", "Right");
 		right.setOnAction(e -> {
-			if (selected == null)
+			if (selectedFrameWidget == null)
 				return;
-			selected.frame.moveRight();
+			selectedFrameWidget.frame.moveRight();
 		});
-		toolBar.getItems().addAll(add, left, right, remove, clear);
+		updateButtons();
+		toolBar.getItems().addAll(add, duplicate, left, right, remove, clear);
 		nameColumn.setCellValueFactory(p -> new SimpleObjectProperty<>(p.getValue().getValue()));
 		nameColumn.setCellFactory(param -> new TreeTableCell<RowAdapter, RowAdapter>() {
 			final ImageView showViewing = new ImageView();
@@ -233,6 +253,7 @@ public class Timeline {
 						if (item == null || empty) {
 							if (rows.contains(row)) {
 								setGraphic(null);
+								row.adapter.row = Optional.empty();
 								row.adapter = null;
 								rows.remove(row);
 							}
@@ -240,6 +261,7 @@ public class Timeline {
 						}
 						if (item.hasFrames()) {
 							row.adapter = item;
+							item.row = Optional.of(row);
 							setGraphic(row);
 							if (!rows.contains(row))
 								rows.add(row);
@@ -251,6 +273,25 @@ public class Timeline {
 			}
 		});
 		tree.getColumns().addAll(nameColumn, framesColumn);
+		tree.getSelectionModel().getSelectedItems().addListener((ListChangeListener<TreeItem<RowAdapter>>) c -> {
+			while (c.next()) {
+				for (TreeItem<RowAdapter> removed : c.getRemoved()) {
+					if (removed == null)
+						continue; // ??
+					if (removed.getValue() == null)
+						continue;
+					removed.getValue().deselected();
+				}
+				for (TreeItem<RowAdapter> added : c.getAddedSubList()) {
+					if (added == null)
+						continue; // ??
+					if (added.getValue() == null)
+						continue;
+					added.getValue().selected();
+				}
+			}
+			updateButtons();
+		});
 		framesColumn.prefWidthProperty().bind(tree.widthProperty().subtract(nameColumn.widthProperty()));
 		foreground.getChildren().addAll(toolBar, tree, scrub, timeScroll);
 
@@ -281,12 +322,12 @@ public class Timeline {
 		public Frame(Row row) {
 			this.row = row;
 			addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
-				if (selected != this) {
-					if (selected != null)
-						selected.deselect();
-					selected = this;
+				if (selectedFrameWidget != this) {
+					if (selectedFrameWidget != null)
+						selectedFrameWidget.deselect();
+					selectedFrameWidget = this;
 					selectedId = this.frame.id();
-					selected.select();
+					selectedFrameWidget.select();
 				}
 			});
 			addEventHandler(MouseEvent.MOUSE_DRAGGED, e -> {
@@ -343,7 +384,7 @@ public class Timeline {
 	private class Row extends Pane {
 		private Group inner = new Group();
 		private RowAdapter adapter;
-		private Rectangle frameMarker = new Rectangle(2, 0);
+		private Rectangle frameMarker = new Rectangle(zoom, 0);
 		private List<Frame> frames = new ArrayList<>();
 
 		private Row() {
@@ -408,19 +449,19 @@ public class Timeline {
 					outerAt += outer.length;
 			}
 
-			if (selected != foundSelectedFrame) {
-				if (selected != null)
-					selected.deselect();
-				selected = foundSelectedFrame;
-				if (selected != null)
-					selected.select();
+			if (selectedFrameWidget != foundSelectedFrame) {
+				if (selectedFrameWidget != null)
+					selectedFrameWidget.deselect();
+				selectedFrameWidget = foundSelectedFrame;
+				if (selectedFrameWidget != null)
+					selectedFrameWidget.select();
 			}
 
 			if (frameIndex < frames.size()) {
 				List<Frame> remove = sublist(frames, frameIndex);
 				for (Frame frame : remove) {
-					if (selected == frame) {
-						selected = null;
+					if (selectedFrameWidget == frame) {
+						selectedFrameWidget = null;
 					}
 				}
 				this.inner.getChildren().removeAll(remove);
@@ -462,6 +503,7 @@ public class Timeline {
 		if (false) {
 			throw new DeadCode();
 		} else if (edit instanceof CameraWrapper) {
+			// nop
 		} else if (edit instanceof GroupNodeWrapper) {
 			class GroupLayerRowAdapter extends RowAdapter {
 				private final GroupLayer layer;
@@ -497,6 +539,11 @@ public class Timeline {
 				}
 
 				@Override
+				public boolean duplciateFrame(int outer) {
+					throw new Assertion();
+				}
+
+				@Override
 				public ObservableObjectValue<Image> getStateImage() {
 					return stateImage;
 				}
@@ -512,12 +559,12 @@ public class Timeline {
 				}
 
 				public void treeDeselected() {
-					((GroupNodeWrapper)edit).setSpecificLayer(null);
+					((GroupNodeWrapper) edit).setSpecificLayer(null);
 					stateImage.set(null);
 				}
 
 				public void treeSelected() {
-					((GroupNodeWrapper)edit).setSpecificLayer(layer);
+					((GroupNodeWrapper) edit).setSpecificLayer(layer);
 					stateImage.set(icon("cursor-move.svg"));
 				}
 			}
@@ -527,8 +574,8 @@ public class Timeline {
 				{
 					cleanup.add(((GroupNode) edit.getValue()).mirrorLayers(tree.getRoot().getChildren(), layer -> {
 						GroupLayerRowAdapter layerRowAdapter = new GroupLayerRowAdapter(layer);
-						TreeItem layerItem = new TreeItem(layerRowAdapter);
-						TreeItem timeFramesItem = new TreeItem(new RowAdapter() {
+						TreeItem<RowAdapter> layerItem = new TreeItem(layerRowAdapter);
+						TreeItem<RowAdapter> timeFramesItem = new TreeItem(new RowAdapter() {
 							@Override
 							public ObservableValue<String> getName() {
 								return new ObservableValueBase<String>() {
@@ -614,40 +661,33 @@ public class Timeline {
 
 							@Override
 							public boolean createFrame(int outer) {
-								int outerAt = 0;
-								for (FrameMapEntry outerFrame : context.timeMap) {
-									if (outer >= outerAt &&
-											(outerFrame.length == -1 || outer < outerAt + outerFrame.length)) {
-										int inner = outer - outerAt + outerFrame.innerOffset;
-										int innerAt = 0;
-										for (int i = 0; i < layer.timeFramesLength(); ++i) {
-											GroupTimeFrame innerFrame = layer.timeFramesGet(i);
-											if (inner >= innerAt && (
-													innerFrame.length() == -1 || inner < innerAt + innerFrame.length()
-											)) {
-												if (inner == innerAt)
-													return false;
-												GroupTimeFrame newFrame = GroupTimeFrame.create(context);
-												int offset = inner - innerAt;
-												if (innerFrame.length() == -1) {
-													context.change.groupTimeFrame(innerFrame).lengthSet(offset);
-													newFrame.initialLengthSet(context, -1);
-												} else {
-													newFrame.initialLengthSet(context, innerFrame.length() - offset);
-													context.change.groupTimeFrame(innerFrame).lengthSet(offset);
-												}
-												newFrame.initialInnerOffsetSet(context,
-														innerFrame.innerOffset() + offset
-												);
-												context.change.groupLayer(layer).timeFramesAdd(i + 1, newFrame);
-												return true;
-											}
-											innerAt += innerFrame.length();
-										}
-									}
-									outerAt += outerFrame.length;
+								return createFrame(outer, previous -> GroupTimeFrame.create(context));
+							}
+
+							@Override
+							public boolean duplciateFrame(int outer) {
+								return createFrame(outer, previous -> {
+									GroupTimeFrame created = GroupTimeFrame.create(context);
+									created.initialInnerOffsetSet(context, previous.innerOffset());
+									return created;
+								});
+							}
+
+							public boolean createFrame(int outer, Function<GroupTimeFrame, GroupTimeFrame> cb) {
+								int inner = timeToInner(outer);
+								GroupLayerWrapper.TimeResult previous = GroupLayerWrapper.findTime(layer, inner);
+								GroupTimeFrame newFrame = cb.apply(previous.frame);
+								int offset = inner - previous.at;
+								if (previous.frame.length() == -1) {
+									context.change.groupTimeFrame(previous.frame).lengthSet(offset);
+									newFrame.initialLengthSet(context, -1);
+								} else {
+									newFrame.initialLengthSet(context, previous.frame.length() - offset);
+									context.change.groupTimeFrame(previous.frame).lengthSet(offset);
 								}
-								throw new Assertion();
+								newFrame.initialInnerOffsetSet(context, previous.frame.innerOffset() + offset);
+								context.change.groupLayer(layer).timeFramesAdd(previous.frameIndex + 1, newFrame);
+								return true;
 							}
 
 							@Override
@@ -657,7 +697,8 @@ public class Timeline {
 
 							@Override
 							public void deselected() {
-								layerRowAdapter.treeDeselected();;
+								layerRowAdapter.treeDeselected();
+								;
 							}
 
 							@Override
@@ -666,7 +707,7 @@ public class Timeline {
 							}
 						});
 						layerItem.getChildren().add(timeFramesItem);
-						TreeItem positionFramesItem = new TreeItem(new RowAdapter() {
+						TreeItem<RowAdapter> positionFramesItem = new TreeItem(new RowAdapter() {
 							@Override
 							public ObservableValue<String> getName() {
 								return new ObservableValueBase<String>() {
@@ -680,7 +721,7 @@ public class Timeline {
 							@Override
 							public List<RowAdapterFrame> getFrames() {
 								List<RowAdapterFrame> out = new ArrayList<>();
-								for (int i0 = 0; i0 < layer.timeFramesLength(); ++i0) {
+								for (int i0 = 0; i0 < layer.positionFramesLength(); ++i0) {
 									final int i = i0;
 									GroupPositionFrame f = layer.positionFramesGet(i);
 									out.add(new RowAdapterFrame() {
@@ -720,7 +761,7 @@ public class Timeline {
 											if (i == 0)
 												return;
 											GroupPositionFrame frameBefore = layer.positionFramesGet(i - 1);
-											context.change.groupLayer(layer).timeFramesMoveTo(i, 1, i - 1);
+											context.change.groupLayer(layer).positionFramesMoveTo(i, 1, i - 1);
 											final int lengthThis = f.length();
 											if (lengthThis == -1) {
 												final int lengthBefore = frameBefore.length();
@@ -731,10 +772,10 @@ public class Timeline {
 
 										@Override
 										public void moveRight() {
-											if (i == layer.timeFramesLength() - 1)
+											if (i == layer.positionFramesLength() - 1)
 												return;
 											GroupPositionFrame frameAfter = layer.positionFramesGet(i + 1);
-											context.change.groupLayer(layer).timeFramesMoveTo(i, 1, i + 1);
+											context.change.groupLayer(layer).positionFramesMoveTo(i, 1, i + 1);
 											final int lengthAfter = frameAfter.length();
 											if (lengthAfter == -1) {
 												final int lengthThis = f.length();
@@ -754,34 +795,42 @@ public class Timeline {
 
 							@Override
 							public boolean createFrame(int outer) {
-								Pair<Integer, FrameMapEntry> found = findTime(outer).get();
-								int outerAt = found.first;
-								FrameMapEntry outerFrame = found.second;
-								int inner = outer - outerAt + outerFrame.innerOffset;
-								int innerAt = 0;
-								for (int i = 0; i < layer.timeFramesLength(); ++i) {
-									GroupPositionFrame innerFrame = layer.positionFramesGet(i);
-									if (inner >= innerAt && (
-											innerFrame.length() == -1 || inner < innerAt + innerFrame.length()
-									)) {
-										if (inner == innerAt)
-											return false;
-										GroupPositionFrame newFrame = GroupPositionFrame.create(context);
-										int offset = inner - innerAt;
-										if (innerFrame.length() == -1) {
-											context.change.groupPositionFrame(innerFrame).lengthSet(offset);
-											newFrame.initialLengthSet(context, -1);
-										} else {
-											newFrame.initialLengthSet(context, innerFrame.length() - offset);
-											context.change.groupPositionFrame(innerFrame).lengthSet(offset);
-										}
-										newFrame.initialOffsetSet(context, innerFrame.offset());
-										context.change.groupLayer(layer).positionFramesAdd(i + 1, newFrame);
-										return true;
-									}
-									innerAt += innerFrame.length();
+								return createFrame(outer, previous -> GroupPositionFrame.create(context));
+							}
+
+							@Override
+							public boolean duplciateFrame(int outer) {
+								return createFrame(outer, previous -> {
+									GroupPositionFrame created = GroupPositionFrame.create(context);
+									created.initialOffsetSet(context, previous.offset());
+									return created;
+								});
+							}
+
+							public boolean createFrame(int outer, Function<GroupPositionFrame, GroupPositionFrame> cb) {
+								int inner = timeToInner(outer);
+								GroupLayerWrapper.PositionResult previous =
+										GroupLayerWrapper.findPosition(layer, inner);
+								GroupPositionFrame newFrame = cb.apply(previous.frame);
+								int offset = inner - previous.at;
+								if (offset <= 0)
+									throw new Assertion();
+								System.out.format("P create frame\n");
+								layer.positionFrames().forEach(f -> System.out.format("  pos fr %s\n", f.length()));
+								System.out.format("  offset %s; previous l %s; previous i %s\n",
+										offset,
+										previous.frame.length(),
+										previous.frameIndex
+								);
+								if (previous.frame.length() == -1) {
+									newFrame.initialLengthSet(context, -1);
+								} else {
+									newFrame.initialLengthSet(context, previous.frame.length() - offset);
 								}
-								throw new Assertion();
+								context.change.groupPositionFrame(previous.frame).lengthSet(offset);
+								newFrame.initialOffsetSet(context, previous.frame.offset());
+								context.change.groupLayer(layer).positionFramesAdd(previous.frameIndex + 1, newFrame);
+								return true;
 							}
 
 							@Override
@@ -801,27 +850,31 @@ public class Timeline {
 						});
 						layerItem.getChildren().add(positionFramesItem);
 
-						GroupLayer.TimeFramesAddListener timeFramesAddListener = (target, at, value) -> updateTime();
-						layer.addTimeFramesAddListeners(timeFramesAddListener);
+						GroupLayer.TimeFramesAddListener timeFramesAddListener =
+								layer.addTimeFramesAddListeners((target, at, value) -> timeFramesItem.getValue().row.ifPresent(
+										r -> r.update()));
 						GroupLayer.TimeFramesRemoveListener timeFramesRemoveListener =
-								(target, at, count) -> updateTime();
-						layer.addTimeFramesRemoveListeners(timeFramesRemoveListener);
+								layer.addTimeFramesRemoveListeners((target, at, count) -> timeFramesItem.getValue().row.ifPresent(
+										r -> r.update()));
 						GroupLayer.TimeFramesMoveToListener timeFramesMoveToListener =
-								(target, source, count, dest) -> updateTime();
-						layer.addTimeFramesMoveToListeners(timeFramesMoveToListener);
-						GroupLayer.TimeFramesClearListener timeFramesClearListener = target -> updateTime();
-						layer.addTimeFramesClearListeners(timeFramesClearListener);
+								layer.addTimeFramesMoveToListeners((target, source, count, dest) -> timeFramesItem.getValue().row
+										.ifPresent(r -> r.update()));
+						GroupLayer.TimeFramesClearListener timeFramesClearListener =
+								layer.addTimeFramesClearListeners(target -> timeFramesItem.getValue().row.ifPresent(r -> r
+										.update()));
+
 						GroupLayer.PositionFramesAddListener positionFramesAddListener =
-								(target, at, value) -> updateTime();
-						layer.addPositionFramesAddListeners(positionFramesAddListener);
+								layer.addPositionFramesAddListeners((target, at, value) -> positionFramesItem.getValue().row
+										.ifPresent(r -> r.update()));
 						GroupLayer.PositionFramesRemoveListener positionFramesRemoveListener =
-								(target, at, count) -> updateTime();
-						layer.addPositionFramesRemoveListeners(positionFramesRemoveListener);
+								layer.addPositionFramesRemoveListeners((target, at, count) -> positionFramesItem.getValue().row
+										.ifPresent(r -> r.update()));
 						GroupLayer.PositionFramesMoveToListener positionFramesMoveToListener =
-								(target, source, count, dest) -> updateTime();
-						layer.addPositionFramesMoveToListeners(positionFramesMoveToListener);
-						GroupLayer.PositionFramesClearListener positionFramesClearListener = target -> updateTime();
-						layer.addPositionFramesClearListeners(positionFramesClearListener);
+								layer.addPositionFramesMoveToListeners((target, source, count, dest) -> positionFramesItem
+										.getValue().row.ifPresent(r -> r.update()));
+						GroupLayer.PositionFramesClearListener positionFramesClearListener =
+								layer.addPositionFramesClearListeners(target -> positionFramesItem.getValue().row.ifPresent(
+										r -> r.update()));
 						cleanup.add(() -> {
 							layer.removeTimeFramesAddListeners(timeFramesAddListener);
 							layer.removeTimeFramesRemoveListeners(timeFramesRemoveListener);
@@ -851,35 +904,8 @@ public class Timeline {
 		} else if (edit instanceof ImageNodeWrapper) {
 			ImageNode editNode = (ImageNode) edit.getValue();
 			List<Runnable> frameCleanup = new ArrayList<>();
-			ImageNode.FramesAddListener framesAddListener =
-					editNode.addFramesAddListeners((target, at, value) -> {
-						frameCleanup.addAll(at, value.stream().map(f -> {
-							ImageFrame.LengthSetListener listener =
-									f.addLengthSetListeners((target1, value1) -> updateTime());
-							return (Runnable) () -> f.removeLengthSetListeners(listener);
-						}).collect(Collectors.toList()));
-						updateTime();
-					});
-			ImageNode.FramesRemoveListener framesRemoveListener =
-					editNode.addFramesRemoveListeners((target, at, count) -> {
-						System.out.format("Frames removed %s %s\n", at, count);
-						List<Runnable> temp = sublist(frameCleanup, at, at + count);
-						temp.forEach(c -> c.run());
-						temp.clear();
-						updateTime();
-					});
-			ImageNode.FramesMoveToListener framesMoveToListener =
-					editNode.addFramesMoveToListeners((target, source, count, dest) -> {
-						moveTo(frameCleanup, source, count, dest);
-						updateTime();
-					});
-			ImageNode.FramesClearListener framesClearListener =
-					editNode.addFramesClearListeners(target -> {
-						frameCleanup.forEach(c -> c.run());
-						frameCleanup.clear();
-						updateTime();
-					});
-			TreeItem imageItem = new TreeItem(new RowAdapter() {
+
+			RowAdapter imageAdapter = new RowAdapter() {
 				@Override
 				public ObservableValue<String> getName() {
 					return new SimpleStringProperty("Frames");
@@ -960,33 +986,36 @@ public class Timeline {
 
 				@Override
 				public boolean createFrame(int outer) {
-					Pair<Integer, FrameMapEntry> found = findTime(outer).get();
-					int outerAt = found.first;
-					FrameMapEntry outerFrame = found.second;
-					int inner = outer - outerAt + outerFrame.innerOffset;
-					int innerAt = 0;
-					for (int i = 0; i < editNode.framesLength(); ++i) {
-						ImageFrame innerFrame = editNode.framesGet(i);
-						if (inner >= innerAt && (
-								innerFrame.length() == -1 || inner < innerAt + innerFrame.length()
-						)) {
-							if (inner == innerAt)
-								return false;
-							ImageFrame newFrame = ImageFrame.create(context);
-							int offset = inner - innerAt;
-							if (innerFrame.length() == -1) {
-								context.change.imageFrame(innerFrame).lengthSet(offset);
-								newFrame.initialLengthSet(context, -1);
-							} else {
-								newFrame.initialLengthSet(context, innerFrame.length() - offset);
-								context.change.imageFrame(innerFrame).lengthSet(offset);
-							}
-							context.change.imageNode(editNode).framesAdd(i + 1, newFrame);
-							return true;
-						}
-						innerAt += innerFrame.length();
+					return insertNewFrame(outer, previous -> {
+						return ImageFrame.create(context);
+					});
+				}
+
+				@Override
+				public boolean duplciateFrame(int outer) {
+					return insertNewFrame(outer, previous -> {
+						ImageFrame created = ImageFrame.create(context);
+						created.initialOffsetSet(context, previous.offset());
+						created.initialTilesPutAll(context, previous.tiles());
+						return created;
+					});
+				}
+
+				private boolean insertNewFrame(int outer, Function<ImageFrame, ImageFrame> cb) {
+					final int inner = timeToInner(outer);
+					ImageNodeWrapper.FrameResult previous = ImageNodeWrapper.findFrame(editNode, inner);
+					ImageFrame newFrame = cb.apply(previous.frame);
+					int offset = inner - previous.at;
+					if (previous.frame.length() == -1) {
+						context.change.imageFrame(previous.frame).lengthSet(offset);
+						newFrame.initialLengthSet(context, -1);
+					} else {
+						newFrame.initialLengthSet(context, previous.frame.length() - offset);
+						context.change.imageFrame(previous.frame).lengthSet(offset);
 					}
-					throw new Assertion();
+					context.change.imageNode(editNode).framesAdd(previous.frameIndex + 1, newFrame);
+
+					return true;
 				}
 
 				@Override
@@ -1003,7 +1032,35 @@ public class Timeline {
 				public void selected() {
 
 				}
+			};
+
+			ImageNode.FramesAddListener framesAddListener = editNode.addFramesAddListeners((target, at, value) -> {
+				frameCleanup.addAll(at, value.stream().map(f -> {
+					ImageFrame.LengthSetListener listener =
+							f.addLengthSetListeners((target1, value1) -> imageAdapter.row.ifPresent(r -> r.update()));
+					return (Runnable) () -> f.removeLengthSetListeners(listener);
+				}).collect(Collectors.toList()));
+				imageAdapter.row.ifPresent(r -> r.update());
 			});
+			ImageNode.FramesRemoveListener framesRemoveListener =
+					editNode.addFramesRemoveListeners((target, at, count) -> {
+						System.out.format("Frames removed %s %s\n", at, count);
+						List<Runnable> temp = sublist(frameCleanup, at, at + count);
+						temp.forEach(c -> c.run());
+						temp.clear();
+						imageAdapter.row.ifPresent(r -> r.update());
+					});
+			ImageNode.FramesMoveToListener framesMoveToListener =
+					editNode.addFramesMoveToListeners((target, source, count, dest) -> {
+						moveTo(frameCleanup, source, count, dest);
+						imageAdapter.row.ifPresent(r -> r.update());
+					});
+			ImageNode.FramesClearListener framesClearListener = editNode.addFramesClearListeners(target -> {
+				frameCleanup.forEach(c -> c.run());
+				frameCleanup.clear();
+				imageAdapter.row.ifPresent(r -> r.update());
+			});
+			TreeItem imageItem = new TreeItem(imageAdapter);
 			tree.getRoot().getChildren().add(imageItem);
 			editHandle = () -> {
 				editNode.removeFramesAddListeners(framesAddListener);
@@ -1032,6 +1089,19 @@ public class Timeline {
 		for (int i = Math.min(source, dest); i < list.size(); ++i) {
 			list.get(i).parentIndex = i;
 		}
+	}
+
+	private void updateButtons() {
+		Wrapper root = context.selectedForView.get();
+		TreeItem<RowAdapter> nowSelected = tree.getSelectionModel().getSelectedItem();
+		boolean noSelection = root == null ||
+				nowSelected == null || nowSelected.getValue() == null || !nowSelected.getValue().hasFrames();
+		add.setDisable(noSelection);
+		duplicate.setDisable(noSelection);
+		left.setDisable(noSelection);
+		right.setDisable(noSelection);
+		clear.setDisable(noSelection);
+		remove.setDisable(noSelection);
 	}
 
 	private void updateFrameMarker() {

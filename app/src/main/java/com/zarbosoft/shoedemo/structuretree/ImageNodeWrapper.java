@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.zarbosoft.shoedemo.Main.uniqueName1;
+
 public class ImageNodeWrapper extends Wrapper {
 	private final ProjectContext context;
 	private final ImageNode node;
@@ -115,11 +117,8 @@ public class ImageNodeWrapper extends Wrapper {
 				Tile tile = frame.tilesGet(key);
 				if (tile == null)
 					continue;
-				WrapTile wrapTile = new WrapTile(
-						tile,
-						(newBounds.x + x) * context.tileSize,
-						(newBounds.y + y) * context.tileSize
-				);
+				WrapTile wrapTile =
+						new WrapTile(tile, (newBounds.x + x) * context.tileSize, (newBounds.y + y) * context.tileSize);
 				wrapTiles.put(key, wrapTile);
 				draw.getChildren().add(wrapTile.widget);
 			}
@@ -232,6 +231,7 @@ public class ImageNodeWrapper extends Wrapper {
 	@Override
 	public ProjectNode separateClone(ProjectContext context) {
 		ImageNode clone = ImageNode.create(this.context);
+		clone.initialNameSet(context, uniqueName1(node.name()));
 		clone.initialFramesAdd(context, node.frames().stream().map(frame -> {
 			ImageFrame newFrame = ImageFrame.create(this.context);
 			newFrame.initialOffsetSet(context, frame.offset());
@@ -239,7 +239,6 @@ public class ImageNodeWrapper extends Wrapper {
 			newFrame.initialTilesPutAll(context, frame.tiles());
 			return newFrame;
 		}).collect(Collectors.toList()));
-		clone.initialNameSet(context, String.format("%s (copy)", node.name()));
 		return clone;
 	}
 
@@ -274,11 +273,29 @@ public class ImageNodeWrapper extends Wrapper {
 	}
 
 	private ImageFrame findFrame(int frameNumber) {
+		return findFrame(node, frameNumber).frame;
+	}
+
+	public static class FrameResult {
+		public final ImageFrame frame;
+		public final int at;
+		public final int frameIndex;
+
+		public FrameResult(ImageFrame frame, int at, int frameIndex) {
+			this.frame = frame;
+			this.at = at;
+			this.frameIndex = frameIndex;
+		}
+	}
+
+	public static FrameResult findFrame(ImageNode node, int frame) {
 		int at = 0;
-		for (ImageFrame frame : node.frames()) {
-			if (frameNumber >= at && (frame.length() == -1 || frameNumber < at + frame.length()))
-				return frame;
-			at += frame.length();
+		for (int i = 0; i < node.framesLength(); ++i) {
+			ImageFrame pos = node.frames().get(i);
+			if ((i == node.framesLength() - 1) || (frame >= at && (pos.length() == -1 || frame < at + pos.length()))) {
+				return new FrameResult(pos, at, i);
+			}
+			at += pos.length();
 		}
 		throw new Assertion();
 	}
@@ -333,5 +350,10 @@ public class ImageNodeWrapper extends Wrapper {
 	@Override
 	public void removeChild(ProjectContext context, int index) {
 		throw new Assertion();
+	}
+
+	@Override
+	public TakesChildren takesChildren() {
+		return TakesChildren.NONE;
 	}
 }

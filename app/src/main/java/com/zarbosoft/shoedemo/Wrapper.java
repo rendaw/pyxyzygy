@@ -1,5 +1,6 @@
 package com.zarbosoft.shoedemo;
 
+import com.zarbosoft.rendaw.common.Pair;
 import com.zarbosoft.shoedemo.model.ProjectNode;
 import com.zarbosoft.shoedemo.model.ProjectObject;
 import com.zarbosoft.shoedemo.model.Rectangle;
@@ -59,7 +60,7 @@ public abstract class Wrapper {
 	 * @param context
 	 * @param at
 	 * @param child
-	 * @return
+	 * @return List containing placed children
 	 */
 	public abstract boolean addChildren(ProjectContext context, int at, List<ProjectNode> child);
 
@@ -70,4 +71,13 @@ public abstract class Wrapper {
 	public abstract void render(GraphicsContext gc, int frame, Rectangle crop);
 
 	public abstract void removeChild(ProjectContext context, int index);
+
+	public static enum TakesChildren {
+		NONE,
+		ONE,
+		ANY
+	}
+
+	// TODO take this info to prevent calling addChildren if it wouldn't succeed, simplify that signature
+	public abstract TakesChildren takesChildren();
 }

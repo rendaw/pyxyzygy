@@ -108,12 +108,31 @@ public class GroupLayerWrapper extends Wrapper {
 	}
 
 	private int findInnerFrame(int frame) {
+		TimeResult result = findTime(node, frame);
+		return result.frame.innerOffset() + (frame - result.at);
+	}
+
+	public static class TimeResult {
+		public final GroupTimeFrame frame;
+		public final int at;
+		public final int frameIndex;
+
+		public TimeResult(GroupTimeFrame frame, int at, int frameIndex) {
+			this.frame = frame;
+			this.at = at;
+			this.frameIndex = frameIndex;
+		}
+	}
+
+	public static TimeResult findTime(GroupLayer node, int frame) {
 		int at = 0;
-		for (GroupTimeFrame time : node.timeFrames()) {
-			if (frame >= at && (time.length() == -1 || frame < at + time.length())) {
-				return time.innerOffset() + frame - at;
+		for (int i = 0; i < node.timeFramesLength(); ++i) {
+			GroupTimeFrame pos = node.timeFrames().get(i);
+			if ((i == node.timeFramesLength() - 1) ||
+					(frame >= at && (pos.length() == -1 || frame < at + pos.length()))) {
+				return new TimeResult(pos, at, i);
 			}
-			at += time.length();
+			at += pos.length();
 		}
 		throw new Assertion();
 	}
@@ -133,14 +152,28 @@ public class GroupLayerWrapper extends Wrapper {
 	}
 
 	private GroupPositionFrame findPosition(int frame) {
-		return findPosition(node, frame);
+		return findPosition(node, frame).frame;
 	}
 
-	public static GroupPositionFrame findPosition(GroupLayer node, int frame) {
+	public static class PositionResult {
+		public final GroupPositionFrame frame;
+		public final int at;
+		public final int frameIndex;
+
+		public PositionResult(GroupPositionFrame frame, int at, int frameIndex) {
+			this.frame = frame;
+			this.at = at;
+			this.frameIndex = frameIndex;
+		}
+	}
+
+	public static PositionResult findPosition(GroupLayer node, int frame) {
 		int at = 0;
-		for (GroupPositionFrame pos : node.positionFrames()) {
-			if (frame >= at && (pos.length() == -1 || frame < at + pos.length())) {
-				return pos;
+		for (int i = 0; i < node.positionFramesLength(); ++i) {
+			GroupPositionFrame pos = node.positionFrames().get(i);
+			if ((i == node.positionFramesLength() - 1) ||
+					(frame >= at && (pos.length() == -1 || frame < at + pos.length()))) {
+				return new PositionResult(pos, at, i);
 			}
 			at += pos.length();
 		}
@@ -178,11 +211,10 @@ public class GroupLayerWrapper extends Wrapper {
 		if (baseBounds == null)
 			return;
 		DoubleRectangle newBounds = baseBounds.minus(pos.offset());
-		if (child != null) {
-			if (canvas != null)
-				updateChildCanvasPosition(pos);
+		if (canvas != null)
+			updateChildCanvasPosition(pos);
+		if (child != null)
 			child.scroll(context, lastBounds, newBounds);
-		}
 		this.lastBounds = newBounds;
 	}
 
@@ -255,9 +287,15 @@ public class GroupLayerWrapper extends Wrapper {
 	}
 
 	@Override
+	public TakesChildren takesChildren() {
+		throw new Assertion();
+	}
+
+	@Override
 	public void setFrame(ProjectContext context, int frameNumber) {
 		this.currentFrame = frameNumber;
 		updateTime(context);
+		updatePosition(context);
 	}
 
 	@Override
