@@ -23,8 +23,7 @@ import java.nio.file.Paths;
 import java.util.List;
 
 import static com.zarbosoft.rendaw.common.Common.uncheck;
-import static com.zarbosoft.shoedemo.Main.uniqueName;
-import static com.zarbosoft.shoedemo.Main.uniqueName1;
+import static com.zarbosoft.shoedemo.Window.uniqueName1;
 import static com.zarbosoft.shoedemo.structuretree.ImageNodeWrapper.snapshot;
 
 public class CameraWrapper extends Wrapper {
@@ -81,7 +80,7 @@ public class CameraWrapper extends Wrapper {
 			}
 			tree.get().getChildren().clear();
 			if (value != null) {
-				child = Main.createNode(context, this, 0, value);
+				child = Window.createNode(context, this, 0, value);
 				child.tree.addListener(childTreeListener);
 				tree.get().getChildren().add(child.tree.getValue());
 				if (canvas != null) {
@@ -209,13 +208,14 @@ public class CameraWrapper extends Wrapper {
 
 	@Override
 	public void mark(ProjectContext context, DoubleVector start, DoubleVector end) {
-		context.change.camera(node).offsetSet(end.minus(markStart).plus(markStartOffset).toInt());
+		context.history.change(c -> c.camera(node).offsetSet(end.minus(markStart).plus(markStartOffset).toInt()));
 	}
 
 	@Override
 	public boolean addChildren(ProjectContext context, int at, List<ProjectNode> child) {
-		if (child.size() > 1) return false;
-		context.change.camera(node).innerSet(child.get(0));
+		if (child.size() > 1)
+			return false;
+		context.history.change(c -> c.camera(node).innerSet(child.get(0)));
 		return true;
 	}
 
@@ -224,7 +224,7 @@ public class CameraWrapper extends Wrapper {
 		if (parent != null)
 			parent.removeChild(context, parentIndex);
 		else
-			this.context.change.project(this.context.project).topRemove(parentIndex, 1);
+			this.context.history.change(c -> c.project(this.context.project).topRemove(parentIndex, 1));
 	}
 
 	@Override
@@ -249,7 +249,7 @@ public class CameraWrapper extends Wrapper {
 
 	@Override
 	public void removeChild(ProjectContext context, int index) {
-		context.change.camera(node).innerSet(null);
+		context.history.change(c -> c.camera(node).innerSet(null));
 	}
 
 	@Override
@@ -271,9 +271,9 @@ public class CameraWrapper extends Wrapper {
 			t.setText(node.name());
 			t
 					.textProperty()
-					.addListener((observable, oldValue, newValue) -> this.context.change
+					.addListener((observable, oldValue, newValue) -> this.context.history.change(c -> c
 							.projectNode(node)
-							.nameSet(newValue));
+							.nameSet(newValue)));
 		}).intSpinner("Crop width", 1, 99999, s -> {
 			propertiesWidth = s;
 			s.getValueFactory().setValue(node.width());
@@ -286,7 +286,7 @@ public class CameraWrapper extends Wrapper {
 		}).doubleSpinner("Framerate", 1, 999, 1, s -> {
 			propertiesFrameRate = s;
 			s.getValueFactory().setValue(node.frameRate() / 10.0);
-		}).chooseDirector("Render path", s -> {
+		}).chooseDirectory("Render path", s -> {
 			if (renderPath != null)
 				s.setValue(renderPath.toString());
 			s.addListener((observable, oldValue, newValue) -> renderPath = Paths.get(newValue));

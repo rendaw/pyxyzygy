@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.zarbosoft.shoedemo.Main.uniqueName1;
+import static com.zarbosoft.shoedemo.Window.uniqueName1;
 
 public class ImageNodeWrapper extends Wrapper {
 	private final ProjectContext context;
@@ -49,8 +49,7 @@ public class ImageNodeWrapper extends Wrapper {
 		}
 
 		public void update(Tile tile) {
-			widget.setImage(tile.data);
-			widget.setViewport(new Rectangle2D(tile.dataOffsetX, tile.dataOffsetY, context.tileSize, context.tileSize));
+			widget.setImage(tile.getData(context));
 		}
 	}
 
@@ -103,7 +102,7 @@ public class ImageNodeWrapper extends Wrapper {
 			for (int y = 0; y < oldBounds.height; ++y) {
 				if (newBounds.contains(x, y))
 					continue;
-				long key = Main.morton.spack(oldBounds.x + x, oldBounds.y + y);
+				long key = Window.morton.spack(oldBounds.x + x, oldBounds.y + y);
 				draw.getChildren().remove(wrapTiles.get(key));
 			}
 		}
@@ -111,10 +110,10 @@ public class ImageNodeWrapper extends Wrapper {
 		// Add missing tiles in bounds
 		for (int x = 0; x < newBounds.width; ++x) {
 			for (int y = 0; y < newBounds.height; ++y) {
-				long key = Main.morton.spack(newBounds.x + x, newBounds.y + y);
+				long key = Window.morton.spack(newBounds.x + x, newBounds.y + y);
 				if (wrapTiles.containsKey(key))
 					continue;
-				Tile tile = frame.tilesGet(key);
+				Tile tile = (Tile) frame.tilesGet(key);
 				if (tile == null)
 					continue;
 				WrapTile wrapTile =
@@ -133,14 +132,14 @@ public class ImageNodeWrapper extends Wrapper {
 					draw.getChildren().remove(old.widget);
 			}
 			Rectangle checkBounds = bounds.scale(3).descaleIntOuter(context.tileSize);
-			for (Map.Entry<Long, Tile> entry : put.entrySet()) {
+			for (Map.Entry<Long, TileBase> entry : put.entrySet()) {
 				long key = entry.getKey();
-				long[] indexes = Main.morton.sunpack(key);
+				long[] indexes = Window.morton.sunpack(key);
 				int x = (int) indexes[0];
 				int y = (int) indexes[1];
 				if (!checkBounds.contains(x, y))
 					continue;
-				Tile value = entry.getValue();
+				Tile value = (Tile) entry.getValue();
 				WrapTile old = wrapTiles.get(key);
 				if (old != null) {
 					old.update(value);
@@ -182,8 +181,8 @@ public class ImageNodeWrapper extends Wrapper {
 	public void mark(ProjectContext context, DoubleVector start, DoubleVector end) {
 		// Get frame-local coordinates
 		System.out.format("stroke start %s %s to %s %s\n", start.x, start.y, end.x, end.y);
-		start = Main.toLocal(this, start);
-		end = Main.toLocal(this, end);
+		start = Window.toLocal(this, start);
+		end = Window.toLocal(this, end);
 
 		// Calculate mark bounds
 		final double radius = 2;
@@ -203,14 +202,23 @@ public class ImageNodeWrapper extends Wrapper {
 		gc.setStroke(Color.BLACK);
 		gc.setLineWidth(radius * 2);
 		gc.strokeLine(start.x - bounds.x, start.y - bounds.y, end.x - bounds.x, end.y - bounds.y);
-		WritableImage shot = snapshot(canvas);
 
 		// Replace tiles in frame
 		for (int x = 0; x < tileBounds.width; ++x) {
 			for (int y = 0; y < tileBounds.height; ++y) {
-				context.change.imageFrame(frame).tilesPut(Main.morton.spack(tileBounds.x + x, tileBounds.y + y),
-						new Tile(context, shot, x * context.tileSize, y * context.tileSize)
+				final int x0 = x;
+				final int y0 = y;
+				WritableImage shot = snapshot(canvas,
+						x0 * context.tileSize,
+						y0 * context.tileSize,
+						context.tileSize,
+						context.tileSize
 				);
+				context.history.change(c -> c
+						.imageFrame(frame)
+						.tilesPut(Window.morton.spack(tileBounds.x + x0, tileBounds.y + y0),
+								Tile.create(context, shot)
+						));
 			}
 		}
 	}
@@ -225,7 +233,7 @@ public class ImageNodeWrapper extends Wrapper {
 		if (parent != null)
 			parent.removeChild(context, parentIndex);
 		else
-			this.context.change.project(this.context.project).topRemove(parentIndex, 1);
+			this.context.history.change(c -> c.project(this.context.project).topRemove(parentIndex, 1));
 	}
 
 	@Override
@@ -248,12 +256,12 @@ public class ImageNodeWrapper extends Wrapper {
 		Rectangle tileBounds = crop.divide(context.tileSize);
 		for (int x = 0; x < tileBounds.width; ++x) {
 			for (int y = 0; y < tileBounds.height; ++y) {
-				Tile tile = frame.tilesGet(Main.morton.spack(tileBounds.x + x, tileBounds.y + y));
+				Tile tile = (Tile) frame.tilesGet(Window.morton.spack(tileBounds.x + x, tileBounds.y + y));
 				if (tile == null)
 					continue;
-				gc.drawImage(tile.data,
-						tile.dataOffsetX,
-						tile.dataOffsetY,
+				gc.drawImage(tile.getData(context),
+						0,
+						0,
 						context.tileSize,
 						context.tileSize,
 						x * context.tileSize - tileOffsetX,
@@ -267,8 +275,13 @@ public class ImageNodeWrapper extends Wrapper {
 	}
 
 	public static WritableImage snapshot(Canvas canvas) {
+		return snapshot(canvas, 0, 0, (int) canvas.getWidth(), (int) canvas.getHeight());
+	}
+
+	public static WritableImage snapshot(Canvas canvas, int x, int y, int w, int h) {
 		SnapshotParameters parameters = new SnapshotParameters();
 		parameters.setFill(Color.TRANSPARENT);
+		parameters.setViewport(new Rectangle2D(x, y, w, h));
 		return canvas.snapshot(parameters, null);
 	}
 
@@ -330,9 +343,9 @@ public class ImageNodeWrapper extends Wrapper {
 			propertyName = t;
 			t
 					.textProperty()
-					.addListener((observable, oldValue, newValue) -> this.context.change
+					.addListener((observable, oldValue, newValue) -> this.context.history.change(c -> c
 							.projectNode(node)
-							.nameSet(newValue));
+							.nameSet(newValue)));
 			t.setText(node.name());
 		}).build();
 	}

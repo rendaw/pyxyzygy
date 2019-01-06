@@ -14,9 +14,9 @@ public class IDMapState extends StackReader.State {
 	protected final Map data = new HashMap<>();
 	private String key;
 	private final List<Pair<String, Long>> temp = new ArrayList<>();
-	DeserializationContext.Finisher finisher = new DeserializationContext.Finisher() {
+	ModelDeserializationContext.Finisher finisher = new ModelDeserializationContext.Finisher() {
 		@Override
-		public void finish(DeserializationContext context) {
+		public void finish(ModelDeserializationContext context) {
 			data.putAll(temp
 					.stream()
 					.collect(Collectors.toMap(e -> e.first, e -> context.objectMap.get(e.second), null, HashMap::new)));

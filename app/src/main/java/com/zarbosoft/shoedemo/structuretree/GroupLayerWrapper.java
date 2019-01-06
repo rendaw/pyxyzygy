@@ -48,7 +48,7 @@ public class GroupLayerWrapper extends Wrapper {
 				child.remove(context);
 			}
 			if (value != null) {
-				child = Main.createNode(context, GroupLayerWrapper.this, 0, value);
+				child = Window.createNode(context, GroupLayerWrapper.this, 0, value);
 				tree.bind(child.tree);
 				if (canvas != null) {
 					Node childCanvas = child.buildCanvas(context, lastBounds);
@@ -281,7 +281,7 @@ public class GroupLayerWrapper extends Wrapper {
 	@Override
 	public void removeChild(ProjectContext context, int index) {
 		if (parent == null)
-			context.change.project(context.project).topRemove(parentIndex, 1);
+			context.history.change(c -> c.project(context.project).topRemove(parentIndex, 1));
 		else
 			parent.removeChild(context, parentIndex);
 	}

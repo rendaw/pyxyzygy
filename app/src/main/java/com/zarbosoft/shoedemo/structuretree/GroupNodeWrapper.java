@@ -13,9 +13,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.zarbosoft.shoedemo.Main.uniqueName1;
 import static com.zarbosoft.shoedemo.Timeline.moveTo;
 import static com.zarbosoft.shoedemo.Timeline.moveWrapperTo;
+import static com.zarbosoft.shoedemo.Window.uniqueName1;
 
 public class GroupNodeWrapper extends Wrapper {
 	private final Wrapper parent;
@@ -53,7 +53,7 @@ public class GroupNodeWrapper extends Wrapper {
 			List<Node> newCanvas = new ArrayList<>();
 			for (int i = 0; i < value.size(); ++i) {
 				GroupLayer v = value.get(i);
-				Wrapper child = Main.createNode(context, this, at + i, v);
+				Wrapper child = Window.createNode(context, this, at + i, v);
 				newChildren.add(child);
 				child.tree.addListener((observable, oldValue, newValue) -> {
 					tree.get().getChildren().set(child.parentIndex, newValue);
@@ -154,14 +154,18 @@ public class GroupNodeWrapper extends Wrapper {
 		if (specificLayer == null)
 			return;
 		GroupPositionFrame pos = GroupLayerWrapper.findPosition(specificLayer, currentFrame).frame;
-		context.change.groupPositionFrame(pos).offsetSet(end.minus(markStart).plus(markStartOffset).toInt());
+		context.history.change(c -> c
+				.groupPositionFrame(pos)
+				.offsetSet(end.minus(markStart).plus(markStartOffset).toInt()));
 		System.out.format("group offset changed\n");
-		specificLayer.positionFrames().forEach(f -> System.out.format("  pos %s %s,%s\n", f.length(), f.offset().x, f.offset().y));
+		specificLayer
+				.positionFrames()
+				.forEach(f -> System.out.format("  pos %s %s,%s\n", f.length(), f.offset().x, f.offset().y));
 	}
 
 	@Override
 	public boolean addChildren(ProjectContext context, int at, List<ProjectNode> newChildren) {
-		context.change
+		context.history.change(c -> c
 				.groupNode(node)
 				.layersAdd(at == -1 ? node.layersLength() : at, newChildren.stream().map(child -> {
 					GroupLayer layer = GroupLayer.create(context);
@@ -175,7 +179,7 @@ public class GroupNodeWrapper extends Wrapper {
 					timeFrame.initialInnerOffsetSet(context, 0);
 					layer.initialTimeFramesAdd(context, ImmutableList.of(timeFrame));
 					return layer;
-				}).collect(Collectors.toList()));
+				}).collect(Collectors.toList())));
 		return true;
 	}
 
@@ -184,7 +188,7 @@ public class GroupNodeWrapper extends Wrapper {
 		if (parent != null)
 			parent.removeChild(context, parentIndex);
 		else
-			context.change.project(context.project).topRemove(parentIndex, 1);
+			context.history.change(c -> c.project(context.project).topRemove(parentIndex, 1));
 	}
 
 	@Override
@@ -219,7 +223,7 @@ public class GroupNodeWrapper extends Wrapper {
 
 	@Override
 	public void removeChild(ProjectContext context, int index) {
-		context.change.groupNode(node).layersRemove(index, 1);
+		context.history.change(c -> c.groupNode(node).layersRemove(index, 1));
 	}
 
 	@Override
@@ -248,9 +252,9 @@ public class GroupNodeWrapper extends Wrapper {
 			propertyName = t;
 			t
 					.textProperty()
-					.addListener((observable, oldValue, newValue) -> context.change
+					.addListener((observable, oldValue, newValue) -> context.history.change(c -> c
 							.projectNode(node)
-							.nameSet(newValue));
+							.nameSet(newValue)));
 			t.setText(node.name());
 		}).build();
 	}

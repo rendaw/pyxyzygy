@@ -1,57 +1,200 @@
 package com.zarbosoft.shoedemo;
 
+import com.google.common.collect.ImmutableList;
 import com.zarbosoft.luxem.read.StackReader;
 import com.zarbosoft.luxem.write.RawWriter;
 import com.zarbosoft.rendaw.common.Assertion;
-import com.zarbosoft.shoedemo.deserialize.DeserializationContext;
+import com.zarbosoft.rendaw.common.DeadCode;
+import com.zarbosoft.shoedemo.deserialize.ModelDeserializationContext;
 import com.zarbosoft.shoedemo.model.*;
 import javafx.beans.property.SimpleObjectProperty;
 
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import static com.zarbosoft.rendaw.common.Common.atomicWrite;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 
-public class ProjectContext extends ProjectContextBase {
-	public Path path;
+public class ProjectContext extends ProjectContextBase implements Dirtyable {
 	public Project project;
 	public int tileSize = 256;
-	private List<ChangeStep> undoHistory = new ArrayList<>();
-	private List<ChangeStep> redoHistory = new ArrayList<>();
-	public ChangeStepBuilder change = new ChangeStepBuilder(this);
 
+	public History history;
 	public List<FrameMapEntry> timeMap;
 	public SimpleObjectProperty<Wrapper> selectedForEdit = new SimpleObjectProperty<>();
 	public SimpleObjectProperty<Wrapper> selectedForView = new SimpleObjectProperty<>();
 
+	public void debugCheckRefCounts() {
+		Map<Long, Long> counts = new HashMap<>();
+		Consumer<ProjectObjectInterface> incCount = o1 -> counts.compute(o1.id(), (i, count) -> count == null ? 1 : count + 1);
+		Consumer<ProjectObjectInterface> count = new Consumer<ProjectObjectInterface>() {
+			@Override
+			public void accept(ProjectObjectInterface o) {
+				if (false) {
+					throw new Assertion();
+				} else if (o instanceof Project) {
+					((Project) o).top().forEach(x -> {
+						incCount.accept(x);
+					});
+				} else if (o instanceof Camera) {
+					if (((Camera) o).inner() != null) {
+						incCount.accept(((Camera) o).inner());
+					}
+				} else if (o instanceof GroupLayer) {
+					((GroupLayer) o).timeFrames().forEach(frame -> {
+						incCount.accept(frame);
+					});
+					((GroupLayer) o).positionFrames().forEach(frame -> {
+						incCount.accept(frame);
+					});
+				} else if (o instanceof GroupNode) {
+					((GroupNode) o).layers().forEach(layer -> {
+						incCount.accept(layer);
+					});
+				} else if (o instanceof GroupPositionFrame) {
+				} else if (o instanceof GroupTimeFrame) {
+				} else if (o instanceof ImageFrame) {
+					((ImageFrame) o).tiles().values().forEach(tile -> {
+						incCount.accept(tile);
+					});
+				} else if (o instanceof ImageNode) {
+					((ImageNode) o).frames().forEach(frame -> {
+						incCount.accept(frame);
+					});
+				} else if (o instanceof TileBase) {
+				} else {
+					throw new Assertion(String.format("Unhandled type %s\n", o));
+				}
+			}
+		};
+		objectMap.values().forEach(o -> {
+			count.accept((ProjectObject) o);
+		});
+		history.change.changeStep.changes.forEach(change -> change.debugRefCounts(incCount));
+		history.undoHistory.forEach(id ->
+			history.get(id).changes.forEach(change -> change.debugRefCounts(incCount))
+		);
+		history.redoHistory.forEach(id ->
+				history.get(id).changes.forEach(change -> change.debugRefCounts(incCount))
+		);
+		objectMap.values().forEach(o -> {
+			long got = ((ProjectObject) o).refCount();
+			long expected = counts.getOrDefault(o.id(), 0L);
+			if (got != expected) {
+				throw new Assertion(String.format("Ref count for %s id %s : %s should be %s\n",
+						o,
+						o.id(),
+						got,
+						expected
+				));
+			}
+		});
+	}
+
+	// Flushing
+	/**
+	 * This controls writing in UI thread vs reading from flush+render threads
+	 */
+	public AtomicBoolean alive = new AtomicBoolean(true);
+	public ReadWriteLock lock = new ReentrantReadWriteLock();
+	private Map<Dirtyable, Object> dirty = new ConcurrentHashMap<>();
+	private Semaphore flushSemaphore = new Semaphore(0);
+
+	{
+		Runtime.getRuntime().addShutdownHook(new Thread(this::flushAll));
+		new Thread() {
+			@Override
+			public void run() {
+				while (alive.get()) {
+					int got = 0;
+					while (flushSemaphore.tryAcquire())
+						got += 1;
+					if (got == 0)
+						uncheck(() -> flushSemaphore.acquire());
+					flushAll();
+				}
+				System.out.format("Flush thread dying\n");
+			}
+		}.start();
+	}
+
+	public ProjectContext(Path path) {
+		super(path);
+	}
+
+	private void flushAll() {
+		Lock readLock = lock.readLock();
+		Iterator<Map.Entry<Dirtyable, Object>> i = dirty.entrySet().iterator();
+		while (i.hasNext()) {
+			Dirtyable dirty = i.next().getKey();
+			i.remove();
+			readLock.lock();
+			try {
+				System.out.format("flushing %s\n", dirty);
+				dirty.dirtyFlush(ProjectContext.this);
+			} finally {
+				readLock.unlock();
+			}
+		}
+	}
+
+	//
+
+	public void setDirty(Dirtyable dirty) {
+		this.dirty.put(dirty, Object.class);
+		flushSemaphore.release();
+	}
+
 	public static ProjectContext create(Path path) {
-		ProjectContext out = new ProjectContext();
-		out.path = path;
+		ProjectContext out = new ProjectContext(path);
 		out.project = Project.create(out);
+		out.history = new History(out, ImmutableList.of(), ImmutableList.of());
 		return out;
 	}
 
-	public void serialize(RawWriter writer) {
-		writer.recordBegin();
-		writer.key("tileSize").primitive(Integer.toString(tileSize));
-		writer.key("nextId").primitive(Long.toString(nextId));
-		writer.key("objects").arrayBegin();
-		project.serialize(writer);
-		for (com.zarbosoft.internal.shoedemo_generate.premodel.ProjectObject object : objectMap.values())
-			((ProjectObjectInterface) object).serialize(writer);
-		writer.arrayEnd();
-		writer.recordEnd();
+	private static Path path(Path base) {
+		return base.resolve("project.luxem");
+	}
+
+	private Path path() {
+		return path(path);
+	}
+
+	@Override
+	public void dirtyFlush(ProjectContextBase context) {
+		atomicWrite(path(), dest -> {
+			RawWriter writer = new RawWriter(dest, (byte) ' ', 4);
+			writer.recordBegin();
+			writer.key("tileSize").primitive(Integer.toString(tileSize));
+			writer.key("nextId").primitive(Long.toString(nextId));
+			writer.key("objects").arrayBegin();
+			project.serialize(writer);
+			for (ProjectObjectInterface object : objectMap.values())
+				object.serialize(writer);
+			writer.arrayEnd();
+			history.serialize(writer);
+			writer.recordEnd();
+		});
 	}
 
 	public static ProjectContext deserialize(Path path) {
 		return uncheck(() -> {
-			DeserializationContext context = new DeserializationContext();
+			ModelDeserializationContext context = new ModelDeserializationContext();
 			ProjectContext out;
-			try (InputStream source = Files.newInputStream(path.resolve("project.luxem"))) {
+			try (InputStream source = Files.newInputStream(path(path))) {
 				out = (ProjectContext) new StackReader().read(source, new Deserializer(context, path));
 			}
 			context.finishers.forEach(finisher -> finisher.finish(context));
@@ -61,57 +204,18 @@ public class ProjectContext extends ProjectContextBase {
 					.filter(o -> o instanceof Project)
 					.findFirst()
 					.ifPresent(p -> out.project = (Project) p);
-			out.path = path;
+			out.history = new History(out, context.undoHistory, context.redoHistory);
 			return out;
 		});
 	}
 
-	public void finishChange() {
-		if (change.changeStep.changes.isEmpty())
-			return;
-		undoHistory.add(change.changeStep);
-		for (ChangeStep c : redoHistory)
-			c.remove(this);
-		redoHistory.clear();
-		change = new ChangeStepBuilder(this);
-		System.out.format("change done; undo %s, redo %s\n", undoHistory.size(), redoHistory.size());
-	}
-
-	public void clearHistory() {
-		finishChange();
-		for (ChangeStep c : undoHistory)
-			c.remove(this);
-		undoHistory.clear();
-		for (ChangeStep c : redoHistory)
-			c.remove(this);
-		redoHistory.clear();
-	}
-
-	public void undo() {
-		if (undoHistory.isEmpty())
-			return;
-		ChangeStep selected = undoHistory.remove(undoHistory.size() - 1);
-		redoHistory.add(selected.apply(this, nextId++));
-		selected.remove(this);
-		System.out.format("undo done; undo %s, redo %s\n", undoHistory.size(), redoHistory.size());
-	}
-
-	public void redo() {
-		if (redoHistory.isEmpty())
-			return;
-		ChangeStep selected = redoHistory.remove(redoHistory.size() - 1);
-		undoHistory.add(selected.apply(this, nextId++));
-		System.out.format("redo done; undo %s, redo %s\n", undoHistory.size(), redoHistory.size());
-	}
-
 	public static class Deserializer extends StackReader.RecordState {
-		private final DeserializationContext context;
+		private final ModelDeserializationContext context;
 		private final ProjectContext out;
 
-		Deserializer(DeserializationContext context, Path path) {
+		Deserializer(ModelDeserializationContext context, Path path) {
 			this.context = context;
-			out = new ProjectContext();
-			out.path = path;
+			out = new ProjectContext(path);
 		}
 
 		@Override
@@ -121,23 +225,41 @@ public class ProjectContext extends ProjectContextBase {
 			} else if ("tileSize".equals(key)) {
 				out.tileSize = Integer.parseInt((String) value);
 			} else if ("objects".equals(key)) {
-				out.objectMap = ((List<ProjectObjectInterface>) value)
-						.stream()
-						.collect(Collectors.toMap(
-								v -> v.id(),
-								v -> (com.zarbosoft.internal.shoedemo_generate.premodel.ProjectObject) v
-						));
+				out.objectMap =
+						((List<ProjectObjectInterface>) value).stream().collect(Collectors.toMap(v -> v.id(), v -> v));
+			} else if ("undo".equals(key)) {
+				context.undoHistory = (List<Long>) value;
+			} else if ("redo".equals(key)) {
+				context.redoHistory = (List<Long>) value;
 			} else
 				throw new Assertion();
 		}
 
 		@Override
 		public StackReader.State array() {
-			if ("objects".equals(key)) {
+			if (false) {
+				throw new DeadCode();
+			} else if ("objects".equals(key)) {
 				return new StackReader.ArrayState() {
 					@Override
 					public StackReader.State record() {
+						if ("Tile".equals(type))
+							return new Tile.Deserializer(context);
 						return DeserializeHelper.deserializeModel(context, type);
+					}
+				};
+			} else if ("undo".equals(key)) {
+				return new StackReader.ArrayState() {
+					@Override
+					public void value(Object value) {
+						super.value(Long.parseLong((String) value));
+					}
+				};
+			} else if ("redo".equals(key)) {
+				return new StackReader.ArrayState() {
+					@Override
+					public void value(Object value) {
+						super.value(Long.parseLong((String) value));
 					}
 				};
 			} else

@@ -48,7 +48,7 @@ public class WidgetFormBuilder {
 		return this;
 	}
 
-	public WidgetFormBuilder chooseDirector(String name, Consumer<SimpleStringProperty> cb) {
+	public WidgetFormBuilder chooseDirectory(String name, Consumer<SimpleStringProperty> cb) {
 		SimpleStringProperty path = new SimpleStringProperty();
 		Button button = new Button("Choose...");
 		button.setOnAction(e -> {

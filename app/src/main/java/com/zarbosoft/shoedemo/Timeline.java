@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
 
 import static com.zarbosoft.rendaw.common.Common.last;
 import static com.zarbosoft.rendaw.common.Common.sublist;
-import static com.zarbosoft.shoedemo.Main.icon;
+import static com.zarbosoft.shoedemo.Window.icon;
 import static javafx.scene.paint.Color.*;
 
 public class Timeline {
@@ -157,7 +157,7 @@ public class Timeline {
 		};
 		scrub.addEventFilter(MouseEvent.MOUSE_CLICKED, mouseEventEventHandler);
 		scrub.addEventFilter(MouseEvent.MOUSE_DRAGGED, mouseEventEventHandler);
-		add = Main.button("plus.svg", "Add");
+		add = Window.button("plus.svg", "Add");
 		add.setOnAction(e -> {
 			if (context.selectedForView.get() == null)
 				return;
@@ -170,7 +170,7 @@ public class Timeline {
 							c.getTreeItem().getValue().createFrame(context.selectedForView.get().frame.get()))
 					.findFirst();
 		});
-		duplicate = Main.button("content-copy.svg", "Duplicate");
+		duplicate = Window.button("content-copy.svg", "Duplicate");
 		duplicate.setOnAction(e -> {
 			if (context.selectedForView.get() == null)
 				return;
@@ -183,26 +183,26 @@ public class Timeline {
 							c.getTreeItem().getValue().duplciateFrame(context.selectedForView.get().frame.get()))
 					.findFirst();
 		});
-		remove = Main.button("minus.svg", "Remove");
+		remove = Window.button("minus.svg", "Remove");
 		remove.setOnAction(e -> {
 			if (selectedFrameWidget == null)
 				return;
 			selectedFrameWidget.frame.remove();
 			selectedFrameWidget = null;
 		});
-		clear = Main.button("eraser-variant.svg", "Clear");
+		clear = Window.button("eraser-variant.svg", "Clear");
 		clear.setOnAction(e -> {
 			if (selectedFrameWidget == null)
 				return;
 			selectedFrameWidget.frame.clear();
 		});
-		left = Main.button("arrow-left.svg", "Left");
+		left = Window.button("arrow-left.svg", "Left");
 		left.setOnAction(e -> {
 			if (selectedFrameWidget == null)
 				return;
 			selectedFrameWidget.frame.moveLeft();
 		});
-		right = Main.button("arrow-right.svg", "Right");
+		right = Window.button("arrow-right.svg", "Right");
 		right.setOnAction(e -> {
 			if (selectedFrameWidget == null)
 				return;
@@ -342,7 +342,7 @@ public class Timeline {
 				this.row.frames.get(index - 1).frame.setLength(length);
 			});
 			addEventHandler(MouseEvent.MOUSE_RELEASED, e -> {
-				context.finishChange();
+				context.history.finishChange();
 			});
 			setWidth(zoom);
 			setHeight(zoom);
@@ -605,21 +605,23 @@ public class Timeline {
 
 										@Override
 										public void setLength(int length) {
-											context.change.groupTimeFrame(f).lengthSet(length);
+											context.history.change(c -> c.groupTimeFrame(f).lengthSet(length));
 										}
 
 										@Override
 										public void remove() {
 											if (i == 0)
 												return;
-											context.change.groupLayer(layer).timeFramesRemove(i, 1);
+											context.history.change(c -> c.groupLayer(layer).timeFramesRemove(i, 1));
 											if (i == layer.timeFramesLength())
-												context.change.groupTimeFrame(last(layer.timeFrames())).lengthSet(-1);
+												context.history.change(c -> c
+														.groupTimeFrame(last(layer.timeFrames()))
+														.lengthSet(-1));
 										}
 
 										@Override
 										public void clear() {
-											context.change.groupTimeFrame(f).innerOffsetSet(0);
+											context.history.change(c -> c.groupTimeFrame(f).innerOffsetSet(0));
 										}
 
 										@Override
@@ -627,12 +629,18 @@ public class Timeline {
 											if (i == 0)
 												return;
 											GroupTimeFrame frameBefore = layer.timeFramesGet(i - 1);
-											context.change.groupLayer(layer).timeFramesMoveTo(i, 1, i - 1);
+											context.history.change(c -> c
+													.groupLayer(layer)
+													.timeFramesMoveTo(i, 1, i - 1));
 											final int lengthThis = f.length();
 											if (lengthThis == -1) {
 												final int lengthBefore = frameBefore.length();
-												context.change.groupTimeFrame(f).lengthSet(lengthBefore);
-												context.change.groupTimeFrame(frameBefore).lengthSet(lengthThis);
+												context.history.change(c -> c
+														.groupTimeFrame(f)
+														.lengthSet(lengthBefore));
+												context.history.change(c -> c
+														.groupTimeFrame(frameBefore)
+														.lengthSet(lengthThis));
 											}
 										}
 
@@ -641,12 +649,16 @@ public class Timeline {
 											if (i == layer.timeFramesLength() - 1)
 												return;
 											GroupTimeFrame frameAfter = layer.timeFramesGet(i + 1);
-											context.change.groupLayer(layer).timeFramesMoveTo(i, 1, i + 1);
+											context.history.change(c -> c
+													.groupLayer(layer)
+													.timeFramesMoveTo(i, 1, i + 1));
 											final int lengthAfter = frameAfter.length();
 											if (lengthAfter == -1) {
 												final int lengthThis = f.length();
-												context.change.groupTimeFrame(f).lengthSet(lengthAfter);
-												context.change.groupTimeFrame(frameAfter).lengthSet(lengthThis);
+												context.history.change(c -> c.groupTimeFrame(f).lengthSet(lengthAfter));
+												context.history.change(c -> c
+														.groupTimeFrame(frameAfter)
+														.lengthSet(lengthThis));
 											}
 										}
 									});
@@ -679,14 +691,16 @@ public class Timeline {
 								GroupTimeFrame newFrame = cb.apply(previous.frame);
 								int offset = inner - previous.at;
 								if (previous.frame.length() == -1) {
-									context.change.groupTimeFrame(previous.frame).lengthSet(offset);
+									context.history.change(c -> c.groupTimeFrame(previous.frame).lengthSet(offset));
 									newFrame.initialLengthSet(context, -1);
 								} else {
 									newFrame.initialLengthSet(context, previous.frame.length() - offset);
-									context.change.groupTimeFrame(previous.frame).lengthSet(offset);
+									context.history.change(c -> c.groupTimeFrame(previous.frame).lengthSet(offset));
 								}
 								newFrame.initialInnerOffsetSet(context, previous.frame.innerOffset() + offset);
-								context.change.groupLayer(layer).timeFramesAdd(previous.frameIndex + 1, newFrame);
+								context.history.change(c -> c
+										.groupLayer(layer)
+										.timeFramesAdd(previous.frameIndex + 1, newFrame));
 								return true;
 							}
 
@@ -737,23 +751,25 @@ public class Timeline {
 
 										@Override
 										public void setLength(int length) {
-											context.change.groupPositionFrame(f).lengthSet(length);
+											context.history.change(c -> c.groupPositionFrame(f).lengthSet(length));
 										}
 
 										@Override
 										public void remove() {
 											if (i == 0)
 												return;
-											context.change.groupLayer(layer).positionFramesRemove(i, 1);
+											context.history.change(c -> c.groupLayer(layer).positionFramesRemove(i, 1));
 											if (i == layer.positionFramesLength())
-												context.change
+												context.history.change(c -> c
 														.groupPositionFrame(last(layer.positionFrames()))
-														.lengthSet(-1);
+														.lengthSet(-1));
 										}
 
 										@Override
 										public void clear() {
-											context.change.groupPositionFrame(f).offsetSet(new Vector(0, 0));
+											context.history.change(c -> c
+													.groupPositionFrame(f)
+													.offsetSet(new Vector(0, 0)));
 										}
 
 										@Override
@@ -761,12 +777,18 @@ public class Timeline {
 											if (i == 0)
 												return;
 											GroupPositionFrame frameBefore = layer.positionFramesGet(i - 1);
-											context.change.groupLayer(layer).positionFramesMoveTo(i, 1, i - 1);
+											context.history.change(c -> c
+													.groupLayer(layer)
+													.positionFramesMoveTo(i, 1, i - 1));
 											final int lengthThis = f.length();
 											if (lengthThis == -1) {
 												final int lengthBefore = frameBefore.length();
-												context.change.groupPositionFrame(f).lengthSet(lengthBefore);
-												context.change.groupPositionFrame(frameBefore).lengthSet(lengthThis);
+												context.history.change(c -> c
+														.groupPositionFrame(f)
+														.lengthSet(lengthBefore));
+												context.history.change(c -> c
+														.groupPositionFrame(frameBefore)
+														.lengthSet(lengthThis));
 											}
 										}
 
@@ -775,12 +797,18 @@ public class Timeline {
 											if (i == layer.positionFramesLength() - 1)
 												return;
 											GroupPositionFrame frameAfter = layer.positionFramesGet(i + 1);
-											context.change.groupLayer(layer).positionFramesMoveTo(i, 1, i + 1);
+											context.history.change(c -> c
+													.groupLayer(layer)
+													.positionFramesMoveTo(i, 1, i + 1));
 											final int lengthAfter = frameAfter.length();
 											if (lengthAfter == -1) {
 												final int lengthThis = f.length();
-												context.change.groupPositionFrame(f).lengthSet(lengthAfter);
-												context.change.groupPositionFrame(frameAfter).lengthSet(lengthThis);
+												context.history.change(c -> c
+														.groupPositionFrame(f)
+														.lengthSet(lengthAfter));
+												context.history.change(c -> c
+														.groupPositionFrame(frameAfter)
+														.lengthSet(lengthThis));
 											}
 										}
 									});
@@ -827,9 +855,11 @@ public class Timeline {
 								} else {
 									newFrame.initialLengthSet(context, previous.frame.length() - offset);
 								}
-								context.change.groupPositionFrame(previous.frame).lengthSet(offset);
+								context.history.change(c -> c.groupPositionFrame(previous.frame).lengthSet(offset));
 								newFrame.initialOffsetSet(context, previous.frame.offset());
-								context.change.groupLayer(layer).positionFramesAdd(previous.frameIndex + 1, newFrame);
+								context.history.change(c -> c
+										.groupLayer(layer)
+										.positionFramesAdd(previous.frameIndex + 1, newFrame));
 								return true;
 							}
 
@@ -930,21 +960,21 @@ public class Timeline {
 
 							@Override
 							public void setLength(int length) {
-								context.change.imageFrame(f).lengthSet(length);
+								context.history.change(c -> c.imageFrame(f).lengthSet(length));
 							}
 
 							@Override
 							public void remove() {
 								if (i == 0)
 									return;
-								context.change.imageNode(editNode).framesRemove(i, 1);
+								context.history.change(c -> c.imageNode(editNode).framesRemove(i, 1));
 								if (i == editNode.framesLength())
-									context.change.imageFrame(last(editNode.frames())).lengthSet(-1);
+									context.history.change(c -> c.imageFrame(last(editNode.frames())).lengthSet(-1));
 							}
 
 							@Override
 							public void clear() {
-								context.change.imageFrame(f).tilesClear();
+								context.history.change(c -> c.imageFrame(f).tilesClear());
 							}
 
 							@Override
@@ -952,12 +982,12 @@ public class Timeline {
 								if (i == 0)
 									return;
 								ImageFrame frameBefore = editNode.framesGet(i - 1);
-								context.change.imageNode(editNode).framesMoveTo(i, 1, i - 1);
+								context.history.change(c -> c.imageNode(editNode).framesMoveTo(i, 1, i - 1));
 								final int lengthThis = f.length();
 								if (lengthThis == -1) {
 									final int lengthBefore = frameBefore.length();
-									context.change.imageFrame(f).lengthSet(lengthBefore);
-									context.change.imageFrame(frameBefore).lengthSet(lengthThis);
+									context.history.change(c -> c.imageFrame(f).lengthSet(lengthBefore));
+									context.history.change(c -> c.imageFrame(frameBefore).lengthSet(lengthThis));
 								}
 							}
 
@@ -966,12 +996,12 @@ public class Timeline {
 								if (i == editNode.framesLength() - 1)
 									return;
 								ImageFrame frameAfter = editNode.framesGet(i + 1);
-								context.change.imageNode(editNode).framesMoveTo(i, 1, i + 1);
+								context.history.change(c -> c.imageNode(editNode).framesMoveTo(i, 1, i + 1));
 								final int lengthAfter = frameAfter.length();
 								if (lengthAfter == -1) {
 									final int lengthThis = f.length();
-									context.change.imageFrame(f).lengthSet(lengthAfter);
-									context.change.imageFrame(frameAfter).lengthSet(lengthThis);
+									context.history.change(c -> c.imageFrame(f).lengthSet(lengthAfter));
+									context.history.change(c -> c.imageFrame(frameAfter).lengthSet(lengthThis));
 								}
 							}
 						});
@@ -1007,13 +1037,13 @@ public class Timeline {
 					ImageFrame newFrame = cb.apply(previous.frame);
 					int offset = inner - previous.at;
 					if (previous.frame.length() == -1) {
-						context.change.imageFrame(previous.frame).lengthSet(offset);
+						context.history.change(c -> c.imageFrame(previous.frame).lengthSet(offset));
 						newFrame.initialLengthSet(context, -1);
 					} else {
 						newFrame.initialLengthSet(context, previous.frame.length() - offset);
-						context.change.imageFrame(previous.frame).lengthSet(offset);
+						context.history.change(c -> c.imageFrame(previous.frame).lengthSet(offset));
 					}
-					context.change.imageNode(editNode).framesAdd(previous.frameIndex + 1, newFrame);
+					context.history.change(c -> c.imageNode(editNode).framesAdd(previous.frameIndex + 1, newFrame));
 
 					return true;
 				}
@@ -1095,7 +1125,9 @@ public class Timeline {
 		Wrapper root = context.selectedForView.get();
 		TreeItem<RowAdapter> nowSelected = tree.getSelectionModel().getSelectedItem();
 		boolean noSelection = root == null ||
-				nowSelected == null || nowSelected.getValue() == null || !nowSelected.getValue().hasFrames();
+				nowSelected == null ||
+				nowSelected.getValue() == null ||
+				!nowSelected.getValue().hasFrames();
 		add.setDisable(noSelection);
 		duplicate.setDisable(noSelection);
 		left.setDisable(noSelection);

@@ -25,7 +25,7 @@
                 <version>8.8.3</version>
                 <configuration>
                     <vendor>Zarbosoft</vendor>
-                    <mainClass>com.zarbosoft.shoedemo.Main</mainClass>
+                    <mainClass>com.zarbosoft.shoedemo.Window</mainClass>
                 </configuration>
                 <executions>
                     <execution>
@@ -91,7 +91,7 @@
         <dependency>
             <groupId>com.zarbosoft</groupId>
             <artifactId>appdirsj</artifactId>
-            <version>0.0.1</version>
+            <version>0.0.2</version>
         </dependency>
         <dependency>
             <groupId>com.zarbosoft</groupId>

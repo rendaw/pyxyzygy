@@ -2,7 +2,6 @@ package com.zarbosoft.shoedemo;
 
 import com.google.common.collect.ImmutableList;
 import com.zarbosoft.rendaw.common.ChainComparator;
-import com.zarbosoft.rendaw.common.Pair;
 import com.zarbosoft.shoedemo.model.*;
 import com.zarbosoft.shoedemo.model.Vector;
 import javafx.beans.binding.Bindings;
@@ -24,8 +23,8 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static com.zarbosoft.rendaw.common.Common.last;
-import static com.zarbosoft.shoedemo.Main.icon;
-import static com.zarbosoft.shoedemo.Main.uniqueName;
+import static com.zarbosoft.shoedemo.Window.icon;
+import static com.zarbosoft.shoedemo.Window.uniqueName;
 import static com.zarbosoft.shoedemo.Timeline.moveTo;
 import static com.zarbosoft.shoedemo.Wrapper.TakesChildren.NONE;
 
@@ -234,7 +233,7 @@ public class Structure {
 			camera.initialFrameRateSet(context, 120);
 			camera.initialHeightSet(context, 240);
 			camera.initialWidthSet(context, 320);
-			context.change.project(context.project).topAdd(camera);
+			context.history.change(c -> c.project(context.project).topAdd(camera));
 		});
 		MenuItem addGroup = new MenuItem("Add Group");
 		addGroup.setOnAction(e -> {
@@ -252,14 +251,14 @@ public class Structure {
 			image.initialFramesAdd(context, ImmutableList.of(frame));
 			addNew(image);
 		});
-		MenuButton addButton = Main.menuButton("plus.svg");
+		MenuButton addButton = Window.menuButton("plus.svg");
 		addButton.getItems().addAll(addCamera, addGroup, addImage);
-		Button removeButton = Main.button("minus.svg", "Remove");
+		Button removeButton = Window.button("minus.svg", "Remove");
 		removeButton.disableProperty().bind(Bindings.isEmpty(treeView.getSelectionModel().getSelectedIndices()));
 		removeButton.setOnAction(e -> {
 			delete(context);
 		});
-		Button moveUpButton = Main.button("arrow-up.svg", "Move Up");
+		Button moveUpButton = Window.button("arrow-up.svg", "Move Up");
 		moveUpButton.disableProperty().bind(Bindings.isEmpty(treeView.getSelectionModel().getSelectedIndices()));
 		moveUpButton.setOnAction(e -> {
 			List<TreeItem<Wrapper>> selected = treeView.getSelectionModel().getSelectedItems();
@@ -281,11 +280,12 @@ public class Structure {
 			if (firstParent.getValue() != null) {
 				firstParent.getValue().addChildren(context, dest, add);
 			} else {
-				context.change.project(context.project).topAdd(dest, add);
+				final int dest1 = dest;
+				context.history.change(c -> c.project(context.project).topAdd(dest1, add));
 			}
-			context.finishChange();
+			context.history.finishChange();
 		});
-		Button moveDownButton = Main.button("arrow-down.svg", "Move Down");
+		Button moveDownButton = Window.button("arrow-down.svg", "Move Down");
 		moveDownButton.disableProperty().bind(Bindings.isEmpty(treeView.getSelectionModel().getSelectedIndices()));
 		moveDownButton.setOnAction(e -> {
 			List<TreeItem<Wrapper>> selected = treeView.getSelectionModel().getSelectedItems();
@@ -307,11 +307,12 @@ public class Structure {
 			if (firstParent.getValue() != null) {
 				firstParent.getValue().addChildren(context, dest, add);
 			} else {
-				context.change.project(context.project).topAdd(dest, add);
+				final int dest1 = dest;
+				context.history.change(c -> c.project(context.project).topAdd(dest1, add));
 			}
-			context.finishChange();
+			context.history.finishChange();
 		});
-		Button duplicateButton = Main.button("content-copy.svg", "Duplicate");
+		Button duplicateButton = Window.button("content-copy.svg", "Duplicate");
 		duplicateButton.disableProperty().bind(Bindings.isEmpty(treeView.getSelectionModel().getSelectedIndices()));
 		duplicateButton.setOnAction(e -> {
 			duplicate();
@@ -328,7 +329,7 @@ public class Structure {
 		linkAfterButton.setOnAction(e -> {
 			placeAfter(context);
 		});
-		MenuButton linkButton = Main.menuButton("content-paste.svg");
+		MenuButton linkButton = Window.menuButton("content-paste.svg");
 		linkButton.getItems().addAll(linkBeforeButton, linkInButton, linkAfterButton);
 		toolbar = new ToolBar(
 				addButton,
@@ -349,7 +350,7 @@ public class Structure {
 			List<TreeItem<Wrapper>> newItems = new ArrayList<>();
 			for (int i = 0; i < value.size(); ++i) {
 				ProjectNode v = value.get(i);
-				Wrapper child = Main.createNode(context, null, at + i, v);
+				Wrapper child = Window.createNode(context, null, at + i, v);
 				child.tree.addListener((observable, oldValue, newValue) -> {
 					treeView.getRoot().getChildren().set(child.parentIndex, newValue);
 				});
@@ -394,7 +395,7 @@ public class Structure {
 		if (edit == null)
 			return;
 		edit.delete(context);
-		context.finishChange();
+		context.history.finishChange();
 	}
 
 	private void placeAfter(ProjectContext context) {
@@ -494,8 +495,8 @@ public class Structure {
 			index = placeAt.parentIndex + 1;
 			placeAt = placeAt.getParent();
 		}
-		context.change.project(context.project).topAdd(node);
-		context.finishChange();
+		context.history.change(c -> c.project(context.project).topAdd(node));
+		context.history.finishChange();
 	}
 
 	/**
@@ -534,16 +535,16 @@ public class Structure {
 			}
 		} else {
 			if (reference != null) {
-				context.change.project(context.project).topAdd(reference.parentIndex + (before ? -1 : 1), nodes);
+				context.history.change(c -> c.project(context.project).topAdd(reference.parentIndex + (before ? -1 : 1), nodes));
 			} else {
 				if (before)
-					context.change.project(context.project).topAdd(0, nodes);
+					context.history.change(c -> c.project(context.project).topAdd(0, nodes));
 				else
-					context.change.project(context.project).topAdd(context.project.topLength(), nodes);
+					context.history.change(c -> c.project(context.project).topAdd(context.project.topLength(), nodes));
 			}
 		}
 		taggedLifted.forEach(c -> c.delete(context));
-		context.finishChange();
+		context.history.finishChange();
 		clearTagCopied();
 		clearTagLifted();
 	}

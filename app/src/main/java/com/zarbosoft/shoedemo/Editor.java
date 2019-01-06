@@ -95,7 +95,7 @@ public class Editor {
 		});
 		canvas.addEventFilter(MouseEvent.MOUSE_RELEASED, e -> {
 			if (e.getButton() == MouseButton.PRIMARY)
-				this.context.finishChange();
+				this.context.history.finishChange();
 		});
 		canvas.addEventFilter(MouseEvent.MOUSE_DRAGGED, e -> {
 			DoubleVector end = normalizeEventCoordinates(e);
