@@ -122,8 +122,9 @@ public class Tile extends TileBase implements Dirtyable {
 
 		@Override
 		public Object get() {
+			out.data = new WeakReference<>(null);
 			context.objectMap.put(out.id(), out);
-			return super.get();
+			return out;
 		}
 	}
 }

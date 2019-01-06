@@ -64,6 +64,7 @@ public class Window {
 	public void start(ProjectContext context, Stage primaryStage) {
 		primaryStage.setOnCloseRequest(e -> {
 			context.alive.set(false);
+			context.flushSemaphore.release();
 		});
 
 		Structure structure = new Structure(context);

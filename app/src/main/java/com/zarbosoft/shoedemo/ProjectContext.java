@@ -39,57 +39,48 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 
 	public void debugCheckRefCounts() {
 		Map<Long, Long> counts = new HashMap<>();
-		Consumer<ProjectObjectInterface> incCount = o1 -> counts.compute(o1.id(), (i, count) -> count == null ? 1 : count + 1);
-		Consumer<ProjectObjectInterface> count = new Consumer<ProjectObjectInterface>() {
-			@Override
-			public void accept(ProjectObjectInterface o) {
-				if (false) {
-					throw new Assertion();
-				} else if (o instanceof Project) {
-					((Project) o).top().forEach(x -> {
-						incCount.accept(x);
-					});
-				} else if (o instanceof Camera) {
-					if (((Camera) o).inner() != null) {
-						incCount.accept(((Camera) o).inner());
-					}
-				} else if (o instanceof GroupLayer) {
-					((GroupLayer) o).timeFrames().forEach(frame -> {
-						incCount.accept(frame);
-					});
-					((GroupLayer) o).positionFrames().forEach(frame -> {
-						incCount.accept(frame);
-					});
-				} else if (o instanceof GroupNode) {
-					((GroupNode) o).layers().forEach(layer -> {
-						incCount.accept(layer);
-					});
-				} else if (o instanceof GroupPositionFrame) {
-				} else if (o instanceof GroupTimeFrame) {
-				} else if (o instanceof ImageFrame) {
-					((ImageFrame) o).tiles().values().forEach(tile -> {
-						incCount.accept(tile);
-					});
-				} else if (o instanceof ImageNode) {
-					((ImageNode) o).frames().forEach(frame -> {
-						incCount.accept(frame);
-					});
-				} else if (o instanceof TileBase) {
-				} else {
-					throw new Assertion(String.format("Unhandled type %s\n", o));
-				}
-			}
-		};
+		Consumer<ProjectObjectInterface> incCount =
+				o1 -> counts.compute(o1.id(), (i, count) -> count == null ? 1 : count + 1);
 		objectMap.values().forEach(o -> {
-			count.accept((ProjectObject) o);
+			if (false) {
+				throw new Assertion();
+			} else if (o instanceof Project) {
+				((Project) o).top().forEach(x -> {
+					incCount.accept(x);
+				});
+			} else if (o instanceof Camera) {
+				if (((Camera) o).inner() != null) {
+					incCount.accept(((Camera) o).inner());
+				}
+			} else if (o instanceof GroupLayer) {
+				((GroupLayer) o).timeFrames().forEach(frame -> {
+					incCount.accept(frame);
+				});
+				((GroupLayer) o).positionFrames().forEach(frame -> {
+					incCount.accept(frame);
+				});
+			} else if (o instanceof GroupNode) {
+				((GroupNode) o).layers().forEach(layer -> {
+					incCount.accept(layer);
+				});
+			} else if (o instanceof GroupPositionFrame) {
+			} else if (o instanceof GroupTimeFrame) {
+			} else if (o instanceof ImageFrame) {
+				((ImageFrame) o).tiles().values().forEach(tile -> {
+					incCount.accept(tile);
+				});
+			} else if (o instanceof ImageNode) {
+				((ImageNode) o).frames().forEach(frame -> {
+					incCount.accept(frame);
+				});
+			} else if (o instanceof TileBase) {
+			} else {
+				throw new Assertion(String.format("Unhandled type %s\n", o));
+			}
 		});
 		history.change.changeStep.changes.forEach(change -> change.debugRefCounts(incCount));
-		history.undoHistory.forEach(id ->
-			history.get(id).changes.forEach(change -> change.debugRefCounts(incCount))
-		);
-		history.redoHistory.forEach(id ->
-				history.get(id).changes.forEach(change -> change.debugRefCounts(incCount))
-		);
+		history.undoHistory.forEach(id -> history.get(id).changes.forEach(change -> change.debugRefCounts(incCount)));
+		history.redoHistory.forEach(id -> history.get(id).changes.forEach(change -> change.debugRefCounts(incCount)));
 		objectMap.values().forEach(o -> {
 			long got = ((ProjectObject) o).refCount();
 			long expected = counts.getOrDefault(o.id(), 0L);
@@ -111,7 +102,7 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 	public AtomicBoolean alive = new AtomicBoolean(true);
 	public ReadWriteLock lock = new ReentrantReadWriteLock();
 	private Map<Dirtyable, Object> dirty = new ConcurrentHashMap<>();
-	private Semaphore flushSemaphore = new Semaphore(0);
+	public Semaphore flushSemaphore = new Semaphore(0);
 
 	{
 		Runtime.getRuntime().addShutdownHook(new Thread(this::flushAll));
@@ -181,7 +172,6 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 			writer.key("tileSize").primitive(Integer.toString(tileSize));
 			writer.key("nextId").primitive(Long.toString(nextId));
 			writer.key("objects").arrayBegin();
-			project.serialize(writer);
 			for (ProjectObjectInterface object : objectMap.values())
 				object.serialize(writer);
 			writer.arrayEnd();
@@ -195,7 +185,17 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 			ModelDeserializationContext context = new ModelDeserializationContext();
 			ProjectContext out;
 			try (InputStream source = Files.newInputStream(path(path))) {
-				out = (ProjectContext) new StackReader().read(source, new Deserializer(context, path));
+				out = (ProjectContext) new StackReader().read(source, new StackReader.ArrayState() {
+					@Override
+					public StackReader.State array() {
+						throw new IllegalStateException("Project data should be a record.");
+					}
+
+					@Override
+					public StackReader.State record() {
+						return new Deserializer(context, path);
+					}
+				}).get(0);
 			}
 			context.finishers.forEach(finisher -> finisher.finish(context));
 			context.objectMap
@@ -242,6 +242,11 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 			} else if ("objects".equals(key)) {
 				return new StackReader.ArrayState() {
 					@Override
+					public void value(Object value) {
+						data.add(value);
+					}
+
+					@Override
 					public StackReader.State record() {
 						if ("Tile".equals(type))
 							return new Tile.Deserializer(context);
@@ -269,6 +274,11 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 		@Override
 		public StackReader.State record() {
 			throw new Assertion();
+		}
+
+		@Override
+		public Object get() {
+			return out;
 		}
 	}
 }

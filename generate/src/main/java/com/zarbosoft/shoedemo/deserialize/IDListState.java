@@ -4,6 +4,7 @@ import com.zarbosoft.luxem.read.StackReader.ArrayState;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class IDListState extends ArrayState {
@@ -17,6 +18,10 @@ public class IDListState extends ArrayState {
 					.collect(Collectors.toCollection(ArrayList::new)));
 		}
 	};
+
+	public IDListState(ModelDeserializationContext context) {
+		context.finishers.add(finisher);
+	}
 
 	@Override
 	public void value(Object value) {

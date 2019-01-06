@@ -14,13 +14,35 @@ public class Vector {
 	}
 
 	public void serialize(RawWriter writer) {
-		writer.arrayBegin().primitive(Integer.toString(x)).primitive(Integer.toString(y)).arrayEnd();
+		writer
+				.recordBegin()
+				.key("x")
+				.primitive(Integer.toString(x))
+				.key("y")
+				.primitive(Integer.toString(y))
+				.recordEnd();
 	}
 
-	public static class Deserializer extends StackReader.ArrayState {
+	public static class Deserializer extends StackReader.RecordState {
+		int x;
+		int y;
+
+		@Override
+		public void value(Object value) {
+			if ("x".equals(key)) {
+				x = Integer.parseInt((String) value);
+				return;
+			}
+			if ("y".equals(key)) {
+				x = Integer.parseInt((String) value);
+				return;
+			}
+			throw new IllegalStateException("Unknown key");
+		}
+
 		@Override
 		public Object get() {
-			return new Vector(Integer.parseInt((String) data.get(0)), Integer.parseInt((String) data.get(1)));
+			return new Vector(x, y);
 		}
 	}
 }

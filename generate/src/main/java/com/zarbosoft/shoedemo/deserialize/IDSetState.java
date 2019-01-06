@@ -22,9 +22,13 @@ public class IDSetState extends StackReader.State {
 		}
 	};
 
+	public IDSetState(ModelDeserializationContext context) {
+		context.finishers.add(finisher);
+	}
+
 	@Override
 	public void value(Object value) {
-		temp.add((Long) value);
+		temp.add(Long.parseLong((String) value));
 	}
 
 	@Override

@@ -329,6 +329,7 @@ public class GenerateTask extends Task {
 					private final TypeSpec.Builder change;
 					private final MethodSpec.Builder changeConstructor;
 					private final CodeBlock.Builder changeApply;
+					private final CodeBlock.Builder changeApply2;
 					private final CodeBlock.Builder changeApplyNotify;
 					private final MethodSpec.Builder changeDelete;
 					private final MethodSpec.Builder changeSerialize;
@@ -400,6 +401,7 @@ public class GenerateTask extends Task {
 						if (flattenPoint(classInfo))
 							changeConstructor.addCode("this.target.incRef(project);\n");
 						changeApply = CodeBlock.builder();
+						changeApply2 = CodeBlock.builder();
 						changeApplyNotify = CodeBlock.builder().add(
 								"for ($T listener : new $T<>(target.$L)) listener.accept(target",
 								listenerName,
@@ -445,17 +447,21 @@ public class GenerateTask extends Task {
 						change.addField(FieldSpec.builder(map, name).addModifiers(PUBLIC).build());
 						changeConstructor.addParameter(map, name).addCode(String.format("this.%s = %s;\n", name, name));
 						if (flattenPoint(value)) {
-							changeDelete
-									.addCode("for (Map.Entry<$T, $T> e : $L.entrySet()) ", keyName, valueName, name)
-									.addCode("e.getValue().decRef(project);\n");
-							if (inc)
-								changeApply
+							Function<Boolean, CodeBlock> incDecBuilder = inc0 -> {
+								CodeBlock.Builder out = CodeBlock.builder();
+								out
 										.add("for (Map.Entry<$T, $T> e : $L.entrySet()) {\n", keyName, valueName, name)
-										.indent()
-										.add("e.getValue().incRef(project);\n")
-										.add("e.getValue().incRef(project);\n")
-										.unindent()
-										.add("};\n");
+										.indent();
+								if (inc0)
+									out.add("e.getValue().incRef(project);\n");
+								else
+									out.add("e.getValue().decRef(project);\n");
+								out.unindent().add("};\n");
+								return out.build();
+							};
+							changeConstructor.addCode(incDecBuilder.apply(true));
+							changeApply2.add(incDecBuilder.apply(inc));
+							changeDelete.addCode(incDecBuilder.apply(false));
 							changeDebugCounts
 									.add("for (Map.Entry<$T, $T> e : $L.entrySet()) {\n", keyName, valueName, name)
 									.indent()
@@ -472,7 +478,11 @@ public class GenerateTask extends Task {
 								.add("for (Map.Entry<$T, $T> e : $L.entrySet()) {\n", keyName, valueName, name)
 								.indent();
 						serializeBlock.add("writer.key($T.toString(e.getKey()));\n", Objects.class);
-						deserializerValue.add("if (\"$L\".equals(key)) { out.$L = ($T) value; return; }\n", name, name, map);
+						deserializerValue.add("if (\"$L\".equals(key)) { out.$L = ($T) value; return; }\n",
+								name,
+								name,
+								map
+						);
 						deserializerRecord
 								.add("if (\"$L\".equals(key)) return new $T() {\n", name, StackReader.RecordState.class)
 								.indent()
@@ -492,8 +502,7 @@ public class GenerateTask extends Task {
 							);
 						} else {
 							serializeBlock.add("writer.primitive($T.toString(e.getValue()));\n", Objects.class);
-							deserializerRecord.add(
-									"data.put($L, $L);\n",
+							deserializerRecord.add("data.put($L, $L);\n",
 									generateScalarFromString(key, "key", deserializerArray, null),
 									generateScalarFromString(value, "value", deserializerArray, null)
 							);
@@ -513,17 +522,19 @@ public class GenerateTask extends Task {
 								.addParameter(list, name)
 								.addCode(String.format("this.%s = %s;\n", name, name));
 						if (flattenPoint(type)) {
-							changeDelete
-									.addCode("for ($T e : $L) ", element, name)
-									.addCode("(($T) e).decRef(project);\n", ProjectObjectInterface.class);
-							if (inc)
-								changeApply
-										.add("for ($T e : $L) {\n", element, name)
-										.indent()
-										.add("(($T) e).incRef(project);\n", ProjectObjectInterface.class)
-										.add("(($T) e).incRef(project);\n", ProjectObjectInterface.class)
-										.unindent()
-										.add("};\n");
+							Function<Boolean, CodeBlock> incDecBuilder = inc0 -> {
+								CodeBlock.Builder out = CodeBlock.builder();
+								out.add("for ($T e : $L) {\n", element, name).indent();
+								if (inc0)
+									out.add("e.incRef(project);\n");
+								else
+									out.add("e.decRef(project);\n");
+								out.unindent().add("};\n");
+								return out.build();
+							};
+							changeConstructor.addCode(incDecBuilder.apply(true));
+							changeApply2.add(incDecBuilder.apply(inc));
+							changeDelete.addCode(incDecBuilder.apply(false));
 							changeDebugCounts
 									.add("for ($T e : $L) {\n", element, name)
 									.indent()
@@ -537,7 +548,11 @@ public class GenerateTask extends Task {
 						changeSerialize
 								.addCode("writer.key(\"$L\").arrayBegin();\n", name)
 								.addCode("for ($T e : $L) ", element, name);
-						deserializerValue.add("if (\"$L\".equals(key)) { out.$L = ($T) value; return; }\n", name, name, list);
+						deserializerValue.add("if (\"$L\".equals(key)) { out.$L = ($T) value; return; }\n",
+								name,
+								name,
+								list
+						);
 						deserializerArray
 								.add("if (\"$L\".equals(key)) return new $T() {\n", name, StackReader.ArrayState.class)
 								.indent()
@@ -555,9 +570,8 @@ public class GenerateTask extends Task {
 							);
 						} else {
 							changeSerialize.addCode("writer.primitive($T.toString(e));\n", Objects.class);
-							CodeBlock.Builder deserializerArrayRecord = CodeBlock.builder();
 							deserializerArray.add("data.add($L);\n",
-									generateScalarFromString(type, "value", deserializerArray, deserializerArrayRecord)
+									generateScalarFromString(type, "value", deserializerArray, null)
 							);
 						}
 						changeSerialize.addCode("writer.arrayEnd();\n");
@@ -572,11 +586,17 @@ public class GenerateTask extends Task {
 								.addParameter(toPoet(type), name)
 								.addCode(String.format("this.%s = %s;\n", name, name));
 						if (flattenPoint(type)) {
-							changeDelete.addCode("$L.decRef(project);\n", name);
-							if (inc) {
-								changeApply.add("$L.incRef(project);\n", name);
-								changeApply.add("$L.incRef(project);\n", name);
-							}
+							Function<Boolean, CodeBlock> incDecBuilder = inc0 -> {
+								CodeBlock.Builder out = CodeBlock.builder();
+								if (inc0)
+									out.add("$L.incRef(project);\n", name);
+								else
+									out.add("$L.decRef(project);\n", name);
+								return out.build();
+							};
+							changeConstructor.addCode(incDecBuilder.apply(true));
+							changeApply2.add(incDecBuilder.apply(inc));
+							changeDelete.addCode(incDecBuilder.apply(false));
 							changeDebugCounts.add("increment.accept($L);\n", name);
 						}
 						changeApplyNotify.add(String.format(", %s", name));
@@ -652,6 +672,7 @@ public class GenerateTask extends Task {
 								.addMethod(changeConstructor.build())
 								.addMethod(poetMethod(sigChangeApply)
 										.addCode(changeApply.build())
+										.addCode(changeApply2.build())
 										.addCode(changeApplyNotify.add(");\n").build())
 										.build())
 								.addMethod(changeSerialize.addCode("writer.recordEnd();\n").build())
@@ -859,15 +880,19 @@ public class GenerateTask extends Task {
 								.addCode("changeStep.add(new $T(project, target, at, new $T(sublist)));\n",
 										addBuilder.getName(),
 										ArrayList.class
-								)
-								.addCode("sublist.clear();\n")
-								.finish();
+								);
+						if (flattenPoint(elementType))
+							removeBuilder.addCode("sublist.forEach(e -> e.decRef(project));\n");
+						removeBuilder.addCode("sublist.clear();\n").finish();
 						ChangeBuilder clearBuilder = new ChangeBuilder(fieldName, "clear").addCode(
 								"changeStep.add(new $T(project, target, 0, new $T(target.$L)));\n",
 								addBuilder.getName(),
 								ArrayList.class,
 								fieldName
-						).addCode("target.$L.clear();\n", fieldName);
+						);
+						if (flattenPoint(elementType))
+							clearBuilder.addCode("target.$L.forEach(e -> e.decRef(project));\n", fieldName);
+						clearBuilder.addCode("target.$L.clear();\n", fieldName);
 						clearBuilder.finish();
 						typeChangeStepBuilder.addMethod(MethodSpec
 								.methodBuilder(String.format("%sAdd", fieldName))
@@ -940,10 +965,13 @@ public class GenerateTask extends Task {
 								.addParameter(ParameterizedTypeName.get(ClassName.get(List.class),
 										TypeVariableName.get("T")
 								), "list")
-								.addParameter(ParameterizedTypeName.get(ClassName.get(Function.class),
-										toPoet(elementType),
-										TypeVariableName.get("T")
-								), "create")
+								.addParameter(
+										ParameterizedTypeName.get(ClassName.get(Function.class),
+												toPoet(elementType),
+												TypeVariableName.get("T")
+										),
+										"create"
+								)
 								.addParameter(ParameterizedTypeName.get(ClassName.get(Consumer.class),
 										TypeVariableName.get("T")
 								), "remove")
@@ -1042,11 +1070,14 @@ public class GenerateTask extends Task {
 								.addListParameter(elementType, "value", false)
 								.addCode(("changeStep.add(new $T(project, target, value));\n"), addBuilder.getName())
 								.finish();
-						new ChangeBuilder(fieldName, "clear").addCode(
+						ChangeBuilder clearBuilder = new ChangeBuilder(fieldName, "clear").addCode(
 								"changeStep.add(new $T(project, target, 0, new $T($L)));\n",
 								addBuilder.getName(),
 								ArrayList.class
-						).addCode("target.$L.clear();\n", fieldName).finish();
+						);
+						if (flattenPoint(elementType))
+							clearBuilder.addCode("target.$L.forEach(e -> e.decRef(project));\n");
+						clearBuilder.addCode("target.$L.clear();\n", fieldName).finish();
 						typeChangeStepBuilder.addMethod(MethodSpec
 								.methodBuilder(String.format("%sAdd"))
 								.addModifiers(PUBLIC)
@@ -1103,35 +1134,42 @@ public class GenerateTask extends Task {
 								.build());
 
 						ChangeBuilder putBuilder = new ChangeBuilder(fieldName, "putAll");
+						CodeBlock.Builder putCode = CodeBlock
+								.builder()
+								.add("if (remove.stream().anyMatch(put::containsKey)) throw new $T();\n",
+										Assertion.class /* DEBUG */
+								)
+								.add("$T<$T, $T> removing = $T.concat(\n",
+										Map.class,
+										toPoet(fieldInfo.parameters[0]),
+										toPoet(fieldInfo.parameters[1]),
+										Stream.class
+								)
+								.indent()
+								.add("remove.stream().filter(k -> target.$L.containsKey(k)),\n", fieldName)
+								.add("put.keySet().stream().filter(k -> target.$L.containsKey(k))\n", fieldName)
+								.unindent()
+								.add(").collect($T.toMap(k -> k, k -> target.$L.get(k)));\n",
+										Collectors.class,
+										fieldName
+								)
+								.add("changeStep.add(new $T(project, target, removing,\n", putBuilder.getName())
+								.indent()
+								.add("new ArrayList<>($T.difference(put.keySet(), target.$L.keySet()))\n",
+										Sets.class,
+										fieldName
+								)
+								.unindent()
+								.add("));\n");
+						if (flattenPoint(fieldInfo.parameters[1]))
+							putCode.add("removing.entrySet().forEach(e -> e.getValue().decRef(project));\n");
+						putCode
+								.add("remove.forEach(k -> target.$L.remove(k));\n", fieldName)
+								.add("target.$L.putAll(put);\n", fieldName);
 						putBuilder
 								.addMapParameter(fieldInfo.parameters[0], fieldInfo.parameters[1], "put", true)
 								.addListParameter(fieldInfo.parameters[0], "remove", false)
-								.addCode(CodeBlock
-										.builder()
-										.add("if (remove.stream().anyMatch(put::containsKey)) throw new $T();\n",
-												Assertion.class /* DEBUG */
-										)
-										.add("changeStep.add(new $T(project, target,\n", putBuilder.getName())
-										.indent()
-										.add("$T.concat(\n", Stream.class)
-										.indent()
-										.add("remove.stream().filter(k -> target.$L.containsKey(k)),\n", fieldName)
-										.add("put.keySet().stream().filter(k -> target.$L.containsKey(k))\n", fieldName)
-										.unindent()
-										.add(").collect($T.toMap(k -> k, k -> target.$L.get(k))),",
-												Collectors.class,
-												fieldName
-										)
-										.add(
-												"new ArrayList<>($T.difference(put.keySet(), target.$L.keySet()))\n",
-												Sets.class,
-												fieldName
-										)
-										.unindent()
-										.add("));\n")
-										.add("remove.forEach(k -> target.$L.remove(k));\n", fieldName)
-										.add("target.$L.putAll(put);\n", fieldName)
-										.build())
+								.addCode(putCode.build())
 								.listenersAdd("listener.accept(this, $L, $T.of());\n", fieldName, ImmutableList.class)
 								.finish();
 						typeChangeStepBuilder.addMethod(MethodSpec
@@ -1192,7 +1230,7 @@ public class GenerateTask extends Task {
 						// Deserialize
 						cloneDeserializeArray.add("if (\"$L\".equals(key)) return new ", fieldName);
 						if (flattenPoint(fieldInfo.parameters[0])) {
-							cloneDeserializeArray.add("$T();\n", IDListState.class);
+							cloneDeserializeArray.add("$T(context);\n", IDListState.class);
 							cloneDecRef.add("for ($T e : $L) (($T) e).decRef(project);\n",
 									toPoet(fieldInfo.parameters[0]),
 									fieldName,
@@ -1234,7 +1272,7 @@ public class GenerateTask extends Task {
 						// Deserialize
 						cloneDeserializeArray.add("if (\"$L\".equals(key)) return new ", fieldName);
 						if (flattenPoint(fieldInfo.parameters[0])) {
-							cloneDeserializeArray.add("$T();\n", IDSetState.class);
+							cloneDeserializeArray.add("$T(context);\n", IDSetState.class);
 							cloneDecRef.add("for ($T e : $L) (($T) e).decRef(project);\n",
 									toPoet(fieldInfo.parameters[0]),
 									fieldName,
@@ -1279,9 +1317,12 @@ public class GenerateTask extends Task {
 								.add("writer.recordEnd();\n");
 
 						// Deserialize
-						cloneDeserializeArray.add("if (\"$L\".equals(key)) return ", fieldName);
+						cloneDeserializeRecord.add("if (\"$L\".equals(key)) return ", fieldName);
 						if (flattenPoint(fieldInfo.parameters[1])) {
-							cloneDeserializeArray.add("new $T();\n", IDMapState.class);
+							cloneDeserializeRecord.add("new $T(context, k -> {\n", IDMapState.class).indent().add(
+									"return $L;\n",
+									generateScalarFromString(fieldInfo.parameters[0], "k", cloneDeserializeRecord, null)
+							).unindent().add("});\n");
 							cloneDecRef.add(
 									"for (Map.Entry<$T, $T> e : $L.entrySet()) (($T) e.getValue()).decRef(project);\n",
 									toPoet(fieldInfo.parameters[0]),
@@ -1290,7 +1331,7 @@ public class GenerateTask extends Task {
 									ProjectObjectInterface.class
 							);
 						} else {
-							cloneDeserializeArray
+							cloneDeserializeRecord
 									.add("new $T() {\n", GeneralMapState.class)
 									.indent()
 									.add("public void value(Object value) {\n")
@@ -1301,7 +1342,7 @@ public class GenerateTask extends Task {
 									generateScalarFromString(fieldInfo.parameters[0], "key", valueCode, recordCode);
 							CodeBlock value =
 									generateScalarFromString(fieldInfo.parameters[1], "value", valueCode, recordCode);
-							cloneDeserializeArray
+							cloneDeserializeRecord
 									.add("data.put(")
 									.add(key)
 									.add(", ")
@@ -1311,13 +1352,13 @@ public class GenerateTask extends Task {
 									.add("}\n");
 							CodeBlock recordCode1 = recordCode.build();
 							if (!recordCode1.isEmpty())
-								cloneDeserializeArray
+								cloneDeserializeRecord
 										.add("public $T record() {\n", StackReader.State.class)
 										.indent()
 										.add(recordCode1)
 										.unindent()
 										.add("}\n");
-							cloneDeserializeArray.add("};\n");
+							cloneDeserializeRecord.unindent().add("};\n");
 						}
 						cloneDeserializeValue.add("out.$L = ($T) value;\n", fieldName, toPoet(fieldInfo));
 					} else if (flattenPoint(fieldInfo)) {
@@ -1383,7 +1424,7 @@ public class GenerateTask extends Task {
 						).build())
 						.addMethod(poetMethod(sigStateGet)
 								.addCode("context.objectMap.put((($T)out).id(), out);\n", ProjectObjectInterface.class)
-								.addCode("return super.get();\n")
+								.addCode("return out;\n")
 								.build());
 				clone
 						.addMethod(MethodSpec
