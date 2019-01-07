@@ -5,7 +5,9 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.HPos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
+import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Priority;
 import javafx.stage.DirectoryChooser;
 
 import java.io.File;
@@ -14,6 +16,20 @@ import java.util.function.Consumer;
 public class WidgetFormBuilder {
 	GridPane gridPane = new GridPane();
 	int row = 0;
+
+	{
+		ColumnConstraints labelColumn = new ColumnConstraints();
+		ColumnConstraints editColumn = new ColumnConstraints();
+		editColumn.setHgrow(Priority.ALWAYS);
+		gridPane.getColumnConstraints().addAll(labelColumn, editColumn);
+		gridPane.setHgap(3);
+		gridPane.setVgap(3);
+	}
+
+	public WidgetFormBuilder apply(Consumer<WidgetFormBuilder> cb) {
+		cb.accept(this);
+		return this;
+	}
 
 	public WidgetFormBuilder button(Consumer<Button> cb) {
 		Button button = new Button();
@@ -63,6 +79,15 @@ public class WidgetFormBuilder {
 		label.textProperty().bind(Bindings.concat(name + ": ", path));
 		cb.accept(path);
 		gridPane.addRow(row++, label, button);
+		return this;
+	}
+
+	public WidgetFormBuilder slider(String name, double min, double max, Consumer<Slider> cb) {
+		Slider widget = new Slider();
+		widget.setMin(min);
+		widget.setMax(max);
+		cb.accept(widget);
+		gridPane.addRow(row++, new Label(name), widget);
 		return this;
 	}
 

@@ -53,6 +53,9 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 					incCount.accept(((Camera) o).inner());
 				}
 			} else if (o instanceof GroupLayer) {
+				if (((GroupLayer) o).inner() != null) {
+					incCount.accept(((GroupLayer) o).inner());
+				}
 				((GroupLayer) o).timeFrames().forEach(frame -> {
 					incCount.accept(frame);
 				});

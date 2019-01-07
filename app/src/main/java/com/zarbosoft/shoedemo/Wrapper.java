@@ -46,12 +46,7 @@ public abstract class Wrapper {
 	 * @param context
 	 * @return
 	 */
-	public abstract Node createProperties(ProjectContext context);
-
-	/**
-	 * Used in ProjectNode wrappers only
-	 */
-	public abstract void destroyProperties();
+	public abstract WidgetHandle createProperties(ProjectContext context);
 
 	public abstract void markStart(ProjectContext context, DoubleVector start);
 

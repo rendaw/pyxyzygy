@@ -26,6 +26,7 @@ public class History {
 	public final List<ChangeStep.CacheId> undoHistory;
 	public final List<ChangeStep.CacheId> redoHistory;
 	public ChangeStepBuilder change;
+	private boolean inChange = false;
 
 	public History(ProjectContext context, List<Long> undoHistory, List<Long> redoHistory) {
 		this.context = context;
@@ -41,7 +42,9 @@ public class History {
 	}
 
 	public void change(Consumer<ChangeStepBuilder> cb) {
+		if (inChange) throw new Assertion();
 		clearRedo();
+		inChange = true;
 		context.lock.writeLock().lock();
 		try {
 			cb.accept(change);
@@ -51,6 +54,7 @@ public class History {
 		context.setDirty(change.changeStep);
 		context.setDirty(context);
 		context.debugCheckRefCounts();
+		inChange = false;
 	}
 
 	public void finishChange() {

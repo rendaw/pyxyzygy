@@ -13,6 +13,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.zarbosoft.shoedemo.Main.nodeFormFields;
+import static com.zarbosoft.shoedemo.Main.opacityMax;
 import static com.zarbosoft.shoedemo.Timeline.moveTo;
 import static com.zarbosoft.shoedemo.Timeline.moveWrapperTo;
 import static com.zarbosoft.shoedemo.Window.uniqueName1;
@@ -21,7 +23,7 @@ public class GroupNodeWrapper extends Wrapper {
 	private final Wrapper parent;
 	private final GroupNode node;
 	private final List<Wrapper> children = new ArrayList<>();
-	private final ProjectNode.NameSetListener nameListener;
+	private final ProjectNode.OpacitySetListener opacityListener;
 	private final GroupNode.LayersAddListener layerAddListener;
 	private final GroupNode.LayersRemoveListener layerRemoveListener;
 	private final GroupNode.LayersMoveToListener layerMoveToListener;
@@ -29,7 +31,6 @@ public class GroupNodeWrapper extends Wrapper {
 
 	private Group canvas;
 	private DoubleRectangle bounds;
-	private TextField propertyName;
 	private GroupLayer specificLayer;
 	private DoubleVector markStart;
 	private Vector markStartOffset;
@@ -42,9 +43,9 @@ public class GroupNodeWrapper extends Wrapper {
 
 		tree.set(new TreeItem<>(this));
 
-		this.nameListener = node.addNameSetListeners((target, value) -> {
-			if (propertyName != null) {
-				propertyName.textProperty().setValue(value);
+		this.opacityListener = node.addOpacitySetListeners((target, value) -> {
+			if (canvas != null) {
+				canvas.setOpacity((double)value / opacityMax);
 			}
 		});
 		this.layerAddListener = node.addLayersAddListeners((target, at, value) -> {
@@ -195,6 +196,7 @@ public class GroupNodeWrapper extends Wrapper {
 	public ProjectNode separateClone(ProjectContext context) {
 		GroupNode clone = GroupNode.create(context);
 		clone.initialNameSet(context, uniqueName1(node.name()));
+		clone.initialOpacitySet(context, node.opacity());
 		clone.initialLayersAdd(context, node.layers().stream().map(layer -> {
 			GroupLayer newLayer = GroupLayer.create(context);
 			newLayer.initialInnerSet(context, layer.inner());
@@ -239,7 +241,7 @@ public class GroupNodeWrapper extends Wrapper {
 
 	@Override
 	public void remove(ProjectContext context) {
-		node.removeNameSetListeners(nameListener);
+		node.removeOpacitySetListeners(opacityListener);
 		node.removeLayersAddListeners(layerAddListener);
 		node.removeLayersRemoveListeners(layerRemoveListener);
 		node.removeLayersMoveToListeners(layerMoveToListener);
@@ -247,21 +249,20 @@ public class GroupNodeWrapper extends Wrapper {
 	}
 
 	@Override
-	public Node createProperties(ProjectContext context) {
-		return new WidgetFormBuilder().text("Name", t -> {
-			propertyName = t;
-			t
-					.textProperty()
-					.addListener((observable, oldValue, newValue) -> context.history.change(c -> c
-							.projectNode(node)
-							.nameSet(newValue)));
-			t.setText(node.name());
-		}).build();
-	}
+	public WidgetHandle createProperties(ProjectContext context) {
+		List<Runnable> cleanup = new ArrayList<>();
+		Node widget = new WidgetFormBuilder().apply(b -> cleanup.add(nodeFormFields(context, b, node))).build();
+		return new WidgetHandle() {
+			@Override
+			public Node getWidget() {
+				return widget;
+			}
 
-	@Override
-	public void destroyProperties() {
-		propertyName = null;
+			@Override
+			public void remove() {
+				cleanup.forEach(c -> c.run());
+			}
+		};
 	}
 
 	public void setSpecificLayer(GroupLayer layer) {

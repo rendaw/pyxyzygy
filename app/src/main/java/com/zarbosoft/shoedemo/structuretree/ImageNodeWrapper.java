@@ -16,24 +16,26 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.StrokeLineCap;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.zarbosoft.shoedemo.Main.nodeFormFields;
+import static com.zarbosoft.shoedemo.Main.opacityMax;
 import static com.zarbosoft.shoedemo.Window.uniqueName1;
 
 public class ImageNodeWrapper extends Wrapper {
 	private final ProjectContext context;
 	private final ImageNode node;
-	private final ProjectNode.NameSetListener nameListener;
+	private final ProjectNode.OpacitySetListener opacityListener;
 	private final ImageNode.FramesAddListener framesAddListener;
 	private final ImageNode.FramesRemoveListener framesRemoveListener;
 	private final ImageNode.FramesMoveToListener framesMoveListener;
 	private ImageFrame frame;
 	private final Wrapper parent;
 	DoubleRectangle bounds;
-	private TextField propertyName;
 	private int frameNumber;
 
 	class WrapTile {
@@ -63,9 +65,9 @@ public class ImageNodeWrapper extends Wrapper {
 		this.parent = parent;
 		this.parentIndex = parentIndex;
 		tree.set(new TreeItem<>(this));
-		this.nameListener = node.addNameSetListeners((target, value) -> {
-			if (propertyName != null) {
-				propertyName.textProperty().setValue(value);
+		this.opacityListener = node.addOpacitySetListeners((target, value) -> {
+			if (draw != null) {
+				draw.setOpacity((double)value / opacityMax);
 			}
 		});
 		this.framesAddListener = node.addFramesAddListeners((target, at, value) -> setFrame(context, frameNumber));
@@ -194,7 +196,7 @@ public class ImageNodeWrapper extends Wrapper {
 		canvas.setWidth(bounds.width);
 		canvas.setHeight(bounds.height);
 		GraphicsContext gc = canvas.getGraphicsContext2D();
-		Rectangle tileBounds = render(gc, frame, bounds);
+		Rectangle tileBounds = render(gc, frame, bounds, 1);
 
 		// Do the stroke
 		System.out.format("stroke %s %s to %s %s\n", start.x, start.y, end.x, end.y);
@@ -240,6 +242,7 @@ public class ImageNodeWrapper extends Wrapper {
 	public ProjectNode separateClone(ProjectContext context) {
 		ImageNode clone = ImageNode.create(this.context);
 		clone.initialNameSet(context, uniqueName1(node.name()));
+		clone.initialOpacitySet(context, node.opacity());
 		clone.initialFramesAdd(context, node.frames().stream().map(frame -> {
 			ImageFrame newFrame = ImageFrame.create(this.context);
 			newFrame.initialOffsetSet(context, frame.offset());
@@ -250,7 +253,8 @@ public class ImageNodeWrapper extends Wrapper {
 		return clone;
 	}
 
-	public Rectangle render(GraphicsContext gc, ImageFrame frame, Rectangle crop) {
+	public Rectangle render(GraphicsContext gc, ImageFrame frame, Rectangle crop, double opacity) {
+		gc.setGlobalAlpha(opacity);
 		int tileOffsetX = Math.floorMod(crop.x, context.tileSize);
 		int tileOffsetY = Math.floorMod(crop.y, context.tileSize);
 		Rectangle tileBounds = crop.divide(context.tileSize);
@@ -331,33 +335,32 @@ public class ImageNodeWrapper extends Wrapper {
 
 	@Override
 	public void remove(ProjectContext context) {
-		node.removeNameSetListeners(nameListener);
+		node.removeOpacitySetListeners(opacityListener);
 		node.removeFramesAddListeners(framesAddListener);
 		node.removeFramesRemoveListeners(framesRemoveListener);
 		node.removeFramesMoveToListeners(framesMoveListener);
 	}
 
 	@Override
-	public Node createProperties(ProjectContext context) {
-		return new WidgetFormBuilder().text("Name", t -> {
-			propertyName = t;
-			t
-					.textProperty()
-					.addListener((observable, oldValue, newValue) -> this.context.history.change(c -> c
-							.projectNode(node)
-							.nameSet(newValue)));
-			t.setText(node.name());
-		}).build();
-	}
+	public WidgetHandle createProperties(ProjectContext context) {
+		List<Runnable> cleanup = new ArrayList<>();
+		Node widget = new WidgetFormBuilder().apply(b -> cleanup.add(nodeFormFields(context, b, node))).build();
+		return new WidgetHandle() {
+			@Override
+			public Node getWidget() {
+				return widget;
+			}
 
-	@Override
-	public void destroyProperties() {
-		propertyName = null;
+			@Override
+			public void remove() {
+				cleanup.forEach(c -> c.run());
+			}
+		};
 	}
 
 	@Override
 	public void render(GraphicsContext gc, int frame, Rectangle crop) {
-		render(gc, findFrame(frame), crop);
+		render(gc, findFrame(frame), crop, (double)node.opacity() / opacityMax);
 	}
 
 	@Override

@@ -12,7 +12,6 @@ import javafx.scene.Node;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Spinner;
-import javafx.scene.control.TextField;
 import javafx.scene.control.TreeItem;
 import javafx.scene.shape.Rectangle;
 
@@ -20,9 +19,12 @@ import javax.imageio.ImageIO;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.zarbosoft.rendaw.common.Common.uncheck;
+import static com.zarbosoft.shoedemo.Main.nodeFormFields;
+import static com.zarbosoft.shoedemo.Main.opacityMax;
 import static com.zarbosoft.shoedemo.Window.uniqueName1;
 import static com.zarbosoft.shoedemo.structuretree.ImageNodeWrapper.snapshot;
 
@@ -30,7 +32,7 @@ public class CameraWrapper extends Wrapper {
 	private final ProjectContext context;
 	private final Wrapper parent;
 	private final Camera node;
-	private final ProjectNode.NameSetListener nameListener;
+	private final ProjectNode.OpacitySetListener opacityListener;
 	private final ChangeListener<TreeItem<Wrapper>> childTreeListener;
 	private final Camera.InnerSetListener innerSetListener;
 	private final Camera.WidthSetListener widthListener;
@@ -46,7 +48,6 @@ public class CameraWrapper extends Wrapper {
 	private DoubleRectangle baseViewBounds;
 	private DoubleRectangle viewBounds;
 
-	private TextField propertiesName;
 	private Spinner<Integer> propertiesWidth;
 	private Spinner<Integer> propertiesHeight;
 	private Spinner<Integer> propertiesEndFrame;
@@ -62,9 +63,10 @@ public class CameraWrapper extends Wrapper {
 		this.parentIndex = parentIndex;
 		this.node = node;
 		tree.set(new TreeItem<>(this));
-		this.nameListener = node.addNameSetListeners((target, value) -> {
-			if (propertiesName != null)
-				propertiesName.setText(value);
+		this.opacityListener = node.addOpacitySetListeners((target, value) -> {
+			if (canvas != null) {
+				canvasChildren.setOpacity((double)value / opacityMax);
+			}
 		});
 		this.childTreeListener = (observable, oldValue, newValue) -> {
 			tree.get().getChildren().setAll(newValue);
@@ -137,7 +139,7 @@ public class CameraWrapper extends Wrapper {
 
 	@Override
 	public void remove(ProjectContext context) {
-		node.removeNameSetListeners(nameListener);
+		node.removeOpacitySetListeners(opacityListener);
 		node.removeInnerSetListeners(innerSetListener);
 		node.removeWidthSetListeners(widthListener);
 		node.removeHeightSetListeners(heightListener);
@@ -231,6 +233,7 @@ public class CameraWrapper extends Wrapper {
 	public ProjectNode separateClone(ProjectContext context) {
 		Camera clone = Camera.create(this.context);
 		clone.initialNameSet(context, uniqueName1(node.name()));
+		clone.initialOpacitySet(context, node.opacity());
 		clone.initialWidthSet(context, node.width());
 		clone.initialHeightSet(context, node.height());
 		clone.initialFrameRateSet(context, node.frameRate());
@@ -265,59 +268,66 @@ public class CameraWrapper extends Wrapper {
 	}
 
 	@Override
-	public Node createProperties(ProjectContext context) {
-		return new WidgetFormBuilder().text("Name", t -> {
-			propertiesName = t;
-			t.setText(node.name());
-			t
-					.textProperty()
-					.addListener((observable, oldValue, newValue) -> this.context.history.change(c -> c
-							.projectNode(node)
-							.nameSet(newValue)));
-		}).intSpinner("Crop width", 1, 99999, s -> {
-			propertiesWidth = s;
-			s.getValueFactory().setValue(node.width());
-		}).intSpinner("Crop height", 1, 99999, s -> {
-			propertiesHeight = s;
-			s.getValueFactory().setValue(node.height());
-		}).intSpinner("End frame", 1, 99999, s -> {
-			propertiesEndFrame = s;
-			s.getValueFactory().setValue(node.end());
-		}).doubleSpinner("Framerate", 1, 999, 1, s -> {
-			propertiesFrameRate = s;
-			s.getValueFactory().setValue(node.frameRate() / 10.0);
-		}).chooseDirectory("Render path", s -> {
-			if (renderPath != null)
-				s.setValue(renderPath.toString());
-			s.addListener((observable, oldValue, newValue) -> renderPath = Paths.get(newValue));
-		}).button(b -> {
-			b.setText("Render");
-			b.setOnAction(e -> uncheck(() -> {
-				if (renderPath == null)
-					return;
-				Files.createDirectories(renderPath);
-				Canvas canvas = new Canvas();
-				canvas.setWidth(node.width());
-				canvas.setHeight(node.height());
-				GraphicsContext gc = canvas.getGraphicsContext2D();
-				for (int i = 0; i < node.end(); ++i) {
-					gc.clearRect(0, 0, node.width(), node.height());
-					child.render(gc, i, crop);
-					ImageIO.write(SwingFXUtils.fromFXImage(snapshot(canvas), null),
-							"PNG",
-							renderPath.resolve(String.format("frame%06d.png", i)).toFile()
-					);
-				}
-			}));
-		}).build();
-	}
+	public WidgetHandle createProperties(ProjectContext context) {
+		List<Runnable> miscCleanup = new ArrayList<>();
+		Node widget = new WidgetFormBuilder()
+				.apply(b -> miscCleanup.add(nodeFormFields(context, b, node)))
+				.intSpinner("Crop width", 1, 99999, s -> {
+					s.getValueFactory().setValue(node.width());
+					propertiesWidth = s;
+				})
+				.intSpinner("Crop height", 1, 99999, s -> {
+					s.getValueFactory().setValue(node.height());
+					propertiesHeight = s;
+				})
+				.intSpinner("End frame", 1, 99999, s -> {
+					s.getValueFactory().setValue(node.end());
+					propertiesEndFrame = s;
+				})
+				.doubleSpinner("Framerate", 1, 999, 1, s -> {
+					s.getValueFactory().setValue(node.frameRate() / 10.0);
+					propertiesFrameRate = s;
+				})
+				.chooseDirectory("Render path", s -> {
+					if (renderPath != null)
+						s.setValue(renderPath.toString());
+					s.addListener((observable, oldValue, newValue) -> renderPath = Paths.get(newValue));
+				})
+				.button(b -> {
+					b.setText("Render");
+					b.setOnAction(e -> uncheck(() -> {
+						if (renderPath == null)
+							return;
+						Files.createDirectories(renderPath);
+						Canvas canvas = new Canvas();
+						canvas.setWidth(node.width());
+						canvas.setHeight(node.height());
+						GraphicsContext gc = canvas.getGraphicsContext2D();
+						for (int i = 0; i < node.end(); ++i) {
+							gc.clearRect(0, 0, node.width(), node.height());
+							child.render(gc, i, crop);
+							ImageIO.write(SwingFXUtils.fromFXImage(snapshot(canvas), null),
+									"PNG",
+									renderPath.resolve(String.format("frame%06d.png", i)).toFile()
+							);
+						}
+					}));
+				})
+				.build();
+		return new WidgetHandle() {
+			@Override
+			public Node getWidget() {
+				return widget;
+			}
 
-	@Override
-	public void destroyProperties() {
-		propertiesName = null;
-		propertiesWidth = null;
-		propertiesHeight = null;
-		propertiesEndFrame = null;
-		propertiesFrameRate = null;
+			@Override
+			public void remove() {
+				propertiesWidth = null;
+				propertiesHeight = null;
+				propertiesEndFrame = null;
+				propertiesFrameRate = null;
+				miscCleanup.forEach(c -> c.run());
+			}
+		};
 	}
 }

@@ -8,6 +8,7 @@ import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.ListChangeListener;
+import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.scene.Node;
 import javafx.scene.control.*;
@@ -23,13 +24,15 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static com.zarbosoft.rendaw.common.Common.last;
+import static com.zarbosoft.shoedemo.Main.opacityMax;
+import static com.zarbosoft.shoedemo.Timeline.moveTo;
 import static com.zarbosoft.shoedemo.Window.icon;
 import static com.zarbosoft.shoedemo.Window.uniqueName;
-import static com.zarbosoft.shoedemo.Timeline.moveTo;
 import static com.zarbosoft.shoedemo.Wrapper.TakesChildren.NONE;
 
 public class Structure {
 	private final ProjectContext context;
+	private WidgetHandle properties;
 	VBox layout = new VBox();
 	TreeView<Wrapper> treeView;
 	ScrollPane treeScroll = new ScrollPane();
@@ -229,6 +232,7 @@ public class Structure {
 		addCamera.setOnAction(e -> {
 			Camera camera = Camera.create(context);
 			camera.initialNameSet(context, uniqueName("Camera"));
+			camera.initialOpacitySet(context, opacityMax);
 			camera.initialEndSet(context, 50);
 			camera.initialFrameRateSet(context, 120);
 			camera.initialHeightSet(context, 240);
@@ -237,15 +241,17 @@ public class Structure {
 		});
 		MenuItem addGroup = new MenuItem("Add Group");
 		addGroup.setOnAction(e -> {
-			GroupNode group = new GroupNode();
+			GroupNode group = GroupNode.create(context);
+			group.initialOpacitySet(context, opacityMax);
 			group.initialNameSet(context, uniqueName("Group"));
 			addNew(group);
 		});
 		MenuItem addImage = new MenuItem("Add Image");
 		addImage.setOnAction(e -> {
-			ImageNode image = new ImageNode();
+			ImageNode image = ImageNode.create(context);
+			image.initialOpacitySet(context, opacityMax);
 			image.initialNameSet(context, uniqueName("Image"));
-			ImageFrame frame = new ImageFrame();
+			ImageFrame frame = ImageFrame.create(context);
 			frame.initialLengthSet(context, -1);
 			frame.initialOffsetSet(context, new Vector(0, 0));
 			image.initialFramesAdd(context, ImmutableList.of(frame));
@@ -331,14 +337,7 @@ public class Structure {
 		});
 		MenuButton linkButton = Window.menuButton("content-paste.svg");
 		linkButton.getItems().addAll(linkBeforeButton, linkInButton, linkAfterButton);
-		toolbar = new ToolBar(
-				addButton,
-				duplicateButton,
-				removeButton,
-				moveUpButton,
-				moveDownButton,
-				linkButton
-		);
+		toolbar = new ToolBar(addButton, duplicateButton, removeButton, moveUpButton, moveDownButton, linkButton);
 		layout.getChildren().addAll(toolbar, treeScroll);
 		VBox.setVgrow(treeScroll, Priority.ALWAYS);
 
@@ -376,16 +375,21 @@ public class Structure {
 			treeView.getRoot().getChildren().clear();
 		});
 		context.selectedForEdit.addListener((observable, oldValue, newValue) -> {
+			if (properties != null) {
+				properties.remove();
+			}
 			if (oldValue != null) {
-				oldValue.destroyProperties();
 				split.getItems().remove(1);
 				split.setDividerPositions(1);
 			}
 			if (newValue != null) {
-				Node widget = newValue.createProperties(context);
-				split.getItems().add(widget);
+				VBox wrapper = new VBox();
+				wrapper.setPadding(new Insets(3, 3, 3, 3));
+				properties = newValue.createProperties(context);
+				wrapper.getChildren().add(properties.getWidget());
+				split.getItems().add(wrapper);
 				split.setDividerPositions(0.7);
-				SplitPane.setResizableWithParent(widget, false);
+				SplitPane.setResizableWithParent(wrapper, false);
 			}
 		});
 	}
@@ -482,11 +486,11 @@ public class Structure {
 
 	/**
 	 * Adds the single node wherever it can, starting from the selection
+	 *
 	 * @param node
 	 */
 	private void addNew(ProjectNode node) {
-		Wrapper edit =
-				getSelection();
+		Wrapper edit = getSelection();
 		Wrapper placeAt = edit;
 		int index = 0;
 		while (placeAt != null) {
@@ -501,6 +505,7 @@ public class Structure {
 
 	/**
 	 * Places exactly within parent/top before/after reference/start=end
+	 *
 	 * @param pasteParent
 	 * @param before
 	 * @param reference
@@ -529,13 +534,17 @@ public class Structure {
 		taggedCopied.forEach(check);
 		if (pasteParent != null) {
 			if (reference != null) {
-						if (!pasteParent.addChildren(context, reference.parentIndex + (before ? -1 : 1), nodes)) return;
+				if (!pasteParent.addChildren(context, reference.parentIndex + (before ? -1 : 1), nodes))
+					return;
 			} else {
-				if (!pasteParent.addChildren(context, before ? 0 : -1, nodes)) return;
+				if (!pasteParent.addChildren(context, before ? 0 : -1, nodes))
+					return;
 			}
 		} else {
 			if (reference != null) {
-				context.history.change(c -> c.project(context.project).topAdd(reference.parentIndex + (before ? -1 : 1), nodes));
+				context.history.change(c -> c
+						.project(context.project)
+						.topAdd(reference.parentIndex + (before ? -1 : 1), nodes));
 			} else {
 				if (before)
 					context.history.change(c -> c.project(context.project).topAdd(0, nodes));

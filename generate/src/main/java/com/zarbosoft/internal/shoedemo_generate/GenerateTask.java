@@ -752,6 +752,7 @@ public class GenerateTask extends Task {
 						if (!Stream.of("id", "refCount").anyMatch(fieldName::equals)) {
 							new ChangeBuilder(fieldName, "set")
 									.addParameter(field, "value", false)
+									.addCode("if ($T.equals(value, target.$L)) return;\n", Objects.class, fieldName)
 									.addCode("changeStep.add(new $T(project, target, target.$L));\n",
 											CHANGE_TOKEN_NAME,
 											fieldName
@@ -765,8 +766,9 @@ public class GenerateTask extends Task {
 									.add("this.$L = value;\n", fieldName);
 							if (flattenPoint(field))
 								initialSetCode.add("value.incRef(project);\n");
+							String initialSetName = String.format("initial%sSet", capFirst(fieldName));
 							clone.addMethod(MethodSpec
-									.methodBuilder(String.format("initial%sSet", capFirst(fieldName)))
+									.methodBuilder(initialSetName)
 									.addModifiers(PUBLIC)
 									.addParameter(ProjectContextBase.class, "project")
 									.addParameter(toPoet(field), "value")
@@ -850,8 +852,9 @@ public class GenerateTask extends Task {
 								.add("this.$L.addAll(values);\n", fieldName);
 						if (flattenPoint(elementType))
 							initialAddCode.add("values.forEach(v -> v.incRef(project));\n");
+						String initialSetName = String.format("initial%sAdd", capFirst(fieldName));
 						clone.addMethod(MethodSpec
-								.methodBuilder(String.format("initial%sAdd", capFirst(fieldName)))
+								.methodBuilder(initialSetName)
 								.addModifiers(PUBLIC)
 								.addParameter(ProjectContextBase.class, "project")
 								.addParameter(
@@ -965,13 +968,10 @@ public class GenerateTask extends Task {
 								.addParameter(ParameterizedTypeName.get(ClassName.get(List.class),
 										TypeVariableName.get("T")
 								), "list")
-								.addParameter(
-										ParameterizedTypeName.get(ClassName.get(Function.class),
-												toPoet(elementType),
-												TypeVariableName.get("T")
-										),
-										"create"
-								)
+								.addParameter(ParameterizedTypeName.get(ClassName.get(Function.class),
+										toPoet(elementType),
+										TypeVariableName.get("T")
+								), "create")
 								.addParameter(ParameterizedTypeName.get(ClassName.get(Consumer.class),
 										TypeVariableName.get("T")
 								), "remove")
@@ -1122,8 +1122,9 @@ public class GenerateTask extends Task {
 								.add("this.$L.putAll(values);\n", fieldName);
 						if (flattenPoint(fieldInfo.parameters[1]))
 							initialPutAllCode.add("values.values().forEach(v -> v.incRef(project));\n");
+						String initialSetName = String.format("initial%sPutAll", capFirst(fieldName));
 						clone.addMethod(MethodSpec
-								.methodBuilder(String.format("initial%sPutAll", capFirst(fieldName)))
+								.methodBuilder(initialSetName)
 								.addModifiers(PUBLIC)
 								.addParameter(ProjectContextBase.class, "project")
 								.addParameter(ParameterizedTypeName.get(ClassName.get(Map.class),
@@ -1381,6 +1382,7 @@ public class GenerateTask extends Task {
 			}
 
 			write(typeChangeStepBuilderName, typeChangeStepBuilder.build());
+			clone.addMethod(MethodSpec.constructorBuilder().build());
 			if (Walk.isConcrete(classInfo)) {
 				ClassName deserializerName = cloneName.nestedClass("Deserializer");
 				ClassName finisherName = deserializerName.nestedClass("Finisher");
@@ -1423,7 +1425,11 @@ public class GenerateTask extends Task {
 								RuntimeException.class
 						).build())
 						.addMethod(poetMethod(sigStateGet)
-								.addCode("context.objectMap.put((($T)out).id(), out);\n", ProjectObjectInterface.class)
+								.addCode(
+										"if (context.objectMap.containsKey(out.id())) throw new $T();\n",
+										Assertion.class
+								)
+								.addCode("context.objectMap.put(out.id(), out);\n", ProjectObjectInterface.class)
 								.addCode("return out;\n")
 								.build());
 				clone
@@ -1438,7 +1444,18 @@ public class GenerateTask extends Task {
 								.build())
 						.addMethod(poetMethod(sigObjIncRef)
 								.addCode("refCount += 1;\n")
-								.addCode("if (refCount == 1) project.objectMap.put(id, this);\n")
+								.addCode(CodeBlock
+										.builder()
+										.add("if (refCount == 1) {\n")
+										.indent()
+										.add(
+												"if (project.objectMap.containsKey(id)) throw new $T();\n",
+												Assertion.class
+										)
+										.add("project.objectMap.put(id, this);\n")
+										.unindent()
+										.add("}\n")
+										.build())
 								.build())
 						.addMethod(poetMethod(sigObjDecRef).addCode(cloneDecRef.build()).build())
 						.addType(deserializerBuilder.build())
@@ -1462,13 +1479,14 @@ public class GenerateTask extends Task {
 		write(changeStepBuilderName, changeStepBuilder.build());
 		write(deserializeHelperName, deserializeHelper
 				.addMethod(globalModelDeserialize
-						.addCode("throw new $T(String.format(\"Unknown type %s\", type));\n", RuntimeException.class)
-						.build())
-				.addMethod(globalChangeDeserialize
-						.addCode("throw new $T(String.format(\"Unknown change type %s\", type));\n",
+						.addCode("throw new $T(String.format(\"Unknown type %s\", type));\n",
 								RuntimeException.class
 						)
 						.build())
+				.addMethod(globalChangeDeserialize.addCode(
+						"throw new $T(String.format(\"Unknown change type %s\", type));\n",
+						RuntimeException.class
+				).build())
 				.build());
 	}
 

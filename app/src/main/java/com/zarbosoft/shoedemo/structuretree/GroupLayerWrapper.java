@@ -312,12 +312,17 @@ public class GroupLayerWrapper extends Wrapper {
 	}
 
 	@Override
-	public Node createProperties(ProjectContext context) {
-		return new Group();
-	}
+	public WidgetHandle createProperties(ProjectContext context) {
+		return new WidgetHandle() {
+			@Override
+			public Node getWidget() {
+				return new Group();
+			}
 
-	@Override
-	public void destroyProperties() {
+			@Override
+			public void remove() {
 
+			}
+		};
 	}
 }
