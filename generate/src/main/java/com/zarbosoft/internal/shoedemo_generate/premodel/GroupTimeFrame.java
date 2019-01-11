@@ -14,4 +14,7 @@ public class GroupTimeFrame extends ProjectObject {
 	 */
 	@Configuration
 	public int innerOffset;
+
+	@Configuration
+	public int innerLoop;
 }

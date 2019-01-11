@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.zarbosoft.shoedemo.Timeline.moveTo;
+import static com.zarbosoft.shoedemo.Main.moveTo;
 
 public class GroupLayerWrapper extends Wrapper {
 	private final Wrapper parent;
@@ -37,8 +37,8 @@ public class GroupLayerWrapper extends Wrapper {
 		this.parentIndex = parentIndex;
 		this.node = node;
 
-		tree.set(new TreeItem<>(this));
 		this.innerSetListener = node.addInnerSetListeners((target, value) -> {
+			System.out.format("layer child set %s : %s\n", value, value == null ? null : value.name());
 			if (child != null) {
 				if (canvas != null) {
 					child.destroyCanvas();
@@ -57,6 +57,7 @@ public class GroupLayerWrapper extends Wrapper {
 				}
 			}
 		});
+		// Don't need clear listeners because clear should never happen (1 frame must always be left)
 		this.positionAddListener = node.addPositionFramesAddListeners((target, at, value) -> {
 			updatePosition(context);
 			positionCleanup.addAll(at, value.stream().map(v -> {
@@ -109,7 +110,10 @@ public class GroupLayerWrapper extends Wrapper {
 
 	private int findInnerFrame(int frame) {
 		TimeResult result = findTime(node, frame);
-		return result.frame.innerOffset() + (frame - result.at);
+		int offset = (frame - result.at);
+		if (result.frame.innerLoop() != 0) offset = offset % result.frame.innerLoop();
+		int innerFrame = result.frame.innerOffset() + offset;
+		return innerFrame;
 	}
 
 	public static class TimeResult {

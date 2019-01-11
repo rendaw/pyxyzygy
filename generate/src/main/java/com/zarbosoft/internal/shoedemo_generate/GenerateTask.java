@@ -416,12 +416,18 @@ public class GenerateTask extends Task {
 								.addModifiers(PUBLIC)
 								.returns(changeStepBuilderName);
 						changeDebugCounts = CodeBlock.builder().add("increment.accept(target);\n");
-						deserializerValue = CodeBlock.builder().add("if (\"target\".equals(key)) {\n").indent().add(
-								"out.target = ($T) context.objectMap.get($T.parseLong(($T) value));\n",
-								cloneName,
-								Long.class,
-								String.class
-						).add("return;\n").unindent().add("}\n");
+						deserializerValue = CodeBlock
+								.builder()
+								.add("if (\"target\".equals(key)) {\n")
+								.indent()
+								.add("out.target = ($T) context.getObject($T.parseLong(($T) value));\n",
+										cloneName,
+										Long.class,
+										String.class
+								)
+								.add("return;\n")
+								.unindent()
+								.add("}\n");
 						deserializerArray = CodeBlock.builder();
 						deserializerRecord = CodeBlock.builder();
 					}
@@ -494,8 +500,7 @@ public class GenerateTask extends Task {
 									Objects.class,
 									ProjectObjectInterface.class
 							);
-							deserializerRecord.add(
-									"data.put($L, context.objectMap.get($T.parseLong(($T) value)));\n",
+							deserializerRecord.add("data.put($L, context.getObject($T.parseLong(($T) value)));\n",
 									generateScalarFromString(key, "key", deserializerArray, null),
 									Long.class,
 									String.class
@@ -564,7 +569,8 @@ public class GenerateTask extends Task {
 									Objects.class,
 									ProjectObjectInterface.class
 							);
-							deserializerArray.add("data.add(context.objectMap.get($T.parseLong(($T) value)));\n",
+							deserializerArray.add(
+									"data.add(context.getObject($T.parseLong(($T) value)));\n",
 									Long.class,
 									String.class
 							);
@@ -610,7 +616,7 @@ public class GenerateTask extends Task {
 									ProjectObjectInterface.class,
 									name
 							);
-							deserializerValue.add("out.$L = ($T) context.objectMap.get($T.parseLong(($T) value));\n",
+							deserializerValue.add("out.$L = ($T) context.getObject($T.parseLong(($T) value));\n",
 									name,
 									toPoet(type),
 									Long.class,
@@ -975,12 +981,15 @@ public class GenerateTask extends Task {
 								.addParameter(ParameterizedTypeName.get(ClassName.get(Consumer.class),
 										TypeVariableName.get("T")
 								), "remove")
-								.addCode(
-										"$T addListener = add$LAddListeners((target, at, values) -> list.addAll(at, values.stream().map(create).collect($T.toList())));\n",
+								.addParameter(Runnable.class, "change")
+								.addCode(CodeBlock.builder().add(
+										"$T addListener = add$LAddListeners((target, at, values) -> {\n",
 										addBuilder.getListenerName(),
-										capFirst(fieldName),
+										capFirst(fieldName)
+								).indent().add(
+										"list.addAll(at, values.stream().map(create).collect($T.toList()));\n",
 										Collectors.class
-								)
+								).add("change.run();\n").unindent().add("});\n").build())
 								.addCode(CodeBlock
 										.builder()
 										.add(
@@ -994,14 +1003,22 @@ public class GenerateTask extends Task {
 										)
 										.add("sublist.forEach(remove);\n")
 										.add("sublist.clear();\n")
+										.add("change.run();\n")
 										.unindent()
 										.add("});\n")
 										.build())
-								.addCode(
-										"$T clearListener = add$LClearListeners((target) -> list.clear());\n",
-										clearBuilder.getListenerName(),
-										capFirst(fieldName)
-								)
+								.addCode(CodeBlock
+										.builder()
+										.add("$T clearListener = add$LClearListeners((target) -> {\n",
+												clearBuilder.getListenerName(),
+												capFirst(fieldName)
+										)
+										.indent()
+										.add("list.clear();\n")
+										.add("change.run();\n")
+										.unindent()
+										.add("});\n")
+										.build())
 								.addCode(CodeBlock
 										.builder()
 										.add(
@@ -1016,6 +1033,7 @@ public class GenerateTask extends Task {
 										.add("List<$T> temp = new ArrayList(sublist);\n", TypeVariableName.get("T"))
 										.add("sublist.clear();\n")
 										.add("list.addAll(dest, temp);\n")
+										.add("change.run();\n")
 										.unindent()
 										.add("});\n")
 										.build())
@@ -1366,8 +1384,9 @@ public class GenerateTask extends Task {
 						generateScalar.applyLeaf(fieldInfo);
 
 						// Deserialize
-						cloneDeserializeValue.add("map.put(\"$L\", ($T)value);\n", fieldName, String.class);
-						cloneDeserializeFinish.add("out.$L = ($T) context.objectMap.get(map.get(\"$L\"));",
+						cloneDeserializeValue.add("map.put(\"$L\", $T.parseLong(($T) value));\n", fieldName, Long.class, String.class);
+						cloneDeserializeFinish.add(
+								"out.$L = ($T) context.getObject(map.get(\"$L\"));\n",
 								fieldName,
 								toPoet(fieldInfo),
 								fieldName
@@ -1399,7 +1418,7 @@ public class GenerateTask extends Task {
 										.build())
 								.build())
 						.addField(ModelDeserializationContext.class, "context", FINAL, PRIVATE)
-						.addField(Map.class, "map", FINAL, PRIVATE)
+						.addField(ParameterizedTypeName.get(Map.class, String.class, Long.class), "map", FINAL, PRIVATE)
 						.addField(cloneName, "out", FINAL, PRIVATE)
 						.addMethod(MethodSpec
 								.constructorBuilder()
@@ -1425,8 +1444,7 @@ public class GenerateTask extends Task {
 								RuntimeException.class
 						).build())
 						.addMethod(poetMethod(sigStateGet)
-								.addCode(
-										"if (context.objectMap.containsKey(out.id())) throw new $T();\n",
+								.addCode("if (context.objectMap.containsKey(out.id())) throw new $T();\n",
 										Assertion.class
 								)
 								.addCode("context.objectMap.put(out.id(), out);\n", ProjectObjectInterface.class)
@@ -1448,8 +1466,7 @@ public class GenerateTask extends Task {
 										.builder()
 										.add("if (refCount == 1) {\n")
 										.indent()
-										.add(
-												"if (project.objectMap.containsKey(id)) throw new $T();\n",
+										.add("if (project.objectMap.containsKey(id)) throw new $T();\n",
 												Assertion.class
 										)
 										.add("project.objectMap.put(id, this);\n")
@@ -1477,17 +1494,21 @@ public class GenerateTask extends Task {
 		}
 
 		write(changeStepBuilderName, changeStepBuilder.build());
-		write(deserializeHelperName, deserializeHelper
-				.addMethod(globalModelDeserialize
-						.addCode("throw new $T(String.format(\"Unknown type %s\", type));\n",
+		write(
+				deserializeHelperName,
+				deserializeHelper
+						.addMethod(globalModelDeserialize
+								.addCode(
+										"throw new $T(String.format(\"Unknown type %s\", type));\n",
+										RuntimeException.class
+								)
+								.build())
+						.addMethod(globalChangeDeserialize.addCode(
+								"throw new $T(String.format(\"Unknown change type %s\", type));\n",
 								RuntimeException.class
-						)
-						.build())
-				.addMethod(globalChangeDeserialize.addCode(
-						"throw new $T(String.format(\"Unknown change type %s\", type));\n",
-						RuntimeException.class
-				).build())
-				.build());
+						).build())
+						.build()
+		);
 	}
 
 	public void write(ClassName name, TypeSpec spec) {

@@ -13,5 +13,12 @@ public class ModelDeserializationContext {
 	public abstract static class Finisher {
 		public abstract void finish(ModelDeserializationContext context);
 	}
+
 	public final List<Finisher> finishers = new ArrayList<>();
+
+	public <T> T getObject(long key) {
+		return (T) objectMap.computeIfAbsent(key, k -> {
+			throw new IllegalStateException(String.format("Can't find object %s in saved data.", key));
+		});
+	}
 }

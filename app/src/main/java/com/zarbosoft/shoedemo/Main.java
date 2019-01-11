@@ -3,6 +3,7 @@ package com.zarbosoft.shoedemo;
 import com.google.common.collect.ImmutableList;
 import com.zarbosoft.appdirsj.AppDirs;
 import com.zarbosoft.luxem.extra.SimpleKVStore;
+import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.shoedemo.model.ImageFrame;
 import com.zarbosoft.shoedemo.model.ImageNode;
 import com.zarbosoft.shoedemo.model.ProjectNode;
@@ -11,6 +12,7 @@ import javafx.application.Application;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.Property;
 import javafx.beans.property.StringProperty;
+import javafx.scene.paint.Color;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 
@@ -18,6 +20,8 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 
 import static com.zarbosoft.shoedemo.Window.uniqueName;
@@ -29,8 +33,35 @@ public class Main extends Application {
 	public final static String SETTING_MAX_UNDO = "maxundo";
 	public final static int opacityMax = 1000;
 
+	public final static int NO_LOOP = 0;
+	public final static int NO_LENGTH = -1;
+	public final static int NO_INNER = -1;
+
 	public static void main(String[] args) {
 		Main.launch(args);
+	}
+
+	public static Color c(java.awt.Color source) {
+		return Color.rgb(source.getRed(), source.getGreen(), source.getBlue());
+	}
+
+	public static void moveTo(List list, int source, int count, int dest) {
+		if (list.get(0) instanceof Wrapper)
+			throw new Assertion(); // DEBUG
+		List temp0 = list.subList(source, source + count);
+		List temp1 = new ArrayList(temp0);
+		temp0.clear();
+		list.addAll(dest, temp1);
+	}
+
+	public static void moveWrapperTo(List<Wrapper> list, int source, int count, int dest) {
+		List temp0 = list.subList(source, source + count);
+		List temp1 = new ArrayList(temp0);
+		temp0.clear();
+		list.addAll(dest, temp1);
+		for (int i = Math.min(source, dest); i < list.size(); ++i) {
+			list.get(i).parentIndex = i;
+		}
 	}
 
 	@Override
@@ -82,7 +113,7 @@ public class Main extends Application {
 							})
 					);
 				});
-				builder.slider("Opacity", 0, 100000, slider -> {
+				builder.slider("Opacity", 0, opacityMax, slider -> {
 					slider.setValue(node.opacity());
 					Main.<DoubleProperty, Number>bind(
 							slider.valueProperty(),

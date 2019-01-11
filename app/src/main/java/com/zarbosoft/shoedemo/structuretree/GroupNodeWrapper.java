@@ -6,7 +6,6 @@ import com.zarbosoft.shoedemo.model.*;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.control.TextField;
 import javafx.scene.control.TreeItem;
 
 import java.util.ArrayList;
@@ -15,8 +14,8 @@ import java.util.stream.Collectors;
 
 import static com.zarbosoft.shoedemo.Main.nodeFormFields;
 import static com.zarbosoft.shoedemo.Main.opacityMax;
-import static com.zarbosoft.shoedemo.Timeline.moveTo;
-import static com.zarbosoft.shoedemo.Timeline.moveWrapperTo;
+import static com.zarbosoft.shoedemo.Main.moveTo;
+import static com.zarbosoft.shoedemo.Main.moveWrapperTo;
 import static com.zarbosoft.shoedemo.Window.uniqueName1;
 
 public class GroupNodeWrapper extends Wrapper {
@@ -178,6 +177,7 @@ public class GroupNodeWrapper extends Wrapper {
 					GroupTimeFrame timeFrame = GroupTimeFrame.create(context);
 					timeFrame.initialLengthSet(context, -1);
 					timeFrame.initialInnerOffsetSet(context, 0);
+					timeFrame.initialInnerLoopSet(context,0 );
 					layer.initialTimeFramesAdd(context, ImmutableList.of(timeFrame));
 					return layer;
 				}).collect(Collectors.toList())));
@@ -210,6 +210,7 @@ public class GroupNodeWrapper extends Wrapper {
 				GroupTimeFrame newFrame = GroupTimeFrame.create(context);
 				newFrame.initialLengthSet(context, frame.length());
 				newFrame.initialInnerOffsetSet(context, frame.innerOffset());
+				newFrame.initialInnerLoopSet(context,0 );
 				return newFrame;
 			}).collect(Collectors.toList()));
 			return newLayer;

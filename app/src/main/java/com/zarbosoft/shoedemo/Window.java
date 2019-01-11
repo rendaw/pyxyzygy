@@ -1,15 +1,13 @@
 package com.zarbosoft.shoedemo;
 
 import com.gojuno.morton.Morton64;
-import com.google.common.collect.ImmutableList;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.shoedemo.model.*;
-import com.zarbosoft.shoedemo.model.Vector;
+import com.zarbosoft.shoedemo.parts.timeline.Timeline;
 import com.zarbosoft.shoedemo.structuretree.CameraWrapper;
 import com.zarbosoft.shoedemo.structuretree.GroupLayerWrapper;
 import com.zarbosoft.shoedemo.structuretree.GroupNodeWrapper;
 import com.zarbosoft.shoedemo.structuretree.ImageNodeWrapper;
-import javafx.application.Application;
 import javafx.geometry.Orientation;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -31,8 +29,6 @@ import org.apache.batik.util.SVGConstants;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 
 import static com.zarbosoft.rendaw.common.Common.uncheck;

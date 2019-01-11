@@ -20,10 +20,5 @@ public class ProjectContextBase {
 		this.path = path;
 		changesDir = path.resolve("changes");
 		tileDir = path.resolve("tiles");
-		uncheck(() -> {
-			Files.createDirectories(path);
-			Files.createDirectories(changesDir);
-			Files.createDirectories(tileDir);
-		});
 	}
 }

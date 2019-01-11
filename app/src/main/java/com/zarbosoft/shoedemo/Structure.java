@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 
 import static com.zarbosoft.rendaw.common.Common.last;
 import static com.zarbosoft.shoedemo.Main.opacityMax;
-import static com.zarbosoft.shoedemo.Timeline.moveTo;
+import static com.zarbosoft.shoedemo.Main.moveTo;
 import static com.zarbosoft.shoedemo.Window.icon;
 import static com.zarbosoft.shoedemo.Window.uniqueName;
 import static com.zarbosoft.shoedemo.Wrapper.TakesChildren.NONE;
@@ -86,10 +86,10 @@ public class Structure {
 	}
 
 	private void prepareTreeItem(TreeItem<Wrapper> item) {
+		item.setExpanded(true);
 		item.getChildren().addListener((ListChangeListener<? super TreeItem<Wrapper>>) c -> {
 			while (c.next()) {
 				if (!c.getAddedSubList().isEmpty()) {
-					item.setExpanded(true);
 					c.getAddedSubList().forEach(a -> {
 						prepareTreeItem(a);
 						treeItemAdded(a);

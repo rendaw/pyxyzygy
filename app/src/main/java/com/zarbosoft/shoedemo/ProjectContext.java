@@ -5,6 +5,7 @@ import com.zarbosoft.luxem.read.StackReader;
 import com.zarbosoft.luxem.write.RawWriter;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.DeadCode;
+import com.zarbosoft.rendaw.common.Pair;
 import com.zarbosoft.shoedemo.deserialize.ModelDeserializationContext;
 import com.zarbosoft.shoedemo.model.*;
 import javafx.beans.property.SimpleObjectProperty;
@@ -36,6 +37,25 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 	public List<FrameMapEntry> timeMap;
 	public SimpleObjectProperty<Wrapper> selectedForEdit = new SimpleObjectProperty<>();
 	public SimpleObjectProperty<Wrapper> selectedForView = new SimpleObjectProperty<>();
+
+	public Pair<Integer, FrameMapEntry> findTimeMapEntry(int outer) {
+		int outerAt = 0;
+		for (FrameMapEntry outerFrame : timeMap) {
+			if (outer >= outerAt && (outerFrame.length == -1 || outer < outerAt + outerFrame.length)) {
+				return new Pair<>(outerAt, outerFrame);
+			}
+			outerAt += outerFrame.length;
+		}
+		throw new Assertion();
+	}
+
+	public int timeToInner(int outer) {
+		Pair<Integer, FrameMapEntry> entry = findTimeMapEntry(outer);
+		if (entry.second.innerOffset == -1)
+			return -1;
+		return entry.second.innerOffset + outer - entry.first;
+	}
+
 
 	public void debugCheckRefCounts() {
 		Map<Long, Long> counts = new HashMap<>();
@@ -127,6 +147,11 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 
 	public ProjectContext(Path path) {
 		super(path);
+		uncheck(() -> {
+			Files.createDirectories(path);
+			Files.createDirectories(changesDir);
+			Files.createDirectories(tileDir);
+		});
 	}
 
 	private void flushAll() {

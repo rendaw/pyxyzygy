@@ -1,8 +1,8 @@
 package com.zarbosoft.shoedemo;
 
 public class FrameMapEntry {
-	final int length;
-	final int innerOffset;
+	public final int length;
+	public final int innerOffset;
 
 	public FrameMapEntry(int length, int innerOffset) {
 		this.length = length;

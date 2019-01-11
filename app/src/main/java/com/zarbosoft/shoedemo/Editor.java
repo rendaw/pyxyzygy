@@ -14,7 +14,7 @@ import javafx.scene.layout.Pane;
 
 import java.awt.*;
 
-import static com.zarbosoft.shoedemo.Timeline.c;
+import static com.zarbosoft.shoedemo.Main.c;
 
 public class Editor {
 	private final ProjectContext context;
