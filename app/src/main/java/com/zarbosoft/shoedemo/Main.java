@@ -167,37 +167,49 @@ public class Main extends Application {
 	}
 
 	public static <T, R> Runnable mirror(
-			ObservableList<T> source,
-			List<R> target,
-			Function<T, R> add,
-			Consumer<R> remove,
-			Consumer<Integer> update
+			ObservableList<T> source, List<R> target, Function<T, R> add, Consumer<R> remove, Consumer<Integer> update
 	) {
-		ListChangeListener<T> listener = c -> {
-			while (c.next()) {
-				if (c.wasAdded()) {
-					target.addAll(c.getFrom(), c.getAddedSubList().stream().map(add).collect(Collectors.toList()));
-				} else if (c.wasRemoved()) {
-					List<R> removing = target.subList(c.getFrom(), c.getTo());
-					removing.forEach(remove);
-					removing.clear();
-				} else if (c.wasPermutated()) {
-					throw new Assertion();
-				} else if (c.wasUpdated()) {
-					throw new Assertion();
-				}
-				update.accept(c.getFrom());
+		return new Runnable() {
+			private ListChangeListener<T> listener;
+			private boolean dead = false;
+
+			{
+				listener = c -> {
+					if (dead)
+						return;
+					while (c.next()) {
+						if (c.wasAdded()) {
+							target.addAll(
+									c.getFrom(),
+									c.getAddedSubList().stream().map(add).collect(Collectors.toList())
+							);
+						} else if (c.wasRemoved()) {
+							List<R> removing = target.subList(c.getFrom(), c.getTo());
+							removing.forEach(remove);
+							removing.clear();
+						} else if (c.wasPermutated()) {
+							throw new Assertion();
+						} else if (c.wasUpdated()) {
+							throw new Assertion();
+						}
+						update.accept(c.getFrom());
+					}
+				};
+				source.addListener(listener);
+				target.addAll(source.stream().map(add).collect(Collectors.toList()));
+				update.accept(0);
 			}
-		};
-		source.addListener(listener);
-		target.addAll(source.stream().map(add).collect(Collectors.toList()));
-		update.accept(0);
-		return () -> {
-			source.removeListener(listener);
+
+			@Override
+			public void run() {
+				dead = true;
+				source.removeListener(listener);
+			}
 		};
 	}
 
 	public static <T> Consumer<T> noopConsumer() {
-		return t -> {};
+		return t -> {
+		};
 	}
 }
