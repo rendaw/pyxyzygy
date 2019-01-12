@@ -61,6 +61,5 @@ public class ChangeStep implements Dirtyable {
 			RawWriter writer = new RawWriter(dest, (byte) ' ', 4);
 			changes.forEach(c -> c.serialize(writer));
 		});
-		System.out.format("wrote %s\n",path(context));System.out.flush();
 	}
 }

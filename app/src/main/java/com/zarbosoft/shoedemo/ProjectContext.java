@@ -9,6 +9,7 @@ import com.zarbosoft.rendaw.common.Pair;
 import com.zarbosoft.shoedemo.deserialize.ModelDeserializationContext;
 import com.zarbosoft.shoedemo.model.*;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.scene.image.Image;
 
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -30,32 +31,34 @@ import static com.zarbosoft.rendaw.common.Common.atomicWrite;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 
 public class ProjectContext extends ProjectContextBase implements Dirtyable {
+	public static Map<String, Image> iconCache = new HashMap<>();
+	public static Map<String, Integer> names = new HashMap<>();
 	public Project project;
 	public int tileSize = 256;
 
 	public History history;
-	public List<FrameMapEntry> timeMap;
-	public SimpleObjectProperty<Wrapper> selectedForEdit = new SimpleObjectProperty<>();
-	public SimpleObjectProperty<Wrapper> selectedForView = new SimpleObjectProperty<>();
 
-	public Pair<Integer, FrameMapEntry> findTimeMapEntry(int outer) {
-		int outerAt = 0;
-		for (FrameMapEntry outerFrame : timeMap) {
-			if (outer >= outerAt && (outerFrame.length == -1 || outer < outerAt + outerFrame.length)) {
-				return new Pair<>(outerAt, outerFrame);
-			}
-			outerAt += outerFrame.length;
-		}
-		throw new Assertion();
+	/**
+	 * Start at count 1 (unwritten) for machine generated names
+	 *
+	 * @param name
+	 * @return
+	 */
+	public static String uniqueName(String name) {
+		int count = names.compute(name, (n, i) -> i == null ? 1 : i + 1);
+		return count == 1 ? name : String.format("%s (%s)", name, count);
 	}
 
-	public int timeToInner(int outer) {
-		Pair<Integer, FrameMapEntry> entry = findTimeMapEntry(outer);
-		if (entry.second.innerOffset == -1)
-			return -1;
-		return entry.second.innerOffset + outer - entry.first;
+	/**
+	 * Start at count 2 if the first element is not in the map (user decided name)
+	 *
+	 * @param name
+	 * @return
+	 */
+	public static String uniqueName1(String name) {
+		int count = names.compute(name, (n, i) -> i == null ? 2 : i + 1);
+		return count == 1 ? name : String.format("%s (%s)", name, count);
 	}
-
 
 	public void debugCheckRefCounts() {
 		Map<Long, Long> counts = new HashMap<>();
@@ -162,7 +165,6 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 			i.remove();
 			readLock.lock();
 			try {
-				System.out.format("flushing %s\n", dirty);
 				dirty.dirtyFlush(ProjectContext.this);
 			} finally {
 				readLock.unlock();

@@ -3,6 +3,7 @@ package com.zarbosoft.shoedemo.parts.timeline;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.shoedemo.ProjectContext;
 import com.zarbosoft.shoedemo.WidgetHandle;
+import com.zarbosoft.shoedemo.Window;
 import com.zarbosoft.shoedemo.model.GroupLayer;
 import com.zarbosoft.shoedemo.model.ProjectNode;
 import com.zarbosoft.shoedemo.structuretree.GroupNodeWrapper;
@@ -59,27 +60,27 @@ public class RowAdapterGroupLayer extends RowAdapter {
 	}
 
 	@Override
-	public boolean createFrame(ProjectContext context, int outer) {
+	public boolean createFrame(ProjectContext context, Window window, int outer) {
 		throw new Assertion();
 	}
 
 	@Override
-	public boolean duplciateFrame(ProjectContext context, int outer) {
+	public boolean duplicateFrame(ProjectContext context, Window window, int outer) {
 		throw new Assertion();
 	}
 
 	@Override
-	public WidgetHandle createRowWidget(ProjectContext context) {
+	public WidgetHandle createRowWidget(ProjectContext context, Window window) {
 		return null;
 	}
 
 	@Override
-	public int updateTime(ProjectContext context) {
+	public int updateTime(ProjectContext context, Window window) {
 		return 0;
 	}
 
 	@Override
-	public void updateFrameMarker(ProjectContext context) {
+	public void updateFrameMarker(ProjectContext context, Window window) {
 
 	}
 

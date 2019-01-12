@@ -5,6 +5,7 @@ import com.zarbosoft.shoedemo.model.Camera;
 import com.zarbosoft.shoedemo.model.ProjectNode;
 import com.zarbosoft.shoedemo.model.ProjectObject;
 import com.zarbosoft.shoedemo.model.Vector;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.Group;
@@ -25,7 +26,7 @@ import java.util.List;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 import static com.zarbosoft.shoedemo.Main.nodeFormFields;
 import static com.zarbosoft.shoedemo.Main.opacityMax;
-import static com.zarbosoft.shoedemo.Window.uniqueName1;
+import static com.zarbosoft.shoedemo.ProjectContext.uniqueName1;
 import static com.zarbosoft.shoedemo.structuretree.ImageNodeWrapper.snapshot;
 
 public class CameraWrapper extends Wrapper {
@@ -40,7 +41,7 @@ public class CameraWrapper extends Wrapper {
 	private final Camera.EndSetListener endListener;
 	private final Camera.FrameRateSetListener framerateListener;
 	private final Camera.OffsetSetListener offsetListener;
-	private Wrapper child;
+	private final SimpleObjectProperty<Wrapper> child = new SimpleObjectProperty<>();
 
 	Group canvas;
 	Group canvasChildren;
@@ -72,22 +73,15 @@ public class CameraWrapper extends Wrapper {
 			tree.get().getChildren().setAll(newValue);
 		};
 		this.innerSetListener = node.addInnerSetListeners((target, value) -> {
-			if (child != null) {
-				if (canvas != null) {
-					canvas.getChildren().remove(child.getCanvas());
-					child.tree.removeListener(childTreeListener);
-					child.destroyCanvas();
-				}
-				child.remove(context);
+			if (child.get() != null) {
+				child.get().tree.removeListener(childTreeListener);
+				child.get().remove(context);
 			}
 			tree.get().getChildren().clear();
 			if (value != null) {
-				child = Window.createNode(context, this, 0, value);
-				child.tree.addListener(childTreeListener);
-				tree.get().getChildren().add(child.tree.getValue());
-				if (canvas != null) {
-					canvas.getChildren().add(0, child.buildCanvas(context, viewBounds));
-				}
+				child .set(Window.createNode(context, this, 0, value));
+				child.get().tree.addListener(childTreeListener);
+				tree.get().getChildren().add(child.get().tree.getValue());
 			}
 		});
 		this.widthListener = node.addWidthSetListeners((target, value) -> {
@@ -170,36 +164,52 @@ public class CameraWrapper extends Wrapper {
 		this.baseViewBounds = newBounds;
 		DoubleRectangle newViewBounds = baseViewBounds.plus(node.offset());
 		if (child != null) {
-			child.scroll(context, viewBounds, newViewBounds);
+			child.get().scroll(context, viewBounds, newViewBounds);
 		}
 		viewBounds = newViewBounds;
 	}
 
 	@Override
-	public Node buildCanvas(ProjectContext context, DoubleRectangle bounds) {
-		this.baseViewBounds = bounds;
-		this.viewBounds = bounds.plus(node.offset());
-		canvas = new Group();
-		canvasChildren = new Group();
-		updateOffset();
-		cameraBorder = new Rectangle();
-		updateCameraBorder();
-		if (child != null)
-			canvasChildren.getChildren().addAll(child.buildCanvas(context, bounds), cameraBorder);
-		canvas.getChildren().addAll(canvasChildren, cameraBorder);
-		return canvas;
-	}
+	public WidgetHandle buildCanvas(ProjectContext context, DoubleRectangle bounds) {
+		return new WidgetHandle() {
+			private final ChangeListener<? super Wrapper> childListener;
+			WidgetHandle childCanvas;
 
-	@Override
-	public Node getCanvas() {
-		return canvas;
-	}
+			{
+				baseViewBounds = bounds;
+				viewBounds = bounds.plus(node.offset());
+				canvas = new Group();
+				canvasChildren = new Group();
+				cameraBorder = new Rectangle();
+				updateOffset();
+				updateCameraBorder();
+				canvas.getChildren().addAll(canvasChildren, cameraBorder);
+				child.addListener(this.childListener = (observable, oldValue, newValue) -> {
+					if (oldValue != null) {
+						canvasChildren.getChildren().clear();
+						childCanvas.remove();
+						childCanvas = null;
+					}
+					if (newValue != null) {
+						childCanvas = newValue.buildCanvas(context, viewBounds);
+						canvasChildren.getChildren().add(0, childCanvas.getWidget());
+					}
+				});
+				childListener.changed(null,null ,child.get() );
+			}
+			@Override
+			public Node getWidget() {
+				return canvas;
+			}
 
-	@Override
-	public void destroyCanvas() {
-		canvas = null;
-		canvasChildren = null;
-		cameraBorder = null;
+			@Override
+			public void remove() {
+				child.removeListener(childListener);
+				canvas = null;
+				canvasChildren = null;
+				cameraBorder = null;
+			}
+		};
 	}
 
 	@Override
@@ -245,9 +255,9 @@ public class CameraWrapper extends Wrapper {
 
 	@Override
 	public void render(GraphicsContext gc, int frame, com.zarbosoft.shoedemo.model.Rectangle crop) {
-		if (child == null)
+		if (child.get() == null)
 			return;
-		child.render(gc, frame, crop.plus(node.offset()));
+		child.get().render(gc, frame, crop.plus(node.offset()));
 	}
 
 	@Override
@@ -262,9 +272,9 @@ public class CameraWrapper extends Wrapper {
 
 	@Override
 	public void setFrame(ProjectContext context, int frameNumber) {
-		if (child == null)
+		if (child.get() == null)
 			return;
-		child.setFrame(context, frameNumber);
+		child.get().setFrame(context, frameNumber);
 	}
 
 	@Override
@@ -305,7 +315,7 @@ public class CameraWrapper extends Wrapper {
 						GraphicsContext gc = canvas.getGraphicsContext2D();
 						for (int i = 0; i < node.end(); ++i) {
 							gc.clearRect(0, 0, node.width(), node.height());
-							child.render(gc, i, crop);
+							child.get().render(gc, i, crop);
 							ImageIO.write(SwingFXUtils.fromFXImage(snapshot(canvas), null),
 									"PNG",
 									renderPath.resolve(String.format("frame%06d.png", i)).toFile()

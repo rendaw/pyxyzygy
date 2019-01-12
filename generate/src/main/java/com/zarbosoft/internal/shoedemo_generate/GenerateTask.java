@@ -981,7 +981,7 @@ public class GenerateTask extends Task {
 								.addParameter(ParameterizedTypeName.get(ClassName.get(Consumer.class),
 										TypeVariableName.get("T")
 								), "remove")
-								.addParameter(Runnable.class, "change")
+								.addParameter(ParameterizedTypeName.get(Consumer.class, Integer.class /* Index of first change */), "change")
 								.addCode(CodeBlock.builder().add(
 										"$T addListener = add$LAddListeners((target, at, values) -> {\n",
 										addBuilder.getListenerName(),
@@ -989,7 +989,7 @@ public class GenerateTask extends Task {
 								).indent().add(
 										"list.addAll(at, values.stream().map(create).collect($T.toList()));\n",
 										Collectors.class
-								).add("change.run();\n").unindent().add("});\n").build())
+								).add("change.accept(at);\n").unindent().add("});\n").build())
 								.addCode(CodeBlock
 										.builder()
 										.add(
@@ -1003,7 +1003,7 @@ public class GenerateTask extends Task {
 										)
 										.add("sublist.forEach(remove);\n")
 										.add("sublist.clear();\n")
-										.add("change.run();\n")
+										.add("change.accept(at);\n")
 										.unindent()
 										.add("});\n")
 										.build())
@@ -1015,7 +1015,7 @@ public class GenerateTask extends Task {
 										)
 										.indent()
 										.add("list.clear();\n")
-										.add("change.run();\n")
+										.add("change.accept(0);\n")
 										.unindent()
 										.add("});\n")
 										.build())
@@ -1033,7 +1033,7 @@ public class GenerateTask extends Task {
 										.add("List<$T> temp = new ArrayList(sublist);\n", TypeVariableName.get("T"))
 										.add("sublist.clear();\n")
 										.add("list.addAll(dest, temp);\n")
-										.add("change.run();\n")
+										.add("change.accept($T.min(source, dest));\n", Math.class)
 										.unindent()
 										.add("});\n")
 										.build())

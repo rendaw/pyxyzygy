@@ -8,7 +8,6 @@ import javafx.scene.Node;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.control.TextField;
 import javafx.scene.control.TreeItem;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
@@ -24,12 +23,11 @@ import java.util.stream.Collectors;
 
 import static com.zarbosoft.shoedemo.Main.nodeFormFields;
 import static com.zarbosoft.shoedemo.Main.opacityMax;
-import static com.zarbosoft.shoedemo.Window.uniqueName1;
+import static com.zarbosoft.shoedemo.ProjectContext.uniqueName1;
 
 public class ImageNodeWrapper extends Wrapper {
 	private final ProjectContext context;
 	private final ImageNode node;
-	private final ProjectNode.OpacitySetListener opacityListener;
 	private final ImageNode.FramesAddListener framesAddListener;
 	private final ImageNode.FramesRemoveListener framesRemoveListener;
 	private final ImageNode.FramesMoveToListener framesMoveListener;
@@ -37,6 +35,9 @@ public class ImageNodeWrapper extends Wrapper {
 	private final Wrapper parent;
 	DoubleRectangle bounds;
 	private int frameNumber;
+	Map<Long, WrapTile> wrapTiles = new HashMap<>();
+	Pane draw;
+	private ImageFrame.TilesPutAllListener tilesPutListener;
 
 	class WrapTile {
 		private final ImageView widget;
@@ -44,7 +45,6 @@ public class ImageNodeWrapper extends Wrapper {
 		WrapTile(Tile tile, int x, int y) {
 			widget = new ImageView();
 			widget.setMouseTransparent(true);
-			System.out.format("wrap tile at %s %s\n", x, y);
 			widget.setLayoutX(x);
 			widget.setLayoutY(y);
 			update(tile);
@@ -55,21 +55,12 @@ public class ImageNodeWrapper extends Wrapper {
 		}
 	}
 
-	Map<Long, WrapTile> wrapTiles = new HashMap<>();
-	Pane draw;
-	private ImageFrame.TilesPutAllListener tilesPutListener;
-
 	public ImageNodeWrapper(ProjectContext context, Wrapper parent, int parentIndex, ImageNode node) {
 		this.context = context;
 		this.node = node;
 		this.parent = parent;
 		this.parentIndex = parentIndex;
 		tree.set(new TreeItem<>(this));
-		this.opacityListener = node.addOpacitySetListeners((target, value) -> {
-			if (draw != null) {
-				draw.setOpacity((double)value / opacityMax);
-			}
-		});
 		this.framesAddListener = node.addFramesAddListeners((target, at, value) -> setFrame(context, frameNumber));
 		this.framesRemoveListener =
 				node.addFramesRemoveListeners((target, at, count) -> setFrame(context, frameNumber));
@@ -94,6 +85,7 @@ public class ImageNodeWrapper extends Wrapper {
 
 	@Override
 	public void scroll(ProjectContext context, DoubleRectangle oldBounds1, DoubleRectangle newBounds1) {
+		this.bounds = newBounds1;
 		if (draw == null)
 			return;
 		Rectangle oldBounds = oldBounds1.scale(3).descaleIntOuter(context.tileSize);
@@ -104,7 +96,7 @@ public class ImageNodeWrapper extends Wrapper {
 			for (int y = 0; y < oldBounds.height; ++y) {
 				if (newBounds.contains(x, y))
 					continue;
-				long key = Window.morton.spack(oldBounds.x + x, oldBounds.y + y);
+				long key = oldBounds.corner().to1D();
 				draw.getChildren().remove(wrapTiles.get(key));
 			}
 		}
@@ -112,7 +104,7 @@ public class ImageNodeWrapper extends Wrapper {
 		// Add missing tiles in bounds
 		for (int x = 0; x < newBounds.width; ++x) {
 			for (int y = 0; y < newBounds.height; ++y) {
-				long key = Window.morton.spack(newBounds.x + x, newBounds.y + y);
+				long key = newBounds.corner().to1D();
 				if (wrapTiles.containsKey(key))
 					continue;
 				Tile tile = (Tile) frame.tilesGet(key);
@@ -128,6 +120,7 @@ public class ImageNodeWrapper extends Wrapper {
 
 	public void attachTiles() {
 		frame.addTilesPutAllListeners(tilesPutListener = (target, put, remove) -> {
+			System.out.format("put all\n");
 			for (Long key : remove) {
 				WrapTile old = wrapTiles.remove(key);
 				if (old != null)
@@ -136,17 +129,18 @@ public class ImageNodeWrapper extends Wrapper {
 			Rectangle checkBounds = bounds.scale(3).descaleIntOuter(context.tileSize);
 			for (Map.Entry<Long, TileBase> entry : put.entrySet()) {
 				long key = entry.getKey();
-				long[] indexes = Window.morton.sunpack(key);
-				int x = (int) indexes[0];
-				int y = (int) indexes[1];
-				if (!checkBounds.contains(x, y))
+				Vector indexes = Vector.from1D(key);
+				System.out.format("\ttile %s %s : bounds %s %s %s %s\n", indexes.x,indexes.y,checkBounds.x,checkBounds.y,checkBounds.width,checkBounds.height);
+				if (!checkBounds.contains(indexes.x, indexes.y)) {
+					System.out.format("\t\tout\n");
 					continue;
+				}
 				Tile value = (Tile) entry.getValue();
 				WrapTile old = wrapTiles.get(key);
 				if (old != null) {
 					old.update(value);
 				} else {
-					WrapTile wrap = new WrapTile(value, x * context.tileSize, y * context.tileSize);
+					WrapTile wrap = new WrapTile(value, indexes.x * context.tileSize, indexes.y * context.tileSize);
 					wrapTiles.put(key, wrap);
 					draw.getChildren().add(wrap.widget);
 				}
@@ -154,24 +148,39 @@ public class ImageNodeWrapper extends Wrapper {
 		});
 	}
 
-	@Override
-	public Node buildCanvas(ProjectContext context, DoubleRectangle bounds) {
-		this.bounds = bounds;
-		draw = new Pane();
-		attachTiles();
-		return draw;
-	}
-
-	@Override
-	public Node getCanvas() {
-		return draw;
-	}
-
-	@Override
-	public void destroyCanvas() {
+	public void detachTiles() {
 		frame.removeTilesPutAllListeners(tilesPutListener);
-		draw = null;
+		tilesPutListener = null;
+		draw.getChildren().clear();
 		wrapTiles.clear();
+	}
+
+	@Override
+	public WidgetHandle buildCanvas(ProjectContext context, DoubleRectangle bounds) {
+		return new WidgetHandle() {
+			private final ProjectNode.OpacitySetListener opacityListener;
+
+			{
+				ImageNodeWrapper.this.bounds = bounds;
+				draw = new Pane();
+				this.opacityListener = node.addOpacitySetListeners((target, value) -> {
+					draw.setOpacity((double) value / opacityMax);
+				});
+				attachTiles();
+			}
+
+			@Override
+			public Node getWidget() {
+				return draw;
+			}
+
+			@Override
+			public void remove() {
+				node.removeOpacitySetListeners(opacityListener);
+				detachTiles();
+				draw = null;
+			}
+		};
 	}
 
 	@Override
@@ -218,9 +227,7 @@ public class ImageNodeWrapper extends Wrapper {
 				);
 				context.history.change(c -> c
 						.imageFrame(frame)
-						.tilesPut(Window.morton.spack(tileBounds.x + x0, tileBounds.y + y0),
-								Tile.create(context, shot)
-						));
+						.tilesPut(tileBounds.corner().plus(x0, y0).to1D(), Tile.create(context, shot)));
 			}
 		}
 	}
@@ -260,7 +267,7 @@ public class ImageNodeWrapper extends Wrapper {
 		Rectangle tileBounds = crop.divide(context.tileSize);
 		for (int x = 0; x < tileBounds.width; ++x) {
 			for (int y = 0; y < tileBounds.height; ++y) {
-				Tile tile = (Tile) frame.tilesGet(Window.morton.spack(tileBounds.x + x, tileBounds.y + y));
+				Tile tile = (Tile) frame.tilesGet(tileBounds.corner().plus(x, y).to1D());
 				if (tile == null)
 					continue;
 				gc.drawImage(tile.getData(context),
@@ -321,10 +328,10 @@ public class ImageNodeWrapper extends Wrapper {
 	public void setFrame(ProjectContext context, int frameNumber) {
 		this.frameNumber = frameNumber;
 		ImageFrame found = findFrame(frameNumber);
+		System.out.format("set frame %s: %s vs %s\n",frameNumber, frame, found);
 		if (frame != found) {
 			if (draw != null) {
-				frame.removeTilesPutAllListeners(tilesPutListener);
-				draw.getChildren().clear();
+				detachTiles();
 			}
 			frame = found;
 			if (draw != null) {
@@ -335,7 +342,6 @@ public class ImageNodeWrapper extends Wrapper {
 
 	@Override
 	public void remove(ProjectContext context) {
-		node.removeOpacitySetListeners(opacityListener);
 		node.removeFramesAddListeners(framesAddListener);
 		node.removeFramesRemoveListeners(framesRemoveListener);
 		node.removeFramesMoveToListeners(framesMoveListener);
@@ -360,7 +366,7 @@ public class ImageNodeWrapper extends Wrapper {
 
 	@Override
 	public void render(GraphicsContext gc, int frame, Rectangle crop) {
-		render(gc, findFrame(frame), crop, (double)node.opacity() / opacityMax);
+		render(gc, findFrame(frame), crop, (double) node.opacity() / opacityMax);
 	}
 
 	@Override

@@ -1,6 +1,7 @@
 package com.zarbosoft.shoedemo;
 
 import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.scene.Group;
@@ -18,6 +19,8 @@ import static com.zarbosoft.shoedemo.Main.c;
 
 public class Editor {
 	private final ProjectContext context;
+	private final Window window;
+	private WidgetHandle viewHandle;
 	private DoubleVector scroll = new DoubleVector(0, 0);
 	public final Pane canvas;
 	private final Group canvasInner;
@@ -53,18 +56,23 @@ public class Editor {
 		canvasInner.setLayoutX(scroll.x + canvas.widthProperty().get() / 2);
 		canvasInner.setLayoutY(scroll.y + canvas.heightProperty().get() / 2);
 		DoubleRectangle newBounds = viewBounds();
-		if (context.selectedForView.get() != null)
-			context.selectedForView.get().scroll(context, oldBounds, newBounds);
+		if (window.selectedForView.get() != null)
+			window.selectedForView.get().scroll(context, oldBounds, newBounds);
 	}
 
 	public void updateScroll() {
 		updateScroll(scroll);
 	}
 
-	public Editor(ProjectContext context) {
+	public Editor(ProjectContext context, Window window) {
 		this.context = context;
+		this.window = window;
 		canvas = new Pane();
-		canvas.setBackground(new Background(new BackgroundFill(c(new Color(99, 80, 97)), CornerRadii.EMPTY, Insets.EMPTY)));
+		canvas.setBackground(new Background(new BackgroundFill(
+				c(new Color(99, 80, 97)),
+				CornerRadii.EMPTY,
+				Insets.EMPTY
+		)));
 		canvas.setFocusTraversable(true);
 		canvasInner = new Group();
 		canvas.getChildren().add(canvasInner);
@@ -86,9 +94,9 @@ public class Editor {
 			eventState.startScroll = scroll;
 			eventState.startScrollClick = new DoubleVector(e.getSceneX(), e.getSceneY());
 			if (e.getButton() == MouseButton.PRIMARY) {
-				Wrapper edit = context.selectedForEdit.get();
+				Wrapper edit = window.selectedForEdit.get();
 				if (edit != null) {
-					edit.markStart(context,eventState.previous);
+					edit.markStart(context, eventState.previous);
 					edit.mark(context, eventState.previous, eventState.previous);
 				}
 			}
@@ -100,7 +108,7 @@ public class Editor {
 		canvas.addEventFilter(MouseEvent.MOUSE_DRAGGED, e -> {
 			DoubleVector end = normalizeEventCoordinates(e);
 			if (e.getButton() == MouseButton.PRIMARY) {
-				Wrapper edit = context.selectedForEdit.get();
+				Wrapper edit = window.selectedForEdit.get();
 				if (edit != null) {
 					edit.mark(context, eventState.previous, end);
 				}
@@ -112,13 +120,26 @@ public class Editor {
 			eventState.previous = end;
 		});
 
-		context.selectedForView.addListener((observable, oldValue, newValue) -> {
-			if (oldValue != null) {
-				canvasInner.getChildren().remove(oldValue.getCanvas());
-				oldValue.destroyCanvas();
+		window.selectedForView.addListener(new ChangeListener<Wrapper>() {
+			{
+				changed(null, null, window.selectedForView.get());
 			}
-			updateScroll();
-			canvasInner.getChildren().add(newValue.buildCanvas(context, viewBounds()));
+
+			@Override
+			public void changed(
+					ObservableValue<? extends Wrapper> observable, Wrapper oldValue, Wrapper newValue
+			) {
+				if (viewHandle != null) {
+					canvasInner.getChildren().clear();
+					viewHandle.remove();
+					viewHandle = null;
+				}
+				if (newValue != null) {
+					viewHandle = newValue.buildCanvas(context, viewBounds());
+					canvasInner.getChildren().add(viewHandle.getWidget());
+					updateScroll();
+				}
+			}
 		});
 	}
 

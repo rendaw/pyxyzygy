@@ -29,11 +29,7 @@ public abstract class Wrapper {
 
 	public abstract void scroll(ProjectContext context, DoubleRectangle oldBounds, DoubleRectangle newBounds);
 
-	public abstract Node buildCanvas(ProjectContext context, DoubleRectangle bounds);
-
-	public abstract Node getCanvas();
-
-	public abstract void destroyCanvas();
+	public abstract WidgetHandle buildCanvas(ProjectContext context, DoubleRectangle bounds);
 
 	public abstract void mark(ProjectContext context, DoubleVector start, DoubleVector end);
 

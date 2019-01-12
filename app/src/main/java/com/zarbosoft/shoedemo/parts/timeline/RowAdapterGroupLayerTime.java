@@ -2,6 +2,7 @@ package com.zarbosoft.shoedemo.parts.timeline;
 
 import com.zarbosoft.shoedemo.ProjectContext;
 import com.zarbosoft.shoedemo.WidgetHandle;
+import com.zarbosoft.shoedemo.Window;
 import com.zarbosoft.shoedemo.model.GroupLayer;
 import com.zarbosoft.shoedemo.model.GroupTimeFrame;
 import com.zarbosoft.shoedemo.structuretree.GroupLayerWrapper;
@@ -53,13 +54,18 @@ public class RowAdapterGroupLayerTime extends RowAdapter {
 	}
 
 	@Override
-	public boolean createFrame(ProjectContext context, int outer) {
-		return createFrame(context, outer, previous -> GroupTimeFrame.create(context));
+	public boolean createFrame(ProjectContext context, Window window, int outer) {
+		return createFrame(context, window,outer, previous -> {
+			GroupTimeFrame created =GroupTimeFrame.create(context);
+			created.initialInnerOffsetSet(context, 0);
+			created.initialInnerLoopSet(context, 0);
+			return created;
+		});
 	}
 
 	@Override
-	public boolean duplciateFrame(ProjectContext context, int outer) {
-		return createFrame(context, outer, previous -> {
+	public boolean duplicateFrame(ProjectContext context, Window window, int outer) {
+		return createFrame(context, window,outer, previous -> {
 			GroupTimeFrame created = GroupTimeFrame.create(context);
 			created.initialInnerOffsetSet(context, previous.innerOffset());
 			created.initialInnerLoopSet(context, previous.innerLoop());
@@ -68,9 +74,9 @@ public class RowAdapterGroupLayerTime extends RowAdapter {
 	}
 
 	public boolean createFrame(
-			ProjectContext context, int outer, Function<GroupTimeFrame, GroupTimeFrame> cb
+			ProjectContext context, Window window, int outer, Function<GroupTimeFrame, GroupTimeFrame> cb
 	) {
-		int inner = context.timeToInner(outer);
+		int inner = window.timeToInner(outer);
 		if (inner == NO_INNER) return false;
 		GroupLayerWrapper.TimeResult previous = GroupLayerWrapper.findTime(layer, inner);
 		GroupTimeFrame newFrame = cb.apply(previous.frame);
@@ -82,8 +88,6 @@ public class RowAdapterGroupLayerTime extends RowAdapter {
 			newFrame.initialLengthSet(context, previous.frame.length() - offset);
 			context.history.change(c -> c.groupTimeFrame(previous.frame).lengthSet(offset));
 		}
-		newFrame.initialInnerOffsetSet(context, previous.frame.innerOffset() + offset);
-		newFrame.initialInnerLoopSet(context, 0);
 		context.history.change(c -> c.groupLayer(layer).timeFramesAdd(previous.frameIndex + 1, newFrame));
 		return true;
 	}
@@ -173,24 +177,25 @@ public class RowAdapterGroupLayerTime extends RowAdapter {
 	}
 
 	@Override
-	public int updateTime(ProjectContext context) {
+	public int updateTime(ProjectContext context, Window window) {
 		return row.map(r -> {
 			List<RowAdapterFrame> frameAdapters = new ArrayList<>();
 			for (int i = 0; i < layer.timeFramesLength(); ++i) {
 				GroupTimeFrame f = layer.timeFramesGet(i);
 				frameAdapters.add(new AdapterTimeFrame(i, layer, f));
 			}
-			return r.updateTime(context, frameAdapters);
+			return r.updateTime(context, window, frameAdapters);
 		}).orElse(0);
 	}
 
 	@Override
-	public void updateFrameMarker(ProjectContext context) {
-		row.ifPresent(r -> r.updateFrameMarker(context));
+	public void updateFrameMarker(ProjectContext context, Window window) {
+		row.ifPresent(r -> r.updateFrameMarker(context, window));
+		rowInnerRange.ifPresent(r -> r.updateFrameMarker(window));
 	}
 
 	@Override
-	public WidgetHandle createRowWidget(ProjectContext context) {
+	public WidgetHandle createRowWidget(ProjectContext context, Window window) {
 		return new WidgetHandle() {
 			final VBox layout = new VBox();
 
@@ -202,20 +207,20 @@ public class RowAdapterGroupLayerTime extends RowAdapter {
 			{
 				framesCleanup = layer.mirrorTimeFrames(frameCleanup, f -> {
 					GroupTimeFrame.LengthSetListener lengthListener = f.addLengthSetListeners((target, value) -> {
-						updateTime(context);
+						updateTime(context, window);
 					});
 					return () -> {
 						f.removeLengthSetListeners(lengthListener);
 					};
-				}, c -> c.run(), () -> {
-					updateTime(context);
+				}, c -> c.run(), at -> {
+					updateTime(context, window);
 				});
 				selectedFrameListener = (observable, oldValue, newValue) -> {
 					if (selectedFrameCleanup != null) {
 						selectedFrameCleanup.run();
 						selectedFrameCleanup = null;
 					}
-					if (newValue == null) {
+					if (newValue == null || !(newValue.frame instanceof AdapterTimeFrame)) {
 						rowInnerRange.ifPresent(w -> {
 							layout.getChildren().remove(w.base);
 							rowInnerRange = Optional.empty();
@@ -229,12 +234,17 @@ public class RowAdapterGroupLayerTime extends RowAdapter {
 						Runnable update = () -> {
 							rowInnerRange.get().set(new TimeRangeAdapter() {
 								@Override
-								public int getStart() {
+								public int getOuterAt() {
+									return newValue.at;
+								}
+
+								@Override
+								public int getInnerStart() {
 									return frame.innerOffset();
 								}
 
 								@Override
-								public int getLength() {
+								public int getInnerLength() {
 									return frame.innerLoop();
 								}
 

@@ -29,6 +29,7 @@ public class GroupLayerWrapper extends Wrapper {
 	private int currentFrame;
 	private Wrapper child;
 	private Group canvas;
+	private WidgetHandle childCanvas;
 	private DoubleRectangle baseBounds;
 	private DoubleRectangle lastBounds;
 
@@ -40,9 +41,9 @@ public class GroupLayerWrapper extends Wrapper {
 		this.innerSetListener = node.addInnerSetListeners((target, value) -> {
 			System.out.format("layer child set %s : %s\n", value, value == null ? null : value.name());
 			if (child != null) {
-				if (canvas != null) {
-					child.destroyCanvas();
+				if (childCanvas != null) {
 					canvas.getChildren().clear();
+					childCanvas.remove();
 				}
 				tree.unbind();
 				child.remove(context);
@@ -51,9 +52,9 @@ public class GroupLayerWrapper extends Wrapper {
 				child = Window.createNode(context, GroupLayerWrapper.this, 0, value);
 				tree.bind(child.tree);
 				if (canvas != null) {
-					Node childCanvas = child.buildCanvas(context, lastBounds);
+					childCanvas = child.buildCanvas(context, lastBounds);
+					canvas.getChildren().add(childCanvas.getWidget());
 					updateChildCanvasPosition(null);
-					canvas.getChildren().add(childCanvas);
 				}
 			}
 		});
@@ -223,30 +224,34 @@ public class GroupLayerWrapper extends Wrapper {
 	}
 
 	@Override
-	public Node buildCanvas(ProjectContext context, DoubleRectangle bounds) {
-		this.baseBounds = bounds;
-		GroupPositionFrame pos = findPosition();
-		this.lastBounds = baseBounds.minus(pos.offset());
-		canvas = new Group();
-		if (child != null) {
-			Node childCanvas = child.buildCanvas(context, this.lastBounds);
-			updateChildCanvasPosition(pos);
-			canvas.getChildren().add(childCanvas);
-		}
-		return canvas;
-	}
+	public WidgetHandle buildCanvas(ProjectContext context, DoubleRectangle bounds) {
+		return new WidgetHandle() {
+			{
+				GroupLayerWrapper.this.baseBounds = bounds;
+				GroupPositionFrame pos = findPosition();
+				lastBounds = baseBounds.minus(pos.offset());
+				canvas = new Group();
+				if (child != null) {
+					childCanvas = child.buildCanvas(context, lastBounds);
+					canvas.getChildren().add(childCanvas.getWidget());
+					updateChildCanvasPosition(pos);
+				}
+			}
 
-	@Override
-	public Node getCanvas() {
-		return canvas;
-	}
+			@Override
+			public Node getWidget() {
+				return canvas;
+			}
 
-	@Override
-	public void destroyCanvas() {
-		if (child != null) {
-			child.destroyCanvas();
-		}
-		canvas = null;
+			@Override
+			public void remove() {
+				if (childCanvas != null) {
+					childCanvas.remove();
+					childCanvas = null;
+				}
+				canvas = null;
+			}
+		};
 	}
 
 	@Override

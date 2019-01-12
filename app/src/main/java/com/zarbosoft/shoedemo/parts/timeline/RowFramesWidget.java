@@ -2,15 +2,16 @@ package com.zarbosoft.shoedemo.parts.timeline;
 
 import com.zarbosoft.shoedemo.FrameMapEntry;
 import com.zarbosoft.shoedemo.ProjectContext;
+import com.zarbosoft.shoedemo.Window;
 import javafx.beans.binding.Bindings;
 import javafx.scene.Group;
+import javafx.scene.effect.BlendMode;
 import javafx.scene.layout.Pane;
 import javafx.scene.shape.Rectangle;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.Callable;
 
 import static com.zarbosoft.rendaw.common.Common.sublist;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
@@ -30,7 +31,7 @@ public class RowFramesWidget extends Pane {
 				.bind(Bindings.createDoubleBinding(
 						() -> {
 							double corner = timeline.controlAlignment.localToScene(0, 0).getX();
-							return corner - localToScene(0, 0).getX() - timeline.timeScroll.getValue();
+							return corner - localToScene(0, 0).getX() - timeline.timeScroll.getValue() + Timeline.baseSize * 2;
 						},
 						localToSceneTransformProperty(),
 						timeline.controlAlignment.localToSceneTransformProperty(),
@@ -40,22 +41,26 @@ public class RowFramesWidget extends Pane {
 		setPrefHeight(getMinHeight());
 		setMaxHeight(getMinHeight());
 		frameMarker.setFill(Timeline.frameMarkerColor);
+		frameMarker.setBlendMode(BlendMode.MULTIPLY);
 		inner.getChildren().add(frameMarker);
 		getChildren().addAll(inner);
 	}
 
 	/**
 	 * @param context
+	 * @param window
 	 * @return max frame encountered
 	 */
-	public int updateTime(ProjectContext context, List<RowAdapterFrame> frameAdapters) {
-		System.out.format("row update time, adapters size %s, time map size %s\n", frameAdapters.size(), context.timeMap.size());
+	public int updateTime(
+			ProjectContext context, Window window, List<RowAdapterFrame> frameAdapters
+	) {
+		System.out.format("row update time, adapters size %s, time map size %s\n", frameAdapters.size(), window.timeMap.size());
 		FrameWidget foundSelectedFrame = null;
 		Object selectedId = Optional.ofNullable(timeline.selectedFrame.get()).map(f -> f.frame.id()).orElse(null);
 
 		int frameIndex = 0;
 		int outerAt = 0;
-		for (FrameMapEntry outer : context.timeMap) {
+		for (FrameMapEntry outer : window.timeMap) {
 			if (outer.innerOffset != -1) {
 				int previousInnerAt = 0;
 				int innerAt = 0;
@@ -120,10 +125,9 @@ public class RowFramesWidget extends Pane {
 		return outerAt;
 	}
 
-	public void updateFrameMarker(ProjectContext context) {
-		if (context.selectedForView.get() == null)
+	public void updateFrameMarker(ProjectContext context, Window window) {
+		if (window.selectedForView.get() == null)
 			return;
-		System.out.format("frmae marker at %s\n", context.selectedForView.get().frame.getValue() * timeline.zoom);
-		frameMarker.setLayoutX(context.selectedForView.get().frame.getValue() * timeline.zoom);
+		frameMarker.setLayoutX(window.selectedForView.get().frame.getValue() * timeline.zoom);
 	}
 }

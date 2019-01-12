@@ -2,8 +2,10 @@ package com.zarbosoft.shoedemo.parts.timeline;
 
 import com.zarbosoft.shoedemo.ProjectContext;
 import com.zarbosoft.shoedemo.WidgetHandle;
+import com.zarbosoft.shoedemo.Window;
 import com.zarbosoft.shoedemo.model.ImageFrame;
 import com.zarbosoft.shoedemo.model.ImageNode;
+import com.zarbosoft.shoedemo.model.Vector;
 import com.zarbosoft.shoedemo.structuretree.ImageNodeWrapper;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ObservableObjectValue;
@@ -40,7 +42,7 @@ class RowAdapterImageNode extends RowAdapter {
 	}
 
 	@Override
-	public int updateTime(ProjectContext context) {
+	public int updateTime(ProjectContext context, Window window) {
 		return row.map(r -> {
 			List<RowAdapterFrame> frameAdapters = new ArrayList<>();
 			for (int i0 = 0; i0 < node.framesLength(); ++i0) {
@@ -105,17 +107,17 @@ class RowAdapterImageNode extends RowAdapter {
 					}
 				});
 			}
-			return r.updateTime(context, frameAdapters);
+			return r.updateTime(context, window, frameAdapters);
 		}).orElse(0);
 	}
 
 	@Override
-	public void updateFrameMarker(ProjectContext context) {
-		row.ifPresent(r -> r.updateFrameMarker(context));
+	public void updateFrameMarker(ProjectContext context, Window window) {
+		row.ifPresent(r -> r.updateFrameMarker(context, window));
 	}
 
 	@Override
-	public WidgetHandle createRowWidget(ProjectContext context) {
+	public WidgetHandle createRowWidget(ProjectContext context, Window window) {
 		return new WidgetHandle() {
 			private VBox layout;
 			private final Runnable framesCleanup;
@@ -128,13 +130,13 @@ class RowAdapterImageNode extends RowAdapter {
 
 				framesCleanup = node.mirrorFrames(frameCleanup, f -> {
 					ImageFrame.LengthSetListener lengthListener = f.addLengthSetListeners((target, value) -> {
-						updateTime(context);
+						updateTime(context, window);
 					});
 					return () -> {
 						f.removeLengthSetListeners(lengthListener);
 					};
-				}, c -> c.run(), () -> {
-					updateTime(context);
+				}, c -> c.run(), at -> {
+					updateTime(context, window);
 				});
 			}
 
@@ -157,15 +159,17 @@ class RowAdapterImageNode extends RowAdapter {
 	}
 
 	@Override
-	public boolean createFrame(ProjectContext context, int outer) {
-		return insertNewFrame(context, outer, previous -> {
-			return ImageFrame.create(context);
+	public boolean createFrame(ProjectContext context, Window window, int outer) {
+		return insertNewFrame(context, window, outer, previous -> {
+			ImageFrame out = ImageFrame.create(context);
+			out.initialOffsetSet(context, new Vector(0, 0));
+			return out;
 		});
 	}
 
 	@Override
-	public boolean duplciateFrame(ProjectContext context, int outer) {
-		return insertNewFrame(context, outer, previous -> {
+	public boolean duplicateFrame(ProjectContext context, Window window, int outer) {
+		return insertNewFrame(context, window, outer, previous -> {
 			ImageFrame created = ImageFrame.create(context);
 			created.initialOffsetSet(context, previous.offset());
 			created.initialTilesPutAll(context, previous.tiles());
@@ -173,9 +177,15 @@ class RowAdapterImageNode extends RowAdapter {
 		});
 	}
 
-	private boolean insertNewFrame(ProjectContext context, int outer, Function<ImageFrame, ImageFrame> cb) {
-		final int inner = context.timeToInner(outer);
-		if (inner == NO_INNER) return false;
+	private boolean insertNewFrame(
+			ProjectContext context,
+			Window window,
+			int outer,
+			Function<ImageFrame, ImageFrame> cb
+	) {
+		final int inner = window.timeToInner(outer);
+		if (inner == NO_INNER)
+			return false;
 		ImageNodeWrapper.FrameResult previous = ImageNodeWrapper.findFrame(node, inner);
 		ImageFrame newFrame = cb.apply(previous.frame);
 		int offset = inner - previous.at;

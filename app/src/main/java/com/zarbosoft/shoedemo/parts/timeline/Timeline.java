@@ -12,14 +12,18 @@ import javafx.beans.Observable;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
 import javafx.event.EventHandler;
+import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.*;
+import javafx.scene.effect.BlendMode;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyEvent;
@@ -39,13 +43,14 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.zarbosoft.rendaw.common.Common.last;
 import static com.zarbosoft.rendaw.common.Common.sublist;
 import static com.zarbosoft.shoedemo.Main.*;
 import static javafx.scene.paint.Color.BLUE;
 
 public class Timeline {
 	private final ProjectContext context;
+	private final Window window;
+	public static final int extraFrames = 500;
 	public static final double baseSize = 16;
 	public double zoom = 16;
 
@@ -55,16 +60,12 @@ public class Timeline {
 	Pane scrub = new Pane();
 	Group scrubElements = new Group();
 	Rectangle frameMarker = new Rectangle(zoom, 0);
-	public final static Color frameMarkerColor = Main.c(new java.awt.Color(159, 123, 130));
+	public final static Color frameMarkerColor = Main.c(new java.awt.Color(195, 195, 195));
 	List<Label> scrubOuterNumbers = new ArrayList<>();
 	List<Label> scrubInnerNumbers = new ArrayList<>();
 	List<Rectangle> scrubRegionMarkers = new ArrayList<>();
 	List<Canvas> scrubRegions = new ArrayList<>();
 	SimpleObjectProperty<FrameWidget> selectedFrame = new SimpleObjectProperty<>();
-	/*
-	Frame selectedFrameWidget = null;
-	Object selectedId = null;
-	*/
 	private Runnable editHandle = null;
 	private final Button add;
 	private final Button duplicate;
@@ -89,34 +90,49 @@ public class Timeline {
 	ScrollBar timeScroll = new ScrollBar();
 	private TimeAdapterNode outerTimeHandle;
 
-	public Timeline(ProjectContext context) {
+	public Timeline(ProjectContext context, Window window) {
 		this.context = context;
-		context.selectedForView.addListener((observable, oldValue, newValue) -> {
-			Observable[] deps;
-			if (newValue == null)
-				deps = new Observable[] {requestedMaxFrame, calculatedMaxFrame};
-			else
-				deps = new Observable[] {requestedMaxFrame, calculatedMaxFrame, context.selectedForView.get().frame};
-			useMaxFrame.bind(Bindings.createIntegerBinding(() -> {
-				int out = 0;
-				out = Math.max(out, requestedMaxFrame.get());
-				out = Math.max(out, calculatedMaxFrame.get());
-				if (newValue != null)
-					out = Math.max(out, context.selectedForView.get().frame.get());
-				return out + 50;
-			}, deps));
+		this.window = window;
+		window.selectedForView.addListener(new ChangeListener<Wrapper>() {
+			{
+				changed(null,null ,window.selectedForView.get() );
+			}
+
+			@Override
+			public void changed(
+					ObservableValue<? extends Wrapper> observable, Wrapper oldValue, Wrapper newValue
+			) {
+				Observable[] deps;
+				if (newValue == null)
+					deps = new Observable[] {requestedMaxFrame, calculatedMaxFrame};
+				else
+					deps = new Observable[] {
+							requestedMaxFrame,
+							calculatedMaxFrame,
+							window.selectedForView.get().frame
+					};
+				useMaxFrame.bind(Bindings.createIntegerBinding(() -> {
+					int out = 0;
+					out = Math.max(out, requestedMaxFrame.get());
+					out = Math.max(out, calculatedMaxFrame.get());
+					if (newValue != null)
+						out = Math.max(out, window.selectedForView.get().frame.get());
+					System.out.format("max frame is %s\n", out + extraFrames);
+					return out + extraFrames;
+				}, deps));
+			}
 		});
-		timeScroll.maxProperty().bind(useMaxFrame.multiply(1.1).multiply(zoom));
+		timeScroll.maxProperty().bind(useMaxFrame.multiply(zoom));
 		tree.setRoot(new TreeItem<>());
 		tree.setShowRoot(false);
 		scrub.setBackground(Background.EMPTY);
 		scrub.setMinHeight(30);
 		scrub.getChildren().addAll(scrubElements);
 		EventHandler<MouseEvent> mouseEventEventHandler = e -> {
-			if (context.selectedForView.get() == null)
+			if (window.selectedForView.get() == null)
 				return;
 			Point2D corner = scrubElements.getLocalToSceneTransform().transform(0, 0);
-			context.selectedForView.get().frame.set(Math.max(0, (int) ((e.getSceneX() - corner.getX()) / zoom)));
+			window.selectedForView.get().frame.set(Math.max(0, (int) ((e.getSceneX() - corner.getX()) / zoom)));
 			updateFrameMarker();
 		};
 		scrub.addEventFilter(MouseEvent.MOUSE_CLICKED, mouseEventEventHandler);
@@ -124,16 +140,16 @@ public class Timeline {
 		scrub.addEventFilter(KeyEvent.KEY_TYPED, e -> {
 			switch (e.getCode()) {
 				case LEFT:
-					context.selectedForView.get().frame.set(Math.max(0, context.selectedForView.get().frame.get() - 1));
+					window.selectedForView.get().frame.set(Math.max(0, window.selectedForView.get().frame.get() - 1));
 					break;
 				case RIGHT:
-					context.selectedForView.get().frame.set(context.selectedForView.get().frame.get() + 1);
+					window.selectedForView.get().frame.set(window.selectedForView.get().frame.get() + 1);
 					break;
 			}
 		});
 		add = com.zarbosoft.shoedemo.Window.button("plus.svg", "Add");
 		add.setOnAction(e -> {
-			if (context.selectedForView.get() == null)
+			if (window.selectedForView.get() == null)
 				return;
 			tree
 					.getSelectionModel()
@@ -141,12 +157,12 @@ public class Timeline {
 					.stream()
 					.filter(c -> c.getTreeItem() != null &&
 							c.getTreeItem().getValue() != null &&
-							c.getTreeItem().getValue().createFrame(context, context.selectedForView.get().frame.get()))
+							c.getTreeItem().getValue().createFrame(context, window, window.selectedForView.get().frame.get()))
 					.findFirst();
 		});
 		duplicate = com.zarbosoft.shoedemo.Window.button("content-copy.svg", "Duplicate");
 		duplicate.setOnAction(e -> {
-			if (context.selectedForView.get() == null)
+			if (window.selectedForView.get() == null)
 				return;
 			tree
 					.getSelectionModel()
@@ -157,7 +173,7 @@ public class Timeline {
 							c
 									.getTreeItem()
 									.getValue()
-									.duplciateFrame(context, context.selectedForView.get().frame.get()))
+									.duplicateFrame(context, window,window.selectedForView.get().frame.get()))
 					.findFirst();
 		});
 		remove = com.zarbosoft.shoedemo.Window.button("minus.svg", "Remove");
@@ -236,8 +252,9 @@ public class Timeline {
 							return;
 						}
 						if (item.hasFrames()) {
-							rowControlsHandle = item.createRowWidget(context);
+							rowControlsHandle = item.createRowWidget(context,window);
 							setGraphic(rowControlsHandle.getWidget());
+							updateTime();
 						}
 						super.updateItem(item, empty);
 					}
@@ -275,19 +292,22 @@ public class Timeline {
 		timeScroll.setMin(0);
 		scrubElements.layoutXProperty().bind(Bindings.createDoubleBinding(() -> {
 			double corner = controlAlignment.localToScene(0, 0).getX();
-			return corner - scrub.localToScene(0, 0).getX() - timeScroll.getValue();
+			return corner - scrub.localToScene(0, 0).getX() - timeScroll.getValue() + Timeline.baseSize * 2;
 		}, controlAlignment.localToSceneTransformProperty(), timeScroll.valueProperty()));
-		scrubElements.getChildren().add(frameMarker);
 		frameMarker.heightProperty().bind(scrub.heightProperty());
 		frameMarker.setFill(frameMarkerColor);
+		frameMarker.setBlendMode(BlendMode.MULTIPLY);
+		scrubElements.getChildren().add(frameMarker);
 		timeScroll.visibleAmountProperty().bind(scrub.widthProperty().subtract(nameColumn.widthProperty()));
 
-		context.selectedForView.addListener((observable, oldValue, newValue) -> setNodes(newValue,
-				context.selectedForEdit.get()
+		window.selectedForView.addListener((observable, oldValue, newValue) -> setNodes(newValue,
+				window.selectedForEdit.get()
 		));
-		context.selectedForEdit.addListener((observable, oldValue, newValue) -> setNodes(context.selectedForView.get(),
+		window.selectedForEdit.addListener((observable, oldValue, newValue) -> setNodes(window.selectedForView.get(),
 				newValue
 		));
+		if (window.selectedForEdit.get() != null && window.selectedForView.get() != null)
+			setNodes(window.selectedForView.get(), window.selectedForEdit.get());
 	}
 
 	public void cleanItemSubtree(TreeItem<RowAdapter> item) {
@@ -303,6 +323,7 @@ public class Timeline {
 		cleanItemSubtree(tree.getRoot());
 		if (editHandle != null) {
 			editHandle.run();
+			editHandle = null;
 		}
 		tree.getRoot().getChildren().clear();
 		if (outerTimeHandle != null) {
@@ -315,8 +336,8 @@ public class Timeline {
 
 		// Prepare time translation
 		outerTimeHandle = createTimeHandle(root.getValue());
-		outerTimeHandle.updateTime(ImmutableList.of(new FrameMapEntry(-1, 0)));
-		if (context.timeMap == null)
+		outerTimeHandle.updateTime(ImmutableList.of(new FrameMapEntry(NO_LENGTH, 0)));
+		if (window.timeMap == null)
 			throw new Assertion(); // DEBUG
 
 		// Prepare rows
@@ -333,8 +354,7 @@ public class Timeline {
 						new TreeItem(new RowAdapterGroupLayerPosition(this, layer, layerRowAdapter))
 				);
 				return layerItem;
-			}, this::cleanItemSubtree, () -> {
-			});
+			}, this::cleanItemSubtree, noopConsumer());
 		} else if (edit instanceof ImageNodeWrapper) {
 			tree.getRoot().getChildren().add(new TreeItem(new RowAdapterImageNode(this, (ImageNode) edit.getValue())));
 		}
@@ -343,7 +363,7 @@ public class Timeline {
 	}
 
 	private void updateButtons() {
-		Wrapper root = context.selectedForView.get();
+		Wrapper root = window.selectedForView.get();
 		TreeItem<RowAdapter> nowSelected = tree.getSelectionModel().getSelectedItem();
 		boolean noSelection = root == null ||
 				nowSelected == null ||
@@ -358,7 +378,7 @@ public class Timeline {
 	}
 
 	private void updateFrameMarker() {
-		Wrapper root = context.selectedForView.get();
+		Wrapper root = window.selectedForView.get();
 		if (root == null)
 			return;
 		root.setFrame(context, root.frame.get());
@@ -368,7 +388,7 @@ public class Timeline {
 			public void accept(TreeItem<RowAdapter> item) {
 				item.getChildren().forEach(child -> accept(child));
 				if (item.getValue() != null)
-					item.getValue().updateFrameMarker(context);
+					item.getValue().updateFrameMarker(context, window);
 			}
 		}.accept(tree.getRoot());
 	}
@@ -381,7 +401,7 @@ public class Timeline {
 				int out = 0;
 				out = Math.max(out, item.getChildren().stream().mapToInt(child -> apply(child)).max().orElse(0));
 				if (item.getValue() != null)
-					out = Math.max(out, item.getValue().updateTime(context));
+					out = Math.max(out, item.getValue().updateTime(context, window));
 				return out;
 			}
 		}.apply(tree.getRoot()));
@@ -393,6 +413,7 @@ public class Timeline {
 			if (i >= scrubOuterNumbers.size()) {
 				scrubOuterNumbers.add(label = new Label(Integer.toString(i * step)));
 				scrubElements.getChildren().addAll(label);
+				label.setPadding(new Insets(0, 0, 0, 2));
 			} else {
 				label = scrubOuterNumbers.get(i);
 			}
@@ -407,7 +428,7 @@ public class Timeline {
 		int at = 0;
 		int innerIndex = 0;
 		int innerMarkIndex = 0;
-		for (FrameMapEntry frame : context.timeMap) {
+		for (FrameMapEntry frame : window.timeMap) {
 			// Draw time region markers
 			Rectangle mark;
 			if (innerMarkIndex >= scrubRegionMarkers.size()) {
@@ -422,11 +443,12 @@ public class Timeline {
 			mark.setLayoutX(at * zoom);
 
 			// Draw times in region
-			for (int i = 0; i < ((frame.length == -1 ? 50 : frame.length) - step + 1) / step; ++i) {
+			for (int i = 0; i < ((frame.length == NO_LENGTH ? extraFrames : frame.length) - step + 1) / step; ++i) {
 				Label label;
 				if (innerIndex >= scrubInnerNumbers.size()) {
 					scrubInnerNumbers.add(label = new Label());
 					scrubElements.getChildren().addAll(label);
+					label.setPadding(new Insets(0, 0, 0, 2));
 				} else {
 					label = scrubInnerNumbers.get(innerIndex);
 				}
@@ -519,13 +541,14 @@ public class Timeline {
 						subMap.add(new FrameMapEntry(useLength, innerOffset));
 						if (outerRemaining != NO_LENGTH)
 							outerRemaining -= useLength;
-						if (at < outer.innerOffset) at = outer.innerOffset;
+						if (at < outer.innerOffset)
+							at = outer.innerOffset;
 						at += useLength;
 						useLength = Math.min(inner.innerLoop(), endAt - at);
 						innerOffset = 0;
 					}
 					if (maxLength == NO_LENGTH)
-						subMap.add(new FrameMapEntry(NO_LENGTH,innerOffset ) );
+						subMap.add(new FrameMapEntry(NO_LENGTH, innerOffset));
 				}
 
 				if (outerRemaining == 0)
@@ -536,7 +559,7 @@ public class Timeline {
 	}
 
 	public TimeAdapterNode createTimeHandle(ProjectObject object) {
-		if (object == context.selectedForEdit.getValue().getValue())
+		if (object == window.selectedForEdit.getValue().getValue())
 			return createEndTimeHandle();
 		if (false) {
 			throw new Assertion();
@@ -552,7 +575,7 @@ public class Timeline {
 								child.remove();
 							if (value ==
 									Optional
-											.ofNullable(context.selectedForEdit.get())
+											.ofNullable(window.selectedForEdit.get())
 											.map(e -> e.getValue())
 											.orElse(null))
 								child = createTimeHandle(value);
@@ -605,7 +628,7 @@ public class Timeline {
 					// Find the layer that leads to the edited node
 					// First find the layer whose parent is this node
 					Wrapper beforeAt = null;
-					Wrapper at = context.selectedForEdit.get();
+					Wrapper at = window.selectedForEdit.get();
 					while (at != null && at.getValue() != object) {
 						beforeAt = at;
 						at = at.getParent();
@@ -651,7 +674,7 @@ public class Timeline {
 								child.remove();
 							if (value ==
 									Optional
-											.ofNullable(context.selectedForEdit.get())
+											.ofNullable(window.selectedForEdit.get())
 											.map(e -> e.getValue())
 											.orElse(null))
 								child = createTimeHandle(value);
@@ -677,7 +700,7 @@ public class Timeline {
 							frame.removeLengthSetListeners(lengthSetListener);
 							frame.removeInnerLoopSetListeners(loopListener);
 						};
-					}, c -> c.run(), () -> {
+					}, c -> c.run(), at -> {
 						recalcTimes();
 					});
 					suppressRecalc -= 1;
@@ -720,13 +743,13 @@ public class Timeline {
 		return new TimeAdapterNode() {
 			@Override
 			public void updateTime(List<FrameMapEntry> timeMap) {
-				context.timeMap = timeMap;
+				window.timeMap = timeMap;
 			}
 
 			@Override
 			public void remove() {
-				context.timeMap = new ArrayList<>();
-				context.timeMap.add(new FrameMapEntry(-1, 0));
+				window.timeMap = new ArrayList<>();
+				window.timeMap.add(new FrameMapEntry(NO_LENGTH, 0));
 			}
 		};
 	}

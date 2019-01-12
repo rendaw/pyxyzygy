@@ -3,6 +3,7 @@ package com.zarbosoft.shoedemo.parts.timeline;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.shoedemo.ProjectContext;
 import com.zarbosoft.shoedemo.WidgetHandle;
+import com.zarbosoft.shoedemo.Window;
 import com.zarbosoft.shoedemo.model.GroupLayer;
 import com.zarbosoft.shoedemo.model.GroupPositionFrame;
 import com.zarbosoft.shoedemo.model.Vector;
@@ -38,8 +39,10 @@ public class RowAdapterGroupLayerPosition extends RowAdapter {
 	}
 
 	@Override
-	public int updateTime(ProjectContext context) {
+	public int updateTime(ProjectContext context, Window window) {
+		System.out.format("pos up tim 1\n");
 		return row.map(r -> {
+			System.out.format("pos up tim 2\n");
 			List<RowAdapterFrame> adapterFrames = new ArrayList<>();
 			for (int i0 = 0; i0 < layer.positionFramesLength(); ++i0) {
 				final int i = i0;
@@ -105,41 +108,42 @@ public class RowAdapterGroupLayerPosition extends RowAdapter {
 					}
 				});
 			}
-			return r.updateTime(context, adapterFrames);
+			return r.updateTime(context, window, adapterFrames);
 		}).orElse(0);
 	}
 
 	@Override
-	public void updateFrameMarker(ProjectContext context) {
-		row.ifPresent(r -> r.updateFrameMarker(context));
+	public void updateFrameMarker(ProjectContext context, Window window) {
+		row.ifPresent(r -> r.updateFrameMarker(context, window));
 	}
 
 	@Override
-	public WidgetHandle createRowWidget(ProjectContext context) {
+	public WidgetHandle createRowWidget(ProjectContext context, Window window) {
 		return new WidgetHandle() {
+			private VBox layout;
 			Runnable framesCleanup;
 			private List<Runnable> frameCleanup = new ArrayList<>();
 
 			{
 				framesCleanup = layer.mirrorPositionFrames(frameCleanup, f -> {
 					GroupPositionFrame.LengthSetListener lengthListener = f.addLengthSetListeners((target, value) -> {
-						updateTime(context);
+						updateTime(context, window);
 					});
 					return () -> {
 						f.removeLengthSetListeners(lengthListener);
 					};
 				}, r -> {
 					r.run();
-				}, () -> {
-					updateTime(context);
+				}, at -> {
+					updateTime(context, window);
 				});
+				layout = new VBox();
+				row = Optional.of(new RowFramesWidget(timeline));
+				layout.getChildren().add(row.get());
 			}
 
 			@Override
 			public Node getWidget() {
-				VBox layout = new VBox();
-				row = Optional.of(new RowFramesWidget(timeline));
-				layout.getChildren().add(row.get());
 				return layout;
 			}
 
@@ -167,13 +171,13 @@ public class RowAdapterGroupLayerPosition extends RowAdapter {
 	}
 
 	@Override
-	public boolean createFrame(ProjectContext context, int outer) {
-		return createFrame(context, outer, previous -> GroupPositionFrame.create(context));
+	public boolean createFrame(ProjectContext context, Window window, int outer) {
+		return createFrame(context, window,outer, previous -> GroupPositionFrame.create(context));
 	}
 
 	@Override
-	public boolean duplciateFrame(ProjectContext context, int outer) {
-		return createFrame(context, outer, previous -> {
+	public boolean duplicateFrame(ProjectContext context, Window window, int outer) {
+		return createFrame(context, window,outer, previous -> {
 			GroupPositionFrame created = GroupPositionFrame.create(context);
 			created.initialOffsetSet(context, previous.offset());
 			return created;
@@ -181,9 +185,9 @@ public class RowAdapterGroupLayerPosition extends RowAdapter {
 	}
 
 	public boolean createFrame(
-			ProjectContext context, int outer, Function<GroupPositionFrame, GroupPositionFrame> cb
+			ProjectContext context, Window window,int outer, Function<GroupPositionFrame, GroupPositionFrame> cb
 	) {
-		int inner = context.timeToInner(outer);
+		int inner = window.timeToInner(outer);
 		if (inner == NO_INNER) return false;
 		GroupLayerWrapper.PositionResult previous = GroupLayerWrapper.findPosition(layer, inner);
 		GroupPositionFrame newFrame = cb.apply(previous.frame);

@@ -1,9 +1,11 @@
 package com.zarbosoft.shoedemo.parts.timeline;
 
 public abstract class TimeRangeAdapter {
-	public abstract int getStart();
+	public abstract int getOuterAt();
 
-	public abstract int getLength();
+	public abstract int getInnerStart();
+
+	public abstract int getInnerLength();
 
 	public abstract void changeStart(int value);
 

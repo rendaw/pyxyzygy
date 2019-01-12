@@ -3,6 +3,8 @@ package com.zarbosoft.shoedemo.structuretree;
 import com.google.common.collect.ImmutableList;
 import com.zarbosoft.shoedemo.*;
 import com.zarbosoft.shoedemo.model.*;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.canvas.GraphicsContext;
@@ -12,23 +14,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.zarbosoft.shoedemo.Main.nodeFormFields;
-import static com.zarbosoft.shoedemo.Main.opacityMax;
-import static com.zarbosoft.shoedemo.Main.moveTo;
-import static com.zarbosoft.shoedemo.Main.moveWrapperTo;
-import static com.zarbosoft.shoedemo.Window.uniqueName1;
+import static com.zarbosoft.shoedemo.Main.*;
+import static com.zarbosoft.shoedemo.ProjectContext.uniqueName1;
 
 public class GroupNodeWrapper extends Wrapper {
 	private final Wrapper parent;
 	private final GroupNode node;
-	private final List<Wrapper> children = new ArrayList<>();
-	private final ProjectNode.OpacitySetListener opacityListener;
-	private final GroupNode.LayersAddListener layerAddListener;
-	private final GroupNode.LayersRemoveListener layerRemoveListener;
-	private final GroupNode.LayersMoveToListener layerMoveToListener;
-	private final GroupNode.LayersClearListener layerClearListener;
+	private final ObservableList<Wrapper> children = FXCollections.observableArrayList();
+	private final Runnable layerListenCleanup;
 
-	private Group canvas;
 	private DoubleRectangle bounds;
 	private GroupLayer specificLayer;
 	private DoubleVector markStart;
@@ -42,58 +36,23 @@ public class GroupNodeWrapper extends Wrapper {
 
 		tree.set(new TreeItem<>(this));
 
-		this.opacityListener = node.addOpacitySetListeners((target, value) -> {
-			if (canvas != null) {
-				canvas.setOpacity((double)value / opacityMax);
-			}
-		});
-		this.layerAddListener = node.addLayersAddListeners((target, at, value) -> {
-			List<Wrapper> newChildren = new ArrayList<>();
-			List<TreeItem<Wrapper>> newTreeChildren = new ArrayList<>();
-			List<Node> newCanvas = new ArrayList<>();
-			for (int i = 0; i < value.size(); ++i) {
-				GroupLayer v = value.get(i);
-				Wrapper child = Window.createNode(context, this, at + i, v);
-				newChildren.add(child);
-				child.tree.addListener((observable, oldValue, newValue) -> {
-					tree.get().getChildren().set(child.parentIndex, newValue);
-				});
-				newTreeChildren.add(child.tree.getValue());
-				if (canvas != null)
-					newCanvas.add(child.buildCanvas(context, bounds));
-			}
-			children.addAll(at, newChildren);
-			tree.get().getChildren().addAll(at, newTreeChildren);
-			if (canvas != null)
-				canvas.getChildren().addAll(at, newCanvas);
-		});
-		this.layerRemoveListener = node.addLayersRemoveListeners((target, at, count) -> {
-			if (canvas != null)
-				canvas.getChildren().subList(at, at + count).clear();
-			List<Wrapper> temp = children.subList(at, at + count);
-			temp.forEach(c -> {
-				if (canvas != null)
-					c.destroyCanvas();
-				c.remove(context);
+		layerListenCleanup = node.mirrorLayers(children,
+				layer -> {
+			System.out.format("gnw child add\n");
+			return Window.createNode(context, this, -1, layer);
+				},
+				child -> child.remove(context),
+				at -> {
+					for (int i = at; i < children.size(); ++i)
+						children.get(i).parentIndex = i;
+				}
+		);
+		mirror(children, tree.get().getChildren(), child -> {
+			child.tree.addListener((observable, oldValue, newValue) -> {
+				tree.get().getChildren().set(child.parentIndex, newValue);
 			});
-			temp.clear();
-			for (int i = at; i < children.size(); ++i)
-				children.get(i).parentIndex = i;
-			tree.get().getChildren().subList(at, at + count).clear();
-		});
-		this.layerMoveToListener = node.addLayersMoveToListeners((target, source, count, dest) -> {
-			moveWrapperTo(children, source, count, dest);
-			moveTo(tree.get().getChildren(), source, count, dest);
-			if (canvas != null)
-				moveTo(canvas.getChildren(), source, count, dest);
-		});
-		this.layerClearListener = node.addLayersClearListeners(target -> {
-			children.forEach(c -> c.remove(context));
-			children.clear();
-			tree.get().getChildren().clear();
-			if (canvas != null)
-				canvas.getChildren().clear();
-		});
+			return child.tree.get();
+		}, noopConsumer(), noopConsumer());
 	}
 
 	@Override
@@ -120,24 +79,49 @@ public class GroupNodeWrapper extends Wrapper {
 	}
 
 	@Override
-	public Node buildCanvas(ProjectContext context, DoubleRectangle bounds) {
-		this.bounds = bounds;
-		canvas = new Group();
-		canvas
-				.getChildren()
-				.addAll(children.stream().map(c -> c.buildCanvas(context, bounds)).collect(Collectors.toList()));
-		return canvas;
-	}
+	public WidgetHandle buildCanvas(ProjectContext context, DoubleRectangle bounds) {
+		return new WidgetHandle() {
+			private Group canvas;
+			private final Runnable layerListenCleanup;
+			private final ProjectNode.OpacitySetListener opacityListener;
+			private final ObservableList<WidgetHandle> childHandles = FXCollections.observableArrayList();
 
-	@Override
-	public Node getCanvas() {
-		return canvas;
-	}
+			{
+				GroupNodeWrapper.this.bounds = bounds;
+				canvas = new Group();
+				System.out.format("gnw canvas\n");
+				layerListenCleanup = mirror(children,
+						childHandles,
+						c -> {
+					System.out.format("gnw child canvas add\n");
+					return c.buildCanvas(context, GroupNodeWrapper.this.bounds);
+						},
+						h -> h.remove(),
+						noopConsumer()
+				);
+				mirror(childHandles, canvas.getChildren(), h -> {
+					System.out.format("gnw child widget add\n");
+					return h.getWidget();}, noopConsumer(), noopConsumer());
+				this.opacityListener = node.addOpacitySetListeners((target, value) -> {
+					if (canvas != null) {
+						canvas.setOpacity((double) value / opacityMax);
+					}
+				});
+			}
 
-	@Override
-	public void destroyCanvas() {
-		canvas = null;
-		children.forEach(c -> c.destroyCanvas());
+			@Override
+			public Node getWidget() {
+				return canvas;
+			}
+
+			@Override
+			public void remove() {
+				canvas = null;
+				childHandles.forEach(c -> c.remove());
+				node.removeOpacitySetListeners(opacityListener);
+				layerListenCleanup.run();
+			}
+		};
 	}
 
 	@Override
@@ -177,7 +161,7 @@ public class GroupNodeWrapper extends Wrapper {
 					GroupTimeFrame timeFrame = GroupTimeFrame.create(context);
 					timeFrame.initialLengthSet(context, -1);
 					timeFrame.initialInnerOffsetSet(context, 0);
-					timeFrame.initialInnerLoopSet(context,0 );
+					timeFrame.initialInnerLoopSet(context, 0);
 					layer.initialTimeFramesAdd(context, ImmutableList.of(timeFrame));
 					return layer;
 				}).collect(Collectors.toList())));
@@ -210,7 +194,7 @@ public class GroupNodeWrapper extends Wrapper {
 				GroupTimeFrame newFrame = GroupTimeFrame.create(context);
 				newFrame.initialLengthSet(context, frame.length());
 				newFrame.initialInnerOffsetSet(context, frame.innerOffset());
-				newFrame.initialInnerLoopSet(context,0 );
+				newFrame.initialInnerLoopSet(context, 0);
 				return newFrame;
 			}).collect(Collectors.toList()));
 			return newLayer;
@@ -242,11 +226,7 @@ public class GroupNodeWrapper extends Wrapper {
 
 	@Override
 	public void remove(ProjectContext context) {
-		node.removeOpacitySetListeners(opacityListener);
-		node.removeLayersAddListeners(layerAddListener);
-		node.removeLayersRemoveListeners(layerRemoveListener);
-		node.removeLayersMoveToListeners(layerMoveToListener);
-		node.removeLayersClearListeners(layerClearListener);
+		layerListenCleanup.run();
 	}
 
 	@Override

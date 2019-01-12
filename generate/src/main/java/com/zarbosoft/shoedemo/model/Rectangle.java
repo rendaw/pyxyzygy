@@ -24,4 +24,8 @@ public class Rectangle {
 	public Rectangle plus(Vector offset) {
 		return new Rectangle(x + offset.x, y+offset.y,width ,height );
 	}
+
+	public Vector corner() {
+		return new Vector(x,y );
+	}
 }

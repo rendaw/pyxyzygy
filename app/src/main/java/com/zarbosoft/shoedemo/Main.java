@@ -12,6 +12,8 @@ import javafx.application.Application;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.Property;
 import javafx.beans.property.StringProperty;
+import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
 import javafx.scene.paint.Color;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
@@ -23,8 +25,10 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
-import static com.zarbosoft.shoedemo.Window.uniqueName;
+import static com.zarbosoft.shoedemo.ProjectContext.uniqueName;
 
 public class Main extends Application {
 	public static AppDirs appDirs = new AppDirs().set_appname("shoedemo2").set_appauthor("zarbosoft");
@@ -115,8 +119,7 @@ public class Main extends Application {
 				});
 				builder.slider("Opacity", 0, opacityMax, slider -> {
 					slider.setValue(node.opacity());
-					Main.<DoubleProperty, Number>bind(
-							slider.valueProperty(),
+					Main.<DoubleProperty, Number>bind(slider.valueProperty(),
 							v -> context.history.change(c -> c.projectNode(node).opacitySet(v.intValue())),
 							setter -> opacitySetListener = node.addOpacitySetListeners((target, value) -> {
 								setter.accept(value);
@@ -161,5 +164,40 @@ public class Main extends Application {
 				});
 			}
 		};
+	}
+
+	public static <T, R> Runnable mirror(
+			ObservableList<T> source,
+			List<R> target,
+			Function<T, R> add,
+			Consumer<R> remove,
+			Consumer<Integer> update
+	) {
+		ListChangeListener<T> listener = c -> {
+			while (c.next()) {
+				if (c.wasAdded()) {
+					target.addAll(c.getFrom(), c.getAddedSubList().stream().map(add).collect(Collectors.toList()));
+				} else if (c.wasRemoved()) {
+					List<R> removing = target.subList(c.getFrom(), c.getTo());
+					removing.forEach(remove);
+					removing.clear();
+				} else if (c.wasPermutated()) {
+					throw new Assertion();
+				} else if (c.wasUpdated()) {
+					throw new Assertion();
+				}
+				update.accept(c.getFrom());
+			}
+		};
+		source.addListener(listener);
+		target.addAll(source.stream().map(add).collect(Collectors.toList()));
+		update.accept(0);
+		return () -> {
+			source.removeListener(listener);
+		};
+	}
+
+	public static <T> Consumer<T> noopConsumer() {
+		return t -> {};
 	}
 }

@@ -1,14 +1,17 @@
 package com.zarbosoft.shoedemo.parts.timeline;
 
 import com.zarbosoft.shoedemo.ProjectContext;
-import javafx.scene.canvas.Canvas;
-import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
 
-import static javafx.scene.paint.Color.BLACK;
-import static javafx.scene.paint.Color.PURPLE;
+import static com.zarbosoft.shoedemo.Main.c;
 
-public class FrameWidget extends Canvas {
+public class FrameWidget extends Pane {
+	private final static double sizePercent = 0.7;
+	private final static double sizePercentComp = (1.0 - sizePercent) * 0.5;
+	final Rectangle rectangle;
 	double zoom;
 
 	final RowFramesWidget row;
@@ -18,9 +21,24 @@ public class FrameWidget extends Canvas {
 	int absStart;
 	int absEnd;
 	int minLength;
+	int at;
 
 	public FrameWidget(ProjectContext context, RowFramesWidget row) {
 		this.row = row;
+
+		setWidth(Timeline.baseSize);
+		setHeight(Timeline.baseSize);
+		setMouseTransparent(false);
+
+		rectangle = new Rectangle(0, Timeline.baseSize * sizePercent);
+		rectangle.setStroke(c(new java.awt.Color(0, 0, 0)));
+		rectangle.setFill(Color.TRANSPARENT);
+		rectangle.setMouseTransparent(true);
+		rectangle.setLayoutY(Timeline.baseSize * sizePercentComp);
+		rectangle.setArcWidth(Timeline.baseSize * 0.4);
+		rectangle.setArcHeight(rectangle.getArcWidth());
+		getChildren().add(rectangle);
+
 		addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
 			row.timeline.select(this);
 		});
@@ -33,34 +51,27 @@ public class FrameWidget extends Canvas {
 				frame = Math.min(frame, absEnd - 1);
 			frame = Math.max(frame, absStart);
 			int length = minLength + frame - absStart;
-			((FrameWidget)this.row.frames.get(index - 1)).frame.setLength(context, length);
+			((FrameWidget) this.row.frames.get(index - 1)).frame.setLength(context, length);
 		});
 		addEventHandler(MouseEvent.MOUSE_RELEASED, e -> {
 			context.history.finishChange();
 		});
-		setWidth(Timeline.baseSize);
-		setHeight(Timeline.baseSize);
 		deselect();
 	}
 
 	public void select() {
-		GraphicsContext gc = getGraphicsContext2D();
-		gc.clearRect(0, 0, getWidth(), getHeight());
-		gc.setFill(PURPLE);
-		gc.fillOval(2, 2, Timeline.baseSize - 4, Timeline.baseSize - 4);
+		rectangle.setFill(c(new java.awt.Color(52, 52, 52)));
 	}
 
 	public void deselect() {
-		GraphicsContext gc = getGraphicsContext2D();
-		gc.clearRect(0, 0, getWidth(), getHeight());
-		gc.setFill(BLACK);
-		gc.strokeOval(2, 2, Timeline.baseSize - 4, Timeline.baseSize - 4);
+		rectangle.setFill(Color.TRANSPARENT);
 	}
 
 	/**
 	 * The limits are because when working under a group the frame might be part of a loop and dragging it outside the
 	 * loop would cause it to disappear (in the current context).
 	 * Prevent dragging out of loops.  Otherwise no rightward limits.
+	 *
 	 * @param index
 	 * @param frame
 	 * @param absStart  Farthest left frame can be dragged
@@ -68,14 +79,24 @@ public class FrameWidget extends Canvas {
 	 * @param minLength When dragged all the way to the left, what length does the frame's preceding frame get
 	 * @param offset    Where to draw the frame relative to absStart
 	 */
-	public void set(double zoom, int index, RowAdapterFrame frame, int absStart, int absEnd, int minLength, int offset) {
+	public void set(
+			double zoom,
+			int index,
+			RowAdapterFrame frame,
+			int absStart,
+			int absEnd,
+			int minLength,
+			int offset
+	) {
 		this.zoom = zoom;
+		rectangle.setWidth(zoom * sizePercent);
+		rectangle.setLayoutX(zoom * sizePercentComp);
 		this.index = index;
 		this.frame = frame;
 		this.absStart = absStart;
 		this.absEnd = absEnd;
 		this.minLength = minLength;
-		System.out.format("pos %s\n",(absStart + offset) * zoom);
-		setLayoutX((absStart + offset) * zoom);
+		at = absStart + offset;
+		setLayoutX(at * zoom);
 	}
 }

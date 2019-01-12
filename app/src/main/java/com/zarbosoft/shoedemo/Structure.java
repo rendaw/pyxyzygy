@@ -7,6 +7,7 @@ import com.zarbosoft.shoedemo.model.Vector;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
@@ -24,14 +25,15 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static com.zarbosoft.rendaw.common.Common.last;
-import static com.zarbosoft.shoedemo.Main.opacityMax;
 import static com.zarbosoft.shoedemo.Main.moveTo;
+import static com.zarbosoft.shoedemo.Main.opacityMax;
 import static com.zarbosoft.shoedemo.Window.icon;
-import static com.zarbosoft.shoedemo.Window.uniqueName;
+import static com.zarbosoft.shoedemo.ProjectContext.uniqueName;
 import static com.zarbosoft.shoedemo.Wrapper.TakesChildren.NONE;
 
 public class Structure {
 	private final ProjectContext context;
+	private final Window window;
 	private WidgetHandle properties;
 	VBox layout = new VBox();
 	TreeView<Wrapper> treeView;
@@ -43,20 +45,23 @@ public class Structure {
 	Set<Wrapper> taggedCopied = new HashSet<>();
 
 	public void selectForEdit(Wrapper wrapper) {
-		context.selectedForEdit.set(wrapper);
 		Wrapper preParent = wrapper;
 		Wrapper parent = wrapper.getParent();
 		boolean found = false;
 		while (parent != null) {
-			if (context.selectedForView.getValue() == parent) {
+			if (window.selectedForView.getValue() == parent) {
 				found = true;
 				break;
 			}
 			preParent = parent;
 			parent = parent.getParent();
 		}
-		if (!found) {
+		if (found) {
+			window.selectedForEdit.set(wrapper);
+		} else {
+			window.selectedForEdit.set(null);
 			selectForView(preParent);
+			window.selectedForEdit.set(wrapper);
 		}
 	}
 
@@ -66,7 +71,7 @@ public class Structure {
 		taggedViewing.clear();
 		wrapper.tagViewing.set(true);
 		taggedViewing.add(wrapper);
-		context.selectedForView.set(wrapper);
+		window.selectedForView.set(wrapper);
 	}
 
 	public void treeItemAdded(TreeItem<Wrapper> item) {
@@ -87,6 +92,7 @@ public class Structure {
 
 	private void prepareTreeItem(TreeItem<Wrapper> item) {
 		item.setExpanded(true);
+		item.getChildren().forEach(c -> prepareTreeItem(c));
 		item.getChildren().addListener((ListChangeListener<? super TreeItem<Wrapper>>) c -> {
 			while (c.next()) {
 				if (!c.getAddedSubList().isEmpty()) {
@@ -100,13 +106,14 @@ public class Structure {
 		});
 	}
 
-	Structure(ProjectContext context) {
+	Structure(ProjectContext context, Window window) {
 		this.context = context;
+		this.window = window;
 		treeView = new TreeView();
 		treeView.setShowRoot(false);
 		TreeItem<Wrapper> rootTreeItem = new TreeItem<>();
 		prepareTreeItem(rootTreeItem);
-		treeView.setRoot(new TreeItem());
+		treeView.setRoot(rootTreeItem);
 		treeView.setMinHeight(0);
 		treeView.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
 			if (e.isControlDown()) {
@@ -118,7 +125,7 @@ public class Structure {
 						lift();
 						break;
 					case V:
-						placeAuto(context);
+						placeAuto();
 						break;
 					case D:
 						duplicate();
@@ -134,11 +141,12 @@ public class Structure {
 		});
 		treeView.getSelectionModel().getSelectedItems().addListener((ListChangeListener<TreeItem<Wrapper>>) c -> {
 			while (c.next()) {
-				c.next();
 				List<? extends TreeItem<Wrapper>> added = c.getAddedSubList();
+				System.out.format("select added %s\n", added.size());
 				if (added.isEmpty())
 					return;
 				TreeItem<Wrapper> first = added.get(0);
+				System.out.format("select added first %s\n", first);
 				if (first.getValue() == null)
 					return;
 				selectForEdit(first.getValue());
@@ -325,15 +333,15 @@ public class Structure {
 		});
 		MenuItem linkBeforeButton = new MenuItem("Before");
 		linkBeforeButton.setOnAction(e -> {
-			placeBefore(context);
+			placeBefore();
 		});
 		MenuItem linkInButton = new MenuItem("In");
 		linkInButton.setOnAction(e -> {
-			placeIn(context);
+			placeIn();
 		});
 		MenuItem linkAfterButton = new MenuItem("After");
 		linkAfterButton.setOnAction(e -> {
-			placeAfter(context);
+			placeAfter();
 		});
 		MenuButton linkButton = Window.menuButton("content-paste.svg");
 		linkButton.getItems().addAll(linkBeforeButton, linkInButton, linkAfterButton);
@@ -374,36 +382,45 @@ public class Structure {
 			treeView.getRoot().getChildren().forEach(c -> c.getValue().remove(context));
 			treeView.getRoot().getChildren().clear();
 		});
-		context.selectedForEdit.addListener((observable, oldValue, newValue) -> {
-			if (properties != null) {
-				properties.remove();
+		window.selectedForEdit.addListener(new ChangeListener<Wrapper>() {
+			{
+				changed(null, null, window.selectedForEdit.get());
 			}
-			if (oldValue != null) {
-				split.getItems().remove(1);
-				split.setDividerPositions(1);
-			}
-			if (newValue != null) {
-				VBox wrapper = new VBox();
-				wrapper.setPadding(new Insets(3, 3, 3, 3));
-				properties = newValue.createProperties(context);
-				wrapper.getChildren().add(properties.getWidget());
-				split.getItems().add(wrapper);
-				split.setDividerPositions(0.7);
-				SplitPane.setResizableWithParent(wrapper, false);
+
+			@Override
+			public void changed(
+					ObservableValue<? extends Wrapper> observable, Wrapper oldValue, Wrapper newValue
+			) {
+				if (properties != null) {
+					properties.remove();
+				}
+				if (oldValue != null) {
+					split.getItems().remove(1);
+					split.setDividerPositions(1);
+				}
+				if (newValue != null) {
+					VBox wrapper = new VBox();
+					wrapper.setPadding(new Insets(3, 3, 3, 3));
+					properties = newValue.createProperties(context);
+					wrapper.getChildren().add(properties.getWidget());
+					split.getItems().add(wrapper);
+					split.setDividerPositions(0.7);
+					SplitPane.setResizableWithParent(wrapper, false);
+				}
 			}
 		});
 	}
 
 	private void delete(ProjectContext context) {
-		Wrapper edit = context.selectedForEdit.get();
+		Wrapper edit = window.selectedForEdit.get();
 		if (edit == null)
 			return;
 		edit.delete(context);
 		context.history.finishChange();
 	}
 
-	private void placeAfter(ProjectContext context) {
-		Wrapper destination = context.selectedForEdit.get();
+	private void placeAfter() {
+		Wrapper destination = window.selectedForEdit.get();
 		if (destination == null) {
 			place(null, false, null);
 		} else {
@@ -412,8 +429,8 @@ public class Structure {
 		}
 	}
 
-	private void placeIn(ProjectContext context) {
-		Wrapper destination = context.selectedForEdit.get();
+	private void placeIn() {
+		Wrapper destination = window.selectedForEdit.get();
 		if (destination == null) {
 			place(null, true, null);
 		} else {
@@ -421,8 +438,8 @@ public class Structure {
 		}
 	}
 
-	private void placeBefore(ProjectContext context) {
-		Wrapper destination = context.selectedForEdit.get();
+	private void placeBefore() {
+		Wrapper destination = window.selectedForEdit.get();
 		if (destination == null) {
 			place(null, true, null);
 		} else {
@@ -431,15 +448,15 @@ public class Structure {
 		}
 	}
 
-	private void placeAuto(ProjectContext context) {
+	private void placeAuto() {
 		Wrapper destination = getSelection();
 		if (destination == null) {
-			placeAfter(context);
+			placeAfter();
 		} else {
 			if (destination.takesChildren() == NONE) {
-				placeAfter(context);
+				placeAfter();
 			} else {
-				placeIn(context);
+				placeIn();
 			}
 		}
 	}
@@ -475,7 +492,7 @@ public class Structure {
 	}
 
 	private void duplicate() {
-		Wrapper destination = context.selectedForEdit.get();
+		Wrapper destination = window.selectedForEdit.get();
 		ProjectNode clone = destination.separateClone(context);
 		addNew(clone);
 	}

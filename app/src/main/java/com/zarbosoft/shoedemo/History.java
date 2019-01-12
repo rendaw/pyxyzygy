@@ -42,7 +42,8 @@ public class History {
 	}
 
 	public void change(Consumer<ChangeStepBuilder> cb) {
-		if (inChange) throw new Assertion();
+		if (inChange)
+			throw new Assertion();
 		clearRedo();
 		inChange = true;
 		context.lock.writeLock().lock();
@@ -81,7 +82,8 @@ public class History {
 				out.changes = new StackReader().read(source, new StackReader.ArrayState() {
 					@Override
 					public void value(Object value) {
-						if (!(value instanceof Change)) throw new Assertion();
+						if (!(value instanceof Change))
+							throw new Assertion();
 						data.add(value);
 					}
 

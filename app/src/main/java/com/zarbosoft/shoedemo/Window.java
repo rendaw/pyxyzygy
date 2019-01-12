@@ -1,13 +1,14 @@
 package com.zarbosoft.shoedemo;
 
-import com.gojuno.morton.Morton64;
 import com.zarbosoft.rendaw.common.Assertion;
+import com.zarbosoft.rendaw.common.Pair;
 import com.zarbosoft.shoedemo.model.*;
 import com.zarbosoft.shoedemo.parts.timeline.Timeline;
 import com.zarbosoft.shoedemo.structuretree.CameraWrapper;
 import com.zarbosoft.shoedemo.structuretree.GroupLayerWrapper;
 import com.zarbosoft.shoedemo.structuretree.GroupNodeWrapper;
 import com.zarbosoft.shoedemo.structuretree.ImageNodeWrapper;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.Orientation;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -29,33 +30,16 @@ import org.apache.batik.util.SVGConstants;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 
 public class Window {
-	public static Map<String, Image> iconCache = new HashMap<>();
-	public static Map<String, Integer> names = new HashMap<>();
-
-	/**
-	 * Start at count 1 (unwritten) for machine generated names
-	 * @param name
-	 * @return
-	 */
-	public static String uniqueName(String name) {
-		int count = names.compute(name, (n, i) -> i == null ? 1 : i + 1);
-		return count == 1 ? name : String.format("%s (%s)", name, count);
-	}
-
-	/**
-	 * Start at count 2 if the first element is not in the map (user decided name)
-	 * @param name
-	 * @return
-	 */
-	public static String uniqueName1(String name) {
-		int count = names.compute(name, (n, i) -> i == null ? 2 : i + 1);
-		return count == 1 ? name : String.format("%s (%s)", name, count);
-	}
+	public List<FrameMapEntry> timeMap;
+	public SimpleObjectProperty<Wrapper> selectedForEdit = new SimpleObjectProperty<>();
+	public SimpleObjectProperty<Wrapper> selectedForView = new SimpleObjectProperty<>();
 
 	public void start(ProjectContext context, Stage primaryStage) {
 		primaryStage.setOnCloseRequest(e -> {
@@ -63,10 +47,10 @@ public class Window {
 			context.flushSemaphore.release();
 		});
 
-		Structure structure = new Structure(context);
+		Structure structure = new Structure(context, this);
 
-		Editor editor = new Editor(context);
-		Timeline timeline = new Timeline(context);
+		Editor editor = new Editor(context, this);
+		Timeline timeline = new Timeline(context, this);
 
 		SplitPane specificLayout = new SplitPane();
 		specificLayout.setOrientation(Orientation.VERTICAL);
@@ -95,7 +79,23 @@ public class Window {
 		primaryStage.show();
 	}
 
-	public static Morton64 morton = new Morton64(2, 32);
+	public Pair<Integer, FrameMapEntry> findTimeMapEntry(int outer) {
+		int outerAt = 0;
+		for (FrameMapEntry outerFrame : timeMap) {
+			if (outer >= outerAt && (outerFrame.length == -1 || outer < outerAt + outerFrame.length)) {
+				return new Pair<>(outerAt, outerFrame);
+			}
+			outerAt += outerFrame.length;
+		}
+		throw new Assertion();
+	}
+
+	public int timeToInner(int outer) {
+		Pair<Integer, FrameMapEntry> entry = findTimeMapEntry(outer);
+		if (entry.second.innerOffset == -1)
+			return -1;
+		return entry.second.innerOffset + outer - entry.first;
+	}
 
 	public static List<Wrapper> getAncestors(Wrapper start, Wrapper target) {
 		List<Wrapper> ancestors = new ArrayList<>();
@@ -154,9 +154,8 @@ public class Window {
 				}
 			};
 			transcoder.setTranscodingHints(hints);
-			uncheck(() -> transcoder.transcode(new TranscoderInput(Window.class.getResourceAsStream("icons/" + resource)),
-					null
-			));
+			uncheck(() -> transcoder.transcode(new TranscoderInput(Window.class.getResourceAsStream("icons/" +
+					resource)), null));
 			ByteArrayOutputStream pngOut = new ByteArrayOutputStream();
 			new PNGImageEncoder(pngOut, PNGEncodeParam.getDefaultEncodeParam(image)).encode(image);
 			return new Image(new ByteArrayInputStream(pngOut.toByteArray()));
@@ -164,7 +163,7 @@ public class Window {
 	}
 
 	public static Image icon(String resource) {
-		return iconCache.computeIfAbsent(resource, r -> iconSize(resource, 16, 16));
+		return ProjectContext.iconCache.computeIfAbsent(resource, r -> iconSize(resource, 16, 16));
 	}
 
 	public static MenuItem menuItem(String icon) {
