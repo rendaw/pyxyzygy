@@ -54,7 +54,6 @@ public class RowFramesWidget extends Pane {
 	public int updateTime(
 			ProjectContext context, Window window, List<RowAdapterFrame> frameAdapters
 	) {
-		System.out.format("row update time, adapters size %s, time map size %s\n", frameAdapters.size(), window.timeMap.size());
 		FrameWidget foundSelectedFrame = null;
 		Object selectedId = Optional.ofNullable(timeline.selectedFrame.get()).map(f -> f.frame.id()).orElse(null);
 

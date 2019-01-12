@@ -38,7 +38,6 @@ public class GroupNodeWrapper extends Wrapper {
 
 		layerListenCleanup = node.mirrorLayers(children,
 				layer -> {
-			System.out.format("gnw child add\n");
 			return Window.createNode(context, this, -1, layer);
 				},
 				child -> child.remove(context),
@@ -89,18 +88,15 @@ public class GroupNodeWrapper extends Wrapper {
 			{
 				GroupNodeWrapper.this.bounds = bounds;
 				canvas = new Group();
-				System.out.format("gnw canvas\n");
 				layerListenCleanup = mirror(children,
 						childHandles,
 						c -> {
-					System.out.format("gnw child canvas add\n");
 					return c.buildCanvas(context, GroupNodeWrapper.this.bounds);
 						},
 						h -> h.remove(),
 						noopConsumer()
 				);
 				mirror(childHandles, canvas.getChildren(), h -> {
-					System.out.format("gnw child widget add\n");
 					return h.getWidget();}, noopConsumer(), noopConsumer());
 				this.opacityListener = node.addOpacitySetListeners((target, value) -> {
 					if (canvas != null) {
@@ -141,10 +137,6 @@ public class GroupNodeWrapper extends Wrapper {
 		context.history.change(c -> c
 				.groupPositionFrame(pos)
 				.offsetSet(end.minus(markStart).plus(markStartOffset).toInt()));
-		System.out.format("group offset changed\n");
-		specificLayer
-				.positionFrames()
-				.forEach(f -> System.out.format("  pos %s %s,%s\n", f.length(), f.offset().x, f.offset().y));
 	}
 
 	@Override

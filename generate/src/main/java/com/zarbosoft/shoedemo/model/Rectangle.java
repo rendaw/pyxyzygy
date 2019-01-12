@@ -28,4 +28,9 @@ public class Rectangle {
 	public Vector corner() {
 		return new Vector(x,y );
 	}
+
+	@Override
+	public String toString() {
+		return String.format("r[%s %s %s %s]", x, y, width, height);
+	}
 }

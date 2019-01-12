@@ -37,4 +37,9 @@ public class DoubleRectangle {
 	public DoubleRectangle minus(Vector offset) {
 		return new DoubleRectangle(x - offset.x, y - offset.y, width, height);
 	}
+
+	@Override
+	public String toString() {
+		return String.format("dr[%s %s %s %s]", x, y, width, height);
+	}
 }

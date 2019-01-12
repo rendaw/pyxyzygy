@@ -86,10 +86,11 @@ public class ImageNodeWrapper extends Wrapper {
 	@Override
 	public void scroll(ProjectContext context, DoubleRectangle oldBounds1, DoubleRectangle newBounds1) {
 		this.bounds = newBounds1;
+		System.out.format("image scroll; b %s\n", bounds);
 		if (draw == null)
 			return;
 		Rectangle oldBounds = oldBounds1.scale(3).descaleIntOuter(context.tileSize);
-		Rectangle newBounds = newBounds1.scale(3).descaleIntOuter(context.tileSize);
+		Rectangle newBounds = bounds.scale(3).descaleIntOuter(context.tileSize);
 
 		// Remove tiles outside view bounds
 		for (int x = 0; x < oldBounds.width; ++x) {
@@ -104,14 +105,17 @@ public class ImageNodeWrapper extends Wrapper {
 		// Add missing tiles in bounds
 		for (int x = 0; x < newBounds.width; ++x) {
 			for (int y = 0; y < newBounds.height; ++y) {
-				long key = newBounds.corner().to1D();
-				if (wrapTiles.containsKey(key))
+				Vector useIndexes = newBounds.corner().plus(x,y );
+				long key = useIndexes.to1D();
+				if (wrapTiles.containsKey(key)) {
 					continue;
+				}
 				Tile tile = (Tile) frame.tilesGet(key);
-				if (tile == null)
+				if (tile == null) {
 					continue;
+				}
 				WrapTile wrapTile =
-						new WrapTile(tile, (newBounds.x + x) * context.tileSize, (newBounds.y + y) * context.tileSize);
+						new WrapTile(tile, useIndexes.x * context.tileSize, useIndexes.y * context.tileSize);
 				wrapTiles.put(key, wrapTile);
 				draw.getChildren().add(wrapTile.widget);
 			}
@@ -120,7 +124,6 @@ public class ImageNodeWrapper extends Wrapper {
 
 	public void attachTiles() {
 		frame.addTilesPutAllListeners(tilesPutListener = (target, put, remove) -> {
-			System.out.format("put all\n");
 			for (Long key : remove) {
 				WrapTile old = wrapTiles.remove(key);
 				if (old != null)
@@ -130,9 +133,7 @@ public class ImageNodeWrapper extends Wrapper {
 			for (Map.Entry<Long, TileBase> entry : put.entrySet()) {
 				long key = entry.getKey();
 				Vector indexes = Vector.from1D(key);
-				System.out.format("\ttile %s %s : bounds %s %s %s %s\n", indexes.x,indexes.y,checkBounds.x,checkBounds.y,checkBounds.width,checkBounds.height);
 				if (!checkBounds.contains(indexes.x, indexes.y)) {
-					System.out.format("\t\tout\n");
 					continue;
 				}
 				Tile value = (Tile) entry.getValue();
@@ -157,11 +158,11 @@ public class ImageNodeWrapper extends Wrapper {
 
 	@Override
 	public WidgetHandle buildCanvas(ProjectContext context, DoubleRectangle bounds) {
+		this.bounds = bounds;
 		return new WidgetHandle() {
 			private final ProjectNode.OpacitySetListener opacityListener;
 
 			{
-				ImageNodeWrapper.this.bounds = bounds;
 				draw = new Pane();
 				this.opacityListener = node.addOpacitySetListeners((target, value) -> {
 					draw.setOpacity((double) value / opacityMax);

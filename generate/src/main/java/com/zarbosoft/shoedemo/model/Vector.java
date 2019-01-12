@@ -57,4 +57,9 @@ public class Vector {
 	public static Vector from1D(long source) {
 		return new Vector((int)(source & 0xFFFFFFFF), (int)(source >>> 32));
 	}
+
+	@Override
+	public String toString() {
+		return String.format("v[%s %s]", x, y);
+	}
 }

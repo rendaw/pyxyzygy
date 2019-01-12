@@ -117,7 +117,6 @@ public class Timeline {
 					out = Math.max(out, calculatedMaxFrame.get());
 					if (newValue != null)
 						out = Math.max(out, window.selectedForView.get().frame.get());
-					System.out.format("max frame is %s\n", out + extraFrames);
 					return out + extraFrames;
 				}, deps));
 			}
@@ -446,7 +445,6 @@ public class Timeline {
 			}
 
 			// Draw times in region
-			System.out.format("times at %s; fl %s; step %s;\n", at, frame.length, step);
 			for (int i = 0; i < Math.max(1, (frame.length == NO_LENGTH ? extraFrames : (frame.length - 2)) / step + 1); ++i) {
 				Label label;
 				if (innerIndex >= scrubInnerNumbers.size()) {

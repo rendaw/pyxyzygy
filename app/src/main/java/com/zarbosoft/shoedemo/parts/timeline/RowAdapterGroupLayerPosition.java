@@ -40,9 +40,7 @@ public class RowAdapterGroupLayerPosition extends RowAdapter {
 
 	@Override
 	public int updateTime(ProjectContext context, Window window) {
-		System.out.format("pos up tim 1\n");
 		return row.map(r -> {
-			System.out.format("pos up tim 2\n");
 			List<RowAdapterFrame> adapterFrames = new ArrayList<>();
 			for (int i0 = 0; i0 < layer.positionFramesLength(); ++i0) {
 				final int i = i0;

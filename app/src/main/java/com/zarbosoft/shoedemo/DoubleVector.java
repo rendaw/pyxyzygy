@@ -38,4 +38,9 @@ public class DoubleVector {
 	public DoubleVector multiply(double factor) {
 		return new DoubleVector(x * factor, y * factor);
 	}
+
+	@Override
+	public String toString() {
+		return String.format("dv[%s %s]", x, y);
+	}
 }
