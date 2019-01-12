@@ -5,10 +5,8 @@ import com.zarbosoft.luxem.read.StackReader;
 import com.zarbosoft.luxem.write.RawWriter;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.DeadCode;
-import com.zarbosoft.rendaw.common.Pair;
 import com.zarbosoft.shoedemo.deserialize.ModelDeserializationContext;
 import com.zarbosoft.shoedemo.model.*;
-import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.image.Image;
 
 import java.io.InputStream;
@@ -182,7 +180,7 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 	public static ProjectContext create(Path path) {
 		ProjectContext out = new ProjectContext(path);
 		out.project = Project.create(out);
-		out.history = new History(out, ImmutableList.of(), ImmutableList.of());
+		out.history = new History(out, ImmutableList.of(), ImmutableList.of(), null);
 		return out;
 	}
 
@@ -206,6 +204,7 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 				object.serialize(writer);
 			writer.arrayEnd();
 			history.serialize(writer);
+			writer.key("activeChange").primitive(Long.toString(history.change.changeStep.cacheId.id));
 			writer.recordEnd();
 		});
 	}
@@ -234,7 +233,7 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 					.filter(o -> o instanceof Project)
 					.findFirst()
 					.ifPresent(p -> out.project = (Project) p);
-			out.history = new History(out, context.undoHistory, context.redoHistory);
+			out.history = new History(out, context.undoHistory, context.redoHistory, context.activeChange);
 			return out;
 		});
 	}
@@ -261,6 +260,8 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 				context.undoHistory = (List<Long>) value;
 			} else if ("redo".equals(key)) {
 				context.redoHistory = (List<Long>) value;
+			} else if ("activeChange".equals(key)) {
+				context.activeChange = Long.parseLong((String)value);
 			} else
 				throw new Assertion();
 		}

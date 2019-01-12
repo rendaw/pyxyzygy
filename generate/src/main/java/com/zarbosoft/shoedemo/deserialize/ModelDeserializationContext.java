@@ -1,5 +1,7 @@
 package com.zarbosoft.shoedemo.deserialize;
 
+import com.zarbosoft.shoedemo.model.ChangeStep;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -9,6 +11,7 @@ public class ModelDeserializationContext {
 	public Map<Long, Object> objectMap = new HashMap<>();
 	public List<Long> undoHistory = new ArrayList<>();
 	public List<Long> redoHistory = new ArrayList<>();
+	public long activeChange;
 
 	public abstract static class Finisher {
 		public abstract void finish(ModelDeserializationContext context);

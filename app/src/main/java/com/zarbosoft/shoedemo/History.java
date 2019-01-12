@@ -28,9 +28,14 @@ public class History {
 	public ChangeStepBuilder change;
 	private boolean inChange = false;
 
-	public History(ProjectContext context, List<Long> undoHistory, List<Long> redoHistory) {
+	public History(ProjectContext context, List<Long> undoHistory, List<Long> redoHistory, Long activeChange) {
 		this.context = context;
-		change = new ChangeStepBuilder(context);
+		change = new ChangeStepBuilder(
+				context,
+				activeChange == null ?
+						new ChangeStep(new ChangeStep.CacheId(context.nextId++)) :
+						get(new ChangeStep.CacheId(activeChange))
+		);
 		this.undoHistory = undoHistory
 				.stream()
 				.map(i -> new ChangeStep.CacheId(i))
@@ -69,7 +74,7 @@ public class History {
 		);
 		excessUndo.forEach(c -> get(c).remove(context));
 		excessUndo.clear();
-		change = new ChangeStepBuilder(context);
+		change = new ChangeStepBuilder(context, new ChangeStep(new ChangeStep.CacheId(context.nextId++)));
 		System.out.format("change done; undo %s, redo %s\n", undoHistory.size(), redoHistory.size());
 	}
 
