@@ -563,43 +563,6 @@ public class Timeline {
 			return createEndTimeHandle();
 		if (false) {
 			throw new Assertion();
-		} else if (object instanceof Camera) {
-			return new TimeAdapterNode() {
-				private TimeAdapterNode child;
-
-				{
-					((Camera) object).addInnerSetListeners(new Camera.InnerSetListener() {
-						@Override
-						public void accept(Camera target, ProjectNode value) {
-							if (child != null)
-								child.remove();
-							if (value ==
-									Optional
-											.ofNullable(window.selectedForEdit.get())
-											.map(e -> e.getValue())
-											.orElse(null))
-								child = createTimeHandle(value);
-							else
-								child = createEndTimeHandle();
-							if (timeMap != null)
-								child.updateTime(timeMap);
-						}
-					});
-				}
-
-				@Override
-				public void remove() {
-					if (child != null)
-						child.remove();
-					child.remove();
-				}
-
-				@Override
-				public void updateTime(List<FrameMapEntry> timeMap) {
-					child.updateTime(timeMap);
-					super.updateTime(timeMap);
-				}
-			};
 		} else if (object instanceof GroupNode) {
 			return new TimeAdapterNode() {
 				private GroupNode.LayersClearListener layersClearListener;

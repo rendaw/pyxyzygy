@@ -1,5 +1,7 @@
 package com.zarbosoft.shoedemo.model;
 
+import static com.zarbosoft.rendaw.common.Common.ceilDiv;
+
 public class Rectangle {
 	public final int x;
 	public final int y;
@@ -21,12 +23,23 @@ public class Rectangle {
 		return new Rectangle(x / val, y / val, width / val, height / val);
 	}
 
+	/**
+	 * Returns a new rect that would encompass this rect if multiplied by the step value
+	 * @param step
+	 * @return
+	 */
+	public Rectangle quantize(int step) {
+		int newX = Math.floorDiv(this.x, step);
+		int newY = Math.floorDiv(this.y, step);
+		return new Rectangle(newX, newY, ceilDiv(this.x + width, step) - newX, ceilDiv(this.y + width, step) - newY);
+	}
+
 	public Rectangle plus(Vector offset) {
-		return new Rectangle(x + offset.x, y+offset.y,width ,height );
+		return new Rectangle(x + offset.x, y + offset.y, width, height);
 	}
 
 	public Vector corner() {
-		return new Vector(x,y );
+		return new Vector(x, y);
 	}
 
 	@Override

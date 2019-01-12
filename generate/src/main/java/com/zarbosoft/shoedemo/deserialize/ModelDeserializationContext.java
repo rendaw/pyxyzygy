@@ -19,7 +19,8 @@ public class ModelDeserializationContext {
 
 	public final List<Finisher> finishers = new ArrayList<>();
 
-	public <T> T getObject(long key) {
+	public <T> T getObject(Long key) {
+		if (key == null) return null;
 		return (T) objectMap.computeIfAbsent(key, k -> {
 			throw new IllegalStateException(String.format("Can't find object %s in saved data.", key));
 		});

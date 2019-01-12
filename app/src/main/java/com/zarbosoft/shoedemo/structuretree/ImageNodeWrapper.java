@@ -263,21 +263,19 @@ public class ImageNodeWrapper extends Wrapper {
 
 	public Rectangle render(GraphicsContext gc, ImageFrame frame, Rectangle crop, double opacity) {
 		gc.setGlobalAlpha(opacity);
-		int tileOffsetX = Math.floorMod(crop.x, context.tileSize);
-		int tileOffsetY = Math.floorMod(crop.y, context.tileSize);
-		Rectangle tileBounds = crop.divide(context.tileSize);
+		Rectangle tileBounds = crop.quantize(context.tileSize);
 		for (int x = 0; x < tileBounds.width; ++x) {
 			for (int y = 0; y < tileBounds.height; ++y) {
 				Tile tile = (Tile) frame.tilesGet(tileBounds.corner().plus(x, y).to1D());
 				if (tile == null)
 					continue;
+				final int renderX = (x + tileBounds.x) * context.tileSize - crop.x;
+				final int renderY = (y + tileBounds.y) * context.tileSize - crop.y;
 				gc.drawImage(tile.getData(context),
 						0,
 						0,
 						context.tileSize,
-						context.tileSize,
-						x * context.tileSize - tileOffsetX,
-						y * context.tileSize - tileOffsetY,
+						context.tileSize, renderX, renderY,
 						context.tileSize,
 						context.tileSize
 				);
@@ -366,8 +364,8 @@ public class ImageNodeWrapper extends Wrapper {
 	}
 
 	@Override
-	public void render(GraphicsContext gc, int frame, Rectangle crop) {
-		render(gc, findFrame(frame), crop, (double) node.opacity() / opacityMax);
+	public void render(GraphicsContext gc, int frame, Rectangle crop, double opacity) {
+		render(gc, findFrame(frame), crop, opacity * ((double) node.opacity() / opacityMax));
 	}
 
 	@Override

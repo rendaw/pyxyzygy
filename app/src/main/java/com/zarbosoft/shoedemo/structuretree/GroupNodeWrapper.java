@@ -168,9 +168,7 @@ public class GroupNodeWrapper extends Wrapper {
 			context.history.change(c -> c.project(context.project).topRemove(parentIndex, 1));
 	}
 
-	@Override
-	public ProjectNode separateClone(ProjectContext context) {
-		GroupNode clone = GroupNode.create(context);
+	public void cloneSet(ProjectContext context, GroupNode clone) {
 		clone.initialNameSet(context, uniqueName1(node.name()));
 		clone.initialOpacitySet(context, node.opacity());
 		clone.initialLayersAdd(context, node.layers().stream().map(layer -> {
@@ -191,13 +189,20 @@ public class GroupNodeWrapper extends Wrapper {
 			}).collect(Collectors.toList()));
 			return newLayer;
 		}).collect(Collectors.toList()));
+	}
+
+	@Override
+	public ProjectNode separateClone(ProjectContext context) {
+		GroupNode clone = GroupNode.create(context);
+		cloneSet(context,clone );
 		return clone;
 	}
 
 	@Override
-	public void render(GraphicsContext gc, int frame, Rectangle crop) {
+	public void render(GraphicsContext gc, int frame, Rectangle crop, double opacity) {
+		double useOpacity = opacity * ((double)node.opacity() / opacityMax);
 		for (Wrapper child : children)
-			child.render(gc, frame, crop);
+			child.render(gc, frame, crop, useOpacity);
 	}
 
 	@Override

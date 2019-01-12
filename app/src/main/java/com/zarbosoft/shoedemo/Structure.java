@@ -27,8 +27,8 @@ import java.util.stream.Collectors;
 import static com.zarbosoft.rendaw.common.Common.last;
 import static com.zarbosoft.shoedemo.Main.moveTo;
 import static com.zarbosoft.shoedemo.Main.opacityMax;
-import static com.zarbosoft.shoedemo.Window.icon;
 import static com.zarbosoft.shoedemo.ProjectContext.uniqueName;
+import static com.zarbosoft.shoedemo.Window.icon;
 import static com.zarbosoft.shoedemo.Wrapper.TakesChildren.NONE;
 
 public class Structure {
@@ -236,16 +236,18 @@ public class Structure {
 		treeScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
 		treeScroll.setFitToHeight(true);
 		treeScroll.setFitToWidth(true);
-		MenuItem addCamera = new MenuItem("Add Camera");
+		MenuItem addCamera = new MenuItem("Add Crop");
 		addCamera.setOnAction(e -> {
 			Camera camera = Camera.create(context);
-			camera.initialNameSet(context, uniqueName("Camera"));
+			camera.initialNameSet(context, uniqueName("Crop"));
 			camera.initialOpacitySet(context, opacityMax);
 			camera.initialEndSet(context, 50);
 			camera.initialFrameRateSet(context, 120);
 			camera.initialHeightSet(context, 240);
 			camera.initialWidthSet(context, 320);
+			System.out.format("A!\n");
 			context.history.change(c -> c.project(context.project).topAdd(camera));
+			System.out.format("B!\n");
 		});
 		MenuItem addGroup = new MenuItem("Add Group");
 		addGroup.setOnAction(e -> {

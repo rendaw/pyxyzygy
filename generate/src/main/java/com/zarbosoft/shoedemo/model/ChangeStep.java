@@ -57,6 +57,7 @@ public class ChangeStep implements Dirtyable {
 
 	@Override
 	public void dirtyFlush(ProjectContextBase context) {
+		System.out.format("flush change step %s\n", cacheId.id);
 		atomicWrite(path(context), dest -> {
 			RawWriter writer = new RawWriter(dest, (byte) ' ', 4);
 			changes.forEach(c -> c.serialize(writer));

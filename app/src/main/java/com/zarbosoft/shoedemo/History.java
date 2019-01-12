@@ -44,6 +44,7 @@ public class History {
 				.stream()
 				.map(i -> new ChangeStep.CacheId(i))
 				.collect(Collectors.toCollection(ArrayList::new));
+		if (activeChange == null) context.setDirty(change.changeStep);
 	}
 
 	public void change(Consumer<ChangeStepBuilder> cb) {
@@ -75,6 +76,7 @@ public class History {
 		excessUndo.forEach(c -> get(c).remove(context));
 		excessUndo.clear();
 		change = new ChangeStepBuilder(context, new ChangeStep(new ChangeStep.CacheId(context.nextId++)));
+		context.setDirty(change.changeStep);
 		System.out.format("change done; undo %s, redo %s\n", undoHistory.size(), redoHistory.size());
 	}
 

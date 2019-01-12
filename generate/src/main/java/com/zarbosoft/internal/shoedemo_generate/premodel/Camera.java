@@ -4,10 +4,7 @@ import com.zarbosoft.interface1.Configuration;
 import com.zarbosoft.shoedemo.model.Vector;
 
 @Configuration
-public class Camera extends ProjectNode {
-	@Configuration
-	public ProjectNode inner;
-
+public class Camera extends GroupNode {
 	@Configuration
 	public int width;
 
@@ -19,7 +16,4 @@ public class Camera extends ProjectNode {
 
 	@Configuration
 	public int frameRate;
-
-	@Configuration
-	public Vector offset;
 }

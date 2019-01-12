@@ -6,7 +6,6 @@ import com.zarbosoft.shoedemo.model.*;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.control.TreeItem;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,7 +38,6 @@ public class GroupLayerWrapper extends Wrapper {
 		this.node = node;
 
 		this.innerSetListener = node.addInnerSetListeners((target, value) -> {
-			System.out.format("layer child set %s : %s\n", value, value == null ? null : value.name());
 			if (child != null) {
 				if (childCanvas != null) {
 					canvas.getChildren().clear();
@@ -280,11 +278,11 @@ public class GroupLayerWrapper extends Wrapper {
 	}
 
 	@Override
-	public void render(GraphicsContext gc, int frame, Rectangle crop) {
+	public void render(GraphicsContext gc, int frame, Rectangle crop, double opacity) {
 		GroupPositionFrame pos = findPosition(frame);
 		frame = findInnerFrame(frame);
 		if (child != null)
-			child.render(gc, frame, crop.plus(pos.offset()));
+			child.render(gc, frame, crop.plus(pos.offset()), opacity);
 	}
 
 	@Override

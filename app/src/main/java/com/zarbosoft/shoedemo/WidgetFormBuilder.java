@@ -3,10 +3,12 @@ package com.zarbosoft.shoedemo;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.HPos;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.stage.DirectoryChooser;
 
@@ -16,6 +18,18 @@ import java.util.function.Consumer;
 public class WidgetFormBuilder {
 	GridPane gridPane = new GridPane();
 	int row = 0;
+
+	private static Label fieldLabel() {
+		Label out = new Label();
+		out.setMinWidth(Label.USE_PREF_SIZE);
+		return out;
+	}
+
+	private static Label fieldLabel(String name) {
+		Label out = fieldLabel();
+				out.setText(name);
+				return out;
+	}
 
 	{
 		ColumnConstraints labelColumn = new ColumnConstraints();
@@ -42,7 +56,7 @@ public class WidgetFormBuilder {
 	public WidgetFormBuilder text(String name, Consumer<TextField> cb) {
 		TextField widget = new TextField();
 		cb.accept(widget);
-		gridPane.addRow(row++, new Label(name), widget);
+		gridPane.addRow(row++, fieldLabel(name), widget);
 		return this;
 	}
 
@@ -50,7 +64,7 @@ public class WidgetFormBuilder {
 		Spinner<Integer> widget = new Spinner<Integer>();
 		widget.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(min, max));
 		cb.accept(widget);
-		gridPane.addRow(row++, new Label(name), widget);
+		gridPane.addRow(row++, fieldLabel(name), widget);
 		return this;
 	}
 
@@ -60,12 +74,16 @@ public class WidgetFormBuilder {
 		Spinner<Double> widget = new Spinner<Double>();
 		widget.setValueFactory(new SpinnerValueFactory.DoubleSpinnerValueFactory(min, max, min, step));
 		cb.accept(widget);
-		gridPane.addRow(row++, new Label(name), widget);
+		gridPane.addRow(row++, fieldLabel(name), widget);
 		return this;
 	}
 
 	public WidgetFormBuilder chooseDirectory(String name, Consumer<SimpleStringProperty> cb) {
 		SimpleStringProperty path = new SimpleStringProperty();
+		Label pathLabel = new Label();
+		pathLabel.setMinWidth(0);
+		pathLabel.textProperty().bind(Bindings.concat(path));
+		HBox.setHgrow(pathLabel,Priority.ALWAYS );
 		Button button = new Button("Choose...");
 		button.setOnAction(e -> {
 			DirectoryChooser chooser = new DirectoryChooser();
@@ -75,10 +93,13 @@ public class WidgetFormBuilder {
 				path.set(result.toString());
 			}
 		});
-		Label label = new Label();
-		label.textProperty().bind(Bindings.concat(name + ": ", path));
+		HBox hbox = new HBox();
+		hbox.setAlignment(Pos.CENTER_RIGHT);
+		hbox.setSpacing(3);
+		hbox.getChildren().addAll(pathLabel, button);
+
 		cb.accept(path);
-		gridPane.addRow(row++, label, button);
+		gridPane.addRow(row++, fieldLabel(name), hbox);
 		return this;
 	}
 
@@ -87,7 +108,7 @@ public class WidgetFormBuilder {
 		widget.setMin(min);
 		widget.setMax(max);
 		cb.accept(widget);
-		gridPane.addRow(row++, new Label(name), widget);
+		gridPane.addRow(row++, fieldLabel(name), widget);
 		return this;
 	}
 
