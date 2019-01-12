@@ -286,7 +286,7 @@ public class Timeline {
 				.bind(tree
 						.widthProperty()
 						.subtract(nameColumn.widthProperty())
-						.subtract(5 /* No way to get actual inner width? */));
+						.subtract(25 /* No way to get actual inner width? Also leave room for scrollbar :& */));
 		foreground.getChildren().addAll(toolBar, tree, scrub, timeScroll);
 
 		timeScroll.setMin(0);
@@ -429,36 +429,38 @@ public class Timeline {
 		int innerIndex = 0;
 		int innerMarkIndex = 0;
 		for (FrameMapEntry frame : window.timeMap) {
-			// Draw time region markers
-			Rectangle mark;
-			if (innerMarkIndex >= scrubRegionMarkers.size()) {
-				scrubRegionMarkers.add(mark = new Rectangle());
-				scrubElements.getChildren().add(0, mark);
-			} else {
-				mark = scrubRegionMarkers.get(innerMarkIndex);
+			if (at != 0) {
+				// Draw time region markers
+				Rectangle mark;
+				if (innerMarkIndex >= scrubRegionMarkers.size()) {
+					scrubRegionMarkers.add(mark = new Rectangle());
+					scrubElements.getChildren().add(0, mark);
+				} else {
+					mark = scrubRegionMarkers.get(innerMarkIndex);
+				}
+				innerMarkIndex += 1;
+				mark.setWidth(1);
+				mark.heightProperty().bind(scrub.heightProperty());
+				mark.fillProperty().setValue(c(new java.awt.Color(35, 37, 112)));
+				mark.setLayoutX(at * zoom);
 			}
-			mark.setWidth(1);
-			mark.heightProperty().bind(scrub.heightProperty());
-			mark.fillProperty().setValue(BLUE);
-			mark.setLayoutX(at * zoom);
 
 			// Draw times in region
-			for (int i = 0; i < ((frame.length == NO_LENGTH ? extraFrames : frame.length) - step + 1) / step; ++i) {
+			System.out.format("times at %s; fl %s; step %s;\n", at, frame.length, step);
+			for (int i = 0; i < Math.max(1, (frame.length == NO_LENGTH ? extraFrames : (frame.length - 2)) / step + 1); ++i) {
 				Label label;
 				if (innerIndex >= scrubInnerNumbers.size()) {
 					scrubInnerNumbers.add(label = new Label());
-					scrubElements.getChildren().addAll(label);
+					scrubElements.getChildren().add(label);
 					label.setPadding(new Insets(0, 0, 0, 2));
 				} else {
 					label = scrubInnerNumbers.get(innerIndex);
 				}
 				innerIndex += 1;
-				label.setText(Integer.toString(frame.innerOffset + i * step));
-				label.setLayoutX(at + i * step * zoom);
+				label.setText(Integer.toString((frame.innerOffset + i) * step));
+				label.setLayoutX((at + i * step) * zoom);
 				label.setLayoutY(0);
-				scrub
-						.heightProperty()
-						.addListener((observable, oldValue, newValue) -> label.setMinHeight(newValue.doubleValue()));
+				label.minHeightProperty().bind(scrub.heightProperty());
 				label.setAlignment(Pos.BOTTOM_LEFT);
 			}
 			at += frame.length;

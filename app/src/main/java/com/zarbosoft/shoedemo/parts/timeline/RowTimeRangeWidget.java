@@ -28,7 +28,6 @@ import static com.zarbosoft.shoedemo.Window.icon;
 
 public class RowTimeRangeWidget {
 	private static final javafx.scene.paint.Color outFill = c(new Color(127, 127, 127));
-	private static final javafx.scene.paint.Color outStroke = c(new Color(79, 79, 79));
 	private static final javafx.scene.paint.Color inFill = c(new Color(255, 255, 255));
 	private static final javafx.scene.paint.Color inStroke = c(new Color(0, 0, 0));
 	private static final Image loopIcon = icon("loop-handle.svg");
@@ -37,7 +36,7 @@ public class RowTimeRangeWidget {
 
 	final Rectangle frameMarker = new Rectangle(Timeline.baseSize, Timeline.baseSize * 3);
 
-	private final Rectangle background = new Rectangle(0, Timeline.baseSize);
+	private final Rectangle background = new Rectangle(0, Timeline.baseSize * 0.8);
 	private final Rectangle inBackground = new Rectangle(0, Timeline.baseSize);
 
 	private final Group alignment = new Group();
@@ -218,10 +217,9 @@ public class RowTimeRangeWidget {
 		base.setMaxHeight(base.getMinHeight());
 
 		background.setFill(outFill);
-		background.setStroke(outStroke);
 		background.widthProperty().bind(base.widthProperty().add(pad * 2));
 		background.setLayoutX(-pad);
-		background.setLayoutY(Timeline.baseSize);
+		background.setLayoutY(Timeline.baseSize + Timeline.baseSize * 0.1);
 
 		frameMarker.setFill(Timeline.frameMarkerColor);
 		frameMarker.setBlendMode(BlendMode.MULTIPLY);
