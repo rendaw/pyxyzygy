@@ -5,10 +5,17 @@ import com.zarbosoft.luxem.read.StackReader;
 import com.zarbosoft.luxem.write.RawWriter;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.DeadCode;
+import com.zarbosoft.shoedemo.config.TrueColor;
+import com.zarbosoft.shoedemo.config.TrueColorBrush;
 import com.zarbosoft.shoedemo.deserialize.ModelDeserializationContext;
 import com.zarbosoft.shoedemo.model.*;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.scene.image.Image;
+import javafx.scene.paint.Color;
 
+import java.awt.*;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -85,12 +92,12 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 				});
 			} else if (o instanceof GroupPositionFrame) {
 			} else if (o instanceof GroupTimeFrame) {
-			} else if (o instanceof ImageFrame) {
-				((ImageFrame) o).tiles().values().forEach(tile -> {
+			} else if (o instanceof TrueColorImageFrame) {
+				((TrueColorImageFrame) o).tiles().values().forEach(tile -> {
 					incCount.accept(tile);
 				});
-			} else if (o instanceof ImageNode) {
-				((ImageNode) o).frames().forEach(frame -> {
+			} else if (o instanceof TrueColorImageNode) {
+				((TrueColorImageNode) o).frames().forEach(frame -> {
 					incCount.accept(frame);
 				});
 			} else if (o instanceof TileBase) {
@@ -141,6 +148,10 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 			}
 		}.start();
 	}
+
+	public final SimpleObjectProperty<TrueColorBrush> trueColorBrush = new SimpleObjectProperty<>();
+	public final SimpleObjectProperty<TrueColor> trueColor = new SimpleObjectProperty<>(TrueColor.fromJfx(Color.BLACK));
+	public final ObservableList<TrueColorBrush> trueColorBrushes = FXCollections.observableArrayList();
 
 	public ProjectContext(Path path) {
 		super(path);

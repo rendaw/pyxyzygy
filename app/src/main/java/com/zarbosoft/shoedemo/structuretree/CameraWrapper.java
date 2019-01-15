@@ -3,20 +3,13 @@ package com.zarbosoft.shoedemo.structuretree;
 import com.zarbosoft.shoedemo.*;
 import com.zarbosoft.shoedemo.model.Camera;
 import com.zarbosoft.shoedemo.model.ProjectNode;
-import com.zarbosoft.shoedemo.model.Vector;
-import javafx.beans.value.ChangeListener;
-import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.Group;
 import javafx.scene.Node;
-import javafx.scene.canvas.Canvas;
-import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Spinner;
-import javafx.scene.control.TreeItem;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.StrokeType;
 
-import javax.imageio.ImageIO;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -25,8 +18,6 @@ import java.util.List;
 
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 import static com.zarbosoft.shoedemo.Main.*;
-import static com.zarbosoft.shoedemo.ProjectContext.uniqueName1;
-import static com.zarbosoft.shoedemo.structuretree.ImageNodeWrapper.snapshot;
 
 public class CameraWrapper extends GroupNodeWrapper {
 	private final Camera node;
@@ -103,7 +94,7 @@ public class CameraWrapper extends GroupNodeWrapper {
 				cameraBorder.setStrokeWidth(1);
 				cameraBorder.setStrokeType(StrokeType.OUTSIDE);
 				cameraBorder.setFill(Color.TRANSPARENT);
-				cameraBorder.setStroke(c(new java.awt.Color(128, 128, 128)));
+				cameraBorder.setStroke(HelperJFX.c(new java.awt.Color(128, 128, 128)));
 				updateCameraBorder();
 				canvas.getChildren().addAll(groupHandle.getWidget(), cameraBorder);
 			}
@@ -165,17 +156,12 @@ public class CameraWrapper extends GroupNodeWrapper {
 						if (renderPath == null)
 							return;
 						Files.createDirectories(renderPath);
-						Canvas canvas = new Canvas();
-						canvas.setWidth(node.width());
-						canvas.setHeight(node.height());
-						GraphicsContext gc = canvas.getGraphicsContext2D();
+						TrueColorImage canvas = TrueColorImage.create(node.width(), node.height());
 						for (int i = 0; i < node.end(); ++i) {
-							gc.clearRect(0, 0, node.width(), node.height());
-							render(gc, i, crop, (double)node.opacity() / opacityMax);
-							ImageIO.write(SwingFXUtils.fromFXImage(snapshot(canvas), null),
-									"PNG",
-									renderPath.resolve(String.format("frame%06d.png", i)).toFile()
-							);
+							if (i != 0)
+								canvas.clear();
+							render(canvas, i, crop, (double) node.opacity() / opacityMax);
+							canvas.serialize(renderPath.resolve(String.format("frame%06d.png", i)).toString());
 						}
 					}));
 				})

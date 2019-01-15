@@ -8,6 +8,7 @@ import javafx.collections.ObservableList;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.ToolBar;
 import javafx.scene.control.TreeItem;
 
 import java.util.ArrayList;
@@ -199,15 +200,20 @@ public class GroupNodeWrapper extends Wrapper {
 	}
 
 	@Override
-	public void render(GraphicsContext gc, int frame, Rectangle crop, double opacity) {
+	public void render(TrueColorImage out, int frame, Rectangle crop, double opacity) {
 		double useOpacity = opacity * ((double)node.opacity() / opacityMax);
 		for (Wrapper child : children)
-			child.render(gc, frame, crop, useOpacity);
+			child.render(out, frame, crop, useOpacity);
 	}
 
 	@Override
 	public void removeChild(ProjectContext context, int index) {
 		context.history.change(c -> c.groupNode(node).layersRemove(index, 1));
+	}
+
+	@Override
+	public WidgetHandle buildCanvasProperties(ProjectContext context) {
+		return null;
 	}
 
 	@Override

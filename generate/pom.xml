@@ -31,7 +31,6 @@
         </plugins>
     </build>
 
-
     <dependencies>
         <dependency>
             <groupId>com.squareup</groupId>

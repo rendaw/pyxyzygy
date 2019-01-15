@@ -2,18 +2,25 @@ package com.zarbosoft.shoedemo;
 
 import com.google.common.collect.ImmutableList;
 import com.zarbosoft.appdirsj.AppDirs;
+import com.zarbosoft.interface1.TypeInfo;
+import com.zarbosoft.interface1.Walk;
 import com.zarbosoft.luxem.extra.SimpleKVStore;
+import com.zarbosoft.luxem.read.ReadTypeGrammar;
 import com.zarbosoft.rendaw.common.Assertion;
-import com.zarbosoft.shoedemo.model.ImageFrame;
-import com.zarbosoft.shoedemo.model.ImageNode;
+import com.zarbosoft.rendaw.common.Pair;
 import com.zarbosoft.shoedemo.model.ProjectNode;
+import com.zarbosoft.shoedemo.model.TrueColorImageFrame;
+import com.zarbosoft.shoedemo.model.TrueColorImageNode;
 import com.zarbosoft.shoedemo.model.Vector;
 import javafx.application.Application;
-import javafx.beans.property.DoubleProperty;
-import javafx.beans.property.Property;
-import javafx.beans.property.StringProperty;
+import javafx.beans.property.*;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
+import javafx.scene.Node;
+import javafx.scene.control.Label;
+import javafx.scene.control.Slider;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
@@ -22,12 +29,15 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.zarbosoft.rendaw.common.Common.uncheck;
 import static com.zarbosoft.shoedemo.ProjectContext.uniqueName;
 
 public class Main extends Application {
@@ -41,12 +51,85 @@ public class Main extends Application {
 	public final static int NO_LENGTH = -1;
 	public final static int NO_INNER = -1;
 
+	public static ReadTypeGrammar.TypeMap saveTypeMap = new ReadTypeGrammar.TypeMap()
+			.add(new TypeInfo(SimpleIntegerProperty.class),
+					new ReadTypeGrammar.TypeMapEntry<SimpleIntegerProperty>() {
+						@Override
+						public void setIn(Object object, TypeInfo field, Object value) {
+							uncheck(() -> ((SimpleIntegerProperty) field.field.get(object)).set((Integer) value));
+						}
+
+						@Override
+						public Object convertOut(SimpleIntegerProperty source) {
+							return source.get();
+						}
+
+						@Override
+						public TypeInfo serializedType(TypeInfo info) {
+							return new TypeInfo(info.field, int.class);
+						}
+					}
+			)
+			.add(new TypeInfo(SimpleStringProperty.class),
+					new ReadTypeGrammar.TypeMapEntry<SimpleStringProperty>() {
+						@Override
+						public void setIn(Object object, TypeInfo field, Object value) {
+							uncheck(() -> ((SimpleStringProperty) field.field.get(object)).set((String) value));
+						}
+
+						@Override
+						public Object convertOut(SimpleStringProperty source) {
+							return source.get();
+						}
+
+						@Override
+						public TypeInfo serializedType(TypeInfo info) {
+							return new TypeInfo(info.field, String.class);
+						}
+					}
+			)
+			.add(new TypeInfo(SimpleBooleanProperty.class),
+					new ReadTypeGrammar.TypeMapEntry<SimpleBooleanProperty>() {
+						@Override
+						public void setIn(Object object, TypeInfo field, Object value) {
+							uncheck(() -> ((SimpleBooleanProperty) field.field.get(object)).set((Boolean) value));
+						}
+
+						@Override
+						public Object convertOut(SimpleBooleanProperty source) {
+							return source.get();
+						}
+
+						@Override
+						public TypeInfo serializedType(TypeInfo info) {
+							return new TypeInfo(info.field, Boolean.class);
+						}
+					}
+			)
+			.add(new TypeInfo(SimpleObjectProperty.class),
+					new ReadTypeGrammar.TypeMapEntry<SimpleObjectProperty>() {
+						@Override
+						public void setIn(Object object, TypeInfo field, Object value) {
+							uncheck(() -> ((SimpleObjectProperty) field.field.get(object)).set(value));
+						}
+
+						@Override
+						public Object convertOut(SimpleObjectProperty source) {
+							return source.get();
+						}
+
+						@Override
+						public TypeInfo serializedType(TypeInfo info) {
+							return new TypeInfo(info.field,
+									info.parameters[0].type,
+									info.parameters[0].parameters
+							);
+						}
+					}
+			);
+
 	public static void main(String[] args) {
 		Main.launch(args);
-	}
-
-	public static Color c(java.awt.Color source) {
-		return Color.rgb(source.getRed(), source.getGreen(), source.getBlue());
 	}
 
 	public static void moveTo(List list, int source, int count, int dest) {
@@ -70,6 +153,7 @@ public class Main extends Application {
 
 	@Override
 	public void start(Stage primaryStage) throws Exception {
+		new mynativeJNI();
 		primaryStage.setTitle("Shoe Demo 2");
 		Path path;
 		if (getParameters().getUnnamed().isEmpty()) {
@@ -89,14 +173,14 @@ public class Main extends Application {
 			context = ProjectContext.deserialize(path);
 		} else {
 			context = ProjectContext.create(path);
-			ImageNode imageNode = ImageNode.create(context);
-			imageNode.initialNameSet(context, uniqueName("Image"));
-			imageNode.initialOpacitySet(context, opacityMax);
-			ImageFrame imageFrame = ImageFrame.create(context);
-			imageFrame.initialLengthSet(context, -1);
-			imageFrame.initialOffsetSet(context, new Vector(0, 0));
-			imageNode.initialFramesAdd(context, ImmutableList.of(imageFrame));
-			context.history.change(c -> c.project(context.project).topAdd(imageNode));
+			TrueColorImageNode trueColorImageNode = TrueColorImageNode.create(context);
+			trueColorImageNode.initialNameSet(context, uniqueName("Image"));
+			trueColorImageNode.initialOpacitySet(context, opacityMax);
+			TrueColorImageFrame trueColorImageFrame = TrueColorImageFrame.create(context);
+			trueColorImageFrame.initialLengthSet(context, -1);
+			trueColorImageFrame.initialOffsetSet(context, new Vector(0, 0));
+			trueColorImageNode.initialFramesAdd(context, ImmutableList.of(trueColorImageFrame));
+			context.history.change(c -> c.project(context.project).topAdd(trueColorImageNode));
 			context.history.finishChange();
 		}
 		new Window().start(context, primaryStage);
@@ -179,8 +263,7 @@ public class Main extends Application {
 						return;
 					while (c.next()) {
 						if (c.wasAdded()) {
-							target.addAll(
-									c.getFrom(),
+							target.addAll(c.getFrom(),
 									c.getAddedSubList().stream().map(add).collect(Collectors.toList())
 							);
 						} else if (c.wasRemoved()) {

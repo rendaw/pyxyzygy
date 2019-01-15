@@ -3,12 +3,10 @@ package com.zarbosoft.shoedemo.model;
 import com.zarbosoft.luxem.read.StackReader;
 import com.zarbosoft.luxem.write.RawWriter;
 import com.zarbosoft.shoedemo.ProjectContext;
-import com.zarbosoft.shoedemo.deserialize.ModelDeserializationContext;
+import com.zarbosoft.shoedemo.TrueColorImage;
 import com.zarbosoft.shoedemo.deserialize.GeneralMapState;
-import javafx.embed.swing.SwingFXUtils;
-import javafx.scene.image.WritableImage;
+import com.zarbosoft.shoedemo.deserialize.ModelDeserializationContext;
 
-import javax.imageio.ImageIO;
 import java.lang.ref.WeakReference;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -17,10 +15,10 @@ import java.util.Objects;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 
 public class Tile extends TileBase implements Dirtyable {
-	public WeakReference<WritableImage> data;
-	private WritableImage dirtyData;
+	public WeakReference<TrueColorImage> data;
+	private TrueColorImage dirtyData;
 
-	public static Tile create(ProjectContext context, WritableImage data) {
+	public static Tile create(ProjectContext context, TrueColorImage data) {
 		Tile out = new Tile();
 		out.id = context.nextId++;
 		out.data = new WeakReference<>(data);
@@ -57,14 +55,14 @@ public class Tile extends TileBase implements Dirtyable {
 
 	@Override
 	public void dirtyFlush(ProjectContextBase context) {
-		uncheck(() -> ImageIO.write(SwingFXUtils.fromFXImage(dirtyData, null), "PNG", path(context).toFile()));
+		dirtyData.serialize(path(context).toString());
 		dirtyData = null;
 	}
 
-	public WritableImage getData(ProjectContext context) {
-		WritableImage data = this.data.get();
+	public TrueColorImage getData(ProjectContext context) {
+		TrueColorImage data = this.data.get();
 		if (data == null) {
-			data = SwingFXUtils.toFXImage(uncheck(() -> ImageIO.read(path(context).toFile())), null);
+			data = TrueColorImage.deserialize(path(context).toString());
 			this.data = new WeakReference<>(data);
 		}
 		return data;

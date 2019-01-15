@@ -6,7 +6,7 @@ import com.zarbosoft.shoedemo.model.Vector;
 import java.util.Map;
 
 @Configuration
-public class ImageFrame extends ProjectObject {
+public class TrueColorImageFrame extends ProjectObject {
 	@Configuration
 	public int length;
 	@Configuration

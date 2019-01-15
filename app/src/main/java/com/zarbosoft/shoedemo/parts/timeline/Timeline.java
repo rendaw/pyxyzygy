@@ -7,7 +7,7 @@ import com.zarbosoft.shoedemo.*;
 import com.zarbosoft.shoedemo.model.*;
 import com.zarbosoft.shoedemo.structuretree.CameraWrapper;
 import com.zarbosoft.shoedemo.structuretree.GroupNodeWrapper;
-import com.zarbosoft.shoedemo.structuretree.ImageNodeWrapper;
+import com.zarbosoft.shoedemo.structuretree.TrueColorImageNodeWrapper;
 import javafx.beans.Observable;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleIntegerProperty;
@@ -45,7 +45,6 @@ import java.util.stream.Stream;
 
 import static com.zarbosoft.rendaw.common.Common.sublist;
 import static com.zarbosoft.shoedemo.Main.*;
-import static javafx.scene.paint.Color.BLUE;
 
 public class Timeline {
 	private final ProjectContext context;
@@ -60,7 +59,7 @@ public class Timeline {
 	Pane scrub = new Pane();
 	Group scrubElements = new Group();
 	Rectangle frameMarker = new Rectangle(zoom, 0);
-	public final static Color frameMarkerColor = Main.c(new java.awt.Color(195, 195, 195));
+	public final static Color frameMarkerColor = HelperJFX.c(new java.awt.Color(195, 195, 195));
 	List<Label> scrubOuterNumbers = new ArrayList<>();
 	List<Label> scrubInnerNumbers = new ArrayList<>();
 	List<Rectangle> scrubRegionMarkers = new ArrayList<>();
@@ -354,8 +353,8 @@ public class Timeline {
 				);
 				return layerItem;
 			}, this::cleanItemSubtree, noopConsumer());
-		} else if (edit instanceof ImageNodeWrapper) {
-			tree.getRoot().getChildren().add(new TreeItem(new RowAdapterImageNode(this, (ImageNode) edit.getValue())));
+		} else if (edit instanceof TrueColorImageNodeWrapper) {
+			tree.getRoot().getChildren().add(new TreeItem(new RowAdapterTrueColorImageNode(this, (TrueColorImageNode) edit.getValue())));
 		}
 
 		updateTime();
@@ -440,7 +439,7 @@ public class Timeline {
 				innerMarkIndex += 1;
 				mark.setWidth(1);
 				mark.heightProperty().bind(scrub.heightProperty());
-				mark.fillProperty().setValue(c(new java.awt.Color(35, 37, 112)));
+				mark.fillProperty().setValue(HelperJFX.c(new java.awt.Color(35, 37, 112)));
 				mark.setLayoutX(at * zoom);
 			}
 
@@ -692,11 +691,11 @@ public class Timeline {
 					recalcTimes();
 				}
 			};
-		} else if (object instanceof ImageNode) {
+		} else if (object instanceof TrueColorImageNode) {
 			// Should be == edit node, or one of it's parents should == edit node
 			// and this should never be reached
 			throw new Assertion();
-		} else if (object instanceof ImageFrame) {
+		} else if (object instanceof TrueColorImageFrame) {
 			throw new Assertion();
 		} else
 			throw new Assertion();

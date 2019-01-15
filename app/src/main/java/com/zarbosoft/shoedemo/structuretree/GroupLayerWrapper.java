@@ -6,6 +6,7 @@ import com.zarbosoft.shoedemo.model.*;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.ToolBar;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -278,11 +279,11 @@ public class GroupLayerWrapper extends Wrapper {
 	}
 
 	@Override
-	public void render(GraphicsContext gc, int frame, Rectangle crop, double opacity) {
+	public void render(TrueColorImage output, int frame, Rectangle crop, double opacity) {
 		GroupPositionFrame pos = findPosition(frame);
 		frame = findInnerFrame(frame);
 		if (child != null)
-			child.render(gc, frame, crop.plus(pos.offset()), opacity);
+			child.render(output, frame, crop.plus(pos.offset()), opacity);
 	}
 
 	@Override
@@ -291,6 +292,11 @@ public class GroupLayerWrapper extends Wrapper {
 			context.history.change(c -> c.project(context.project).topRemove(parentIndex, 1));
 		else
 			parent.removeChild(context, parentIndex);
+	}
+
+	@Override
+	public WidgetHandle buildCanvasProperties(ProjectContext context) {
+		return null;
 	}
 
 	@Override

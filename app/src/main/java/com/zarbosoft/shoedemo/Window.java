@@ -3,11 +3,12 @@ package com.zarbosoft.shoedemo;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.Pair;
 import com.zarbosoft.shoedemo.model.*;
+import com.zarbosoft.shoedemo.parts.editor.Editor;
 import com.zarbosoft.shoedemo.parts.timeline.Timeline;
 import com.zarbosoft.shoedemo.structuretree.CameraWrapper;
 import com.zarbosoft.shoedemo.structuretree.GroupLayerWrapper;
 import com.zarbosoft.shoedemo.structuretree.GroupNodeWrapper;
-import com.zarbosoft.shoedemo.structuretree.ImageNodeWrapper;
+import com.zarbosoft.shoedemo.structuretree.TrueColorImageNodeWrapper;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.Orientation;
 import javafx.scene.Scene;
@@ -74,6 +75,7 @@ public class Window {
 				context.history.redo();
 			}
 		});
+		scene.getStylesheets().add(getClass().getResource("colorpicker/style.css").toExternalForm());
 
 		primaryStage.setScene(scene);
 		primaryStage.show();
@@ -124,8 +126,8 @@ public class Window {
 			return new GroupNodeWrapper(context, parent, parentIndex, (GroupNode) node);
 		} else if (node instanceof GroupLayer) {
 			return new GroupLayerWrapper(context, parent, parentIndex, (GroupLayer) node);
-		} else if (node instanceof ImageNode) {
-			return new ImageNodeWrapper(context, parent, parentIndex, (ImageNode) node);
+		} else if (node instanceof TrueColorImageNode) {
+			return new TrueColorImageNodeWrapper(context, parent, parentIndex, (TrueColorImageNode) node);
 		} else
 			throw new Assertion();
 	}

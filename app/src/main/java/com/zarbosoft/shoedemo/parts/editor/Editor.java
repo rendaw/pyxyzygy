@@ -1,5 +1,7 @@
-package com.zarbosoft.shoedemo;
+package com.zarbosoft.shoedemo.parts.editor;
 
+import com.zarbosoft.shoedemo.*;
+import com.zarbosoft.shoedemo.Window;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.Insets;
@@ -8,19 +10,18 @@ import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.CornerRadii;
-import javafx.scene.layout.Pane;
+import javafx.scene.layout.*;
 
 import java.awt.*;
 
-import static com.zarbosoft.shoedemo.Main.c;
+import static com.zarbosoft.shoedemo.HelperJFX.c;
 
 public class Editor {
 	private final ProjectContext context;
-	private final Window window;
+	private final com.zarbosoft.shoedemo.Window window;
 	private WidgetHandle viewHandle;
+	private WidgetHandle propertiesHandle;
+	private final VBox layout;
 	private DoubleVector scroll = new DoubleVector(0, 0);
 	public final Pane canvas;
 	private final Group canvasInner;
@@ -67,18 +68,24 @@ public class Editor {
 	public Editor(ProjectContext context, Window window) {
 		this.context = context;
 		this.window = window;
+
 		canvas = new Pane();
-		canvas.setBackground(new Background(new BackgroundFill(
-				c(new Color(99, 80, 97)),
+		canvas.setBackground(new Background(new BackgroundFill(c(new Color(99, 80, 97)),
 				CornerRadii.EMPTY,
 				Insets.EMPTY
 		)));
+		canvas.setMouseTransparent(false);
 		canvas.setFocusTraversable(true);
 		canvasInner = new Group();
 		canvas.getChildren().add(canvasInner);
 		ChangeListener<Number> onResize = (observable, oldValue, newValue) -> updateScroll();
 		canvas.widthProperty().addListener(onResize);
 		canvas.heightProperty().addListener(onResize);
+		VBox.setVgrow(canvas, Priority.ALWAYS);
+
+		layout = new VBox();
+		layout.setFillWidth(true);
+		layout.getChildren().addAll(canvas);
 
 		class EventState {
 			DoubleVector previous;
@@ -94,6 +101,7 @@ public class Editor {
 			eventState.startScroll = scroll;
 			eventState.startScrollClick = new DoubleVector(e.getSceneX(), e.getSceneY());
 			if (e.getButton() == MouseButton.PRIMARY) {
+				System.out.format("hi\n");
 				Wrapper edit = window.selectedForEdit.get();
 				if (edit != null) {
 					edit.markStart(context, eventState.previous);
@@ -134,16 +142,26 @@ public class Editor {
 					viewHandle.remove();
 					viewHandle = null;
 				}
+				if (propertiesHandle != null) {
+					layout.getChildren().remove(propertiesHandle.getWidget());
+					propertiesHandle.remove();
+					propertiesHandle = null;
+				}
 				if (newValue != null) {
 					viewHandle = newValue.buildCanvas(context, viewBounds());
 					canvasInner.getChildren().add(viewHandle.getWidget());
 					updateScroll();
+					propertiesHandle = newValue.buildCanvasProperties(context);
+					if (propertiesHandle != null) {
+						VBox.setVgrow(propertiesHandle.getWidget(), Priority.NEVER);
+						layout.getChildren().add(0, propertiesHandle.getWidget());
+					}
 				}
 			}
 		});
 	}
 
 	public Node getWidget() {
-		return canvas;
+		return layout;
 	}
 }

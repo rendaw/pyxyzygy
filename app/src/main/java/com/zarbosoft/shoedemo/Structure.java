@@ -9,7 +9,6 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
-import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.scene.Node;
 import javafx.scene.control.*;
@@ -36,8 +35,7 @@ public class Structure {
 	private final Window window;
 	private WidgetHandle properties;
 	VBox layout = new VBox();
-	TreeView<Wrapper> treeView;
-	ScrollPane treeScroll = new ScrollPane();
+	TreeView<Wrapper> tree;
 	ToolBar toolbar;
 	SplitPane split = new SplitPane();
 	Set<Wrapper> taggedViewing = new HashSet<>();
@@ -75,7 +73,7 @@ public class Structure {
 	}
 
 	public void treeItemAdded(TreeItem<Wrapper> item) {
-		treeView.getSelectionModel().select(item);
+		tree.getSelectionModel().select(item);
 	}
 
 	public void treeItemRemoved(TreeItem<Wrapper> item) {
@@ -109,13 +107,13 @@ public class Structure {
 	Structure(ProjectContext context, Window window) {
 		this.context = context;
 		this.window = window;
-		treeView = new TreeView();
-		treeView.setShowRoot(false);
+		tree = new TreeView();
+		tree.setShowRoot(false);
 		TreeItem<Wrapper> rootTreeItem = new TreeItem<>();
 		prepareTreeItem(rootTreeItem);
-		treeView.setRoot(rootTreeItem);
-		treeView.setMinHeight(0);
-		treeView.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
+		tree.setRoot(rootTreeItem);
+		tree.setMinHeight(0);
+		tree.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
 			if (e.isControlDown()) {
 				switch (e.getCode()) {
 					case C:
@@ -139,7 +137,7 @@ public class Structure {
 				}
 			}
 		});
-		treeView.getSelectionModel().getSelectedItems().addListener((ListChangeListener<TreeItem<Wrapper>>) c -> {
+		tree.getSelectionModel().getSelectedItems().addListener((ListChangeListener<TreeItem<Wrapper>>) c -> {
 			while (c.next()) {
 				List<? extends TreeItem<Wrapper>> added = c.getAddedSubList();
 				System.out.format("select added %s\n", added.size());
@@ -152,7 +150,7 @@ public class Structure {
 				selectForEdit(first.getValue());
 			}
 		});
-		treeView.setCellFactory((TreeView<Wrapper> param) -> {
+		tree.setCellFactory((TreeView<Wrapper> param) -> {
 			return new TreeCell<Wrapper>() {
 				final ImageView showViewing = new ImageView();
 				final ImageView showGrabState = new ImageView();
@@ -232,10 +230,6 @@ public class Structure {
 				}
 			};
 		});
-		treeScroll.setContent(treeView);
-		treeScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-		treeScroll.setFitToHeight(true);
-		treeScroll.setFitToWidth(true);
 		MenuItem addCamera = new MenuItem("Add Crop");
 		addCamera.setOnAction(e -> {
 			Camera camera = Camera.create(context);
@@ -245,9 +239,7 @@ public class Structure {
 			camera.initialFrameRateSet(context, 120);
 			camera.initialHeightSet(context, 240);
 			camera.initialWidthSet(context, 320);
-			System.out.format("A!\n");
 			context.history.change(c -> c.project(context.project).topAdd(camera));
-			System.out.format("B!\n");
 		});
 		MenuItem addGroup = new MenuItem("Add Group");
 		addGroup.setOnAction(e -> {
@@ -256,12 +248,12 @@ public class Structure {
 			group.initialNameSet(context, uniqueName("Group"));
 			addNew(group);
 		});
-		MenuItem addImage = new MenuItem("Add Image");
+		MenuItem addImage = new MenuItem("Add True Color");
 		addImage.setOnAction(e -> {
-			ImageNode image = ImageNode.create(context);
+			TrueColorImageNode image = TrueColorImageNode.create(context);
 			image.initialOpacitySet(context, opacityMax);
-			image.initialNameSet(context, uniqueName("Image"));
-			ImageFrame frame = ImageFrame.create(context);
+			image.initialNameSet(context, uniqueName("True color"));
+			TrueColorImageFrame frame = TrueColorImageFrame.create(context);
 			frame.initialLengthSet(context, -1);
 			frame.initialOffsetSet(context, new Vector(0, 0));
 			image.initialFramesAdd(context, ImmutableList.of(frame));
@@ -270,14 +262,14 @@ public class Structure {
 		MenuButton addButton = Window.menuButton("plus.svg");
 		addButton.getItems().addAll(addCamera, addGroup, addImage);
 		Button removeButton = Window.button("minus.svg", "Remove");
-		removeButton.disableProperty().bind(Bindings.isEmpty(treeView.getSelectionModel().getSelectedIndices()));
+		removeButton.disableProperty().bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedIndices()));
 		removeButton.setOnAction(e -> {
 			delete(context);
 		});
 		Button moveUpButton = Window.button("arrow-up.svg", "Move Up");
-		moveUpButton.disableProperty().bind(Bindings.isEmpty(treeView.getSelectionModel().getSelectedIndices()));
+		moveUpButton.disableProperty().bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedIndices()));
 		moveUpButton.setOnAction(e -> {
-			List<TreeItem<Wrapper>> selected = treeView.getSelectionModel().getSelectedItems();
+			List<TreeItem<Wrapper>> selected = tree.getSelectionModel().getSelectedItems();
 			TreeItem<Wrapper> firstParent = selected.get(0).getParent();
 			List<TreeItem<Wrapper>> removeOrder = selected
 					.stream()
@@ -302,9 +294,9 @@ public class Structure {
 			context.history.finishChange();
 		});
 		Button moveDownButton = Window.button("arrow-down.svg", "Move Down");
-		moveDownButton.disableProperty().bind(Bindings.isEmpty(treeView.getSelectionModel().getSelectedIndices()));
+		moveDownButton.disableProperty().bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedIndices()));
 		moveDownButton.setOnAction(e -> {
-			List<TreeItem<Wrapper>> selected = treeView.getSelectionModel().getSelectedItems();
+			List<TreeItem<Wrapper>> selected = tree.getSelectionModel().getSelectedItems();
 			TreeItem<Wrapper> firstParent = selected.get(0).getParent();
 			List<TreeItem<Wrapper>> removeOrder = selected
 					.stream()
@@ -329,7 +321,7 @@ public class Structure {
 			context.history.finishChange();
 		});
 		Button duplicateButton = Window.button("content-copy.svg", "Duplicate");
-		duplicateButton.disableProperty().bind(Bindings.isEmpty(treeView.getSelectionModel().getSelectedIndices()));
+		duplicateButton.disableProperty().bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedIndices()));
 		duplicateButton.setOnAction(e -> {
 			duplicate();
 		});
@@ -348,8 +340,8 @@ public class Structure {
 		MenuButton linkButton = Window.menuButton("content-paste.svg");
 		linkButton.getItems().addAll(linkBeforeButton, linkInButton, linkAfterButton);
 		toolbar = new ToolBar(addButton, duplicateButton, removeButton, moveUpButton, moveDownButton, linkButton);
-		layout.getChildren().addAll(toolbar, treeScroll);
-		VBox.setVgrow(treeScroll, Priority.ALWAYS);
+		layout.getChildren().addAll(toolbar, tree);
+		VBox.setVgrow(tree, Priority.ALWAYS);
 
 		split.setOrientation(Orientation.VERTICAL);
 		split.getItems().add(layout);
@@ -361,28 +353,28 @@ public class Structure {
 				ProjectNode v = value.get(i);
 				Wrapper child = Window.createNode(context, null, at + i, v);
 				child.tree.addListener((observable, oldValue, newValue) -> {
-					treeView.getRoot().getChildren().set(child.parentIndex, newValue);
+					tree.getRoot().getChildren().set(child.parentIndex, newValue);
 				});
 				newItems.add(child.tree.getValue());
 			}
-			treeView.getRoot().getChildren().addAll(at, newItems);
+			tree.getRoot().getChildren().addAll(at, newItems);
 		});
 		context.project.addTopRemoveListeners((target, at, count) -> {
-			List<TreeItem<Wrapper>> temp = treeView.getRoot().getChildren().subList(at, at + count);
+			List<TreeItem<Wrapper>> temp = tree.getRoot().getChildren().subList(at, at + count);
 			temp.forEach(i -> i.getValue().remove(context));
 			temp.clear();
-			for (int i = at; i < treeView.getRoot().getChildren().size(); ++i) {
-				treeView.getRoot().getChildren().get(i).getValue().parentIndex = at + i;
+			for (int i = at; i < tree.getRoot().getChildren().size(); ++i) {
+				tree.getRoot().getChildren().get(i).getValue().parentIndex = at + i;
 			}
 		});
 		context.project.addTopMoveToListeners((target, source, count, dest) -> {
-			moveTo(treeView.getRoot().getChildren(), source, count, dest);
-			for (int i = Math.min(source, dest); i < treeView.getRoot().getChildren().size(); ++i)
-				treeView.getRoot().getChildren().get(i).getValue().parentIndex = i;
+			moveTo(tree.getRoot().getChildren(), source, count, dest);
+			for (int i = Math.min(source, dest); i < tree.getRoot().getChildren().size(); ++i)
+				tree.getRoot().getChildren().get(i).getValue().parentIndex = i;
 		});
 		context.project.addTopClearListeners(target -> {
-			treeView.getRoot().getChildren().forEach(c -> c.getValue().remove(context));
-			treeView.getRoot().getChildren().clear();
+			tree.getRoot().getChildren().forEach(c -> c.getValue().remove(context));
+			tree.getRoot().getChildren().clear();
 		});
 		window.selectedForEdit.addListener(new ChangeListener<Wrapper>() {
 			{
@@ -401,13 +393,10 @@ public class Structure {
 					split.setDividerPositions(1);
 				}
 				if (newValue != null) {
-					VBox wrapper = new VBox();
-					wrapper.setPadding(new Insets(3, 3, 3, 3));
 					properties = newValue.createProperties(context);
-					wrapper.getChildren().add(properties.getWidget());
-					split.getItems().add(wrapper);
+					split.getItems().add(properties.getWidget());
 					split.setDividerPositions(0.7);
-					SplitPane.setResizableWithParent(wrapper, false);
+					SplitPane.setResizableWithParent(properties.getWidget(), false);
 				}
 			}
 		});
@@ -466,7 +455,7 @@ public class Structure {
 	private void link() {
 		clearTagLifted();
 		clearTagCopied();
-		treeView.getSelectionModel().getSelectedItems().stream().forEach(s -> {
+		tree.getSelectionModel().getSelectedItems().stream().forEach(s -> {
 			Wrapper wrapper = s.getValue();
 			taggedCopied.add(wrapper);
 			wrapper.tagCopied.set(true);
@@ -486,7 +475,7 @@ public class Structure {
 	private void lift() {
 		clearTagLifted();
 		clearTagCopied();
-		treeView.getSelectionModel().getSelectedItems().stream().forEach(s -> {
+		tree.getSelectionModel().getSelectedItems().stream().forEach(s -> {
 			Wrapper wrapper = s.getValue();
 			taggedLifted.add(wrapper);
 			wrapper.tagLifted.set(true);
@@ -500,7 +489,7 @@ public class Structure {
 	}
 
 	private Wrapper getSelection() {
-		return Optional.ofNullable(treeView.getSelectionModel().getSelectedItem()).map(t -> t.getValue()).orElse(null);
+		return Optional.ofNullable(tree.getSelectionModel().getSelectedItem()).map(t -> t.getValue()).orElse(null);
 	}
 
 	/**

@@ -14,6 +14,7 @@ import javafx.stage.DirectoryChooser;
 
 import java.io.File;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public class WidgetFormBuilder {
 	GridPane gridPane = new GridPane();
@@ -27,8 +28,8 @@ public class WidgetFormBuilder {
 
 	private static Label fieldLabel(String name) {
 		Label out = fieldLabel();
-				out.setText(name);
-				return out;
+		out.setText(name);
+		return out;
 	}
 
 	{
@@ -83,7 +84,7 @@ public class WidgetFormBuilder {
 		Label pathLabel = new Label();
 		pathLabel.setMinWidth(0);
 		pathLabel.textProperty().bind(Bindings.concat(path));
-		HBox.setHgrow(pathLabel,Priority.ALWAYS );
+		HBox.setHgrow(pathLabel, Priority.ALWAYS);
 		Button button = new Button("Choose...");
 		button.setOnAction(e -> {
 			DirectoryChooser chooser = new DirectoryChooser();
@@ -108,6 +109,24 @@ public class WidgetFormBuilder {
 		widget.setMin(min);
 		widget.setMax(max);
 		cb.accept(widget);
+		gridPane.addRow(row++, fieldLabel(name), widget);
+		return this;
+	}
+
+	public WidgetFormBuilder span(Supplier<Node> supplier) {
+		gridPane.add(supplier.get(), 0, row++, 2, 1);
+		return this;
+	}
+
+	public WidgetFormBuilder check(String name, Consumer<CheckBox> cb) {
+		CheckBox widget = new CheckBox();
+		cb.accept(widget);
+		gridPane.addRow(row++, fieldLabel(name), widget);
+		return this;
+	}
+
+	public WidgetFormBuilder custom(String name, Supplier<Node> cb) {
+		Node widget = cb.get();
 		gridPane.addRow(row++, fieldLabel(name), widget);
 		return this;
 	}

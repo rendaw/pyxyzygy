@@ -6,7 +6,7 @@ import com.zarbosoft.shoedemo.model.Rectangle;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.ToolBar;
 import javafx.scene.control.TreeItem;
 
 import java.util.List;
@@ -37,6 +37,7 @@ public abstract class Wrapper {
 
 	/**
 	 * Used in ProjectNode wrappers only
+	 *
 	 * @param context
 	 * @return
 	 */
@@ -46,6 +47,7 @@ public abstract class Wrapper {
 
 	/**
 	 * Used in ProjectNode wrappers only
+	 *
 	 * @param context
 	 * @param at
 	 * @param child
@@ -58,14 +60,16 @@ public abstract class Wrapper {
 	public abstract ProjectNode separateClone(ProjectContext context);
 
 	/**
-	 * @param gc for canvas with w/h = crop w/h
-	 * @param frame frame to render
-	 * @param crop viewport of render
+	 * @param gc      for canvas with w/h = crop w/h
+	 * @param frame   frame to render
+	 * @param crop    viewport of render
 	 * @param opacity opacity of this subtree
 	 */
-	public abstract void render(GraphicsContext gc, int frame, Rectangle crop, double opacity);
+	public abstract void render(TrueColorImage output, int frame, Rectangle crop, double opacity);
 
 	public abstract void removeChild(ProjectContext context, int index);
+
+	public abstract WidgetHandle buildCanvasProperties(ProjectContext context);
 
 	public static enum TakesChildren {
 		NONE,

@@ -1,7 +1,6 @@
 package com.zarbosoft.shoedemo.parts.timeline;
 
 import com.zarbosoft.shoedemo.DoubleVector;
-import com.zarbosoft.shoedemo.ProjectContext;
 import com.zarbosoft.shoedemo.Window;
 import javafx.beans.binding.Bindings;
 import javafx.geometry.Insets;
@@ -23,7 +22,7 @@ import java.awt.*;
 
 import static com.zarbosoft.rendaw.common.Common.aeq;
 import static com.zarbosoft.shoedemo.Main.NO_INNER;
-import static com.zarbosoft.shoedemo.Main.c;
+import static com.zarbosoft.shoedemo.HelperJFX.c;
 import static com.zarbosoft.shoedemo.Window.icon;
 
 public class RowTimeRangeWidget {

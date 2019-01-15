@@ -25,7 +25,7 @@
                 <version>8.8.3</version>
                 <configuration>
                     <vendor>Zarbosoft</vendor>
-                    <mainClass>com.zarbosoft.shoedemo.Window</mainClass>
+                    <mainClass>com.zarbosoft.shoedemo.Main</mainClass>
                 </configuration>
                 <executions>
                     <execution>
@@ -71,7 +71,7 @@
                 <version>1.7</version>
                 <executions>
                     <execution>
-                        <id>add-source</id>
+                        <id>add-target-sources-dir</id>
                         <phase>generate-sources</phase>
                         <goals>
                             <goal>add-source</goal>
@@ -80,6 +80,46 @@
                             <sources>
                                 <source>${project.build.directory}/src</source>
                             </sources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>add-target-resources-dir</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>add-resource</goal>
+                        </goals>
+                        <configuration>
+                            <resources>
+                                <resource>
+                                    <directory>${project.build.directory}/resources</directory>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>1.7</version>
+                <executions>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>exec-maven-plugin</artifactId>
+                <groupId>org.codehaus.mojo</groupId>
+                <version>1.6.0</version>
+                <executions>
+                    <execution>
+                        <id>run-swig</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <workingDirectory>${basedir}/../native</workingDirectory>
+                            <executable>python</executable>
+                            <arguments>build.py</arguments>
                         </configuration>
                     </execution>
                 </executions>

@@ -3,10 +3,10 @@ package com.zarbosoft.shoedemo.parts.timeline;
 import com.zarbosoft.shoedemo.ProjectContext;
 import com.zarbosoft.shoedemo.WidgetHandle;
 import com.zarbosoft.shoedemo.Window;
-import com.zarbosoft.shoedemo.model.ImageFrame;
-import com.zarbosoft.shoedemo.model.ImageNode;
+import com.zarbosoft.shoedemo.model.TrueColorImageFrame;
+import com.zarbosoft.shoedemo.model.TrueColorImageNode;
 import com.zarbosoft.shoedemo.model.Vector;
-import com.zarbosoft.shoedemo.structuretree.ImageNodeWrapper;
+import com.zarbosoft.shoedemo.structuretree.TrueColorImageNodeWrapper;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ObservableObjectValue;
 import javafx.beans.value.ObservableValue;
@@ -22,12 +22,12 @@ import java.util.function.Function;
 import static com.zarbosoft.rendaw.common.Common.last;
 import static com.zarbosoft.shoedemo.Main.NO_INNER;
 
-class RowAdapterImageNode extends RowAdapter {
+class RowAdapterTrueColorImageNode extends RowAdapter {
 	private final Timeline timeline;
-	private final ImageNode node;
+	private final TrueColorImageNode node;
 	Optional<RowFramesWidget> row = Optional.empty();
 
-	public RowAdapterImageNode(Timeline timeline, ImageNode node) {
+	public RowAdapterTrueColorImageNode(Timeline timeline, TrueColorImageNode node) {
 		this.timeline = timeline;
 		this.node = node;
 	}
@@ -47,7 +47,7 @@ class RowAdapterImageNode extends RowAdapter {
 			List<RowAdapterFrame> frameAdapters = new ArrayList<>();
 			for (int i0 = 0; i0 < node.framesLength(); ++i0) {
 				final int i = i0;
-				ImageFrame f = node.framesGet(i);
+				TrueColorImageFrame f = node.framesGet(i);
 				frameAdapters.add(new RowAdapterFrame() {
 					@Override
 					public Object id() {
@@ -61,34 +61,34 @@ class RowAdapterImageNode extends RowAdapter {
 
 					@Override
 					public void setLength(ProjectContext context, int length) {
-						context.history.change(c -> c.imageFrame(f).lengthSet(length));
+						context.history.change(c -> c.trueColorImageFrame(f).lengthSet(length));
 					}
 
 					@Override
 					public void remove(ProjectContext context) {
 						if (i == 0)
 							return;
-						context.history.change(c -> c.imageNode(node).framesRemove(i, 1));
+						context.history.change(c -> c.trueColorImageNode(node).framesRemove(i, 1));
 						if (i == node.framesLength())
-							context.history.change(c -> c.imageFrame(last(node.frames())).lengthSet(-1));
+							context.history.change(c -> c.trueColorImageFrame(last(node.frames())).lengthSet(-1));
 					}
 
 					@Override
 					public void clear(ProjectContext context) {
-						context.history.change(c -> c.imageFrame(f).tilesClear());
+						context.history.change(c -> c.trueColorImageFrame(f).tilesClear());
 					}
 
 					@Override
 					public void moveLeft(ProjectContext context) {
 						if (i == 0)
 							return;
-						ImageFrame frameBefore = node.framesGet(i - 1);
-						context.history.change(c -> c.imageNode(node).framesMoveTo(i, 1, i - 1));
+						TrueColorImageFrame frameBefore = node.framesGet(i - 1);
+						context.history.change(c -> c.trueColorImageNode(node).framesMoveTo(i, 1, i - 1));
 						final int lengthThis = f.length();
 						if (lengthThis == -1) {
 							final int lengthBefore = frameBefore.length();
-							context.history.change(c -> c.imageFrame(f).lengthSet(lengthBefore));
-							context.history.change(c -> c.imageFrame(frameBefore).lengthSet(lengthThis));
+							context.history.change(c -> c.trueColorImageFrame(f).lengthSet(lengthBefore));
+							context.history.change(c -> c.trueColorImageFrame(frameBefore).lengthSet(lengthThis));
 						}
 					}
 
@@ -96,13 +96,13 @@ class RowAdapterImageNode extends RowAdapter {
 					public void moveRight(ProjectContext context) {
 						if (i == node.framesLength() - 1)
 							return;
-						ImageFrame frameAfter = node.framesGet(i + 1);
-						context.history.change(c -> c.imageNode(node).framesMoveTo(i, 1, i + 1));
+						TrueColorImageFrame frameAfter = node.framesGet(i + 1);
+						context.history.change(c -> c.trueColorImageNode(node).framesMoveTo(i, 1, i + 1));
 						final int lengthAfter = frameAfter.length();
 						if (lengthAfter == -1) {
 							final int lengthThis = f.length();
-							context.history.change(c -> c.imageFrame(f).lengthSet(lengthAfter));
-							context.history.change(c -> c.imageFrame(frameAfter).lengthSet(lengthThis));
+							context.history.change(c -> c.trueColorImageFrame(f).lengthSet(lengthAfter));
+							context.history.change(c -> c.trueColorImageFrame(frameAfter).lengthSet(lengthThis));
 						}
 					}
 				});
@@ -129,7 +129,7 @@ class RowAdapterImageNode extends RowAdapter {
 				layout.getChildren().add(row.get());
 
 				framesCleanup = node.mirrorFrames(frameCleanup, f -> {
-					ImageFrame.LengthSetListener lengthListener = f.addLengthSetListeners((target, value) -> {
+					TrueColorImageFrame.LengthSetListener lengthListener = f.addLengthSetListeners((target, value) -> {
 						updateTime(context, window);
 					});
 					return () -> {
@@ -161,7 +161,7 @@ class RowAdapterImageNode extends RowAdapter {
 	@Override
 	public boolean createFrame(ProjectContext context, Window window, int outer) {
 		return insertNewFrame(context, window, outer, previous -> {
-			ImageFrame out = ImageFrame.create(context);
+			TrueColorImageFrame out = TrueColorImageFrame.create(context);
 			out.initialOffsetSet(context, new Vector(0, 0));
 			return out;
 		});
@@ -170,7 +170,7 @@ class RowAdapterImageNode extends RowAdapter {
 	@Override
 	public boolean duplicateFrame(ProjectContext context, Window window, int outer) {
 		return insertNewFrame(context, window, outer, previous -> {
-			ImageFrame created = ImageFrame.create(context);
+			TrueColorImageFrame created = TrueColorImageFrame.create(context);
 			created.initialOffsetSet(context, previous.offset());
 			created.initialTilesPutAll(context, previous.tiles());
 			return created;
@@ -181,22 +181,22 @@ class RowAdapterImageNode extends RowAdapter {
 			ProjectContext context,
 			Window window,
 			int outer,
-			Function<ImageFrame, ImageFrame> cb
+			Function<TrueColorImageFrame, TrueColorImageFrame> cb
 	) {
 		final int inner = window.timeToInner(outer);
 		if (inner == NO_INNER)
 			return false;
-		ImageNodeWrapper.FrameResult previous = ImageNodeWrapper.findFrame(node, inner);
-		ImageFrame newFrame = cb.apply(previous.frame);
+		TrueColorImageNodeWrapper.FrameResult previous = TrueColorImageNodeWrapper.findFrame(node, inner);
+		TrueColorImageFrame newFrame = cb.apply(previous.frame);
 		int offset = inner - previous.at;
 		if (previous.frame.length() == -1) {
-			context.history.change(c -> c.imageFrame(previous.frame).lengthSet(offset));
+			context.history.change(c -> c.trueColorImageFrame(previous.frame).lengthSet(offset));
 			newFrame.initialLengthSet(context, -1);
 		} else {
 			newFrame.initialLengthSet(context, previous.frame.length() - offset);
-			context.history.change(c -> c.imageFrame(previous.frame).lengthSet(offset));
+			context.history.change(c -> c.trueColorImageFrame(previous.frame).lengthSet(offset));
 		}
-		context.history.change(c -> c.imageNode(node).framesAdd(previous.frameIndex + 1, newFrame));
+		context.history.change(c -> c.trueColorImageNode(node).framesAdd(previous.frameIndex + 1, newFrame));
 		return true;
 	}
 
