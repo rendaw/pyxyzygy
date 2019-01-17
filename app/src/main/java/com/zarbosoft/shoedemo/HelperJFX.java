@@ -28,11 +28,11 @@ public class HelperJFX {
 		return Color.rgb(source.getRed(), source.getGreen(), source.getBlue());
 	}
 
-	public static Pair<Node, SimpleIntegerProperty> nonlinerSlider(int min, int max, int precision) {
+	public static Pair<Node, SimpleIntegerProperty> nonlinerSlider(int min, int max, int precision, int divide) {
 		Slider slider = new Slider();
 		slider.setMin(0);
 		slider.setMax(1);
-		HBox.setHgrow(slider, Priority.ALWAYS );
+		HBox.setHgrow(slider, Priority.ALWAYS);
 
 		TextField text = new TextField();
 		text.setMinWidth(50);
@@ -48,6 +48,7 @@ public class HelperJFX {
 		Function<Double, Integer> fromNonlinear = v -> (int) (Math.pow(v, 2) * range + min);
 		Function<Integer, Double> toNonlinear = v -> Math.pow((v - min) / range, 0.5);
 		SimpleIntegerProperty value = new SimpleIntegerProperty();
+
 		CustomBinding.bindBidirectional(
 				value,
 				slider.valueProperty(),
@@ -56,13 +57,16 @@ public class HelperJFX {
 		);
 		DecimalFormat textFormat = new DecimalFormat();
 		textFormat.setMaximumFractionDigits(precision);
-		CustomBinding.bindBidirectional(value,text.textProperty() ,v -> Optional.of(textFormat.format(v.intValue())),v -> {
-			try {
-				return Optional.of(Double.parseDouble(v));
-			} catch (NumberFormatException e) {
-				return Optional.empty();
-			}
-		} );
+		CustomBinding.bindBidirectional(value,
+				text.textProperty(),
+				v -> Optional.of(textFormat.format((double)v.intValue() / divide)),
+				v -> {
+					try {
+						return Optional.of((int)(Double.parseDouble(v) * divide));
+					} catch (NumberFormatException e) {
+						return Optional.empty();
+					}
+				});
 
 		return new Pair<>(out, value);
 	}

@@ -74,19 +74,20 @@ class TrueColorImage {
 		int getHeight() const;
 		void clear();
 		void serialize(char const * path) const throw(std::runtime_error);
+		void setPixel(uint8_t cr, uint8_t cg, uint8_t cb, uint8_t ca, int x, int y);
 		void stroke(uint8_t cr, uint8_t cg, uint8_t cb, uint8_t ca, double x1, double y1, double r1, double x2, double y2, double r2, double blend);
 		void compose(TrueColorImage const & source, int x, int y, double opacity);
 
 		TrueColorImage &operator = (TrueColorImage const & other) = delete;
 		TrueColorImage &operator = (TrueColorImage && other) = delete;
+		TrueColorImage(TrueColorImage &&other) = delete;
 		TrueColorImage(TrueColorImage const & other) = delete;
 	private:
 		TrueColorImage(int w, int h, uint8_t * pixels);
-		TrueColorImage(TrueColorImage &&other) noexcept;
 
 		int const w;
 		int const h;
-		uint8_t * pixels;
+		uint8_t * const pixels;
 };
 
 #ifdef SWIG

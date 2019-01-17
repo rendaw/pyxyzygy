@@ -2,26 +2,18 @@ package com.zarbosoft.shoedemo;
 
 import com.google.common.collect.ImmutableList;
 import com.zarbosoft.appdirsj.AppDirs;
-import com.zarbosoft.interface1.TypeInfo;
-import com.zarbosoft.interface1.Walk;
 import com.zarbosoft.luxem.extra.SimpleKVStore;
-import com.zarbosoft.luxem.read.ReadTypeGrammar;
 import com.zarbosoft.rendaw.common.Assertion;
-import com.zarbosoft.rendaw.common.Pair;
 import com.zarbosoft.shoedemo.model.ProjectNode;
 import com.zarbosoft.shoedemo.model.TrueColorImageFrame;
 import com.zarbosoft.shoedemo.model.TrueColorImageNode;
 import com.zarbosoft.shoedemo.model.Vector;
 import javafx.application.Application;
-import javafx.beans.property.*;
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.Property;
+import javafx.beans.property.StringProperty;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
-import javafx.scene.Node;
-import javafx.scene.control.Label;
-import javafx.scene.control.Slider;
-import javafx.scene.control.TextField;
-import javafx.scene.layout.HBox;
-import javafx.scene.paint.Color;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 
@@ -29,15 +21,12 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static com.zarbosoft.rendaw.common.Common.uncheck;
 import static com.zarbosoft.shoedemo.ProjectContext.uniqueName;
 
 public class Main extends Application {
@@ -51,6 +40,7 @@ public class Main extends Application {
 	public final static int NO_LENGTH = -1;
 	public final static int NO_INNER = -1;
 
+	/*
 	public static ReadTypeGrammar.TypeMap saveTypeMap = new ReadTypeGrammar.TypeMap()
 			.add(new TypeInfo(SimpleIntegerProperty.class),
 					new ReadTypeGrammar.TypeMapEntry<SimpleIntegerProperty>() {
@@ -127,6 +117,7 @@ public class Main extends Application {
 						}
 					}
 			);
+			*/
 
 	public static void main(String[] args) {
 		Main.launch(args);

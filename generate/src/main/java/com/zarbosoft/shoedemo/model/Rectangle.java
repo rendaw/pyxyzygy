@@ -31,7 +31,7 @@ public class Rectangle {
 	public Rectangle quantize(int step) {
 		int newX = Math.floorDiv(this.x, step);
 		int newY = Math.floorDiv(this.y, step);
-		return new Rectangle(newX, newY, ceilDiv(this.x + width, step) - newX, ceilDiv(this.y + width, step) - newY);
+		return new Rectangle(newX, newY, ceilDiv(this.x + width, step) - newX, ceilDiv(this.y + height, step) - newY);
 	}
 
 	public Rectangle plus(Vector offset) {

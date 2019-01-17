@@ -11,6 +11,7 @@ import javafx.scene.Node;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
+import javafx.scene.shape.Rectangle;
 
 import java.awt.*;
 
@@ -76,6 +77,10 @@ public class Editor {
 		)));
 		canvas.setMouseTransparent(false);
 		canvas.setFocusTraversable(true);
+		Rectangle clip = new Rectangle();
+		clip.widthProperty().bind(canvas.widthProperty());
+		clip.heightProperty().bind(canvas.heightProperty());
+		canvas.setClip(clip);
 		canvasInner = new Group();
 		canvas.getChildren().add(canvasInner);
 		ChangeListener<Number> onResize = (observable, oldValue, newValue) -> updateScroll();

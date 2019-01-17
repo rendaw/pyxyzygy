@@ -35,6 +35,7 @@ def main():
             'clang++',
             '-c',
             '-Wall', '-pedantic',
+            '-O3',
             '-o', '{}.o'.format(name),
             name,
             '-I/c/jdk1.3.1/include',
@@ -49,6 +50,7 @@ def main():
     c([
         'clang++',
         '-shared',
+        '-O3',
         '-L/usr/lib',
         '-o', java_resource_dest / '{}.so'.format(module),
         'header_wrap.cxx.o',
