@@ -7,13 +7,13 @@ import com.zarbosoft.shoedemo.config.TrueColor;
 import com.zarbosoft.shoedemo.config.TrueColorBrush;
 import com.zarbosoft.shoedemo.model.*;
 import com.zarbosoft.shoedemo.model.Vector;
-import javafx.beans.binding.Bindings;
+import com.zarbosoft.shoedemo.widgets.BrushButton;
+import com.zarbosoft.shoedemo.widgets.TrueColorPicker;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.HPos;
-import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.image.*;
@@ -59,8 +59,10 @@ public class TrueColorImageNodeWrapper extends Wrapper {
 
 		public void update(Tile tile) {
 			TrueColorImage image = tile.getData(context);
-			byte[] data = image.data();
 			widget.setImage(new WritableImage(new PixelReader() {
+				byte[] premultipliedData;
+				byte[] data;
+
 				@Override
 				public PixelFormat getPixelFormat() {
 					return PixelFormat.getByteBgraInstance();
@@ -82,6 +84,13 @@ public class TrueColorImageNodeWrapper extends Wrapper {
 				) {
 					if (scanlineStride != w * 4)
 						throw new Assertion();
+					byte[] data = pixelformat.isPremultiplied() ?
+							(
+									premultipliedData == null ?
+											premultipliedData = image.dataPremultiplied() :
+											premultipliedData
+							) :
+							(this.data == null ? this.data = image.data() : this.data);
 					if (w == image.getWidth()) {
 						if (x != 0)
 							throw new Assertion();
@@ -110,6 +119,13 @@ public class TrueColorImageNodeWrapper extends Wrapper {
 				) {
 					if (scanlineStride != w * 4)
 						throw new Assertion();
+					byte[] data = pixelformat.isPremultiplied() ?
+							(
+									premultipliedData == null ?
+											premultipliedData = image.dataPremultiplied() :
+											premultipliedData
+							) :
+							(this.data == null ? this.data = image.data() : this.data);
 					if (w == image.getWidth()) {
 						if (x != 0)
 							throw new Assertion();
@@ -120,8 +136,7 @@ public class TrueColorImageNodeWrapper extends Wrapper {
 						if (y + h > image.getHeight())
 							throw new Assertion();
 						for (int i = y; i < y + h; ++i) {
-							System.arraycopy(
-									data,
+							System.arraycopy(data,
 									(i * image.getWidth() + x) * 4,
 									buffer,
 									offset + i * w * 4,
@@ -295,40 +310,43 @@ public class TrueColorImageNodeWrapper extends Wrapper {
 					brush.color.set(TrueColor.rgba(0, 0, 0, 255));
 					brush.blend.set(1000);
 					brush.size.set(20);
-					context.trueColorBrushes.add(brush);
+					Main.config.trueColorBrushes.add(brush);
+					if (Main.config.trueColorBrushes.size() == 1) {
+						Main.config.trueColorBrush.set(0);
+					}
 				});
 				MenuItem menuDelete = new MenuItem("Delete");
+				menuDelete.disableProperty().bind(Main.config.trueColorBrush.isEqualTo(-1));
 				menuDelete.setOnAction(e -> {
-					int index = context.trueColorBrushes.indexOf(context.trueColorBrush.get());
+					int index = Main.config.trueColorBrushes.indexOf(Main.config.trueColorBrush.get());
 					if (index == -1)
 						return;
-					context.trueColorBrushes.remove(index);
-					if (context.trueColorBrushes.isEmpty()) {
-						context.trueColorBrush.set(null);
+					Main.config.trueColorBrushes.remove(index);
+					if (Main.config.trueColorBrushes.isEmpty()) {
+						Main.config.trueColorBrush.set(-1);
 					} else {
-						context.trueColorBrush.set(context.trueColorBrushes.get(Math.max(0, index - 1)));
+						Main.config.trueColorBrush.set(Math.max(0, index - 1));
 					}
-					context.trueColorBrushes.add(index - 1, context.trueColorBrush.get());
 				});
 				MenuItem menuLeft = new MenuItem("Move left");
+				menuLeft.disableProperty().bind(Main.config.trueColorBrush.isEqualTo(-1));
 				menuLeft.setOnAction(e -> {
-					int index = context.trueColorBrushes.indexOf(context.trueColorBrush.get());
-					if (index == -1)
-						return;
+					int index = Main.config.trueColorBrush.get();
+					TrueColorBrush brush = Main.config.trueColorBrushes.get(index);
 					if (index == 0)
 						return;
-					context.trueColorBrushes.remove(index);
-					context.trueColorBrushes.add(index - 1, context.trueColorBrush.get());
+					Main.config.trueColorBrushes.remove(index);
+					Main.config.trueColorBrushes.add(index - 1, brush);
 				});
 				MenuItem menuRight = new MenuItem("Move right");
+				menuRight.disableProperty().bind(Main.config.trueColorBrush.isEqualTo(-1));
 				menuRight.setOnAction(e -> {
-					int index = context.trueColorBrushes.indexOf(context.trueColorBrush.get());
-					if (index == -1)
+					int index = Main.config.trueColorBrushes.indexOf(Main.config.trueColorBrush.get());
+					TrueColorBrush brush = Main.config.trueColorBrushes.get(index);
+					if (index == Main.config.trueColorBrushes.size() - 1)
 						return;
-					if (index == context.trueColorBrushes.size() - 1)
-						return;
-					context.trueColorBrushes.remove(index);
-					context.trueColorBrushes.add(index + 1, context.trueColorBrush.get());
+					Main.config.trueColorBrushes.remove(index);
+					Main.config.trueColorBrushes.add(index + 1, brush);
 				});
 
 				MenuButton menuButton = new MenuButton(null, new ImageView(icon("menu.svg")));
@@ -348,45 +366,8 @@ public class TrueColorImageNodeWrapper extends Wrapper {
 				box.setFillHeight(true);
 				box.getChildren().addAll(menu);
 
-				brushesCleanup = mirror(context.trueColorBrushes, brushes.getItems(), b -> {
-					TrueColorSwatch swatch = new TrueColorSwatch();
-
-					Label label = new Label();
-					label.textProperty().bind(b.size.divide(10.0).asString("%.1f"));
-					label.setAlignment(Pos.CENTER);
-
-					StackPane stack = new StackPane();
-					stack.getChildren().addAll(swatch, label);
-
-					ToggleButton out = new ToggleButton();
-					out.setGraphic(stack);
-
-					out.selectedProperty().addListener((observable, oldValue, newValue) -> {
-						if (!newValue)
-							return;
-						context.trueColorBrush.set(b);
-					});
-
-					b.useColor.addListener(new ChangeListener<Boolean>() {
-						{
-							changed(null, null, b.useColor.get());
-						}
-
-						@Override
-						public void changed(
-								ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue
-						) {
-							SimpleObjectProperty<TrueColor> property = newValue ? b.color : context.trueColor;
-							swatch.colorProperty.bind(Bindings.createObjectBinding(() -> property.get().toJfx(),
-									property
-							));
-							label.textFillProperty().bind(Bindings.createObjectBinding(() -> {
-								Color c = property.get().toJfx();
-								double darkness = (1.0 - c.getBrightness()) * c.getOpacity();
-								return darkness > 0.5 ? Color.WHITE : Color.BLACK;
-							}, property));
-						}
-					});
+				brushesCleanup = mirror(Main.config.trueColorBrushes, brushes.getItems(), b -> {
+					BrushButton out = new BrushButton(b);
 					if (brushes.getItems().isEmpty() && box.getChildren().size() == 1) {
 						box.getChildren().add(0, brushes);
 						HBox.setHgrow(brushes, Priority.ALWAYS);
@@ -418,16 +399,24 @@ public class TrueColorImageNodeWrapper extends Wrapper {
 
 	@Override
 	public void mark(ProjectContext context, DoubleVector start, DoubleVector end) {
-		TrueColorBrush brush = context.trueColorBrush.get();
-		if (brush == null)
+		if (Main.config.trueColorBrush.get() == -1)
 			return;
-		TrueColor color = brush.useColor.get() ? brush.color.get() : context.trueColor.get();
+		TrueColorBrush brush = Main.config.trueColorBrushes.get(Main.config.trueColorBrush.get());
+		TrueColor color = brush.useColor.get() ? brush.color.get() : Main.config.trueColor.get();
 
 		final double startRadius = brush.size.get() / 20.0;
 		final double endRadius = brush.size.get() / 20.0;
 
 		// Get frame-local coordinates
-		System.out.format("stroke start %s %s to %s %s rad %s %s\n", start.x, start.y, end.x, end.y, startRadius, endRadius);
+		System.out.format(
+				"stroke start %s %s to %s %s rad %s %s\n",
+				start.x,
+				start.y,
+				end.x,
+				end.y,
+				startRadius,
+				endRadius
+		);
 		start = Window.toLocal(this, start);
 		end = Window.toLocal(this, end);
 
@@ -444,7 +433,17 @@ public class TrueColorImageNodeWrapper extends Wrapper {
 		Rectangle tileBounds = render(canvas, frame, bounds, 1);
 
 		// Do the stroke
-		System.out.format("stroke %s %s to %s %s\n", start.x, start.y, end.x, end.y);
+		System.out.format(
+				"stroke %s %s to %s %s, c %s %s %s %s\n",
+				start.x,
+				start.y,
+				end.x,
+				end.y,
+				color.r,
+				color.g,
+				color.b,
+				color.a
+		);
 		canvas.stroke(color.r,
 				color.g,
 				color.b,
@@ -463,7 +462,15 @@ public class TrueColorImageNodeWrapper extends Wrapper {
 			for (int y = 0; y < tileBounds.height; ++y) {
 				final int x0 = x;
 				final int y0 = y;
-				System.out.format("\tcopy %s %s: %s %s by %s %s\n", x0, y0, x0 * context.tileSize, y0 * context.tileSize, context.tileSize, context.tileSize);
+				System.out.format(
+						"\tcopy %s %s: %s %s by %s %s\n",
+						x0,
+						y0,
+						x0 * context.tileSize,
+						y0 * context.tileSize,
+						context.tileSize,
+						context.tileSize
+				);
 				TrueColorImage shot =
 						canvas.copy(x0 * context.tileSize, y0 * context.tileSize, context.tileSize, context.tileSize);
 				context.history.change(c -> c
@@ -584,21 +591,20 @@ public class TrueColorImageNodeWrapper extends Wrapper {
 						.build()));
 
 				Tab paintTab = new Tab("Paint");
-				context.trueColorBrush.addListener(new ChangeListener<TrueColorBrush>() {
+				Main.config.trueColorBrush.addListener(new ChangeListener<Number>() {
 					{
-						changed(null, null, context.trueColorBrush.get());
+						changed(null, null, Main.config.trueColorBrush.get());
 					}
 
 					@Override
 					public void changed(
-							ObservableValue<? extends TrueColorBrush> observable,
-							TrueColorBrush oldValue,
-							TrueColorBrush newBrush
+							ObservableValue<? extends Number> observable, Number oldValue, Number newBrushIndex
 					) {
-						if (newBrush == null) {
+						if (newBrushIndex.intValue() >= Main.config.trueColorBrushes.size()) {
 							paintTab.setContent(null);
 							return;
 						}
+						TrueColorBrush newBrush = Main.config.trueColorBrushes.get(newBrushIndex.intValue());
 
 						TrueColorPicker colorPicker = new TrueColorPicker();
 						GridPane.setHalignment(colorPicker, HPos.CENTER);
@@ -626,7 +632,7 @@ public class TrueColorImageNodeWrapper extends Wrapper {
 											if (newValue)
 												color = newBrush.color;
 											else
-												color = context.trueColor;
+												color = Main.config.trueColor;
 
 											if (pickerBindingCleanup != null) {
 												pickerBindingCleanup.run();

@@ -1,4 +1,4 @@
-package com.zarbosoft.shoedemo;
+package com.zarbosoft.shoedemo.widgets;
 
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;

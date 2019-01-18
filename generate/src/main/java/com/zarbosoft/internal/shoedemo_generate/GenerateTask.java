@@ -13,6 +13,9 @@ import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.Pair;
 import com.zarbosoft.shoedemo.deserialize.*;
 import com.zarbosoft.shoedemo.model.*;
+import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleLongProperty;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
 import org.reflections.Reflections;
@@ -88,6 +91,7 @@ public class GenerateTask extends Task {
 	public static Method sigObjDecRef = findMethod(ProjectObjectInterface.class, "decRef");
 	public static Method sigObjSerialize = findMethod(ProjectObjectInterface.class, "serialize");
 	public static Method sigChangeDebugCounts = findMethod(Change.class, "debugRefCounts");
+	public static Method sigChangeMerge = findMethod(Change.class, "merge");
 	public static Method sigChangeApply = findMethod(Change.class, "apply");
 	public static Method sigChangeDelete = findMethod(Change.class, "delete");
 	public static Method sigChangeSerialize = findMethod(Change.class, "serialize");
@@ -343,6 +347,7 @@ public class GenerateTask extends Task {
 					private final ClassName listenerName;
 					private final TypeSpec.Builder listener;
 					private final MethodSpec.Builder listenerAccept;
+					private final CodeBlock.Builder merge;
 					private final ClassName deserializerName;
 					private final CodeBlock.Builder deserializerValue;
 					private final CodeBlock.Builder deserializerRecord;
@@ -372,6 +377,7 @@ public class GenerateTask extends Task {
 								.initializer("new $T<>()", ArrayList.class)
 								.build());
 						listenersAdd = CodeBlock.builder();
+						merge = CodeBlock.builder();
 						deserializerName = cloneName.nestedClass(String.format("%s%sDeserializer",
 								capFirst(fieldName),
 								capFirst(action)
@@ -614,7 +620,8 @@ public class GenerateTask extends Task {
 									Objects.class,
 									name
 							);
-							deserializerValue.add("out.$L = ($T) context.getObject(\"null\".equals(value) ? null : $T.parseLong(($T) value));\n",
+							deserializerValue.add(
+									"out.$L = ($T) context.getObject(\"null\".equals(value) ? null : $T.parseLong(($T) value));\n",
 									name,
 									toPoet(type),
 									Long.class,
@@ -653,6 +660,16 @@ public class GenerateTask extends Task {
 						return this;
 					}
 
+					public ChangeBuilder mergeAdd(String format, Object... args) {
+						merge.add(format, args);
+						return this;
+					}
+
+					public ChangeBuilder mergeAdd(CodeBlock code) {
+						merge.add(code);
+						return this;
+					}
+
 					public void finish() {
 						listener.addMethod(listenerAccept.build());
 						clone.addType(listener.build());
@@ -670,6 +687,12 @@ public class GenerateTask extends Task {
 								.addModifiers(PUBLIC)
 								.addParameter(listenerName, "listener")
 								.addCode("$L.remove(listener);\n", listenersFieldName)
+								.build());
+						CodeBlock mergeBuilt = merge.build();
+						change.addMethod(poetMethod(sigChangeMerge)
+								.addCode(mergeBuilt.isEmpty() ?
+										CodeBlock.builder().add("return false;\n").build() :
+										mergeBuilt)
 								.build());
 						change
 								.addMethod(MethodSpec.constructorBuilder().build())
@@ -754,15 +777,28 @@ public class GenerateTask extends Task {
 
 						// Mutation
 						if (!Stream.of("id", "refCount").anyMatch(fieldName::equals)) {
-							new ChangeBuilder(fieldName, "set")
+							ChangeBuilder setBuilder = new ChangeBuilder(fieldName, "set");
+							CodeBlock.Builder changeMerge = CodeBlock.builder().add(
+									"if (other.getClass() != getClass() || (($T)other).target == target) return false;\n",
+									setBuilder.changeName
+							);
+							if (flattenPoint(field))
+								changeMerge.add("value.decRef(context);\n");
+							changeMerge.add("value = (($T)other).value;\n", setBuilder.changeName);
+							if (flattenPoint(field))
+								changeMerge.add("value.incRef(context);\n");
+							changeMerge.add("return true;\n");
+							setBuilder
 									.addParameter(field, "value", false)
 									.addCode("if ($T.equals(value, target.$L)) return;\n", Objects.class, fieldName)
-									.addCode("changeStep.add(new $T(project, target, target.$L));\n",
+									.addCode(
+											"changeStep.add(project, new $T(project, target, target.$L));\n",
 											CHANGE_TOKEN_NAME,
 											fieldName
 									)
 									.addCode("target.$L = value;\n", fieldName)
 									.listenersAdd("listener.accept(this, $L);\n", fieldName)
+									.mergeAdd(changeMerge.build())
 									.finish();
 							CodeBlock.Builder initialSetCode = CodeBlock
 									.builder()
@@ -811,17 +847,20 @@ public class GenerateTask extends Task {
 				if (pair.second.field.getDeclaringClass() == klass) {
 					if (fieldInfo.type == String.class) {
 						generateScalar.applyFieldOrigin(fieldInfo);
-					} else if (fieldInfo.type == Integer.class || fieldInfo.type == int.class) {
-						generateScalar.applyFieldOrigin(fieldInfo);
-					} else if (fieldInfo.type == Long.class || fieldInfo.type == long.class) {
-						generateScalar.applyFieldOrigin(fieldInfo);
-					} else if (fieldInfo.type == Float.class || fieldInfo.type == float.class) {
-						generateScalar.applyFieldOrigin(fieldInfo);
-					} else if (fieldInfo.type == Double.class || fieldInfo.type == double.class) {
-						generateScalar.applyFieldOrigin(fieldInfo);
-					} else if (fieldInfo.type == Boolean.class || fieldInfo.type == boolean.class) {
-						generateScalar.applyFieldOrigin(fieldInfo);
-					} else if (((Class<?>) fieldInfo.type).isEnum()) {
+					} else if (fieldInfo.type == Integer.class ||
+							fieldInfo.type == int.class ||
+							fieldInfo.type == SimpleIntegerProperty.class ||
+							fieldInfo.type == Long.class ||
+							fieldInfo.type == long.class ||
+							fieldInfo.type == SimpleLongProperty.class ||
+							fieldInfo.type == Float.class ||
+							fieldInfo.type == float.class ||
+							fieldInfo.type == SimpleDoubleProperty.class ||
+							fieldInfo.type == Double.class ||
+							fieldInfo.type == double.class ||
+							fieldInfo.type == Boolean.class ||
+							fieldInfo.type == boolean.class ||
+							((Class<?>) fieldInfo.type).isEnum()) {
 						generateScalar.applyFieldOrigin(fieldInfo);
 					} else if (((Class) fieldInfo.type).isAssignableFrom(ArrayList.class)) {
 						field.initializer("new $T()", ArrayList.class);
@@ -874,7 +913,8 @@ public class GenerateTask extends Task {
 								.addParameter(new TypeInfo(int.class), "at", false)
 								.addListParameter(elementType, "value", true)
 								.addCode("target.$L.addAll(at, value);\n", fieldName)
-								.addCode("changeStep.add(new $T(project, target, at, value.size()));\n",
+								.addCode(
+										"changeStep.add(project, new $T(project, target, at, value.size()));\n",
 										removeBuilder.getName()
 								)
 								.listenersAdd("listener.accept(this, 0, $L);\n", fieldName)
@@ -884,7 +924,8 @@ public class GenerateTask extends Task {
 								.addParameter(new TypeInfo(int.class), "at", false)
 								.addParameter(new TypeInfo(int.class), "count", false)
 								.addCode("final $T sublist = target.$L.subList(at, at + count);\n", listType, fieldName)
-								.addCode("changeStep.add(new $T(project, target, at, new $T(sublist)));\n",
+								.addCode(
+										"changeStep.add(project, new $T(project, target, at, new $T(sublist)));\n",
 										addBuilder.getName(),
 										ArrayList.class
 								);
@@ -892,14 +933,18 @@ public class GenerateTask extends Task {
 							removeBuilder.addCode("sublist.forEach(e -> e.decRef(project));\n");
 						removeBuilder.addCode("sublist.clear();\n").finish();
 						ChangeBuilder clearBuilder = new ChangeBuilder(fieldName, "clear").addCode(
-								"changeStep.add(new $T(project, target, 0, new $T(target.$L)));\n",
+								"changeStep.add(project, new $T(project, target, 0, new $T(target.$L)));\n",
 								addBuilder.getName(),
 								ArrayList.class,
 								fieldName
 						);
 						if (flattenPoint(elementType))
 							clearBuilder.addCode("target.$L.forEach(e -> e.decRef(project));\n", fieldName);
-						clearBuilder.addCode("target.$L.clear();\n", fieldName);
+						clearBuilder.addCode("target.$L.clear();\n", fieldName).mergeAdd(
+								"return other.getClass() == $T.class && (($T)other).target == target;\n",
+								clearBuilder.changeName,
+								clearBuilder.changeName
+						);
 						clearBuilder.finish();
 						typeChangeStepBuilder.addMethod(MethodSpec
 								.methodBuilder(String.format("%sAdd", fieldName))
@@ -932,7 +977,7 @@ public class GenerateTask extends Task {
 								)
 								.addCode("source = $T.min(source, target.$L.size() - count);\n", Math.class, fieldName)
 								.addCode(
-										"changeStep.add(new $T(project, target, dest, count, source));\n",
+										"changeStep.add(project, new $T(project, target, dest, count, source));\n",
 										CHANGE_TOKEN_NAME
 								)
 								.addCode("$T sublist = target.$L.subList(source, source + count);\n",
@@ -1094,21 +1139,44 @@ public class GenerateTask extends Task {
 								.addCode("if (target.$L.contains(value)) return;\n")
 								.addListParameter(elementType, "value", true)
 								.addCode("target.$L.addAll(value);\n", fieldName)
-								.addCode(("changeStep.add(new $T(project, target, value));\n"), removeBuilder.getName())
+								.addCode(("changeStep.add(project, new $T(project, target, value));\n"),
+										removeBuilder.getName()
+								)
+								.mergeAdd(CodeBlock
+										.builder()
+										.add(
+												"if (other.getClass() != $T.class || (($T)other).target != target) return false;\n",
+												addBuilder.changeName,
+												addBuilder.changeName
+										)
+										.add("(($T)other).value.forEach(e -> {\n")
+										.indent()
+										.add("if (value.contains(e)) return;\n")
+										.add("e.incRef(context);\n")
+										.add("value.add(e);\n")
+										.unindent()
+										.add("}\n")
+										.build())
 								.finish();
 						removeBuilder
 								.addCode("if (!target.$L.remove(value)) return;\n", fieldName)
 								.addListParameter(elementType, "value", false)
-								.addCode(("changeStep.add(new $T(project, target, value));\n"), addBuilder.getName())
+								.addCode(("changeStep.add(project, new $T(project, target, value));\n"),
+										addBuilder.getName()
+								)
 								.finish();
 						ChangeBuilder clearBuilder = new ChangeBuilder(fieldName, "clear").addCode(
-								"changeStep.add(new $T(project, target, 0, new $T($L)));\n",
+								"changeStep.add(project, new $T(project, target, 0, new $T($L)));\n",
 								addBuilder.getName(),
 								ArrayList.class
 						);
 						if (flattenPoint(elementType))
 							clearBuilder.addCode("target.$L.forEach(e -> e.decRef(project));\n");
-						clearBuilder.addCode("target.$L.clear();\n", fieldName).finish();
+						clearBuilder.addCode("target.$L.clear();\n", fieldName).mergeAdd(
+								"return other.getClass() == $T.class && (($T)other).target == target;\n",
+								clearBuilder.changeName,
+								clearBuilder.changeName
+						).finish();
 						typeChangeStepBuilder.addMethod(MethodSpec
 								.methodBuilder(String.format("%sAdd"))
 								.addModifiers(PUBLIC)
@@ -1185,7 +1253,9 @@ public class GenerateTask extends Task {
 										Collectors.class,
 										fieldName
 								)
-								.add("changeStep.add(new $T(project, target, removing,\n", putBuilder.getName())
+								.add("changeStep.add(project, new $T(project, target, removing,\n",
+										putBuilder.getName()
+								)
 								.indent()
 								.add("new ArrayList<>($T.difference(put.keySet(), target.$L.keySet()))\n",
 										Sets.class,
@@ -1198,11 +1268,27 @@ public class GenerateTask extends Task {
 						putCode
 								.add("remove.forEach(k -> target.$L.remove(k));\n", fieldName)
 								.add("target.$L.putAll(put);\n", fieldName);
+						CodeBlock.Builder putMergeCode = CodeBlock
+								.builder()
+								.add(
+										"if (other.getClass() != $T.class || (($T)other).target != target) return false;\n",
+										putBuilder.changeName,
+										putBuilder.changeName
+								)
+								.add("remove.addAll((($T)other).remove);\n", putBuilder.changeName)
+								.add("(($T)other).put.forEach((k, v) -> {\n", putBuilder.changeName)
+								.indent()
+								.add("if (put.containsKey(k) || remove.contains(k)) return;\n")
+								.add("put.put(k, v);\n");
+						if (flattenPoint(fieldInfo.parameters[1]))
+							putMergeCode.add("v.incRef(context);\n");
+						putMergeCode.unindent().add("});\n").add("return true;\n");
 						putBuilder
 								.addMapParameter(fieldInfo.parameters[0], fieldInfo.parameters[1], "put", true)
 								.addListParameter(fieldInfo.parameters[0], "remove", false)
 								.addCode(putCode.build())
 								.listenersAdd("listener.accept(this, $L, $T.of());\n", fieldName, ImmutableList.class)
+								.mergeAdd(putMergeCode.build())
 								.finish();
 						typeChangeStepBuilder.addMethod(MethodSpec
 								.methodBuilder(String.format("%sPut", fieldName))
@@ -1215,13 +1301,18 @@ public class GenerateTask extends Task {
 										ImmutableList.class
 								)
 								.build());
-						new ChangeBuilder(fieldName, "clear").addCode(
-								"changeStep.add(new $T(project, target, new $T(target.$L), new $T()));\n",
+						ChangeBuilder clearBuilder = new ChangeBuilder(fieldName, "clear");
+						clearBuilder.addCode(
+								"changeStep.add(project, new $T(project, target, new $T(target.$L), new $T()));\n",
 								putBuilder.getName(),
 								HashMap.class,
 								fieldName,
 								ArrayList.class
-						).addCode("target.$L.clear();\n", fieldName).finish();
+						).addCode("target.$L.clear();\n", fieldName).mergeAdd(
+								"return other.getClass() == $T.class && (($T)other).target == target;\n",
+								clearBuilder.changeName,
+								clearBuilder.changeName
+						).finish();
 					} else if (flattenPoint(fieldInfo)) {
 						generateScalar.applyFieldOrigin(fieldInfo);
 					} else {
@@ -1397,7 +1488,8 @@ public class GenerateTask extends Task {
 						generateScalar.applyLeaf(fieldInfo);
 
 						// Deserialize
-						cloneDeserializeValue.add("if (!\"null\".equals(value)) map.put(\"$L\", $T.parseLong(($T) value));\n",
+						cloneDeserializeValue.add(
+								"if (!\"null\".equals(value)) map.put(\"$L\", $T.parseLong(($T) value));\n",
 								fieldName,
 								Long.class,
 								String.class

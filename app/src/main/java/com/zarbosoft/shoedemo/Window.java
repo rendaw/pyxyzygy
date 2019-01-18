@@ -44,8 +44,7 @@ public class Window {
 
 	public void start(ProjectContext context, Stage primaryStage) {
 		primaryStage.setOnCloseRequest(e -> {
-			context.alive.set(false);
-			context.flushSemaphore.release();
+			context.shutdown();
 		});
 
 		Structure structure = new Structure(context, this);
@@ -75,7 +74,8 @@ public class Window {
 				context.history.redo();
 			}
 		});
-		scene.getStylesheets().add(getClass().getResource("colorpicker/style.css").toExternalForm());
+		scene.getStylesheets().add(getClass().getResource("widgets/colorpicker/style.css").toExternalForm());
+		scene.getStylesheets().add(getClass().getResource("widgets/brushbutton/style.css").toExternalForm());
 
 		primaryStage.setScene(scene);
 		primaryStage.show();

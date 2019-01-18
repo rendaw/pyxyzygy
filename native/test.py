@@ -1,6 +1,11 @@
 #!/bin/env python
 def main():
     from subprocess import check_call
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('test')
+    args = parser.parse_args()
 
     def c(*pargs, **kwargs):
         print(*pargs, **kwargs)
@@ -18,17 +23,17 @@ def main():
         ])
 
     compile_obj('implementation.cpp')
-    compile_obj('test_stroke.cxx')
+    compile_obj('test_{}.cxx'.format(args.test))
     c([
         'clang++',
         '-ggdb',
         '-L/usr/lib',
-        '-o', 'test_stroke',
-        'test_stroke.cxx.o',
+        '-o', 'test_{}'.format(args.test),
+        'test_{}.cxx.o'.format(args.test),
         'implementation.cpp.o',
         '-lpng',
     ])
-    c(['./test_stroke'])
+    c(['./test_{}'.format(args.test)])
 
 
 main()

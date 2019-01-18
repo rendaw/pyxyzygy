@@ -4,7 +4,7 @@ import com.zarbosoft.interface1.Configuration;
 import com.zarbosoft.shoedemo.Brush;
 import javafx.beans.property.*;
 
-@Configuration
+@Configuration(name = "true-color-brush")
 public class TrueColorBrush extends Brush {
 	/**
 	 * Size in pixels = `size / 10`

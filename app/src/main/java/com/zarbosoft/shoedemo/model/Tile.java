@@ -9,18 +9,22 @@ import com.zarbosoft.shoedemo.deserialize.ModelDeserializationContext;
 
 import java.lang.ref.WeakReference;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 
 public class Tile extends TileBase implements Dirtyable {
+	AtomicBoolean deleted = new AtomicBoolean(false);
 	public WeakReference<TrueColorImage> data;
 	private TrueColorImage dirtyData;
 
 	public static Tile create(ProjectContext context, TrueColorImage data) {
 		Tile out = new Tile();
 		out.id = context.nextId++;
+		System.out.format("hello I am tile %s\n", out.id);
 		out.data = new WeakReference<>(data);
 		out.dirtyData = data;
 		context.setDirty(out);
@@ -39,8 +43,15 @@ public class Tile extends TileBase implements Dirtyable {
 	public void decRef(ProjectContextBase project) {
 		refCount -= 1;
 		if (refCount == 0) {
+			deleted.set(true);
 			project.objectMap.remove(id);
-			uncheck(() -> Files.delete(path(project)));
+			uncheck(()-> {
+				try {
+					Files.delete(path(project));
+				} catch (NoSuchFileException e) {
+					// nop
+				}
+			});
 		}
 	}
 
@@ -55,6 +66,7 @@ public class Tile extends TileBase implements Dirtyable {
 
 	@Override
 	public void dirtyFlush(ProjectContextBase context) {
+		if (deleted.get()) return;
 		dirtyData.serialize(path(context).toString());
 		dirtyData = null;
 	}

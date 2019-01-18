@@ -93,6 +93,9 @@ public class Editor {
 		layout.getChildren().addAll(canvas);
 
 		class EventState {
+			Wrapper edit;
+			boolean dragged = false;
+			MouseButton button;
 			DoubleVector previous;
 			DoubleVector lastClick;
 			DoubleVector startScroll;
@@ -102,30 +105,34 @@ public class Editor {
 		canvas.addEventFilter(MouseEvent.ANY, e -> e.consume());
 		canvas.addEventFilter(MouseEvent.MOUSE_PRESSED, e -> {
 			canvas.requestFocus();
+			eventState.button = e.getButton();
 			eventState.lastClick = eventState.previous = normalizeEventCoordinates(e);
 			eventState.startScroll = scroll;
 			eventState.startScrollClick = new DoubleVector(e.getSceneX(), e.getSceneY());
+			eventState.edit = window.selectedForEdit.get();
 			if (e.getButton() == MouseButton.PRIMARY) {
-				System.out.format("hi\n");
-				Wrapper edit = window.selectedForEdit.get();
-				if (edit != null) {
-					edit.markStart(context, eventState.previous);
-					edit.mark(context, eventState.previous, eventState.previous);
+				if (eventState.edit != null) {
+					eventState.edit.markStart(context, eventState.previous);
 				}
 			}
 		});
 		canvas.addEventFilter(MouseEvent.MOUSE_RELEASED, e -> {
-			if (e.getButton() == MouseButton.PRIMARY)
-				this.context.history.finishChange();
+			if (eventState.button == MouseButton.PRIMARY) {
+				if (!eventState.dragged && eventState.edit != null) {
+					eventState.edit.mark(context, eventState.previous, eventState.previous);
+				}
+				if (e.getButton() == MouseButton.PRIMARY)
+					this.context.history.finishChange();
+			}
 		});
 		canvas.addEventFilter(MouseEvent.MOUSE_DRAGGED, e -> {
+			eventState.dragged = true;
 			DoubleVector end = normalizeEventCoordinates(e);
-			if (e.getButton() == MouseButton.PRIMARY) {
-				Wrapper edit = window.selectedForEdit.get();
-				if (edit != null) {
-					edit.mark(context, eventState.previous, end);
+			if (eventState.button == MouseButton.PRIMARY) {
+				if (eventState.edit != null) {
+					eventState.edit.mark(context, eventState.previous, end);
 				}
-			} else if (e.getButton() == MouseButton.MIDDLE) {
+			} else if (eventState.button == MouseButton.MIDDLE) {
 				updateScroll(eventState.startScroll.plus(new DoubleVector(e.getSceneX(),
 						e.getSceneY()
 				).minus(eventState.startScrollClick)));

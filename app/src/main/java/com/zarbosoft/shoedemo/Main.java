@@ -2,122 +2,179 @@ package com.zarbosoft.shoedemo;
 
 import com.google.common.collect.ImmutableList;
 import com.zarbosoft.appdirsj.AppDirs;
-import com.zarbosoft.luxem.extra.SimpleKVStore;
+import com.zarbosoft.interface1.TypeInfo;
+import com.zarbosoft.luxem.Luxem;
+import com.zarbosoft.luxem.read.ReadTypeGrammar;
 import com.zarbosoft.rendaw.common.Assertion;
+import com.zarbosoft.shoedemo.config.Configuration;
+import com.zarbosoft.shoedemo.config.TrueColor;
+import com.zarbosoft.shoedemo.config.TrueColorBrush;
 import com.zarbosoft.shoedemo.model.ProjectNode;
 import com.zarbosoft.shoedemo.model.TrueColorImageFrame;
 import com.zarbosoft.shoedemo.model.TrueColorImageNode;
 import com.zarbosoft.shoedemo.model.Vector;
 import javafx.application.Application;
-import javafx.beans.property.DoubleProperty;
-import javafx.beans.property.Property;
-import javafx.beans.property.StringProperty;
+import javafx.application.Platform;
+import javafx.beans.property.*;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
+import javafx.scene.paint.Color;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
+import java.time.Duration;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.zarbosoft.rendaw.common.Common.atomicWrite;
+import static com.zarbosoft.rendaw.common.Common.uncheck;
 import static com.zarbosoft.shoedemo.ProjectContext.uniqueName;
 
 public class Main extends Application {
 	public static AppDirs appDirs = new AppDirs().set_appname("shoedemo2").set_appauthor("zarbosoft");
-	public static SimpleKVStore settings = new SimpleKVStore(appDirs.user_config_dir().resolve("settings.luxem"));
+	public static final Path configDir = appDirs.user_config_dir();
+	public static final Path configPath = configDir.resolve("config.luxem");
 	public final static String SETTING_LAST_DIR = "lastdir";
 	public final static String SETTING_MAX_UNDO = "maxundo";
 	public final static int opacityMax = 1000;
+	public final static int blendMax = 1000;
 
 	public final static int NO_LOOP = 0;
 	public final static int NO_LENGTH = -1;
 	public final static int NO_INNER = -1;
 
-	/*
-	public static ReadTypeGrammar.TypeMap saveTypeMap = new ReadTypeGrammar.TypeMap()
-			.add(new TypeInfo(SimpleIntegerProperty.class),
-					new ReadTypeGrammar.TypeMapEntry<SimpleIntegerProperty>() {
-						@Override
-						public void setIn(Object object, TypeInfo field, Object value) {
-							uncheck(() -> ((SimpleIntegerProperty) field.field.get(object)).set((Integer) value));
-						}
+	public final static Timer configFlushTimer = new Timer("config-flush", true);
+	public static Configuration config;
+	public static ReadTypeGrammar.TypeMap configTypeMap = new ReadTypeGrammar.TypeMap()
+			.add(new TypeInfo(SimpleIntegerProperty.class), new ReadTypeGrammar.TypeMapEntry<SimpleIntegerProperty>() {
+				@Override
+				public void setIn(Object object, TypeInfo field, Object value) {
+					uncheck(() -> ((SimpleIntegerProperty) field.field.get(object)).set((Integer) value));
+				}
 
-						@Override
-						public Object convertOut(SimpleIntegerProperty source) {
-							return source.get();
-						}
+				@Override
+				public Object convertOut(SimpleIntegerProperty source) {
+					return source.get();
+				}
 
-						@Override
-						public TypeInfo serializedType(TypeInfo info) {
-							return new TypeInfo(info.field, int.class);
-						}
+				@Override
+				public TypeInfo serializedType(TypeInfo info) {
+					return new TypeInfo(info.field, int.class);
+				}
+			})
+			.add(new TypeInfo(SimpleStringProperty.class), new ReadTypeGrammar.TypeMapEntry<SimpleStringProperty>() {
+				@Override
+				public void setIn(Object object, TypeInfo field, Object value) {
+					uncheck(() -> ((SimpleStringProperty) field.field.get(object)).set((String) value));
+				}
+
+				@Override
+				public Object convertOut(SimpleStringProperty source) {
+					return source.get();
+				}
+
+				@Override
+				public TypeInfo serializedType(TypeInfo info) {
+					return new TypeInfo(info.field, String.class);
+				}
+			})
+			.add(new TypeInfo(SimpleBooleanProperty.class), new ReadTypeGrammar.TypeMapEntry<SimpleBooleanProperty>() {
+				@Override
+				public void setIn(Object object, TypeInfo field, Object value) {
+					uncheck(() -> ((SimpleBooleanProperty) field.field.get(object)).set((Boolean) value));
+				}
+
+				@Override
+				public Object convertOut(SimpleBooleanProperty source) {
+					return source.get();
+				}
+
+				@Override
+				public TypeInfo serializedType(TypeInfo info) {
+					return new TypeInfo(info.field, Boolean.class);
+				}
+			})
+			.add(new TypeInfo(SimpleObjectProperty.class), new ReadTypeGrammar.TypeMapEntry<SimpleObjectProperty>() {
+				@Override
+				public void setIn(Object object, TypeInfo field, Object value) {
+					uncheck(() -> ((SimpleObjectProperty) field.field.get(object)).set(value));
+				}
+
+				@Override
+				public Object convertOut(SimpleObjectProperty source) {
+					return source.get();
+				}
+
+				@Override
+				public TypeInfo serializedType(TypeInfo info) {
+					return new TypeInfo(info.field, info.parameters[0].type, info.parameters[0].parameters);
+				}
+			}).add(new TypeInfo(ObservableList.class), new ReadTypeGrammar.TypeMapEntry() {
+				@Override
+				public void setIn(Object object, TypeInfo field, Object value) {
+					uncheck(() -> ((ObservableList) field.field.get(object)).addAll((Collection)value));
+				}
+
+				@Override
+				public TypeInfo serializedType(TypeInfo info) {
+					return new TypeInfo(info.field, ArrayList.class, info.parameters);
+				}
+			});
+
+	static {
+		uncheck(() -> {
+			Files.createDirectories(configDir);
+			try (InputStream source = Files.newInputStream(configPath)) {
+				config = Luxem
+						.parse(null, new TypeInfo(Configuration.class))
+						.map(configTypeMap)
+						.from(source)
+						.map(o -> (Configuration) o)
+						.findFirst()
+						.get();
+			} catch (NoSuchFileException e) {
+				config = new Configuration();
+				config.trueColor.set(TrueColor.fromJfx(Color.BLACK));
+				TrueColorBrush transparentBrush = new TrueColorBrush();
+				transparentBrush.name.set("Transparent");
+				transparentBrush.size.set(50);
+				transparentBrush.blend.set(blendMax);
+				transparentBrush.color.set(TrueColor.fromJfx(Color.TRANSPARENT));
+				transparentBrush.useColor.set(true);
+				TrueColorBrush defaultBrush = new TrueColorBrush();
+				defaultBrush.name.set("Default");
+				defaultBrush.size.set(10);
+				defaultBrush.blend.set(blendMax);
+				defaultBrush.color.set(TrueColor.fromJfx(Color.BLACK));
+				defaultBrush.useColor.set(true);
+				config.trueColorBrushes.addAll(transparentBrush, defaultBrush);
+				config.trueColorBrush.set(1);
+			}
+		});
+		configFlushTimer.scheduleAtFixedRate(new TimerTask() {
+			Logger logger = LoggerFactory.getLogger("config-flush");
+			@Override
+			public void run() {
+				Platform.runLater(() -> {
+					try {
+						flushConfig();
+					} catch (Exception e) {
+						logger.error("Error flushing config",e );
 					}
-			)
-			.add(new TypeInfo(SimpleStringProperty.class),
-					new ReadTypeGrammar.TypeMapEntry<SimpleStringProperty>() {
-						@Override
-						public void setIn(Object object, TypeInfo field, Object value) {
-							uncheck(() -> ((SimpleStringProperty) field.field.get(object)).set((String) value));
-						}
-
-						@Override
-						public Object convertOut(SimpleStringProperty source) {
-							return source.get();
-						}
-
-						@Override
-						public TypeInfo serializedType(TypeInfo info) {
-							return new TypeInfo(info.field, String.class);
-						}
-					}
-			)
-			.add(new TypeInfo(SimpleBooleanProperty.class),
-					new ReadTypeGrammar.TypeMapEntry<SimpleBooleanProperty>() {
-						@Override
-						public void setIn(Object object, TypeInfo field, Object value) {
-							uncheck(() -> ((SimpleBooleanProperty) field.field.get(object)).set((Boolean) value));
-						}
-
-						@Override
-						public Object convertOut(SimpleBooleanProperty source) {
-							return source.get();
-						}
-
-						@Override
-						public TypeInfo serializedType(TypeInfo info) {
-							return new TypeInfo(info.field, Boolean.class);
-						}
-					}
-			)
-			.add(new TypeInfo(SimpleObjectProperty.class),
-					new ReadTypeGrammar.TypeMapEntry<SimpleObjectProperty>() {
-						@Override
-						public void setIn(Object object, TypeInfo field, Object value) {
-							uncheck(() -> ((SimpleObjectProperty) field.field.get(object)).set(value));
-						}
-
-						@Override
-						public Object convertOut(SimpleObjectProperty source) {
-							return source.get();
-						}
-
-						@Override
-						public TypeInfo serializedType(TypeInfo info) {
-							return new TypeInfo(info.field,
-									info.parameters[0].type,
-									info.parameters[0].parameters
-							);
-						}
-					}
-			);
-			*/
+				});
+			}
+		}, Duration.ofMinutes(5).toMillis(), Duration.ofMinutes(5).toMillis());
+	}
 
 	public static void main(String[] args) {
 		Main.launch(args);
@@ -149,13 +206,16 @@ public class Main extends Application {
 		Path path;
 		if (getParameters().getUnnamed().isEmpty()) {
 			DirectoryChooser chooser = new DirectoryChooser();
-			chooser.setInitialDirectory(new File(settings.get(SETTING_LAST_DIR).orElse(appDirs.user_dir().toString())));
+			chooser.setInitialDirectory(new File(config.lastDir));
 			chooser.setTitle("Select a new or existing project!");
 			File result = chooser.showDialog(null);
-			if (result == null)
+			if (result == null) {
+				shutdown();
+				Platform.exit();
 				return;
+			}
 			path = result.toPath();
-			settings.set(SETTING_LAST_DIR, path.getParent().toAbsolutePath().toString());
+			config.lastDir = path.getParent().toAbsolutePath().toString();
 		} else {
 			path = Paths.get(this.getParameters().getUnnamed().get(0));
 		}
@@ -285,5 +345,17 @@ public class Main extends Application {
 	public static <T> Consumer<T> noopConsumer() {
 		return t -> {
 		};
+	}
+
+	public static void shutdown() {
+		configFlushTimer.cancel();
+	}
+
+	public static void flushConfig() {
+		System.out.format("flushing config\n");
+		atomicWrite(configPath, stream -> {
+			Luxem.write(config).map(configTypeMap).pretty().toStream(stream);
+		});
+		System.out.format("flushing config DONE\n");
 	}
 }

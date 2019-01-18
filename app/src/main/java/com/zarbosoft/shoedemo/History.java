@@ -71,7 +71,7 @@ public class History {
 		undoHistory.add(change.changeStep.cacheId);
 		clearRedo();
 		List<ChangeStep.CacheId> excessUndo = undoHistory.subList(0,
-				Math.max(0, undoHistory.size() - Main.settings.getInt(Main.SETTING_MAX_UNDO).orElse(1000))
+				Math.max(0, undoHistory.size() - Main.config.maxUndo)
 		);
 		excessUndo.forEach(c -> get(c).remove(context));
 		excessUndo.clear();

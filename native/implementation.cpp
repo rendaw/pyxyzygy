@@ -14,12 +14,14 @@ static int const channels = 4;
 ROBytes::ROBytes(size_t const size, uint8_t const * const data) : size(size), data(data) {
 }
 
-TrueColorImage::TrueColorImage(int w, int h, uint8_t * const pixels) : w(w), h(h), pixels(pixels) {
+TrueColorImage::TrueColorImage(int w, int h, uint8_t * const pixels) :
+   	w(w), h(h), pixels(pixels), premultipliedPixels(new uint8_t[w * h * channels]) {
 }
 
 TrueColorImage::~TrueColorImage() {
 	fflush(stdout);
 	delete [] pixels;
+	delete [] premultipliedPixels;
 }
 
 TrueColorImage * TrueColorImage::create(int w, int h) {
@@ -59,6 +61,20 @@ TrueColorImage * TrueColorImage::copy(int x0, int y0, int w0, int h0) const {
 
 ROBytes TrueColorImage::data() const {
 	return {(size_t)(w * h * channels), pixels};
+}
+
+ROBytes TrueColorImage::dataPremultiplied() const {
+	for (int y = 0; y < h; ++y) {
+		for (int x = 0; x < w; ++x) {
+			uint8_t *dest = &premultipliedPixels[(y * w + x) * channels];
+			uint8_t *source = &pixels[(y * w + x) * channels];
+			float const alpha = (source[3] / 255.0f);
+			for (int i = 0; i < channels - 1; ++i)
+				dest[i] = source[i] * alpha;
+			dest[3] = source[3];
+		}
+	}
+	return {(size_t)(w * h * channels), premultipliedPixels};
 }
 
 int TrueColorImage::getWidth() const {
@@ -454,15 +470,16 @@ void TrueColorImage::stroke(uint8_t cr, uint8_t cg, uint8_t cb, uint8_t ca, doub
 
 	// merge + scale down (w/h / 2)
 	for (
-		int y = std::max(0, subpixelTop / subpixels);
-		y < std::min(h, posCeilDiv(subpixelBottom, subpixels));
+		int y = std::max(-offsetY, subpixelTop / subpixels);
+		y < std::min(h - offsetY, posCeilDiv(subpixelBottom, subpixels));
 		++y
 	) {
 		for (
-			int x = std::max(0, subpixelLeft / subpixels);
-			x < std::min(w, posCeilDiv(subpixelRight, subpixels));
+			int x = std::max(-offsetX, subpixelLeft / subpixels);
+			x < std::min(w - offsetX, posCeilDiv(subpixelRight, subpixels));
 			++x
 		) {
+			//printf("compose at %d %d\n", offsetX + x, offsetY + y);
 			uint8_t *pixel = &pixels[((offsetY + y) * w + (offsetX + x)) * channels];
 			int subpixelCount = 0;
 			for (int subY = 0; subY < subpixels; ++subY) {
@@ -475,16 +492,35 @@ void TrueColorImage::stroke(uint8_t cr, uint8_t cg, uint8_t cb, uint8_t ca, doub
 			}
 			float const useBlend = blend * (subpixelCount / (float)subpixelSum);
 			float const compBlend = 1.0f - useBlend;
-			float const sourceAlpha = colors[3] / 255.0;
-			float const destAlpha = pixel[3] / 255.0;
-			float dFactor = destAlpha * compBlend;
-			float sFactor = sourceAlpha * useBlend;
-			float const factorSum = std::max(0.001f, dFactor + sFactor);
-			dFactor /= factorSum;
-			sFactor /= factorSum;
-			//printf("merge %d %d: sub %d, max %d, ble %f\n", x, y, subpixelCount, subpixelSum, useBlend);
+			float const sourceAlpha = (colors[3] / 255.0) * useBlend;
+			float const destAlpha = (pixel[3] / 255.0) * compBlend;
+			float const alphaSum = std::max(0.00001f, sourceAlpha + destAlpha);
+			/*
+			printf("composing dest %u %u %u %u; src %u %u %u %u; dest alpha %f, source alpha %f, blend %f\n",
+				pixel[0],
+				pixel[1],
+				pixel[2],
+				pixel[3],
+				colors[0],
+				colors[1],
+				colors[2],
+				colors[3],
+				destAlpha,
+				sourceAlpha,
+				useBlend
+			);
+			*/
 			for (int i = 0; i < channels - 1; ++i) {
-				pixel[i] = pixel[i] * dFactor + colors[i] * sFactor;
+				float const destValue = pixel[i] * destAlpha;
+				float const sourceValue = colors[i] * sourceAlpha;
+				float const sum = destValue + sourceValue;
+				float const scaled = sum / alphaSum;
+				uint8_t const byte = scaled;
+				/*
+				printf("\tdest fact %f, source fact %f, sum %f, result %f, byte %u\n",
+					destValue, sourceValue, sum, scaled, byte);
+				*/
+				pixel[i] = byte;
 			}
 			pixel[3] = pixel[3] * compBlend + colors[3] * useBlend;
 		}
@@ -514,11 +550,37 @@ void TrueColorImage::compose(TrueColorImage const &source, int x0, int y0, doubl
 			//printf("\tcomp %d %d, dest %d %d, source %d %d span span %d %d\n", x1, y1, x.dest + x1, y.dest + y1, x.source + x1, y.source + y1, x.span, y.span);
 			uint8_t * const destPixel = &pixels[((y.dest + y1) * w + (x.dest + x1)) * channels];
 			uint8_t const * const sourcePixel = &source.pixels[((y.source + y1) * source.w + (x.source + x1)) * channels];
-			double const useOpacity = (sourcePixel[3] / 255.0f) * opacity;
+			float const sourceAlpha = sourcePixel[3] / 255.0;
+			float const destAlpha = destPixel[3] / 255.0;
+			float const outAlpha = destAlpha * (1.0 - sourceAlpha) + sourceAlpha;
+			/*
+			printf("composing dest %u %u %u %u; src %u %u %u %u; dest alpha %f, source alpha %f, out alpha %f\n",
+				destPixel[0],
+				destPixel[1],
+				destPixel[2],
+				destPixel[3],
+				sourcePixel[0],
+				sourcePixel[1],
+				sourcePixel[2],
+				sourcePixel[3],
+				destAlpha,
+				sourceAlpha,
+				outAlpha
+			);
+			*/
 			for (int i = 0; i < channels - 1; ++i) {
-				destPixel[i] = destPixel[i] * (1.0 - useOpacity) + sourcePixel[i] * useOpacity;
+				float const destValue = destPixel[i] * destAlpha * (1.0 - sourceAlpha);
+				float const sourceValue = sourcePixel[i] * sourceAlpha;
+				float const sum = destValue + sourceValue;
+				float const scaled = sum / outAlpha;
+				uint8_t const byte = scaled;
+				/*
+				printf("\tdest fact %f, source fact %f, sum %f, result %f, byte %u\n",
+					destValue, sourceValue, sum, scaled, byte);
+				*/
+				destPixel[i] = byte;
 			}
-			destPixel[3] = std::min(255, (int)(destPixel[3] * (1.0 - useOpacity) + sourcePixel[3]));
+			destPixel[3] = std::min(255, (int)(255 * outAlpha));
 		}
 	}
 }

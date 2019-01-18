@@ -5,27 +5,18 @@ import com.zarbosoft.luxem.read.StackReader;
 import com.zarbosoft.luxem.write.RawWriter;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.DeadCode;
-import com.zarbosoft.shoedemo.config.TrueColor;
-import com.zarbosoft.shoedemo.config.TrueColorBrush;
 import com.zarbosoft.shoedemo.deserialize.ModelDeserializationContext;
 import com.zarbosoft.shoedemo.model.*;
-import javafx.beans.property.SimpleObjectProperty;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.scene.image.Image;
-import javafx.scene.paint.Color;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.awt.*;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -122,36 +113,27 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 		});
 	}
 
+	// Config flushing
+
 	// Flushing
 	/**
 	 * This controls writing in UI thread vs reading from flush+render threads
 	 */
-	public AtomicBoolean alive = new AtomicBoolean(true);
+	public AtomicReference<Timer> flushTimer = new AtomicReference<>();
 	public ReadWriteLock lock = new ReentrantReadWriteLock();
 	private Map<Dirtyable, Object> dirty = new ConcurrentHashMap<>();
-	public Semaphore flushSemaphore = new Semaphore(0);
 
-	{
-		Runtime.getRuntime().addShutdownHook(new Thread(this::flushAll));
-		new Thread() {
-			@Override
-			public void run() {
-				while (alive.get()) {
-					int got = 0;
-					while (flushSemaphore.tryAcquire())
-						got += 1;
-					if (got == 0)
-						uncheck(() -> flushSemaphore.acquire());
-					flushAll();
-				}
-				System.out.format("Flush thread dying\n");
-			}
-		}.start();
+	public void shutdown() {
+		Timer timer = flushTimer.getAndSet(null);
+		if (timer != null)
+			timer.cancel();
+		flushAll();
+		Main.shutdown();
 	}
 
-	public final SimpleObjectProperty<TrueColorBrush> trueColorBrush = new SimpleObjectProperty<>();
-	public final SimpleObjectProperty<TrueColor> trueColor = new SimpleObjectProperty<>(TrueColor.fromJfx(Color.BLACK));
-	public final ObservableList<TrueColorBrush> trueColorBrushes = FXCollections.observableArrayList();
+	{
+		Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
+	}
 
 	public ProjectContext(Path path) {
 		super(path);
@@ -181,7 +163,22 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 
 	public void setDirty(Dirtyable dirty) {
 		this.dirty.put(dirty, Object.class);
-		flushSemaphore.release();
+		Timer newTimer;
+		String timerName = "dirty-flush";
+		Timer oldTimer = flushTimer.getAndSet(newTimer = new Timer(timerName));
+		if (oldTimer != null)
+			oldTimer.cancel();
+		newTimer.schedule(new TimerTask() {
+			Logger logger = LoggerFactory.getLogger(timerName);
+			@Override
+			public void run() {
+				try {
+					flushAll();
+				} catch (Exception e) {
+					logger.error("Error during flush",e );
+				}
+			}
+		}, 5000);
 	}
 
 	public static ProjectContext create(Path path) {
@@ -268,7 +265,7 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 			} else if ("redo".equals(key)) {
 				context.redoHistory = (List<Long>) value;
 			} else if ("activeChange".equals(key)) {
-				context.activeChange = Long.parseLong((String)value);
+				context.activeChange = Long.parseLong((String) value);
 			} else
 				throw new Assertion();
 		}

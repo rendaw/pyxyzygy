@@ -70,6 +70,7 @@ class TrueColorImage {
 		static TrueColorImage * deserialize(char const * path) throw(std::runtime_error);
 		TrueColorImage * copy(int x, int y, int w, int h) const;
 		ROBytes data() const;
+		ROBytes dataPremultiplied() const;
 		int getWidth() const;
 		int getHeight() const;
 		void clear();
@@ -88,6 +89,7 @@ class TrueColorImage {
 		int const w;
 		int const h;
 		uint8_t * const pixels;
+		uint8_t * const premultipliedPixels;
 };
 
 #ifdef SWIG

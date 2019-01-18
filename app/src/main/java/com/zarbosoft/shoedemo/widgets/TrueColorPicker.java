@@ -1,4 +1,4 @@
-package com.zarbosoft.shoedemo;
+package com.zarbosoft.shoedemo.widgets;
 
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.DoubleProperty;
