@@ -2,11 +2,11 @@ package com.zarbosoft.shoedemo.structuretree;
 
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.shoedemo.*;
+import com.zarbosoft.shoedemo.config.NodeConfig;
 import com.zarbosoft.shoedemo.model.*;
 import javafx.scene.Group;
 import javafx.scene.Node;
-import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.control.ToolBar;
+import javafx.scene.control.TabPane;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,8 +30,8 @@ public class GroupLayerWrapper extends Wrapper {
 	private Wrapper child;
 	private Group canvas;
 	private WidgetHandle childCanvas;
+	private int zoom;
 	private DoubleRectangle baseBounds;
-	private DoubleRectangle lastBounds;
 
 	public GroupLayerWrapper(ProjectContext context, Wrapper parent, int parentIndex, GroupLayer node) {
 		this.parent = parent;
@@ -51,7 +51,7 @@ public class GroupLayerWrapper extends Wrapper {
 				child = Window.createNode(context, GroupLayerWrapper.this, 0, value);
 				tree.bind(child.tree);
 				if (canvas != null) {
-					childCanvas = child.buildCanvas(context, lastBounds);
+					childCanvas = child.buildCanvas(context);
 					canvas.getChildren().add(childCanvas.getWidget());
 					updateChildCanvasPosition(null);
 				}
@@ -196,9 +196,15 @@ public class GroupLayerWrapper extends Wrapper {
 	}
 
 	@Override
-	public void scroll(
-			ProjectContext context, DoubleRectangle oldBounds, DoubleRectangle newBounds
+	public NodeConfig getConfig() {
+		return null;
+	}
+
+	@Override
+	public void setViewport(
+			ProjectContext context, DoubleRectangle newBounds, int zoom
 	) {
+		this.zoom = zoom;
 		baseBounds = newBounds;
 		updatePosition(context);
 	}
@@ -218,20 +224,17 @@ public class GroupLayerWrapper extends Wrapper {
 		if (canvas != null)
 			updateChildCanvasPosition(pos);
 		if (child != null)
-			child.scroll(context, lastBounds, newBounds);
-		this.lastBounds = newBounds;
+			child.setViewport(context, newBounds, zoom);
 	}
 
 	@Override
-	public WidgetHandle buildCanvas(ProjectContext context, DoubleRectangle bounds) {
+	public WidgetHandle buildCanvas(ProjectContext context) {
 		return new WidgetHandle() {
 			{
-				GroupLayerWrapper.this.baseBounds = bounds;
 				GroupPositionFrame pos = findPosition();
-				lastBounds = baseBounds.minus(pos.offset());
 				canvas = new Group();
 				if (child != null) {
-					childCanvas = child.buildCanvas(context, lastBounds);
+					childCanvas = child.buildCanvas(context);
 					canvas.getChildren().add(childCanvas.getWidget());
 					updateChildCanvasPosition(pos);
 				}
@@ -325,17 +328,7 @@ public class GroupLayerWrapper extends Wrapper {
 	}
 
 	@Override
-	public WidgetHandle createProperties(ProjectContext context) {
-		return new WidgetHandle() {
-			@Override
-			public Node getWidget() {
-				return new Group();
-			}
-
-			@Override
-			public void remove() {
-
-			}
-		};
+	public Runnable createProperties(ProjectContext context, TabPane leftTabs) {
+		return () -> {};
 	}
 }

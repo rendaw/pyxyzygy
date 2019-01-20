@@ -1,12 +1,12 @@
 package com.zarbosoft.shoedemo;
 
+import com.zarbosoft.shoedemo.config.NodeConfig;
 import com.zarbosoft.shoedemo.model.ProjectNode;
 import com.zarbosoft.shoedemo.model.ProjectObject;
 import com.zarbosoft.shoedemo.model.Rectangle;
 import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.scene.control.ToolBar;
+import javafx.scene.control.TabPane;
 import javafx.scene.control.TreeItem;
 
 import java.util.List;
@@ -14,7 +14,6 @@ import java.util.List;
 public abstract class Wrapper {
 	public int parentIndex;
 	public final SimpleObjectProperty<TreeItem<Wrapper>> tree = new SimpleObjectProperty<>();
-	public final SimpleIntegerProperty frame = new SimpleIntegerProperty(0);
 	public final SimpleBooleanProperty tagViewing = new SimpleBooleanProperty(false);
 	public final SimpleBooleanProperty tagLifted = new SimpleBooleanProperty(false);
 	public final SimpleBooleanProperty tagCopied = new SimpleBooleanProperty(false);
@@ -25,9 +24,11 @@ public abstract class Wrapper {
 
 	public abstract ProjectObject getValue();
 
-	public abstract void scroll(ProjectContext context, DoubleRectangle oldBounds, DoubleRectangle newBounds);
+	public abstract NodeConfig getConfig();
 
-	public abstract WidgetHandle buildCanvas(ProjectContext context, DoubleRectangle bounds);
+	public abstract void setViewport(ProjectContext context, DoubleRectangle newBounds, int zoom);
+
+	public abstract WidgetHandle buildCanvas(ProjectContext context);
 
 	public abstract void mark(ProjectContext context, DoubleVector start, DoubleVector end);
 
@@ -39,9 +40,10 @@ public abstract class Wrapper {
 	 * Used in ProjectNode wrappers only
 	 *
 	 * @param context
+	 * @param leftTabs
 	 * @return
 	 */
-	public abstract WidgetHandle createProperties(ProjectContext context);
+	public abstract Runnable createProperties(ProjectContext context, TabPane leftTabs);
 
 	public abstract void markStart(ProjectContext context, DoubleVector start);
 

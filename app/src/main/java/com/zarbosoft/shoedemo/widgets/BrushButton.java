@@ -1,6 +1,7 @@
 package com.zarbosoft.shoedemo.widgets;
 
 import com.zarbosoft.shoedemo.Main;
+import com.zarbosoft.shoedemo.ProjectContext;
 import com.zarbosoft.shoedemo.config.TrueColor;
 import com.zarbosoft.shoedemo.config.TrueColorBrush;
 import javafx.beans.binding.Bindings;
@@ -10,13 +11,16 @@ import javafx.beans.value.ObservableValue;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.control.ToggleButton;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 
+import java.awt.event.MouseEvent;
+
 public class BrushButton extends ToggleButton {
-	public BrushButton(TrueColorBrush b) {
+	private final TrueColorBrush brush;
+
+	public BrushButton(ProjectContext context, TrueColorBrush b) {
+		this.brush = b;
 		getStyleClass().add("brush-button");
 
 		TrueColorSwatch swatch = new TrueColorSwatch();
@@ -30,11 +34,9 @@ public class BrushButton extends ToggleButton {
 
 		setGraphic(stack);
 
-		selectedProperty().addListener((observable, oldValue, newValue) -> {
-			if (!newValue)
-				return;
-			Main.config.trueColorBrush.set(Main.config.trueColorBrushes.indexOf(b));
-		});
+		selectedProperty().bind(Bindings.createBooleanBinding(() -> {
+			return Main.config.trueColorBrush.get() == Main.config.trueColorBrushes.indexOf(b);
+		}, Main.config.trueColorBrush, Main.config.trueColorBrushes));
 
 		b.useColor.addListener(new ChangeListener<Boolean>() {
 			{
@@ -45,7 +47,7 @@ public class BrushButton extends ToggleButton {
 			public void changed(
 					ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue
 			) {
-				SimpleObjectProperty<TrueColor> property = newValue ? b.color : Main.config.trueColor;
+				SimpleObjectProperty<TrueColor> property = newValue ? b.color : context.config.trueColor;
 				swatch.colorProperty.bind(Bindings.createObjectBinding(() -> property.get().toJfx(),
 						property
 				));
@@ -56,5 +58,11 @@ public class BrushButton extends ToggleButton {
 				}, property));
 			}
 		});
+	}
+
+	@Override
+	public void fire() {
+		if (isSelected()) return;
+		Main.config.trueColorBrush.set(Main.config.trueColorBrushes.indexOf(brush));
 	}
 }

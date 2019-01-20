@@ -127,6 +127,6 @@ public class RowFramesWidget extends Pane {
 	public void updateFrameMarker(ProjectContext context, Window window) {
 		if (window.selectedForView.get() == null)
 			return;
-		frameMarker.setLayoutX(window.selectedForView.get().frame.getValue() * timeline.zoom);
+		frameMarker.setLayoutX(window.selectedForView.get().getConfig().frame.getValue() * timeline.zoom);
 	}
 }

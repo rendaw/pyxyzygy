@@ -15,13 +15,13 @@ ROBytes::ROBytes(size_t const size, uint8_t const * const data) : size(size), da
 }
 
 TrueColorImage::TrueColorImage(int w, int h, uint8_t * const pixels) :
-   	w(w), h(h), pixels(pixels), premultipliedPixels(new uint8_t[w * h * channels]) {
+   	w(w), h(h), pixels(pixels), calculatedPixelsSize(0), calculatedPixels(nullptr) {
 }
 
 TrueColorImage::~TrueColorImage() {
 	fflush(stdout);
 	delete [] pixels;
-	delete [] premultipliedPixels;
+	delete [] calculatedPixels;
 }
 
 TrueColorImage * TrueColorImage::create(int w, int h) {
@@ -59,22 +59,53 @@ TrueColorImage * TrueColorImage::copy(int x0, int y0, int w0, int h0) const {
 	return out;
 }
 
-ROBytes TrueColorImage::data() const {
-	return {(size_t)(w * h * channels), pixels};
-}
-
-ROBytes TrueColorImage::dataPremultiplied() const {
+template <class T> ROBytes TrueColorImage::calculateZoomedData(int const zoom, T calculate) {
+	size_t const newSize = (h * zoom) * (w * zoom) * channels;
+	if (newSize != calculatedPixelsSize) {
+		calculatedPixelsSize = newSize;
+		delete [] calculatedPixels;
+		calculatedPixels = new uint8_t[newSize];
+	}
 	for (int y = 0; y < h; ++y) {
 		for (int x = 0; x < w; ++x) {
-			uint8_t *dest = &premultipliedPixels[(y * w + x) * channels];
-			uint8_t *source = &pixels[(y * w + x) * channels];
+			uint8_t const * const source = &pixels[(y * w + x) * channels];
+			uint8_t *dest = &calculatedPixels[((y * zoom) * (w * zoom) + x * zoom) * channels];
+			calculate(zoom, dest, source);
+		}
+		uint8_t const * const source = &calculatedPixels[(y * zoom) * (w * zoom) * channels];
+		for (int j = 1; j < zoom; ++j) {
+			uint8_t *dest = &calculatedPixels[(y * zoom + j) * (w * zoom) * channels];
+			memcpy(dest, source, (w * zoom) * channels);
+		}
+	}
+	return {calculatedPixelsSize, calculatedPixels};
+}
+
+ROBytes TrueColorImage::data(int const zoom) {
+	assert(zoom > 0);
+	if (zoom == 1)
+		return {(size_t)(w * h * channels), pixels};
+	else {
+		return calculateZoomedData(zoom, [](int const zoom, uint8_t *dest, uint8_t const * const source) {
+			for (int i = 0; i < zoom; ++i) {
+				memcpy(dest, source, channels);
+				dest += channels;
+			}
+		});
+	}
+}
+
+ROBytes TrueColorImage::dataPremultiplied(int const zoom) {
+	assert(zoom > 0);
+	return calculateZoomedData(zoom, [&](int const zoom, uint8_t *dest, uint8_t const * const source) {
+		for (int i = 0; i < zoom; ++i) {
 			float const alpha = (source[3] / 255.0f);
 			for (int i = 0; i < channels - 1; ++i)
 				dest[i] = source[i] * alpha;
 			dest[3] = source[3];
+			dest += channels;
 		}
-	}
-	return {(size_t)(w * h * channels), premultipliedPixels};
+	});
 }
 
 int TrueColorImage::getWidth() const {

@@ -6,6 +6,8 @@ import com.zarbosoft.shoedemo.model.ProjectNode;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.control.Spinner;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.StrokeType;
@@ -17,7 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.zarbosoft.rendaw.common.Common.uncheck;
-import static com.zarbosoft.shoedemo.Main.*;
+import static com.zarbosoft.shoedemo.Main.nodeFormFields;
+import static com.zarbosoft.shoedemo.Main.opacityMax;
 
 public class CameraWrapper extends GroupNodeWrapper {
 	private final Camera node;
@@ -84,9 +87,9 @@ public class CameraWrapper extends GroupNodeWrapper {
 	}
 
 	@Override
-	public WidgetHandle buildCanvas(ProjectContext context, DoubleRectangle bounds) {
+	public WidgetHandle buildCanvas(ProjectContext context) {
 		return new WidgetHandle() {
-			WidgetHandle groupHandle = CameraWrapper.super.buildCanvas(context, bounds);
+			WidgetHandle groupHandle = CameraWrapper.super.buildCanvas(context);
 
 			{
 				canvas = new Group();
@@ -125,9 +128,9 @@ public class CameraWrapper extends GroupNodeWrapper {
 	}
 
 	@Override
-	public WidgetHandle createProperties(ProjectContext context) {
+	public Runnable createProperties(ProjectContext context, TabPane tabPane) {
 		List<Runnable> miscCleanup = new ArrayList<>();
-		Node widget = new WidgetFormBuilder()
+		Tab tab = new Tab("Camera", new WidgetFormBuilder()
 				.apply(b -> miscCleanup.add(nodeFormFields(context, b, node)))
 				.intSpinner("Crop width", 1, 99999, s -> {
 					s.getValueFactory().setValue(node.width());
@@ -165,21 +168,15 @@ public class CameraWrapper extends GroupNodeWrapper {
 						}
 					}));
 				})
-				.build();
-		return new WidgetHandle() {
-			@Override
-			public Node getWidget() {
-				return widget;
-			}
-
-			@Override
-			public void remove() {
-				propertiesWidth = null;
-				propertiesHeight = null;
-				propertiesEndFrame = null;
-				propertiesFrameRate = null;
-				miscCleanup.forEach(c -> c.run());
-			}
+				.build());
+		tabPane.getTabs().addAll(tab);
+		return () -> {
+			tabPane.getTabs().removeAll(tab);
+			propertiesWidth = null;
+			propertiesHeight = null;
+			propertiesEndFrame = null;
+			propertiesFrameRate = null;
+			miscCleanup.forEach(c -> c.run());
 		};
 	}
 }

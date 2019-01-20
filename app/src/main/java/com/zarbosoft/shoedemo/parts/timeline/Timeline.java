@@ -108,14 +108,14 @@ public class Timeline {
 					deps = new Observable[] {
 							requestedMaxFrame,
 							calculatedMaxFrame,
-							window.selectedForView.get().frame
+							window.selectedForView.get().getConfig().frame
 					};
 				useMaxFrame.bind(Bindings.createIntegerBinding(() -> {
 					int out = 0;
 					out = Math.max(out, requestedMaxFrame.get());
 					out = Math.max(out, calculatedMaxFrame.get());
 					if (newValue != null)
-						out = Math.max(out, window.selectedForView.get().frame.get());
+						out = Math.max(out, window.selectedForView.get().getConfig().frame.get());
 					return out + extraFrames;
 				}, deps));
 			}
@@ -130,7 +130,7 @@ public class Timeline {
 			if (window.selectedForView.get() == null)
 				return;
 			Point2D corner = scrubElements.getLocalToSceneTransform().transform(0, 0);
-			window.selectedForView.get().frame.set(Math.max(0, (int) ((e.getSceneX() - corner.getX()) / zoom)));
+			window.selectedForView.get().getConfig().frame.set(Math.max(0, (int) ((e.getSceneX() - corner.getX()) / zoom)));
 			updateFrameMarker();
 		};
 		scrub.addEventFilter(MouseEvent.MOUSE_CLICKED, mouseEventEventHandler);
@@ -138,10 +138,10 @@ public class Timeline {
 		scrub.addEventFilter(KeyEvent.KEY_TYPED, e -> {
 			switch (e.getCode()) {
 				case LEFT:
-					window.selectedForView.get().frame.set(Math.max(0, window.selectedForView.get().frame.get() - 1));
+					window.selectedForView.get().getConfig().frame.set(Math.max(0, window.selectedForView.get().getConfig().frame.get() - 1));
 					break;
 				case RIGHT:
-					window.selectedForView.get().frame.set(window.selectedForView.get().frame.get() + 1);
+					window.selectedForView.get().getConfig().frame.set(window.selectedForView.get().getConfig().frame.get() + 1);
 					break;
 			}
 		});
@@ -155,7 +155,7 @@ public class Timeline {
 					.stream()
 					.filter(c -> c.getTreeItem() != null &&
 							c.getTreeItem().getValue() != null &&
-							c.getTreeItem().getValue().createFrame(context, window, window.selectedForView.get().frame.get()))
+							c.getTreeItem().getValue().createFrame(context, window, window.selectedForView.get().getConfig().frame.get()))
 					.findFirst();
 		});
 		duplicate = com.zarbosoft.shoedemo.Window.button("content-copy.svg", "Duplicate");
@@ -171,7 +171,7 @@ public class Timeline {
 							c
 									.getTreeItem()
 									.getValue()
-									.duplicateFrame(context, window,window.selectedForView.get().frame.get()))
+									.duplicateFrame(context, window,window.selectedForView.get().getConfig().frame.get()))
 					.findFirst();
 		});
 		remove = com.zarbosoft.shoedemo.Window.button("minus.svg", "Remove");
@@ -379,8 +379,8 @@ public class Timeline {
 		Wrapper root = window.selectedForView.get();
 		if (root == null)
 			return;
-		root.setFrame(context, root.frame.get());
-		frameMarker.setLayoutX(root.frame.getValue() * zoom);
+		root.setFrame(context, root.getConfig().frame.get());
+		frameMarker.setLayoutX(root.getConfig().frame.getValue() * zoom);
 		new Consumer<TreeItem<RowAdapter>>() {
 			@Override
 			public void accept(TreeItem<RowAdapter> item) {

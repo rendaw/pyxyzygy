@@ -33,11 +33,9 @@ import static com.zarbosoft.shoedemo.Wrapper.TakesChildren.NONE;
 public class Structure {
 	private final ProjectContext context;
 	private final Window window;
-	private WidgetHandle properties;
 	VBox layout = new VBox();
 	TreeView<Wrapper> tree;
 	ToolBar toolbar;
-	SplitPane split = new SplitPane();
 	Set<Wrapper> taggedViewing = new HashSet<>();
 	Set<Wrapper> taggedLifted = new HashSet<>();
 	Set<Wrapper> taggedCopied = new HashSet<>();
@@ -343,10 +341,6 @@ public class Structure {
 		layout.getChildren().addAll(toolbar, tree);
 		VBox.setVgrow(tree, Priority.ALWAYS);
 
-		split.setOrientation(Orientation.VERTICAL);
-		split.getItems().add(layout);
-		split.setDividerPositions(1);
-
 		context.project.addTopAddListeners((target, at, value) -> {
 			List<TreeItem<Wrapper>> newItems = new ArrayList<>();
 			for (int i = 0; i < value.size(); ++i) {
@@ -375,30 +369,6 @@ public class Structure {
 		context.project.addTopClearListeners(target -> {
 			tree.getRoot().getChildren().forEach(c -> c.getValue().remove(context));
 			tree.getRoot().getChildren().clear();
-		});
-		window.selectedForEdit.addListener(new ChangeListener<Wrapper>() {
-			{
-				changed(null, null, window.selectedForEdit.get());
-			}
-
-			@Override
-			public void changed(
-					ObservableValue<? extends Wrapper> observable, Wrapper oldValue, Wrapper newValue
-			) {
-				if (properties != null) {
-					properties.remove();
-				}
-				if (oldValue != null) {
-					split.getItems().remove(1);
-					split.setDividerPositions(1);
-				}
-				if (newValue != null) {
-					properties = newValue.createProperties(context);
-					split.getItems().add(properties.getWidget());
-					split.setDividerPositions(0.7);
-					SplitPane.setResizableWithParent(properties.getWidget(), false);
-				}
-			}
 		});
 	}
 
@@ -567,6 +537,6 @@ public class Structure {
 	}
 
 	public Node getWidget() {
-		return split;
+		return layout;
 	}
 }

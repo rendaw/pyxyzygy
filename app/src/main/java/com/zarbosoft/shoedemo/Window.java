@@ -10,6 +10,8 @@ import com.zarbosoft.shoedemo.structuretree.GroupLayerWrapper;
 import com.zarbosoft.shoedemo.structuretree.GroupNodeWrapper;
 import com.zarbosoft.shoedemo.structuretree.TrueColorImageNodeWrapper;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.geometry.Orientation;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -41,6 +43,7 @@ public class Window {
 	public List<FrameMapEntry> timeMap;
 	public SimpleObjectProperty<Wrapper> selectedForEdit = new SimpleObjectProperty<>();
 	public SimpleObjectProperty<Wrapper> selectedForView = new SimpleObjectProperty<>();
+	private Runnable editPropertiesHandle;
 
 	public void start(ProjectContext context, Stage primaryStage) {
 		primaryStage.setOnCloseRequest(e -> {
@@ -58,13 +61,16 @@ public class Window {
 		SplitPane.setResizableWithParent(timeline.getWidget(), false);
 		specificLayout.setDividerPositions(0.7);
 
+		TabPane leftTabs = new TabPane();
+		leftTabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+		leftTabs.getTabs().add(new Tab("Structure",structure.getWidget() ));
+
 		SplitPane generalLayout = new SplitPane();
 		generalLayout.setOrientation(Orientation.HORIZONTAL);
-		generalLayout.getItems().addAll(structure.getWidget(), specificLayout);
-		SplitPane.setResizableWithParent(structure.getWidget(), false);
+		generalLayout.getItems().addAll(leftTabs, specificLayout);
+		SplitPane.setResizableWithParent(leftTabs, false);
 		generalLayout.setDividerPositions(0.3);
 
-		primaryStage.setTitle("Shoe Demo 2");
 		Scene scene = new Scene(generalLayout, 1200, 800);
 
 		scene.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
@@ -77,6 +83,26 @@ public class Window {
 		scene.getStylesheets().add(getClass().getResource("widgets/colorpicker/style.css").toExternalForm());
 		scene.getStylesheets().add(getClass().getResource("widgets/brushbutton/style.css").toExternalForm());
 
+		selectedForEdit.addListener(new ChangeListener<Wrapper>() {
+			{
+				changed(null, null, selectedForEdit.get());
+			}
+
+			@Override
+			public void changed(
+					ObservableValue<? extends Wrapper> observable, Wrapper oldValue, Wrapper newValue
+			) {
+				if (editPropertiesHandle != null) {
+					editPropertiesHandle.run();
+					editPropertiesHandle = null;
+				}
+				if (newValue != null) {
+					editPropertiesHandle = newValue.createProperties(context, leftTabs);
+				}
+			}
+		});
+
+		primaryStage.setTitle(String.format("%s - Shoe Demo 2", context.path.getFileName().toString()));
 		primaryStage.setScene(scene);
 		primaryStage.show();
 	}

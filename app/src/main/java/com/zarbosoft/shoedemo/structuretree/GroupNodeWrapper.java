@@ -2,13 +2,14 @@ package com.zarbosoft.shoedemo.structuretree;
 
 import com.google.common.collect.ImmutableList;
 import com.zarbosoft.shoedemo.*;
+import com.zarbosoft.shoedemo.config.NodeConfig;
 import com.zarbosoft.shoedemo.model.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.Group;
 import javafx.scene.Node;
-import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.control.ToolBar;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 import javafx.scene.control.TreeItem;
 
 import java.util.ArrayList;
@@ -21,6 +22,7 @@ import static com.zarbosoft.shoedemo.ProjectContext.uniqueName1;
 public class GroupNodeWrapper extends Wrapper {
 	private final Wrapper parent;
 	private final GroupNode node;
+	private final NodeConfig config;
 	private final ObservableList<Wrapper> children = FXCollections.observableArrayList();
 	private final Runnable layerListenCleanup;
 
@@ -34,6 +36,7 @@ public class GroupNodeWrapper extends Wrapper {
 		this.parentIndex = parentIndex;
 		this.parent = parent;
 		this.node = node;
+		config = context.config.nodes.computeIfAbsent(node.id(),id->new NodeConfig());
 
 		tree.set(new TreeItem<>(this));
 
@@ -71,15 +74,20 @@ public class GroupNodeWrapper extends Wrapper {
 	}
 
 	@Override
-	public void scroll(
-			ProjectContext context, DoubleRectangle oldBounds, DoubleRectangle newBounds
-	) {
-		this.bounds = newBounds;
-		children.forEach(c -> c.scroll(context, oldBounds, newBounds));
+	public NodeConfig getConfig() {
+		return config;
 	}
 
 	@Override
-	public WidgetHandle buildCanvas(ProjectContext context, DoubleRectangle bounds) {
+	public void setViewport(
+			ProjectContext context, DoubleRectangle newBounds, int zoom
+	) {
+		this.bounds = newBounds;
+		children.forEach(c -> c.setViewport(context, newBounds, zoom));
+	}
+
+	@Override
+	public WidgetHandle buildCanvas(ProjectContext context) {
 		return new WidgetHandle() {
 			private Group canvas;
 			private final Runnable layerListenCleanup;
@@ -87,12 +95,11 @@ public class GroupNodeWrapper extends Wrapper {
 			private final ObservableList<WidgetHandle> childHandles = FXCollections.observableArrayList();
 
 			{
-				GroupNodeWrapper.this.bounds = bounds;
 				canvas = new Group();
 				layerListenCleanup = mirror(children,
 						childHandles,
 						c -> {
-					return c.buildCanvas(context, GroupNodeWrapper.this.bounds);
+					return c.buildCanvas(context);
 						},
 						h -> h.remove(),
 						noopConsumer()
@@ -230,22 +237,17 @@ public class GroupNodeWrapper extends Wrapper {
 	@Override
 	public void remove(ProjectContext context) {
 		layerListenCleanup.run();
+		context.config.nodes.remove(node.id());
 	}
 
 	@Override
-	public WidgetHandle createProperties(ProjectContext context) {
+	public Runnable createProperties(ProjectContext context, TabPane tabPane) {
 		List<Runnable> cleanup = new ArrayList<>();
-		Node widget = new WidgetFormBuilder().apply(b -> cleanup.add(nodeFormFields(context, b, node))).build();
-		return new WidgetHandle() {
-			@Override
-			public Node getWidget() {
-				return widget;
-			}
-
-			@Override
-			public void remove() {
-				cleanup.forEach(c -> c.run());
-			}
+		Tab tab = new Tab("Group", new WidgetFormBuilder().apply(b -> cleanup.add(nodeFormFields(context, b, node))).build());
+		tabPane.getTabs().addAll(tab);
+		return () -> {
+tabPane.getTabs().removeAll(tab);
+			cleanup.forEach(c -> c.run());
 		};
 	}
 

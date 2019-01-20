@@ -13,6 +13,10 @@ public class Vector {
 		this.y = y;
 	}
 
+	public Vector plus(int x, int y) {
+		return new Vector(this.x + x, this.y + y);
+	}
+
 	public void serialize(RawWriter writer) {
 		writer
 				.recordBegin()
@@ -21,10 +25,6 @@ public class Vector {
 				.key("y")
 				.primitive(Integer.toString(y))
 				.recordEnd();
-	}
-
-	public Vector plus(int x, int y) {
-		return new Vector(this.x + x,this.y+y );
 	}
 
 	public static class Deserializer extends StackReader.RecordState {
@@ -51,11 +51,11 @@ public class Vector {
 	}
 
 	public long to1D() {
-		return (((long)y) << 32) | Integer.toUnsignedLong(x);
+		return (((long) y) << 32) | Integer.toUnsignedLong(x);
 	}
 
 	public static Vector from1D(long source) {
-		return new Vector((int)(source & 0xFFFFFFFF), (int)(source >>> 32));
+		return new Vector((int) (source & 0xFFFFFFFF), (int) (source >>> 32));
 	}
 
 	@Override

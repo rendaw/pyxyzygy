@@ -3,6 +3,8 @@ package com.zarbosoft.shoedemo;
 import com.zarbosoft.shoedemo.model.Rectangle;
 import com.zarbosoft.shoedemo.model.Vector;
 
+import static com.zarbosoft.rendaw.common.Common.ceilDiv;
+
 public class DoubleRectangle {
 	final public double x;
 	final public double y;
@@ -16,10 +18,15 @@ public class DoubleRectangle {
 		this.height = height;
 	}
 
-	public Rectangle descaleIntOuter(int scale) {
-		int outX = (int) (x / scale);
-		int outY = (int) (y / scale);
-		return new Rectangle(outX, outY, (int) ((x + width) / scale - outX), (int) ((y + height) / scale - outY));
+	public Rectangle quantize(int scale) {
+		int outX = Math.floorDiv((int) x, scale);
+		int outY = Math.floorDiv((int) y, scale);
+		return new Rectangle(
+				outX,
+				outY,
+				ceilDiv((int) Math.ceil(x + width), scale) - outX,
+				ceilDiv((int) Math.ceil(y + height), scale) - outY
+		);
 	}
 
 	public DoubleRectangle scale(double scale) {

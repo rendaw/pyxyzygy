@@ -1,5 +1,7 @@
 package com.zarbosoft.shoedemo;
 
+import com.zarbosoft.luxem.read.StackReader;
+import com.zarbosoft.luxem.write.RawWriter;
 import com.zarbosoft.shoedemo.model.Vector;
 
 public class DoubleVector {
@@ -42,5 +44,13 @@ public class DoubleVector {
 	@Override
 	public String toString() {
 		return String.format("dv[%s %s]", x, y);
+	}
+
+	public DoubleVector divide(DoubleVector factors) {
+		return new DoubleVector(x / factors.x, y / factors.y);
+	}
+
+	public DoubleVector multiply(DoubleVector factors) {
+		return new DoubleVector(x * factors.x, y * factors.y);
 	}
 }
