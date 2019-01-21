@@ -35,11 +35,7 @@ public class GroupNodeEditHandle extends Wrapper.EditControlsHandle {
 	public GroupNodeEditHandle(final GroupNodeWrapper groupNodeWrapper, ProjectContext context, TabPane tabPane) {
 		// Canvas overlay
 		overlay = new Group();
-		if (groupNodeWrapper.canvasHandle == null)
-			throw new Assertion();
 		groupNodeWrapper.canvasHandle.canvasOuter.getChildren().add(overlay);
-		Line overlayMarker = new Line(0, 0, -10, 10);
-		overlay.getChildren().addAll(overlayMarker);
 
 		// Group tab
 		groupTab = new Tab(

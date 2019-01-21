@@ -1,9 +1,11 @@
-package com.zarbosoft.shoedemo.widgets;
+package com.zarbosoft.shoedemo.wrappers.truecolorimage;
 
 import com.zarbosoft.shoedemo.Main;
 import com.zarbosoft.shoedemo.ProjectContext;
 import com.zarbosoft.shoedemo.config.TrueColor;
 import com.zarbosoft.shoedemo.config.TrueColorBrush;
+import com.zarbosoft.shoedemo.config.TrueColorImageNodeConfig;
+import com.zarbosoft.shoedemo.widgets.TrueColorSwatch;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
@@ -14,12 +16,14 @@ import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 
-import java.awt.event.MouseEvent;
-
 public class BrushButton extends ToggleButton {
 	private final TrueColorBrush brush;
+	private final TrueColorImageNodeWrapper trueColorImageNodeWrapper;
 
-	public BrushButton(ProjectContext context, TrueColorBrush b) {
+	public BrushButton(
+			ProjectContext context, TrueColorImageNodeWrapper trueColorImageNodeWrapper, TrueColorBrush b
+	) {
+		this.trueColorImageNodeWrapper = trueColorImageNodeWrapper;
 		this.brush = b;
 		getStyleClass().add("brush-button");
 
@@ -34,9 +38,13 @@ public class BrushButton extends ToggleButton {
 
 		setGraphic(stack);
 
-		selectedProperty().bind(Bindings.createBooleanBinding(() -> {
-			return Main.config.trueColorBrush.get() == Main.config.trueColorBrushes.indexOf(b);
-		}, Main.config.trueColorBrush, Main.config.trueColorBrushes));
+		selectedProperty().bind(Bindings.createBooleanBinding(
+				() -> trueColorImageNodeWrapper.config.tool.get() == TrueColorImageNodeConfig.Tool.BRUSH &&
+						trueColorImageNodeWrapper.config.brush.get() == Main.config.trueColorBrushes.indexOf(b),
+				trueColorImageNodeWrapper.config.tool,
+				trueColorImageNodeWrapper.config.brush,
+				Main.config.trueColorBrushes
+		));
 
 		b.useColor.addListener(new ChangeListener<Boolean>() {
 			{
@@ -48,9 +56,7 @@ public class BrushButton extends ToggleButton {
 					ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue
 			) {
 				SimpleObjectProperty<TrueColor> property = newValue ? b.color : context.config.trueColor;
-				swatch.colorProperty.bind(Bindings.createObjectBinding(() -> property.get().toJfx(),
-						property
-				));
+				swatch.colorProperty.bind(Bindings.createObjectBinding(() -> property.get().toJfx(), property));
 				label.textFillProperty().bind(Bindings.createObjectBinding(() -> {
 					Color c = property.get().toJfx();
 					double darkness = (1.0 - c.getBrightness()) * c.getOpacity();
@@ -62,7 +68,9 @@ public class BrushButton extends ToggleButton {
 
 	@Override
 	public void fire() {
-		if (isSelected()) return;
-		Main.config.trueColorBrush.set(Main.config.trueColorBrushes.indexOf(brush));
+		if (isSelected())
+			return;
+		trueColorImageNodeWrapper.config.tool.set(TrueColorImageNodeConfig.Tool.BRUSH);
+		trueColorImageNodeWrapper.config.brush.set(Main.config.trueColorBrushes.indexOf(brush));
 	}
 }

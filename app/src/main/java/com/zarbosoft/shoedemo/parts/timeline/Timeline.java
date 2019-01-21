@@ -7,7 +7,7 @@ import com.zarbosoft.shoedemo.*;
 import com.zarbosoft.shoedemo.model.*;
 import com.zarbosoft.shoedemo.structuretree.CameraWrapper;
 import com.zarbosoft.shoedemo.wrappers.group.GroupNodeWrapper;
-import com.zarbosoft.shoedemo.structuretree.TrueColorImageNodeWrapper;
+import com.zarbosoft.shoedemo.wrappers.truecolorimage.TrueColorImageNodeWrapper;
 import javafx.beans.Observable;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleIntegerProperty;

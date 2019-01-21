@@ -3,7 +3,7 @@ package com.zarbosoft.shoedemo;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.shoedemo.model.*;
 import com.zarbosoft.shoedemo.wrappers.group.GroupLayerWrapper;
-import com.zarbosoft.shoedemo.structuretree.TrueColorImageNodeWrapper;
+import com.zarbosoft.shoedemo.wrappers.truecolorimage.TrueColorImageNodeWrapper;
 
 import static com.zarbosoft.shoedemo.Main.opacityMax;
 

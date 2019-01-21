@@ -13,9 +13,6 @@ import static com.zarbosoft.shoedemo.Main.appDirs;
 @Configuration
 public class GlobalConfig extends ConfigBase {
 	@Configuration
-	public final SimpleIntegerProperty trueColorBrush = new SimpleIntegerProperty();
-
-	@Configuration
 	public final ObservableList<TrueColorBrush> trueColorBrushes = FXCollections.observableArrayList();
 
 	@Configuration

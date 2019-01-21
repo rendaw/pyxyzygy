@@ -58,4 +58,8 @@ public class Rectangle {
 				Math.max(this.y + height, bounds.y + bounds.height) - y
 		);
 	}
+
+	public boolean contains(Vector vector) {
+		return contains(vector.x, vector.y);
+	}
 }

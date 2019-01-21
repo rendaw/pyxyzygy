@@ -106,6 +106,7 @@ public class GroupNodeWrapper extends Wrapper {
 	public void markStart(ProjectContext context, DoubleVector start) {
 		if (tool == null)
 			return;
+		start = Window.toLocal(this, start);
 		tool.markStart(context, start);
 	}
 
@@ -113,6 +114,8 @@ public class GroupNodeWrapper extends Wrapper {
 	public void mark(ProjectContext context, DoubleVector start, DoubleVector end) {
 		if (tool == null)
 			return;
+		start = Window.toLocal(this, start);
+		end = Window.toLocal(this, end);
 		tool.mark(context, start, end);
 	}
 
@@ -204,6 +207,5 @@ public class GroupNodeWrapper extends Wrapper {
 	@Override
 	public void cursorMoved(ProjectContext context, DoubleVector vector) {
 		mousePosition.set(vector.toInt());
-		System.out.format("mouse %s\n", vector);
 	}
 }

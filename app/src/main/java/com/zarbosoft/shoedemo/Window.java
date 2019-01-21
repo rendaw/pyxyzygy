@@ -8,13 +8,15 @@ import com.zarbosoft.shoedemo.parts.timeline.Timeline;
 import com.zarbosoft.shoedemo.structuretree.CameraWrapper;
 import com.zarbosoft.shoedemo.wrappers.group.GroupLayerWrapper;
 import com.zarbosoft.shoedemo.wrappers.group.GroupNodeWrapper;
-import com.zarbosoft.shoedemo.structuretree.TrueColorImageNodeWrapper;
+import com.zarbosoft.shoedemo.wrappers.truecolorimage.TrueColorImageNodeWrapper;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.Orientation;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.SplitPane;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
@@ -22,8 +24,6 @@ import javafx.stage.Stage;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import static com.zarbosoft.rendaw.common.Common.uncheck;
 
 public class Window {
 	public List<FrameMapEntry> timeMap;

@@ -2,7 +2,11 @@ package com.zarbosoft.shoedemo;
 
 import com.zarbosoft.rendaw.common.Common;
 import com.zarbosoft.rendaw.common.Pair;
+import javafx.beans.binding.Binding;
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.Property;
+import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 
@@ -102,5 +106,12 @@ public class CustomBinding {
 			cleanup.add(new Pair<>(pair.first, listener) );
 		}
 		return () -> cleanup.forEach(pair -> pair.first.removeListener(pair.second));
+	}
+
+	public static Binding absInt(ObservableValue<Number> a) {
+		return Bindings.createIntegerBinding(() -> Math.abs(a.getValue().intValue()), a);
+	}
+	public static Binding bindAbs(ObservableValue<Number> a) {
+		return Bindings.createDoubleBinding(() -> Math.abs(a.getValue().doubleValue()), a);
 	}
 }

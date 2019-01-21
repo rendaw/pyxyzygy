@@ -53,7 +53,6 @@ public class Main extends Application {
 		defaultBrush.color.set(TrueColor.fromJfx(Color.BLACK));
 		defaultBrush.useColor.set(true);
 		config.trueColorBrushes.addAll(transparentBrush, defaultBrush);
-		config.trueColorBrush.set(1);
 		return config;
 	});
 

@@ -6,7 +6,7 @@ import com.zarbosoft.shoedemo.Window;
 import com.zarbosoft.shoedemo.model.TrueColorImageFrame;
 import com.zarbosoft.shoedemo.model.TrueColorImageNode;
 import com.zarbosoft.shoedemo.model.Vector;
-import com.zarbosoft.shoedemo.structuretree.TrueColorImageNodeWrapper;
+import com.zarbosoft.shoedemo.wrappers.truecolorimage.TrueColorImageNodeWrapper;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ObservableObjectValue;
 import javafx.beans.value.ObservableValue;
