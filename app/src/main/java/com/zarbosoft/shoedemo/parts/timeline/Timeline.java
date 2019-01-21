@@ -6,7 +6,7 @@ import com.zarbosoft.rendaw.common.DeadCode;
 import com.zarbosoft.shoedemo.*;
 import com.zarbosoft.shoedemo.model.*;
 import com.zarbosoft.shoedemo.structuretree.CameraWrapper;
-import com.zarbosoft.shoedemo.structuretree.GroupNodeWrapper;
+import com.zarbosoft.shoedemo.wrappers.group.GroupNodeWrapper;
 import com.zarbosoft.shoedemo.structuretree.TrueColorImageNodeWrapper;
 import javafx.beans.Observable;
 import javafx.beans.binding.Bindings;
@@ -145,7 +145,7 @@ public class Timeline {
 					break;
 			}
 		});
-		add = com.zarbosoft.shoedemo.Window.button("plus.svg", "Add");
+		add = HelperJFX.button("plus.svg", "Add");
 		add.setOnAction(e -> {
 			if (window.selectedForView.get() == null)
 				return;
@@ -158,7 +158,7 @@ public class Timeline {
 							c.getTreeItem().getValue().createFrame(context, window, window.selectedForView.get().getConfig().frame.get()))
 					.findFirst();
 		});
-		duplicate = com.zarbosoft.shoedemo.Window.button("content-copy.svg", "Duplicate");
+		duplicate = HelperJFX.button("content-copy.svg", "Duplicate");
 		duplicate.setOnAction(e -> {
 			if (window.selectedForView.get() == null)
 				return;
@@ -174,26 +174,26 @@ public class Timeline {
 									.duplicateFrame(context, window,window.selectedForView.get().getConfig().frame.get()))
 					.findFirst();
 		});
-		remove = com.zarbosoft.shoedemo.Window.button("minus.svg", "Remove");
+		remove = HelperJFX.button("minus.svg", "Remove");
 		remove.setOnAction(e -> {
 			if (selectedFrame.get() == null)
 				return;
 			selectedFrame.get().frame.remove(context);
 			selectedFrame.set(null);
 		});
-		clear = com.zarbosoft.shoedemo.Window.button("eraser-variant.svg", "Clear");
+		clear = HelperJFX.button("eraser-variant.svg", "Clear");
 		clear.setOnAction(e -> {
 			if (selectedFrame.get() == null)
 				return;
 			selectedFrame.get().frame.clear(context);
 		});
-		left = com.zarbosoft.shoedemo.Window.button("arrow-left.svg", "Left");
+		left = HelperJFX.button("arrow-left.svg", "Left");
 		left.setOnAction(e -> {
 			if (selectedFrame.get() == null)
 				return;
 			selectedFrame.get().frame.moveLeft(context);
 		});
-		right = Window.button("arrow-right.svg", "Right");
+		right = HelperJFX.button("arrow-right.svg", "Right");
 		right.setOnAction(e -> {
 			if (selectedFrame.get() == null)
 				return;

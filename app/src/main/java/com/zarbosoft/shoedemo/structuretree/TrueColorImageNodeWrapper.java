@@ -26,17 +26,15 @@ import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.transform.Scale;
 
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.zarbosoft.shoedemo.HelperJFX.pad;
+import static com.zarbosoft.shoedemo.HelperJFX.toImage;
 import static com.zarbosoft.shoedemo.Main.*;
 import static com.zarbosoft.shoedemo.ProjectContext.uniqueName;
 import static com.zarbosoft.shoedemo.ProjectContext.uniqueName1;
-import static com.zarbosoft.shoedemo.Window.icon;
+import static com.zarbosoft.shoedemo.HelperJFX.icon;
 
 public class TrueColorImageNodeWrapper extends Wrapper {
 	private final ProjectContext context;
@@ -47,7 +45,7 @@ public class TrueColorImageNodeWrapper extends Wrapper {
 	private TrueColorImageFrame frame;
 	private final NodeConfig config;
 	private final Wrapper parent;
-	DoubleRectangle bounds;
+	DoubleRectangle bounds = new DoubleRectangle(0,0 ,0 ,0 );
 	private int frameNumber;
 	Map<Long, WrapTile> wrapTiles = new HashMap<>();
 	Group draw;
@@ -70,100 +68,7 @@ public class TrueColorImageNodeWrapper extends Wrapper {
 
 		public void update(Tile tile) {
 			TrueColorImage image = tile.getData(context);
-			final int width = image.getWidth() * zoom;
-			final int height = image.getHeight() * zoom;
-			widget.setImage(new WritableImage(new PixelReader() {
-				byte[] premultipliedData;
-				byte[] data;
-
-				@Override
-				public PixelFormat getPixelFormat() {
-					return PixelFormat.getByteBgraInstance();
-				}
-
-				@Override
-				public int getArgb(int x, int y) {
-					throw new Assertion();
-				}
-
-				@Override
-				public Color getColor(int x, int y) {
-					throw new Assertion();
-				}
-
-				@Override
-				public <T extends Buffer> void getPixels(
-						int x, int y, int w, int h, WritablePixelFormat<T> pixelformat, T buffer, int scanlineStride
-				) {
-					if (scanlineStride != w * 4)
-						throw new Assertion();
-					byte[] data = pixelformat.isPremultiplied() ? (
-							premultipliedData == null ?
-									premultipliedData = image.dataPremultiplied(zoom) :
-									premultipliedData
-					) : (this.data == null ? this.data = image.data(zoom) : this.data);
-					if (w == width) {
-						if (x != 0)
-							throw new Assertion();
-						((ByteBuffer) buffer).put(data, y * width * 4, h * width * 4);
-					} else {
-						if (x + w > width)
-							throw new Assertion();
-						if (y + h > height)
-							throw new Assertion();
-						for (int i = y; i < y + h; ++i) {
-							((ByteBuffer) buffer).put(data, (i * width + x) * 4, scanlineStride);
-						}
-					}
-				}
-
-				@Override
-				public void getPixels(
-						int x,
-						int y,
-						int w,
-						int h,
-						WritablePixelFormat<ByteBuffer> pixelformat,
-						byte[] buffer,
-						int offset,
-						int scanlineStride
-				) {
-					if (scanlineStride != w * 4)
-						throw new Assertion();
-					byte[] data = pixelformat.isPremultiplied() ? (
-							premultipliedData == null ?
-									premultipliedData = image.dataPremultiplied(zoom) :
-									premultipliedData
-					) : (this.data == null ? this.data = image.data(zoom) : this.data);
-					if (w == width) {
-						if (x != 0)
-							throw new Assertion();
-						System.arraycopy(data, y * width * 4, buffer, offset, h * width * 4);
-					} else {
-						if (x + w > width)
-							throw new Assertion();
-						if (y + h > height)
-							throw new Assertion();
-						for (int i = y; i < y + h; ++i) {
-							System.arraycopy(data, (i * width + x) * 4, buffer, offset + i * w * 4, scanlineStride);
-						}
-					}
-				}
-
-				@Override
-				public void getPixels(
-						int x,
-						int y,
-						int w,
-						int h,
-						WritablePixelFormat<IntBuffer> pixelformat,
-						int[] buffer,
-						int offset,
-						int scanlineStride
-				) {
-					throw new Assertion();
-				}
-			}, width, height));
+			widget.setImage(toImage(image, zoom));
 		}
 	}
 
@@ -315,12 +220,20 @@ public class TrueColorImageNodeWrapper extends Wrapper {
 	}
 
 	@Override
-	public WidgetHandle buildCanvasProperties(ProjectContext context) {
-		return new WidgetHandle() {
+	public void cursorMoved(ProjectContext context, DoubleVector vector) {
+
+	}
+
+	@Override
+	public EditControlsHandle buildEditControls(ProjectContext context, TabPane tabPane) {
+		return new EditControlsHandle() {
+			List<Runnable> cleanup = new ArrayList<>();
+
 			private final Runnable brushesCleanup;
 			private HBox box;
 
 			{
+				// Toolbar
 				ToolBar brushes = new ToolBar();
 				brushes.setMinWidth(0);
 
@@ -404,16 +317,101 @@ public class TrueColorImageNodeWrapper extends Wrapper {
 					}
 					return out;
 				}, noopConsumer(), noopConsumer());
+
+				// Tab
+				Tab generalTab = new Tab("Image");
+				generalTab.setContent(pad(new WidgetFormBuilder()
+						.apply(b -> cleanup.add(nodeFormFields(context, b, node)))
+						.build()));
+
+				Tab paintTab = new Tab("Paint");
+				Main.config.trueColorBrush.addListener(new ChangeListener<Number>() {
+					{
+						changed(null, null, Main.config.trueColorBrush.get());
+					}
+
+					@Override
+					public void changed(
+							ObservableValue<? extends Number> observable, Number oldValue, Number newBrushIndex
+					) {
+						if (newBrushIndex.intValue() >= Main.config.trueColorBrushes.size()) {
+							paintTab.setContent(null);
+							return;
+						}
+						TrueColorBrush newBrush = Main.config.trueColorBrushes.get(newBrushIndex.intValue());
+
+						TrueColorPicker colorPicker = new TrueColorPicker();
+						GridPane.setHalignment(colorPicker, HPos.CENTER);
+						paintTab.setContent(pad(new WidgetFormBuilder()
+								.text("Name", t -> t.textProperty().bindBidirectional(newBrush.name))
+								.span(() -> {
+									return colorPicker;
+								})
+								.check("Use brush color", widget -> {
+									widget.selectedProperty().bindBidirectional(newBrush.useColor);
+									widget.selectedProperty().addListener(new ChangeListener<Boolean>() {
+										Runnable pickerBindingCleanup;
+
+										{
+											changed(null, null, widget.isSelected());
+										}
+
+										@Override
+										public void changed(
+												ObservableValue<? extends Boolean> observable,
+												Boolean oldValue,
+												Boolean newValue
+										) {
+											SimpleObjectProperty<TrueColor> color;
+											if (newValue)
+												color = newBrush.color;
+											else
+												color = context.config.trueColor;
+
+											if (pickerBindingCleanup != null) {
+												pickerBindingCleanup.run();
+												pickerBindingCleanup = null;
+											}
+											pickerBindingCleanup = CustomBinding.<TrueColor, Color>bindBidirectional(color,
+													colorPicker.colorProxyProperty,
+													c -> Optional.of(c.toJfx()),
+													c -> {
+														TrueColor out = new TrueColor();
+														out.r = (byte) (c.getRed() * 255);
+														out.g = (byte) (c.getGreen() * 255);
+														out.b = (byte) (c.getBlue() * 255);
+														out.a = (byte) (c.getOpacity() * 255);
+														return Optional.of(out);
+													}
+											);
+										}
+									});
+								})
+								.custom("Size", () -> {
+									Pair<Node, SimpleIntegerProperty> brushSize = HelperJFX.nonlinerSlider(10, 2000, 1, 10);
+									brushSize.second.bindBidirectional(newBrush.size);
+									return brushSize.first;
+								})
+								.slider("Blend", 1, 1000, s -> {
+									s.valueProperty().bindBidirectional(newBrush.blend);
+								})
+								.build()));
+					}
+				});
+
+				tabPane.getTabs().addAll(generalTab, paintTab);
+cleanup.add(() ->  tabPane.getTabs().removeAll(generalTab, paintTab));
 			}
 
 			@Override
-			public Node getWidget() {
+			public Node getProperties() {
 				return box;
 			}
 
 			@Override
-			public void remove() {
-				brushesCleanup.run();
+			public void remove(ProjectContext context) {
+brushesCleanup.run();
+cleanup.forEach(Runnable::run);
 			}
 		};
 	}
@@ -600,102 +598,6 @@ public class TrueColorImageNodeWrapper extends Wrapper {
 		node.removeFramesRemoveListeners(framesRemoveListener);
 		node.removeFramesMoveToListeners(framesMoveListener);
 		context.config.nodes.remove(node.id());
-	}
-
-	@Override
-	public Runnable createProperties(ProjectContext context, TabPane tabPane) {
-		List<Runnable> cleanup = new ArrayList<>();
-		Tab generalTab = new Tab("Image");
-		generalTab.setContent(pad(new WidgetFormBuilder()
-				.apply(b -> cleanup.add(nodeFormFields(context, b, node)))
-				.build()));
-
-		Tab paintTab = new Tab("Paint");
-		Main.config.trueColorBrush.addListener(new ChangeListener<Number>() {
-			{
-				changed(null, null, Main.config.trueColorBrush.get());
-			}
-
-			@Override
-			public void changed(
-					ObservableValue<? extends Number> observable, Number oldValue, Number newBrushIndex
-			) {
-				if (newBrushIndex.intValue() >= Main.config.trueColorBrushes.size()) {
-					paintTab.setContent(null);
-					return;
-				}
-				TrueColorBrush newBrush = Main.config.trueColorBrushes.get(newBrushIndex.intValue());
-
-				TrueColorPicker colorPicker = new TrueColorPicker();
-				GridPane.setHalignment(colorPicker, HPos.CENTER);
-				paintTab.setContent(pad(new WidgetFormBuilder()
-						.text("Name", t -> t.textProperty().bindBidirectional(newBrush.name))
-						.span(() -> {
-							return colorPicker;
-						})
-						.check("Use brush color", widget -> {
-							widget.selectedProperty().bindBidirectional(newBrush.useColor);
-							widget.selectedProperty().addListener(new ChangeListener<Boolean>() {
-								Runnable pickerBindingCleanup;
-
-								{
-									changed(null, null, widget.isSelected());
-								}
-
-								@Override
-								public void changed(
-										ObservableValue<? extends Boolean> observable,
-										Boolean oldValue,
-										Boolean newValue
-								) {
-									SimpleObjectProperty<TrueColor> color;
-									if (newValue)
-										color = newBrush.color;
-									else
-										color = context.config.trueColor;
-
-									if (pickerBindingCleanup != null) {
-										pickerBindingCleanup.run();
-										pickerBindingCleanup = null;
-									}
-									pickerBindingCleanup = CustomBinding.<TrueColor, Color>bindBidirectional(color,
-											colorPicker.colorProxyProperty,
-											c -> Optional.of(c.toJfx()),
-											c -> {
-												TrueColor out = new TrueColor();
-												out.r = (byte) (c.getRed() * 255);
-												out.g = (byte) (c.getGreen() * 255);
-												out.b = (byte) (c.getBlue() * 255);
-												out.a = (byte) (c.getOpacity() * 255);
-												return Optional.of(out);
-											}
-									);
-								}
-							});
-						})
-						.custom("Size", () -> {
-							Pair<Node, SimpleIntegerProperty> brushSize = HelperJFX.nonlinerSlider(10, 2000, 1, 10);
-							brushSize.second.bindBidirectional(newBrush.size);
-							return brushSize.first;
-						})
-						.slider("Blend", 1, 1000, s -> {
-							s.valueProperty().bindBidirectional(newBrush.blend);
-						})
-						.build()));
-			}
-		});
-
-		tabPane.getTabs().addAll(generalTab, paintTab);
-
-		return () -> {
-			tabPane.getTabs().removeAll(generalTab, paintTab);
-			cleanup.forEach(c -> c.run());
-		};
-	}
-
-	@Override
-	public void render(TrueColorImage out, int frame, Rectangle crop, double opacity) {
-		render(out, findFrame(frame), crop, opacity * ((double) node.opacity() / opacityMax));
 	}
 
 	@Override

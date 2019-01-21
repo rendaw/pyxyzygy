@@ -1,20 +1,38 @@
 package com.zarbosoft.shoedemo;
 
+import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.Pair;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
-import javafx.scene.control.Slider;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
+import javafx.scene.image.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import org.apache.batik.dom.svg.SVGDOMImplementation;
+import org.apache.batik.ext.awt.image.codec.PNGEncodeParam;
+import org.apache.batik.ext.awt.image.codec.PNGImageEncoder;
+import org.apache.batik.transcoder.TranscoderException;
+import org.apache.batik.transcoder.TranscoderInput;
+import org.apache.batik.transcoder.TranscoderOutput;
+import org.apache.batik.transcoder.TranscodingHints;
+import org.apache.batik.transcoder.image.ImageTranscoder;
+import org.apache.batik.util.SVGConstants;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 import java.text.DecimalFormat;
 import java.util.Optional;
 import java.util.function.Function;
+
+import static com.zarbosoft.rendaw.common.Common.uncheck;
 
 public class HelperJFX {
 	public static Node pad(Node node) {
@@ -49,8 +67,7 @@ public class HelperJFX {
 		Function<Integer, Double> toNonlinear = v -> Math.pow((v - min) / range, 0.5);
 		SimpleIntegerProperty value = new SimpleIntegerProperty();
 
-		CustomBinding.bindBidirectional(
-				value,
+		CustomBinding.bindBidirectional(value,
 				slider.valueProperty(),
 				v -> Optional.of(toNonlinear.apply(v.intValue())),
 				v -> Optional.of(fromNonlinear.apply(v.doubleValue()))
@@ -59,15 +76,170 @@ public class HelperJFX {
 		textFormat.setMaximumFractionDigits(precision);
 		CustomBinding.bindBidirectional(value,
 				text.textProperty(),
-				v -> Optional.of(textFormat.format((double)v.intValue() / divide)),
+				v -> Optional.of(textFormat.format((double) v.intValue() / divide)),
 				v -> {
 					try {
-						return Optional.of((int)(Double.parseDouble(v) * divide));
+						return Optional.of((int) (Double.parseDouble(v) * divide));
 					} catch (NumberFormatException e) {
 						return Optional.empty();
 					}
-				});
+				}
+		);
 
 		return new Pair<>(out, value);
+	}
+
+	public static Image iconSize(String resource, int width, int height) {
+		return uncheck(() -> {
+			TranscodingHints hints = new TranscodingHints();
+			hints.put(ImageTranscoder.KEY_WIDTH, (float) width); //your image width
+			hints.put(ImageTranscoder.KEY_HEIGHT, (float) height); //your image height
+			hints.put(ImageTranscoder.KEY_DOM_IMPLEMENTATION, SVGDOMImplementation.getDOMImplementation());
+			hints.put(ImageTranscoder.KEY_DOCUMENT_ELEMENT_NAMESPACE_URI, SVGConstants.SVG_NAMESPACE_URI);
+			hints.put(ImageTranscoder.KEY_DOCUMENT_ELEMENT, SVGConstants.SVG_SVG_TAG);
+			hints.put(ImageTranscoder.KEY_XML_PARSER_VALIDATING, false);
+			final BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+			ImageTranscoder transcoder = new ImageTranscoder() {
+				@Override
+				public BufferedImage createImage(int i, int i1) {
+					return image;
+				}
+
+				@Override
+				public void writeImage(
+						BufferedImage bufferedImage, TranscoderOutput transcoderOutput
+				) throws TranscoderException {
+
+				}
+			};
+			transcoder.setTranscodingHints(hints);
+			uncheck(() -> transcoder.transcode(new TranscoderInput(Window.class.getResourceAsStream("icons/" +
+					resource)), null));
+			ByteArrayOutputStream pngOut = new ByteArrayOutputStream();
+			new PNGImageEncoder(pngOut, PNGEncodeParam.getDefaultEncodeParam(image)).encode(image);
+			return new Image(new ByteArrayInputStream(pngOut.toByteArray()));
+		});
+	}
+
+	public static Image icon(String resource) {
+		return ProjectContext.iconCache.computeIfAbsent(resource, r -> iconSize(resource, 16, 16));
+	}
+
+	public static MenuItem menuItem(String icon) {
+		return new MenuItem(null, new ImageView(icon(icon)));
+	}
+
+	public static MenuButton menuButton(String icon) {
+		return new MenuButton(null, new ImageView(icon(icon)));
+	}
+
+	public static class IconToggleButton extends ToggleButton{
+		public IconToggleButton(String icon, String hint) {
+			super(null, new ImageView(icon(icon)));
+			Tooltip.install(this, new Tooltip(hint));
+		}
+	}
+
+	public static Button button(String icon, String hint) {
+		Button out = new Button(null, new ImageView(icon(icon)));
+		Tooltip.install(out, new Tooltip(hint));
+		return out;
+	}
+
+	public static WritableImage toImage(TrueColorImage image, int zoom) {
+		final int width = image.getWidth() * zoom;
+		final int height = image.getHeight() * zoom;
+		return new WritableImage(new PixelReader() {
+				byte[] premultipliedData;
+				byte[] data;
+
+				@Override
+				public PixelFormat getPixelFormat() {
+					return PixelFormat.getByteBgraInstance();
+				}
+
+				@Override
+				public int getArgb(int x, int y) {
+					throw new Assertion();
+				}
+
+				@Override
+				public Color getColor(int x, int y) {
+					throw new Assertion();
+				}
+
+				@Override
+				public <T extends Buffer> void getPixels(
+						int x, int y, int w, int h, WritablePixelFormat<T> pixelformat, T buffer, int scanlineStride
+				) {
+					if (scanlineStride != w * 4)
+						throw new Assertion();
+					byte[] data = pixelformat.isPremultiplied() ? (
+							premultipliedData == null ?
+									premultipliedData = image.dataPremultiplied(zoom) :
+									premultipliedData
+					) : (this.data == null ? this.data = image.data(zoom) : this.data);
+					if (w == width) {
+						if (x != 0)
+							throw new Assertion();
+						((ByteBuffer) buffer).put(data, y * width * 4, h * width * 4);
+					} else {
+						if (x + w > width)
+							throw new Assertion();
+						if (y + h > height)
+							throw new Assertion();
+						for (int i = y; i < y + h; ++i) {
+							((ByteBuffer) buffer).put(data, (i * width + x) * 4, scanlineStride);
+						}
+					}
+				}
+
+				@Override
+				public void getPixels(
+						int x,
+						int y,
+						int w,
+						int h,
+						WritablePixelFormat<ByteBuffer> pixelformat,
+						byte[] buffer,
+						int offset,
+						int scanlineStride
+				) {
+					if (scanlineStride != w * 4)
+						throw new Assertion();
+					byte[] data = pixelformat.isPremultiplied() ? (
+							premultipliedData == null ?
+									premultipliedData = image.dataPremultiplied(zoom) :
+									premultipliedData
+					) : (this.data == null ? this.data = image.data(zoom) : this.data);
+					if (w == width) {
+						if (x != 0)
+							throw new Assertion();
+						System.arraycopy(data, y * width * 4, buffer, offset, h * width * 4);
+					} else {
+						if (x + w > width)
+							throw new Assertion();
+						if (y + h > height)
+							throw new Assertion();
+						for (int i = y; i < y + h; ++i) {
+							System.arraycopy(data, (i * width + x) * 4, buffer, offset + i * w * 4, scanlineStride);
+						}
+					}
+				}
+
+				@Override
+				public void getPixels(
+						int x,
+						int y,
+						int w,
+						int h,
+						WritablePixelFormat<IntBuffer> pixelformat,
+						int[] buffer,
+						int offset,
+						int scanlineStride
+				) {
+					throw new Assertion();
+				}
+			}, width, height);
 	}
 }

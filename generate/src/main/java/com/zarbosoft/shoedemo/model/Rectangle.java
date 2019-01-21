@@ -25,6 +25,7 @@ public class Rectangle {
 
 	/**
 	 * Returns a new rect that would encompass this rect if multiplied by the step value
+	 *
 	 * @param step
 	 * @return
 	 */
@@ -45,5 +46,16 @@ public class Rectangle {
 	@Override
 	public String toString() {
 		return String.format("r[%s %s %s %s]", x, y, width, height);
+	}
+
+	public Rectangle expand(Rectangle bounds) {
+		final int x = Math.min(this.x, bounds.x);
+		final int y = Math.min(this.y, bounds.y);
+		return new Rectangle(
+				x,
+				y,
+				Math.max(this.x + width, bounds.x + bounds.width) - x,
+				Math.max(this.y + height, bounds.y + bounds.height) - y
+		);
 	}
 }

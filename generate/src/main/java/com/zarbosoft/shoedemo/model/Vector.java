@@ -27,6 +27,10 @@ public class Vector {
 				.recordEnd();
 	}
 
+	public Vector multiply(int tileSize) {
+		return new Vector(x * tileSize, y * tileSize);
+	}
+
 	public static class Deserializer extends StackReader.RecordState {
 		int x;
 		int y;
@@ -38,7 +42,7 @@ public class Vector {
 				return;
 			}
 			if ("y".equals(key)) {
-				x = Integer.parseInt((String) value);
+				y = Integer.parseInt((String) value);
 				return;
 			}
 			throw new IllegalStateException("Unknown key");

@@ -17,12 +17,12 @@ public class Editor {
 	private final ProjectContext context;
 	private final com.zarbosoft.shoedemo.Window window;
 	private WidgetHandle viewHandle;
-	private WidgetHandle propertiesHandle;
 	private final VBox layout;
 	public final StackPane outerCanvas;
 	public final Pane canvas;
 	private final Group canvasInner;
-	private DoubleRectangle oldBounds = new DoubleRectangle(0, 0, 0, 0);
+	private Runnable editCleanup;
+	private Wrapper edit;
 
 	/**
 	 * Returns a vector from a JavaFX canvas point relative to the image origin in image pixels
@@ -76,7 +76,6 @@ public class Editor {
 				.build();
 		if (window.selectedForView.get() != null)
 			window.selectedForView.get().setViewport(context, newBounds, calculatePositiveZoom(view));
-		oldBounds = newBounds;
 	}
 
 	public int calculatePositiveZoom(Wrapper view) {
@@ -225,6 +224,12 @@ public class Editor {
 			}
 			pointerEventState.previous = end;
 		});
+		outerCanvas.addEventFilter(MouseEvent.MOUSE_MOVED,e -> {
+			if (edit == null) return;
+			Wrapper view = window.selectedForView.get();
+			if (view == null) return;
+			edit.cursorMoved(context, normalizeEventCoordinates(view, e));
+		} );
 		outerCanvas.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
 			if (false) {
 				throw new DeadCode();
@@ -272,21 +277,11 @@ public class Editor {
 					updateBounds();
 					viewHandle = newView.buildCanvas(context);
 					canvasInner.getChildren().add(viewHandle.getWidget());
-					propertiesHandle = newView.buildCanvasProperties(context);
-					if (propertiesHandle != null) {
-						VBox.setVgrow(propertiesHandle.getWidget(), Priority.NEVER);
-						layout.getChildren().add(0, propertiesHandle.getWidget());
-					}
 					cleanup = () -> {
 						newView.getConfig().zoom.removeListener(zoomListener);
 						canvasInner.getChildren().clear();
 						viewHandle.remove();
 						viewHandle = null;
-						if (propertiesHandle != null) {
-							layout.getChildren().remove(propertiesHandle.getWidget());
-							propertiesHandle.remove();
-							propertiesHandle = null;
-						}
 					};
 				} else {
 					canvas.scaleXProperty().unbind();
@@ -298,5 +293,21 @@ public class Editor {
 
 	public Node getWidget() {
 		return layout;
+	}
+
+	public void setEdit(Wrapper edit, Wrapper.EditControlsHandle editControls) {
+		if (editCleanup != null) {
+			editCleanup.run();
+			editCleanup = null;
+		}
+		this.edit = edit;
+		Node header = editControls.getProperties();
+		VBox.setVgrow(header, Priority.NEVER);
+		layout.getChildren().add(0, header);
+		if (header != null) {
+			editCleanup = () -> {
+				layout.getChildren().remove(header);
+			};
+		}
 	}
 }

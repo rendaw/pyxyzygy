@@ -7,9 +7,7 @@ import com.zarbosoft.shoedemo.model.Vector;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
-import javafx.geometry.Orientation;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
@@ -27,7 +25,7 @@ import static com.zarbosoft.rendaw.common.Common.last;
 import static com.zarbosoft.shoedemo.Main.moveTo;
 import static com.zarbosoft.shoedemo.Main.opacityMax;
 import static com.zarbosoft.shoedemo.ProjectContext.uniqueName;
-import static com.zarbosoft.shoedemo.Window.icon;
+import static com.zarbosoft.shoedemo.HelperJFX.icon;
 import static com.zarbosoft.shoedemo.Wrapper.TakesChildren.NONE;
 
 public class Structure {
@@ -257,14 +255,14 @@ public class Structure {
 			image.initialFramesAdd(context, ImmutableList.of(frame));
 			addNew(image);
 		});
-		MenuButton addButton = Window.menuButton("plus.svg");
+		MenuButton addButton = HelperJFX.menuButton("plus.svg");
 		addButton.getItems().addAll(addCamera, addGroup, addImage);
-		Button removeButton = Window.button("minus.svg", "Remove");
+		Button removeButton = HelperJFX.button("minus.svg", "Remove");
 		removeButton.disableProperty().bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedIndices()));
 		removeButton.setOnAction(e -> {
 			delete(context);
 		});
-		Button moveUpButton = Window.button("arrow-up.svg", "Move Up");
+		Button moveUpButton = HelperJFX.button("arrow-up.svg", "Move Up");
 		moveUpButton.disableProperty().bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedIndices()));
 		moveUpButton.setOnAction(e -> {
 			List<TreeItem<Wrapper>> selected = tree.getSelectionModel().getSelectedItems();
@@ -291,7 +289,7 @@ public class Structure {
 			}
 			context.history.finishChange();
 		});
-		Button moveDownButton = Window.button("arrow-down.svg", "Move Down");
+		Button moveDownButton = HelperJFX.button("arrow-down.svg", "Move Down");
 		moveDownButton.disableProperty().bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedIndices()));
 		moveDownButton.setOnAction(e -> {
 			List<TreeItem<Wrapper>> selected = tree.getSelectionModel().getSelectedItems();
@@ -318,7 +316,7 @@ public class Structure {
 			}
 			context.history.finishChange();
 		});
-		Button duplicateButton = Window.button("content-copy.svg", "Duplicate");
+		Button duplicateButton = HelperJFX.button("content-copy.svg", "Duplicate");
 		duplicateButton.disableProperty().bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedIndices()));
 		duplicateButton.setOnAction(e -> {
 			duplicate();
@@ -335,7 +333,7 @@ public class Structure {
 		linkAfterButton.setOnAction(e -> {
 			placeAfter();
 		});
-		MenuButton linkButton = Window.menuButton("content-paste.svg");
+		MenuButton linkButton = HelperJFX.menuButton("content-paste.svg");
 		linkButton.getItems().addAll(linkBeforeButton, linkInButton, linkAfterButton);
 		toolbar = new ToolBar(addButton, duplicateButton, removeButton, moveUpButton, moveDownButton, linkButton);
 		layout.getChildren().addAll(toolbar, tree);

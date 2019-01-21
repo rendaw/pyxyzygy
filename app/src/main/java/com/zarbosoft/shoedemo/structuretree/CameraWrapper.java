@@ -3,6 +3,7 @@ package com.zarbosoft.shoedemo.structuretree;
 import com.zarbosoft.shoedemo.*;
 import com.zarbosoft.shoedemo.model.Camera;
 import com.zarbosoft.shoedemo.model.ProjectNode;
+import com.zarbosoft.shoedemo.wrappers.group.GroupNodeWrapper;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.control.Spinner;
@@ -20,7 +21,6 @@ import java.util.List;
 
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 import static com.zarbosoft.shoedemo.Main.nodeFormFields;
-import static com.zarbosoft.shoedemo.Main.opacityMax;
 
 public class CameraWrapper extends GroupNodeWrapper {
 	private final Camera node;
@@ -128,7 +128,7 @@ public class CameraWrapper extends GroupNodeWrapper {
 	}
 
 	@Override
-	public Runnable createProperties(ProjectContext context, TabPane tabPane) {
+	public EditControlsHandle buildEditControls(ProjectContext context, TabPane tabPane) {
 		List<Runnable> miscCleanup = new ArrayList<>();
 		Tab tab = new Tab("Camera", new WidgetFormBuilder()
 				.apply(b -> miscCleanup.add(nodeFormFields(context, b, node)))
@@ -163,20 +163,28 @@ public class CameraWrapper extends GroupNodeWrapper {
 						for (int i = 0; i < node.end(); ++i) {
 							if (i != 0)
 								canvas.clear();
-							render(canvas, i, crop, (double) node.opacity() / opacityMax);
+							Render.render(context,node, canvas ,i ,crop , 1.0);
 							canvas.serialize(renderPath.resolve(String.format("frame%06d.png", i)).toString());
 						}
 					}));
 				})
 				.build());
 		tabPane.getTabs().addAll(tab);
-		return () -> {
-			tabPane.getTabs().removeAll(tab);
-			propertiesWidth = null;
-			propertiesHeight = null;
-			propertiesEndFrame = null;
-			propertiesFrameRate = null;
-			miscCleanup.forEach(c -> c.run());
+		return new EditControlsHandle() {
+			@Override
+			public Node getProperties() {
+				return null;
+			}
+
+			@Override
+			public void remove(ProjectContext context) {
+				tabPane.getTabs().removeAll(tab);
+				propertiesWidth = null;
+				propertiesHeight = null;
+				propertiesEndFrame = null;
+				propertiesFrameRate = null;
+				miscCleanup.forEach(c -> c.run());
+			}
 		};
 	}
 }

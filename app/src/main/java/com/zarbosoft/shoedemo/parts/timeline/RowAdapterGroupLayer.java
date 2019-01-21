@@ -6,14 +6,14 @@ import com.zarbosoft.shoedemo.WidgetHandle;
 import com.zarbosoft.shoedemo.Window;
 import com.zarbosoft.shoedemo.model.GroupLayer;
 import com.zarbosoft.shoedemo.model.ProjectNode;
-import com.zarbosoft.shoedemo.structuretree.GroupNodeWrapper;
+import com.zarbosoft.shoedemo.wrappers.group.GroupNodeWrapper;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ObservableObjectValue;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.image.Image;
 
-import static com.zarbosoft.shoedemo.Window.icon;
+import static com.zarbosoft.shoedemo.HelperJFX.icon;
 
 public class RowAdapterGroupLayer extends RowAdapter {
 	private final GroupNodeWrapper wrapper;

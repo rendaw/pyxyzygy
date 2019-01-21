@@ -90,8 +90,6 @@ class TrueColorImage {
 		int const w;
 		int const h;
 		uint8_t * const pixels;
-		size_t calculatedPixelsSize;
-		uint8_t * calculatedPixels;
 };
 
 #ifdef SWIG

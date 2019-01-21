@@ -1,18 +1,16 @@
-package com.zarbosoft.shoedemo.structuretree;
+package com.zarbosoft.shoedemo.wrappers.group;
 
 import com.google.common.collect.ImmutableList;
 import com.zarbosoft.shoedemo.*;
+import com.zarbosoft.shoedemo.config.GroupNodeConfig;
 import com.zarbosoft.shoedemo.config.NodeConfig;
 import com.zarbosoft.shoedemo.model.*;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.scene.Group;
-import javafx.scene.Node;
-import javafx.scene.control.Tab;
-import javafx.scene.control.TabPane;
-import javafx.scene.control.TreeItem;
+import javafx.scene.control.*;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -21,41 +19,46 @@ import static com.zarbosoft.shoedemo.ProjectContext.uniqueName1;
 
 public class GroupNodeWrapper extends Wrapper {
 	private final Wrapper parent;
-	private final GroupNode node;
-	private final NodeConfig config;
-	private final ObservableList<Wrapper> children = FXCollections.observableArrayList();
+	final GroupNode node;
+	final GroupNodeConfig config;
+	final ObservableList<Wrapper> children = FXCollections.observableArrayList();
 	private final Runnable layerListenCleanup;
 
-	private DoubleRectangle bounds;
-	private GroupLayer specificLayer;
-	private DoubleVector markStart;
-	private Vector markStartOffset;
-	private int currentFrame = 0;
+	GroupLayer specificLayer;
+	int currentFrame = 0;
+	Tool tool = null;
+	GroupNodeCanvasHandle canvasHandle;
+
+	final SimpleIntegerProperty positiveZoom = new SimpleIntegerProperty(0);
+	final SimpleObjectProperty<Vector> mousePosition = new SimpleObjectProperty<>(new Vector(0, 0));
 
 	public GroupNodeWrapper(ProjectContext context, Wrapper parent, int parentIndex, GroupNode node) {
 		this.parentIndex = parentIndex;
 		this.parent = parent;
 		this.node = node;
-		config = context.config.nodes.computeIfAbsent(node.id(),id->new NodeConfig());
+		config = (GroupNodeConfig) context.config.nodes.computeIfAbsent(node.id(), id -> new GroupNodeConfig());
 
 		tree.set(new TreeItem<>(this));
 
-		layerListenCleanup = node.mirrorLayers(children,
-				layer -> {
+		layerListenCleanup = node.mirrorLayers(children, layer -> {
+			System.out.format("creating group node child 1.\n");
 			return Window.createNode(context, this, -1, layer);
-				},
-				child -> child.remove(context),
-				at -> {
-					for (int i = at; i < children.size(); ++i)
-						children.get(i).parentIndex = i;
-				}
-		);
+		}, child -> {
+			System.out.format("removing group node child 1.\n");
+			child.remove(context);
+		}, at -> {
+			for (int i = at; i < children.size(); ++i)
+				children.get(i).parentIndex = i;
+		});
 		mirror(children, tree.get().getChildren(), child -> {
+			System.out.format("creating group node child 2.\n");
 			child.tree.addListener((observable, oldValue, newValue) -> {
 				tree.get().getChildren().set(child.parentIndex, newValue);
 			});
 			return child.tree.get();
-		}, noopConsumer(), noopConsumer());
+		}, c -> {
+			System.out.format("removing group node child 2.\n");
+		}, noopConsumer());
 	}
 
 	@Override
@@ -82,69 +85,35 @@ public class GroupNodeWrapper extends Wrapper {
 	public void setViewport(
 			ProjectContext context, DoubleRectangle newBounds, int zoom
 	) {
-		this.bounds = newBounds;
+		this.positiveZoom.set(zoom);
 		children.forEach(c -> c.setViewport(context, newBounds, zoom));
 	}
 
 	@Override
 	public WidgetHandle buildCanvas(ProjectContext context) {
-		return new WidgetHandle() {
-			private Group canvas;
-			private final Runnable layerListenCleanup;
-			private final ProjectNode.OpacitySetListener opacityListener;
-			private final ObservableList<WidgetHandle> childHandles = FXCollections.observableArrayList();
+		if (canvasHandle == null) {
+			canvasHandle = new GroupNodeCanvasHandle(this, context);
+		}
+		return canvasHandle;
+	}
 
-			{
-				canvas = new Group();
-				layerListenCleanup = mirror(children,
-						childHandles,
-						c -> {
-					return c.buildCanvas(context);
-						},
-						h -> h.remove(),
-						noopConsumer()
-				);
-				mirror(childHandles, canvas.getChildren(), h -> {
-					return h.getWidget();}, noopConsumer(), noopConsumer());
-				this.opacityListener = node.addOpacitySetListeners((target, value) -> {
-					if (canvas != null) {
-						canvas.setOpacity((double) value / opacityMax);
-					}
-				});
-			}
-
-			@Override
-			public Node getWidget() {
-				return canvas;
-			}
-
-			@Override
-			public void remove() {
-				canvas = null;
-				childHandles.forEach(c -> c.remove());
-				node.removeOpacitySetListeners(opacityListener);
-				layerListenCleanup.run();
-			}
-		};
+	@Override
+	public EditControlsHandle buildEditControls(ProjectContext context, TabPane tabPane) {
+		return new GroupNodeEditHandle(this, context, tabPane);
 	}
 
 	@Override
 	public void markStart(ProjectContext context, DoubleVector start) {
-		if (specificLayer == null)
+		if (tool == null)
 			return;
-		this.markStart = start;
-		GroupPositionFrame pos = GroupLayerWrapper.findPosition(specificLayer, currentFrame).frame;
-		this.markStartOffset = pos.offset();
+		tool.markStart(context, start);
 	}
 
 	@Override
 	public void mark(ProjectContext context, DoubleVector start, DoubleVector end) {
-		if (specificLayer == null)
+		if (tool == null)
 			return;
-		GroupPositionFrame pos = GroupLayerWrapper.findPosition(specificLayer, currentFrame).frame;
-		context.history.change(c -> c
-				.groupPositionFrame(pos)
-				.offsetSet(end.minus(markStart).plus(markStartOffset).toInt()));
+		tool.mark(context, start, end);
 	}
 
 	@Override
@@ -202,25 +171,13 @@ public class GroupNodeWrapper extends Wrapper {
 	@Override
 	public ProjectNode separateClone(ProjectContext context) {
 		GroupNode clone = GroupNode.create(context);
-		cloneSet(context,clone );
+		cloneSet(context, clone);
 		return clone;
-	}
-
-	@Override
-	public void render(TrueColorImage out, int frame, Rectangle crop, double opacity) {
-		double useOpacity = opacity * ((double)node.opacity() / opacityMax);
-		for (Wrapper child : children)
-			child.render(out, frame, crop, useOpacity);
 	}
 
 	@Override
 	public void removeChild(ProjectContext context, int index) {
 		context.history.change(c -> c.groupNode(node).layersRemove(index, 1));
-	}
-
-	@Override
-	public WidgetHandle buildCanvasProperties(ProjectContext context) {
-		return null;
 	}
 
 	@Override
@@ -240,18 +197,13 @@ public class GroupNodeWrapper extends Wrapper {
 		context.config.nodes.remove(node.id());
 	}
 
-	@Override
-	public Runnable createProperties(ProjectContext context, TabPane tabPane) {
-		List<Runnable> cleanup = new ArrayList<>();
-		Tab tab = new Tab("Group", new WidgetFormBuilder().apply(b -> cleanup.add(nodeFormFields(context, b, node))).build());
-		tabPane.getTabs().addAll(tab);
-		return () -> {
-tabPane.getTabs().removeAll(tab);
-			cleanup.forEach(c -> c.run());
-		};
-	}
-
 	public void setSpecificLayer(GroupLayer layer) {
 		this.specificLayer = layer;
+	}
+
+	@Override
+	public void cursorMoved(ProjectContext context, DoubleVector vector) {
+		mousePosition.set(vector.toInt());
+		System.out.format("mouse %s\n", vector);
 	}
 }

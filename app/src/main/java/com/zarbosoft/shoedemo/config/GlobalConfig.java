@@ -23,4 +23,7 @@ public class GlobalConfig extends ConfigBase {
 
 	@Configuration
 	public int maxUndo = 1000;
+
+	@Configuration
+	public int tileSize = 32;
 }

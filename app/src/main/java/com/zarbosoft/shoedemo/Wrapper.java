@@ -6,6 +6,7 @@ import com.zarbosoft.shoedemo.model.ProjectObject;
 import com.zarbosoft.shoedemo.model.Rectangle;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.scene.Node;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TreeItem;
 
@@ -30,20 +31,20 @@ public abstract class Wrapper {
 
 	public abstract WidgetHandle buildCanvas(ProjectContext context);
 
+	public abstract void cursorMoved(ProjectContext context, DoubleVector vector);
+
+	public abstract static class EditControlsHandle {
+		public abstract Node getProperties();
+		public abstract void remove(ProjectContext context);
+	}
+
+	public abstract EditControlsHandle buildEditControls(ProjectContext context, TabPane leftTabs);
+
 	public abstract void mark(ProjectContext context, DoubleVector start, DoubleVector end);
 
 	public abstract void setFrame(ProjectContext context, int frameNumber);
 
 	public abstract void remove(ProjectContext context);
-
-	/**
-	 * Used in ProjectNode wrappers only
-	 *
-	 * @param context
-	 * @param leftTabs
-	 * @return
-	 */
-	public abstract Runnable createProperties(ProjectContext context, TabPane leftTabs);
 
 	public abstract void markStart(ProjectContext context, DoubleVector start);
 
@@ -61,17 +62,7 @@ public abstract class Wrapper {
 
 	public abstract ProjectNode separateClone(ProjectContext context);
 
-	/**
-	 * @param gc      for canvas with w/h = crop w/h
-	 * @param frame   frame to render
-	 * @param crop    viewport of render
-	 * @param opacity opacity of this subtree
-	 */
-	public abstract void render(TrueColorImage output, int frame, Rectangle crop, double opacity);
-
 	public abstract void removeChild(ProjectContext context, int index);
-
-	public abstract WidgetHandle buildCanvasProperties(ProjectContext context);
 
 	public static enum TakesChildren {
 		NONE,

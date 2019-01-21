@@ -11,17 +11,102 @@
 
 static int const channels = 4;
 
+static int posCeilDiv(int x, int y) {
+	return (x + y - 1) / y;
+}
+
+template <class T> static T msq(T const &a) {
+	return a * a;
+}
+
+static unsigned int scratchBitWidth = 0;
+static unsigned int scratchHeight = 0;
+static unsigned int scratchByteWidth;
+static uint8_t *scratch = nullptr;
+
+static void clearScratch() {
+	memset(scratch, 0, scratchHeight * scratchByteWidth);
+}
+
+static void prepareBitScratch(int const width, int const height) {
+	if (scratch == nullptr || scratchHeight < height || scratchBitWidth < width) {
+		scratchBitWidth = width;
+		scratchByteWidth = posCeilDiv(width, 8);
+		scratchHeight = height;
+		delete [] scratch;
+		scratch = new uint8_t[scratchHeight * scratchByteWidth];
+	}
+	clearScratch();
+}
+
+static void prepareByteScratch(int const width, int const height) {
+	if (scratch == nullptr || scratchHeight < height || scratchByteWidth < width) {
+		scratchByteWidth = width;
+		scratchBitWidth = width * 8;
+		scratchHeight = height;
+		delete [] scratch;
+		scratch = new uint8_t[scratchHeight * scratchByteWidth];
+	}
+	clearScratch();
+}
+
+static uint8_t getBitScratch(unsigned int x, unsigned int y) {
+	if (y >= scratchHeight) {
+		return 0;
+	}
+	if (x >= scratchBitWidth) {
+		return 0;
+	}
+	unsigned int bit = x % 8;
+	x = x / 8;
+	return (scratch[y * scratchByteWidth + x] >> bit) & 1u;
+}
+
+static void setBitScratch(unsigned int x, unsigned int y) {
+	fflush(stdout);
+	assert(x < scratchBitWidth);
+	assert(y < scratchHeight);
+	//printf("\tp %u %u\n", x, y);
+	unsigned int bit = x % 8;
+	x = x / 8;
+	scratch[y * scratchByteWidth + x] |= 1u << bit;
+	//debugScratch();
+	//debugRawScratch();
+}
+
+static void setBitScratchLine(unsigned int y, unsigned int start, unsigned int end) {
+	//printf("fl y %u, %u - %u\n", y, start, end);
+	fflush(stdout);
+	assert(end <= scratchBitWidth);
+	assert(y < scratchHeight);
+	unsigned int alignedStart = posCeilDiv(start, 8);
+	unsigned int alignedEnd = std::min(scratchByteWidth, end / 8);
+	//printf("\talign start %u end %u\n", alignedStart, alignedEnd);
+	if (alignedEnd < alignedStart) {
+		for (unsigned int x = start; x < end; ++x) {
+			setBitScratch(x, y);
+		}
+	} else {
+		for (unsigned int x = start; x < alignedStart * 8; ++x) {
+			setBitScratch(x, y);
+		}
+		memset(&scratch[y * scratchByteWidth + alignedStart], 0xff, alignedEnd - alignedStart);
+		for (unsigned int x = alignedEnd * 8; x < end; ++x) {
+			setBitScratch(x, y);
+		}
+	}
+}
+
 ROBytes::ROBytes(size_t const size, uint8_t const * const data) : size(size), data(data) {
 }
 
 TrueColorImage::TrueColorImage(int w, int h, uint8_t * const pixels) :
-   	w(w), h(h), pixels(pixels), calculatedPixelsSize(0), calculatedPixels(nullptr) {
+   	w(w), h(h), pixels(pixels) {
 }
 
 TrueColorImage::~TrueColorImage() {
 	fflush(stdout);
 	delete [] pixels;
-	delete [] calculatedPixels;
 }
 
 TrueColorImage * TrueColorImage::create(int w, int h) {
@@ -60,25 +145,20 @@ TrueColorImage * TrueColorImage::copy(int x0, int y0, int w0, int h0) const {
 }
 
 template <class T> ROBytes TrueColorImage::calculateZoomedData(int const zoom, T calculate) {
-	size_t const newSize = (h * zoom) * (w * zoom) * channels;
-	if (newSize != calculatedPixelsSize) {
-		calculatedPixelsSize = newSize;
-		delete [] calculatedPixels;
-		calculatedPixels = new uint8_t[newSize];
-	}
+	prepareByteScratch(w * zoom * channels, h * zoom);
 	for (int y = 0; y < h; ++y) {
 		for (int x = 0; x < w; ++x) {
 			uint8_t const * const source = &pixels[(y * w + x) * channels];
-			uint8_t *dest = &calculatedPixels[((y * zoom) * (w * zoom) + x * zoom) * channels];
+			uint8_t *dest = &scratch[((y * zoom) * (w * zoom) + x * zoom) * channels];
 			calculate(zoom, dest, source);
 		}
-		uint8_t const * const source = &calculatedPixels[(y * zoom) * (w * zoom) * channels];
+		uint8_t const * const source = &scratch[(y * zoom) * (w * zoom) * channels];
 		for (int j = 1; j < zoom; ++j) {
-			uint8_t *dest = &calculatedPixels[(y * zoom + j) * (w * zoom) * channels];
+			uint8_t *dest = &scratch[(y * zoom + j) * (w * zoom) * channels];
 			memcpy(dest, source, (w * zoom) * channels);
 		}
 	}
-	return {calculatedPixelsSize, calculatedPixels};
+	return {scratchByteWidth * scratchHeight, scratch};
 }
 
 ROBytes TrueColorImage::data(int const zoom) {
@@ -137,89 +217,6 @@ void TrueColorImage::serialize(const char *path) const throw(std::runtime_error)
 		printf("libpng warning: %s\n", img.message);
 	}
 }
-
-static int posCeilDiv(int x, int y) {
-	return (x + y - 1) / y;
-}
-
-static unsigned int scratchWidth = 0;
-static unsigned int scratchHeight = 0;
-static unsigned int scratchByteWidth;
-static uint8_t *scratch = nullptr;
-
-static void clearScratch() {
-	memset(scratch, 0, scratchHeight * scratchByteWidth);
-}
-
-static uint8_t getScratch(unsigned int x, unsigned int y) {
-	if (y >= scratchHeight) {
-		return 0;
-	}
-	if (x >= scratchWidth) {
-		return 0;
-	}
-	unsigned int bit = x % 8;
-	x = x / 8;
-	return (scratch[y * scratchByteWidth + x] >> bit) & 1u;
-}
-
-static void debugScratch() {
-	for (unsigned int y = 0; y < scratchHeight; ++y) {
-		for (unsigned int x = 0; x < scratchWidth; ++x) {
-			printf("%u", getScratch(x, y));
-		}
-		printf("\n");
-	}
-}
-
-static void debugRawScratch() {
-	for (unsigned int y = 0; y < scratchHeight; ++y) {
-		for (unsigned int x = 0; x < scratchByteWidth; ++x) {
-			printf("%03u ", scratch[y * scratchByteWidth + x]);
-		}
-		printf("\n");
-	}
-}
-
-static void setScratch(unsigned int x, unsigned int y) {
-	fflush(stdout);
-	assert(x < scratchWidth);
-	assert(y < scratchHeight);
-	//printf("\tp %u %u\n", x, y);
-	unsigned int bit = x % 8;
-	x = x / 8;
-	scratch[y * scratchByteWidth + x] |= 1u << bit;
-	//debugScratch();
-	//debugRawScratch();
-}
-
-static void setScratchLine(unsigned int y, unsigned int start, unsigned int end) {
-	//printf("fl y %u, %u - %u\n", y, start, end);
-	fflush(stdout);
-	assert(end <= scratchWidth);
-	assert(y < scratchHeight);
-	unsigned int alignedStart = posCeilDiv(start, 8);
-	unsigned int alignedEnd = std::min(scratchByteWidth, end / 8);
-	//printf("\talign start %u end %u\n", alignedStart, alignedEnd);
-	if (alignedEnd < alignedStart) {
-		for (unsigned int x = start; x < end; ++x) {
-			setScratch(x, y);
-		}
-	} else {
-		for (unsigned int x = start; x < alignedStart * 8; ++x) {
-			setScratch(x, y);
-		}
-		memset(&scratch[y * scratchByteWidth + alignedStart], 0xff, alignedEnd - alignedStart);
-		for (unsigned int x = alignedEnd * 8; x < end; ++x) {
-			setScratch(x, y);
-		}
-	}
-}
-
-template <class T> static T msq(T const &a) {
-	return a * a;
-}
-
 
 template<class HandleMeasures, class SetPixelLine> static void strokeSolid(
 	double const x1_0, double const y1_0, double const r1_0,
@@ -487,16 +484,9 @@ void TrueColorImage::stroke(uint8_t cr, uint8_t cg, uint8_t cb, uint8_t ca, doub
 			subpixelLeft = subpixelLeft_0;
 			subpixelRight = subpixelRight_0;
 			//printf("got extents: o %d %d, t %d b %d l %d r %d\n", offsetX, offsetY, subpixelTop, subpixelBottom, subpixelLeft, subpixelRight);
-			if (scratch == nullptr || scratchHeight < subpixelBottom || scratchWidth < subpixelRight) {
-				scratchWidth = subpixelRight;
-				scratchByteWidth = posCeilDiv(subpixelRight, 8);
-				scratchHeight = subpixelBottom;
-				delete [] scratch;
-				scratch = new uint8_t[scratchHeight * scratchByteWidth];
-			}
-			clearScratch();
+			prepareBitScratch(subpixelRight, subpixelBottom);
 		},
-		setScratchLine
+		setBitScratchLine
 	);
 
 	// merge + scale down (w/h / 2)
@@ -515,7 +505,7 @@ void TrueColorImage::stroke(uint8_t cr, uint8_t cg, uint8_t cb, uint8_t ca, doub
 			int subpixelCount = 0;
 			for (int subY = 0; subY < subpixels; ++subY) {
 				for (int subX = 0; subX < subpixels; ++subX) {
-					subpixelCount += getScratch(
+					subpixelCount += getBitScratch(
 						x * subpixels + subX,
 						y * subpixels + subY
 					);

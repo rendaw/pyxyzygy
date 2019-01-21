@@ -35,7 +35,7 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 	public static Map<String, Integer> names = new HashMap<>();
 	public Project project;
 	public ProjectConfig config;
-	public int tileSize = 256;
+	public int tileSize = Main.config.tileSize;
 
 	public History history;
 

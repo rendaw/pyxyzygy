@@ -5,7 +5,7 @@ import com.zarbosoft.shoedemo.WidgetHandle;
 import com.zarbosoft.shoedemo.Window;
 import com.zarbosoft.shoedemo.model.GroupLayer;
 import com.zarbosoft.shoedemo.model.GroupTimeFrame;
-import com.zarbosoft.shoedemo.structuretree.GroupLayerWrapper;
+import com.zarbosoft.shoedemo.wrappers.group.GroupLayerWrapper;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableObjectValue;
 import javafx.beans.value.ObservableValue;

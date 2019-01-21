@@ -1,4 +1,4 @@
-package com.zarbosoft.shoedemo.structuretree;
+package com.zarbosoft.shoedemo.wrappers.group;
 
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.shoedemo.*;
@@ -108,12 +108,15 @@ public class GroupLayerWrapper extends Wrapper {
 		});
 	}
 
-	private int findInnerFrame(int frame) {
+	public static int findInnerFrame(GroupLayer node, int frame) {
 		TimeResult result = findTime(node, frame);
 		int offset = (frame - result.at);
 		if (result.frame.innerLoop() != 0) offset = offset % result.frame.innerLoop();
 		int innerFrame = result.frame.innerOffset() + offset;
 		return innerFrame;
+	}
+	private int findInnerFrame(int frame) {
+		return findInnerFrame(node,frame );
 	}
 
 	public static class TimeResult {
@@ -257,6 +260,11 @@ public class GroupLayerWrapper extends Wrapper {
 	}
 
 	@Override
+	public void cursorMoved(ProjectContext context, DoubleVector vector) {
+
+	}
+
+	@Override
 	public void markStart(ProjectContext context, DoubleVector start) {
 		throw new Assertion();
 	}
@@ -282,24 +290,11 @@ public class GroupLayerWrapper extends Wrapper {
 	}
 
 	@Override
-	public void render(TrueColorImage output, int frame, Rectangle crop, double opacity) {
-		GroupPositionFrame pos = findPosition(frame);
-		frame = findInnerFrame(frame);
-		if (child != null)
-			child.render(output, frame, crop.plus(pos.offset()), opacity);
-	}
-
-	@Override
 	public void removeChild(ProjectContext context, int index) {
 		if (parent == null)
 			context.history.change(c -> c.project(context.project).topRemove(parentIndex, 1));
 		else
 			parent.removeChild(context, parentIndex);
-	}
-
-	@Override
-	public WidgetHandle buildCanvasProperties(ProjectContext context) {
-		return null;
 	}
 
 	@Override
@@ -328,7 +323,7 @@ public class GroupLayerWrapper extends Wrapper {
 	}
 
 	@Override
-	public Runnable createProperties(ProjectContext context, TabPane leftTabs) {
-		return () -> {};
+	public EditControlsHandle buildEditControls(ProjectContext context, TabPane leftTabs) {
+		return null;
 	}
 }

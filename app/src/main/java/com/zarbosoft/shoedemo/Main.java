@@ -56,8 +56,6 @@ public class Main extends Application {
 		config.trueColorBrush.set(1);
 		return config;
 	});
-	public final static String SETTING_LAST_DIR = "lastdir";
-	public final static String SETTING_MAX_UNDO = "maxundo";
 
 	public final static int NO_LOOP = 0;
 	public final static int NO_LENGTH = -1;
@@ -210,7 +208,7 @@ public class Main extends Application {
 									c.getAddedSubList().stream().map(add).collect(Collectors.toList())
 							);
 						} else if (c.wasRemoved()) {
-							List<R> removing = target.subList(c.getFrom(), c.getTo());
+							List<R> removing = target.subList(c.getFrom(), c.getFrom() + c.getRemovedSize());
 							removing.forEach(remove);
 							removing.clear();
 						} else if (c.wasPermutated()) {
