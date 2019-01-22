@@ -3,6 +3,10 @@ package com.zarbosoft.shoedemo;
 import com.zarbosoft.luxem.read.StackReader;
 import com.zarbosoft.luxem.write.RawWriter;
 import com.zarbosoft.shoedemo.model.Vector;
+import javafx.geometry.BoundingBox;
+import javafx.geometry.Bounds;
+import javafx.geometry.Point2D;
+import javafx.geometry.Point3D;
 
 public class DoubleVector {
 	public final double x;
@@ -52,5 +56,9 @@ public class DoubleVector {
 
 	public DoubleVector multiply(DoubleVector factors) {
 		return new DoubleVector(x * factors.x, y * factors.y);
+	}
+
+	public Point2D toJfx() {
+		return new Point2D(x,y );
 	}
 }

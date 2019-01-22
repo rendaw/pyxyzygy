@@ -102,28 +102,24 @@ public class Editor {
 
 		outerCanvas = new StackPane();
 		VBox.setVgrow(outerCanvas, Priority.ALWAYS);
-		outerCanvas
-				.backgroundProperty()
-				.bind(Bindings.createObjectBinding(() -> new Background(new BackgroundFill(context.config.backgroundColor
-								.get()
-								.toJfx(), CornerRadii.EMPTY, Insets.EMPTY)),
-						context.config.backgroundColor
-				));
+		outerCanvas.backgroundProperty().bind(Bindings.createObjectBinding(() -> new Background(new BackgroundFill(
+				context.config.backgroundColor.get().toJfx(),
+				CornerRadii.EMPTY,
+				Insets.EMPTY
+		)), context.config.backgroundColor));
 		outerCanvas.setMouseTransparent(false);
 		outerCanvas.setFocusTraversable(true);
 		Rectangle clip = new Rectangle();
 		clip
 				.widthProperty()
-				.bind(Bindings.createDoubleBinding(
-						() -> outerCanvas.widthProperty().get() /
+				.bind(Bindings.createDoubleBinding(() -> outerCanvas.widthProperty().get() /
 								Math.abs(outerCanvas.scaleXProperty().get()),
 						outerCanvas.widthProperty(),
 						outerCanvas.scaleXProperty()
 				));
 		clip
 				.heightProperty()
-				.bind(Bindings.createDoubleBinding(
-						() -> outerCanvas.heightProperty().get() /
+				.bind(Bindings.createDoubleBinding(() -> outerCanvas.heightProperty().get() /
 								Math.abs(outerCanvas.scaleXProperty().get()),
 						outerCanvas.heightProperty(),
 						outerCanvas.scaleYProperty()
@@ -202,12 +198,13 @@ public class Editor {
 			}
 		});
 		outerCanvas.addEventFilter(MouseEvent.MOUSE_RELEASED, e -> {
+			if (pointerEventState.edit == null)
+				return;
 			if (pointerEventState.button == MouseButton.PRIMARY) {
-				if (!pointerEventState.dragged && pointerEventState.edit != null) {
+				if (!pointerEventState.dragged) {
 					pointerEventState.edit.mark(context, pointerEventState.previous, pointerEventState.previous);
 				}
-				if (e.getButton() == MouseButton.PRIMARY)
-					this.context.history.finishChange();
+				this.context.history.finishChange();
 			}
 		});
 		outerCanvas.addEventFilter(MouseEvent.MOUSE_DRAGGED, e -> {
@@ -224,12 +221,14 @@ public class Editor {
 			}
 			pointerEventState.previous = end;
 		});
-		outerCanvas.addEventFilter(MouseEvent.MOUSE_MOVED,e -> {
-			if (edit == null) return;
+		outerCanvas.addEventFilter(MouseEvent.MOUSE_MOVED, e -> {
+			if (edit == null)
+				return;
 			Wrapper view = window.selectedForView.get();
-			if (view == null) return;
+			if (view == null)
+				return;
 			edit.cursorMoved(context, normalizeEventCoordinates(view, e));
-		} );
+		});
 		outerCanvas.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
 			if (false) {
 				throw new DeadCode();

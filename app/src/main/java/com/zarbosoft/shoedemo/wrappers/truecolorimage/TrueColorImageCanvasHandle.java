@@ -31,7 +31,10 @@ public class TrueColorImageCanvasHandle extends WidgetHandle {
 		});
 		draw
 				.getTransforms()
-				.setAll(new Scale(1.0 / trueColorImageNodeWrapper.zoom, 1.0 / trueColorImageNodeWrapper.zoom));
+				.setAll(new Scale(
+						1.0 / trueColorImageNodeWrapper.zoom.get(),
+						1.0 / trueColorImageNodeWrapper.zoom.get()
+				));
 
 		outerDraw = new Group();
 		outerDraw.getChildren().add(draw);
@@ -63,7 +66,10 @@ public class TrueColorImageCanvasHandle extends WidgetHandle {
 			wrapTiles.clear();
 			draw
 					.getTransforms()
-					.setAll(new Scale(1.0 / trueColorImageNodeWrapper.zoom, 1.0 / trueColorImageNodeWrapper.zoom));
+					.setAll(new Scale(
+							1.0 / trueColorImageNodeWrapper.zoom.get(),
+							1.0 / trueColorImageNodeWrapper.zoom.get()
+					));
 		} else {
 			// Remove tiles outside view bounds
 			for (int x = 0; x < oldBounds.width; ++x) {
@@ -91,7 +97,7 @@ public class TrueColorImageCanvasHandle extends WidgetHandle {
 				WrapTile wrapTile = new WrapTile(
 						context,
 						tile,
-						trueColorImageNodeWrapper.zoom,
+						trueColorImageNodeWrapper.zoom.get(),
 						useIndexes.x * context.tileSize,
 						useIndexes.y * context.tileSize
 				);
@@ -129,7 +135,7 @@ public class TrueColorImageCanvasHandle extends WidgetHandle {
 					WrapTile wrap = new WrapTile(
 							context,
 							value,
-							trueColorImageNodeWrapper.zoom,
+							trueColorImageNodeWrapper.zoom.get(),
 							indexes.x * context.tileSize,
 							indexes.y * context.tileSize
 					);

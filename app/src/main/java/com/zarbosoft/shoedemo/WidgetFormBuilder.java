@@ -6,10 +6,7 @@ import javafx.geometry.HPos;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
-import javafx.scene.layout.ColumnConstraints;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
+import javafx.scene.layout.*;
 import javafx.stage.DirectoryChooser;
 
 import java.io.File;
@@ -133,5 +130,12 @@ public class WidgetFormBuilder {
 
 	public Node build() {
 		return gridPane;
+	}
+
+	public WidgetFormBuilder separator() {
+		Region space = new Region();
+		space.setMinHeight(4);
+		gridPane.add(space, 0, row++, 2, 1);
+		return this;
 	}
 }

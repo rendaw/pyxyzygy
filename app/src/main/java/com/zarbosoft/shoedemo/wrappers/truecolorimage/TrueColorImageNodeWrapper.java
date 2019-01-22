@@ -8,6 +8,7 @@ import com.zarbosoft.shoedemo.config.TrueColorBrush;
 import com.zarbosoft.shoedemo.config.TrueColorImageNodeConfig;
 import com.zarbosoft.shoedemo.model.*;
 import com.zarbosoft.shoedemo.wrappers.group.Tool;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TreeItem;
 
@@ -28,7 +29,7 @@ public class TrueColorImageNodeWrapper extends Wrapper {
 	// Cache values when there's no canvas
 	DoubleRectangle bounds = new DoubleRectangle(0,0 ,0 ,0 );
 	private int frameNumber = 0;
-	int zoom = 1;
+	SimpleIntegerProperty zoom = new SimpleIntegerProperty(1);
 
 	TrueColorImageFrame frame;
 	TrueColorImageCanvasHandle canvasHandle;
@@ -71,8 +72,8 @@ public class TrueColorImageNodeWrapper extends Wrapper {
 		System.out.format("image scroll; b %s\n", newBounds1);
 		DoubleRectangle oldBounds1 = this.bounds;
 		this.bounds = newBounds1;
-		boolean zoomChanged = this.zoom == zoom;
-		this.zoom = zoom;
+		boolean zoomChanged = this.zoom.get() == zoom;
+		this.zoom.set(zoom);
 		if (canvasHandle == null)
 			return;
 		canvasHandle.updateViewport(context, oldBounds1, newBounds1, zoomChanged);
@@ -139,7 +140,7 @@ public class TrueColorImageNodeWrapper extends Wrapper {
 		return clone;
 	}
 
-	public Rectangle render(ProjectContext context, TrueColorImage gc, TrueColorImageFrame frame, Rectangle crop, double opacity) {
+	public Rectangle render(ProjectContext context, TrueColorImage gc, Rectangle crop) {
 		Rectangle tileBounds = crop.quantize(context.tileSize);
 		//System.out.format("render tb %s\n", tileBounds);
 		for (int x = 0; x < tileBounds.width; ++x) {
@@ -152,7 +153,7 @@ public class TrueColorImageNodeWrapper extends Wrapper {
 				//System.out.format("composing at %s %s op %s\n", renderX, renderY, opacity);
 				System.out.flush();
 				TrueColorImage data = tile.getData(context);
-				gc.compose(data, renderX, renderY, (float) opacity);
+				gc.compose(data, renderX, renderY, (float) 1);
 			}
 		}
 		return tileBounds;
@@ -160,6 +161,38 @@ public class TrueColorImageNodeWrapper extends Wrapper {
 
 	TrueColorImageFrame findFrame(int frameNumber) {
 		return findFrame(node, frameNumber).frame;
+	}
+
+	public void drop(ProjectContext context,Rectangle unitBounds, TrueColorImage image) {
+		for (int x = 0; x < unitBounds.width; ++x) {
+			for (int y = 0; y < unitBounds.height; ++y) {
+				final int x0 = x;
+				final int y0 = y;
+				System.out.format("\tcopy %s %s: %s %s by %s %s\n",
+						x0,
+						y0,
+						x0 * context.tileSize,
+						y0 * context.tileSize,
+						context.tileSize,
+						context.tileSize
+				);
+				TrueColorImage shot =
+						image.copy(x0 * context.tileSize, y0 * context.tileSize, context.tileSize, context.tileSize);
+				context.history.change(c -> c
+						.trueColorImageFrame(frame)
+						.tilesPut(unitBounds.corner().plus(x0, y0).to1D(), Tile.create(context, shot)));
+			}
+		}
+	}
+
+	void clear(ProjectContext context, Rectangle bounds) {
+		Rectangle quantizedBounds = bounds.quantize(context.tileSize);
+		Rectangle clearBounds = quantizedBounds.multiply(context.tileSize);
+		TrueColorImage clearCanvas = TrueColorImage.create(clearBounds.width, clearBounds.height);
+		render(context, clearCanvas, clearBounds);
+		Vector offset = bounds.corner().minus(clearBounds.corner());
+		clearCanvas.clear(offset.x, offset.y, bounds.width, bounds.height);
+		drop(context, quantizedBounds, clearCanvas);
 	}
 
 	public static class FrameResult {

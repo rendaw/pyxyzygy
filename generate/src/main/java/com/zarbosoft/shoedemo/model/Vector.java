@@ -31,6 +31,18 @@ public class Vector {
 		return new Vector(x * tileSize, y * tileSize);
 	}
 
+	public Vector plus(Vector vector) {
+		return new Vector(x + vector.x, y + vector.y);
+	}
+
+	public Rectangle toRect(int width, int height) {
+		return new Rectangle(x, y, width, height);
+	}
+
+	public Vector minus(Vector other) {
+		return new Vector(x - other.x, y - other.y);
+	}
+
 	public static class Deserializer extends StackReader.RecordState {
 		int x;
 		int y;

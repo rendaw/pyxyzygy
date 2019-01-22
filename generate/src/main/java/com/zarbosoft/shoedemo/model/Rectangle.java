@@ -23,6 +23,10 @@ public class Rectangle {
 		return new Rectangle(x / val, y / val, width / val, height / val);
 	}
 
+	public Rectangle multiply(int factor) {
+		return new Rectangle(x * factor,y * factor ,width * factor ,height * factor );
+	}
+
 	/**
 	 * Returns a new rect that would encompass this rect if multiplied by the step value
 	 *
@@ -61,5 +65,9 @@ public class Rectangle {
 
 	public boolean contains(Vector vector) {
 		return contains(vector.x, vector.y);
+	}
+
+	public Rectangle shift(Vector vector) {
+		return new Rectangle(x+vector.x, y+vector.y,width ,height );
 	}
 }

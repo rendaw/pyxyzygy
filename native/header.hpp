@@ -74,6 +74,7 @@ class TrueColorImage {
 		int getWidth() const;
 		int getHeight() const;
 		void clear();
+		void clear(int x, int y, int width, int height);
 		void serialize(char const * path) const throw(std::runtime_error);
 		void setPixel(uint8_t cr, uint8_t cg, uint8_t cb, uint8_t ca, int x, int y);
 		void stroke(uint8_t cr, uint8_t cg, uint8_t cb, uint8_t ca, double x1, double y1, double r1, double x2, double y2, double r2, double blend);

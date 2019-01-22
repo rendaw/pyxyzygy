@@ -49,7 +49,7 @@ public class Window {
 
 		TabPane leftTabs = new TabPane();
 		leftTabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
-		leftTabs.getTabs().add(new Tab("Structure",structure.getWidget() ));
+		leftTabs.getTabs().add(new Tab("Structure", structure.getWidget()));
 
 		SplitPane generalLayout = new SplitPane();
 		generalLayout.setOrientation(Orientation.HORIZONTAL);
@@ -66,8 +66,11 @@ public class Window {
 				context.history.redo();
 			}
 		});
-		scene.getStylesheets().add(getClass().getResource("widgets/colorpicker/style.css").toExternalForm());
-		scene.getStylesheets().add(getClass().getResource("widgets/brushbutton/style.css").toExternalForm());
+		scene
+				.getStylesheets()
+				.addAll(
+						getClass().getResource("widgets/colorpicker/style.css").toExternalForm(),
+						getClass().getResource("widgets/brushbutton/style.css").toExternalForm());
 
 		selectedForEdit.addListener(new ChangeListener<Wrapper>() {
 			{

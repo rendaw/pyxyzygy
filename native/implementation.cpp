@@ -200,6 +200,20 @@ void TrueColorImage::clear() {
 	memset(pixels, 0, w * h * channels);
 }
 
+void TrueColorImage::clear(int x, int y, int w0, int h0) {
+	assert(x >= 0);
+	assert(y >= 0);
+	assert(x + w0 <= w);
+	assert(y + h0 <= h);
+	for (int y1 = y; y1 < y + h0; ++y1) {
+		memset(
+			&pixels[(y1 * w + x) * channels],
+			0,
+			w0 * channels
+		);
+	}
+}
+
 void TrueColorImage::serialize(const char *path) const throw(std::runtime_error) {
 	png_image img;
 	memset(&img, 0, sizeof(img));

@@ -19,20 +19,22 @@ import javafx.scene.paint.Color;
 
 import java.util.Optional;
 
+import static com.zarbosoft.shoedemo.HelperJFX.pad;
+
 public class ToolBrush extends Tool {
-	final TrueColorImageNodeWrapper trueColorImageNodeWrapper;
 	final TrueColorBrush brush;
-	private final Node properties;
+	private final TrueColorImageEditHandle editHandle;
 
 	public ToolBrush(ProjectContext context,
-			TrueColorImageNodeWrapper trueColorImageNodeWrapper, TrueColorBrush brush
+					 TrueColorImageEditHandle trueColorImageEditHandle,
+					 TrueColorBrush brush
 	) {
-		this.trueColorImageNodeWrapper = trueColorImageNodeWrapper;
+		this.editHandle = trueColorImageEditHandle;
 		this.brush = brush;
 
 		TrueColorPicker colorPicker = new TrueColorPicker();
 		GridPane.setHalignment(colorPicker, HPos.CENTER);
-		properties =  new WidgetFormBuilder()
+		trueColorImageEditHandle.paintTab.setContent(pad(new WidgetFormBuilder()
 				.text("Name", t -> t.textProperty().bindBidirectional(brush.name))
 				.span(() -> {
 					return colorPicker;
@@ -85,7 +87,7 @@ public class ToolBrush extends Tool {
 				.slider("Blend", 1, 1000, s -> {
 					s.valueProperty().bindBidirectional(brush.blend);
 				})
-				.build();
+				.build()));
 	}
 
 	@Override
@@ -120,7 +122,7 @@ public class ToolBrush extends Tool {
 
 		// Copy tiles to canvas
 		TrueColorImage canvas = TrueColorImage.create(bounds.width, bounds.height);
-		Rectangle tileBounds = trueColorImageNodeWrapper.render(context, canvas, trueColorImageNodeWrapper.frame, bounds, 1);
+		Rectangle tileBounds = editHandle.wrapper.render(context, canvas, bounds);
 
 		// Do the stroke
 		System.out.format("stroke %s %s to %s %s, c %s %s %s %s\n",
@@ -147,30 +149,12 @@ public class ToolBrush extends Tool {
 		);
 
 		// Replace tiles in frame
-		for (int x = 0; x < tileBounds.width; ++x) {
-			for (int y = 0; y < tileBounds.height; ++y) {
-				final int x0 = x;
-				final int y0 = y;
-				System.out.format("\tcopy %s %s: %s %s by %s %s\n",
-						x0,
-						y0,
-						x0 * context.tileSize,
-						y0 * context.tileSize,
-						context.tileSize,
-						context.tileSize
-				);
-				TrueColorImage shot =
-						canvas.copy(x0 * context.tileSize, y0 * context.tileSize, context.tileSize, context.tileSize);
-				context.history.change(c -> c
-						.trueColorImageFrame(trueColorImageNodeWrapper.frame)
-						.tilesPut(tileBounds.corner().plus(x0, y0).to1D(), Tile.create(context, shot)));
-			}
-		}
+		editHandle.wrapper.drop(context,tileBounds ,canvas );
 	}
 
 	@Override
 	public Node getProperties() {
-		return properties;
+		return null;
 	}
 
 	@Override
