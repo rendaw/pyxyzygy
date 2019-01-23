@@ -6,7 +6,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 
-import static com.zarbosoft.shoedemo.HelperJFX.c;
+import static com.zarbosoft.shoedemo.widgets.HelperJFX.c;
 
 public class FrameWidget extends Pane {
 	private final static double sizePercent = 0.7;

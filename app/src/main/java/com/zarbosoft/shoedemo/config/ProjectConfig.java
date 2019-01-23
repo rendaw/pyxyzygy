@@ -2,6 +2,7 @@ package com.zarbosoft.shoedemo.config;
 
 import com.zarbosoft.interface1.Configuration;
 import com.zarbosoft.shoedemo.ConfigBase;
+import edu.umd.cs.findbugs.annotations.CleanupObligation;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableMap;
@@ -17,4 +18,10 @@ public class ProjectConfig extends ConfigBase {
 
 	@Configuration
 	public final ObservableMap<Long, NodeConfig> nodes = FXCollections.observableHashMap();
+
+	@Configuration(optional = true)
+	public double tabsSplit = 0.3;
+
+	@Configuration(optional = true)
+	public double timelineSplit = 0.7;
 }

@@ -4,7 +4,7 @@ import com.google.common.collect.Range;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.shoedemo.Main;
 import com.zarbosoft.shoedemo.ProjectContext;
-import com.zarbosoft.shoedemo.WidgetFormBuilder;
+import com.zarbosoft.shoedemo.widgets.WidgetFormBuilder;
 import com.zarbosoft.shoedemo.Wrapper;
 import com.zarbosoft.shoedemo.config.TrueColor;
 import com.zarbosoft.shoedemo.config.TrueColorBrush;
@@ -25,8 +25,8 @@ import javafx.scene.layout.Region;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.zarbosoft.shoedemo.HelperJFX.icon;
-import static com.zarbosoft.shoedemo.HelperJFX.pad;
+import static com.zarbosoft.shoedemo.widgets.HelperJFX.icon;
+import static com.zarbosoft.shoedemo.widgets.HelperJFX.pad;
 import static com.zarbosoft.shoedemo.Main.*;
 import static com.zarbosoft.shoedemo.ProjectContext.uniqueName;
 

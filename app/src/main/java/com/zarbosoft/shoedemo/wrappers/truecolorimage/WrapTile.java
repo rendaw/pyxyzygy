@@ -5,7 +5,7 @@ import com.zarbosoft.shoedemo.TrueColorImage;
 import com.zarbosoft.shoedemo.model.Tile;
 import javafx.scene.image.ImageView;
 
-import static com.zarbosoft.shoedemo.HelperJFX.toImage;
+import static com.zarbosoft.shoedemo.widgets.HelperJFX.toImage;
 
 public class WrapTile {
 	final ImageView widget;

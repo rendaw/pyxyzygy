@@ -1,4 +1,4 @@
-package com.zarbosoft.shoedemo;
+package com.zarbosoft.shoedemo.widgets;
 
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleStringProperty;
@@ -137,5 +137,18 @@ public class WidgetFormBuilder {
 		space.setMinHeight(4);
 		gridPane.add(space, 0, row++, 2, 1);
 		return this;
+	}
+
+	public WidgetFormBuilder section(String title) {
+		return span(() -> {
+			Label s = new Label(title);
+			s.getStyleClass().add("h2");
+			return s;
+		});
+	}
+
+	public WidgetFormBuilder twoLine(String name, Supplier<Node> cb) {
+		gridPane.add(fieldLabel(name), 0, row++, 1, 1);
+		return span(cb);
 	}
 }

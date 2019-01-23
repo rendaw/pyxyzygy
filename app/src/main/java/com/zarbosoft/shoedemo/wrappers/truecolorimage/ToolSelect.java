@@ -1,9 +1,10 @@
 package com.zarbosoft.shoedemo.wrappers.truecolorimage;
 
-import com.google.common.collect.ImmutableList;
 import com.zarbosoft.shoedemo.*;
 import com.zarbosoft.shoedemo.model.Rectangle;
 import com.zarbosoft.shoedemo.model.Vector;
+import com.zarbosoft.shoedemo.widgets.HelperJFX;
+import com.zarbosoft.shoedemo.widgets.WidgetFormBuilder;
 import com.zarbosoft.shoedemo.wrappers.group.Tool;
 import javafx.beans.binding.Bindings;
 import javafx.scene.Group;
@@ -12,16 +13,14 @@ import javafx.scene.effect.BlendMode;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.KeyCode;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.StrokeType;
 import javafx.scene.transform.Scale;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-
 import static com.zarbosoft.rendaw.common.Common.uncheck;
-import static com.zarbosoft.shoedemo.HelperJFX.icon;
-import static com.zarbosoft.shoedemo.HelperJFX.pad;
+import static com.zarbosoft.shoedemo.widgets.HelperJFX.icon;
+import static com.zarbosoft.shoedemo.widgets.HelperJFX.pad;
 
 public class ToolSelect extends Tool {
 	final TrueColorImageEditHandle editHandle;
@@ -29,7 +28,6 @@ public class ToolSelect extends Tool {
 	final int handlePad = 3;
 
 	abstract class State {
-
 		public abstract void markStart(ProjectContext context, DoubleVector start);
 
 		public abstract void mark(ProjectContext context, DoubleVector start, DoubleVector end);
@@ -48,6 +46,7 @@ public class ToolSelect extends Tool {
 			setFill(Color.TRANSPARENT);
 			setVisible(false);
 			setBlendMode(BlendMode.DIFFERENCE);
+			strokeWidthProperty().bind(Bindings.divide(1.0, editHandle.wrapper.zoom));
 		}
 	}
 
@@ -86,9 +85,35 @@ public class ToolSelect extends Tool {
 		private Rectangle bounds;
 		private DoubleVector start;
 		private Vector startCorner;
+		Hotkeys.Action[] actions = new Hotkeys.Action[] {
+				new Hotkeys.Action(
+						Hotkeys.Scope.EDITOR,
+						"cancel",
+						"Cancel",
+						Hotkeys.Hotkey.create(KeyCode.ESCAPE, false, false, false)
+				) {
+					@Override
+					public void run(ProjectContext context) {
+						setState(context, new StateCreate(context));
+					}
+				},
+				new Hotkeys.Action(Hotkeys.Scope.EDITOR,
+						"place",
+						"Place",
+						Hotkeys.Hotkey.create(KeyCode.ENTER, false, false, true)
+				) {
+					@Override
+					public void run(ProjectContext context) {
+						setState(context, new StateCreate(context));
+					}
+				},
+		};
 
 		StateMove(ProjectContext context, Rectangle originalBounds, TrueColorImage buffer) {
 			this.bounds = originalBounds;
+
+			for (Hotkeys.Action action : actions)
+				context.hotkeys.register(action);
 
 			originalRectangle.setWidth(originalBounds.width);
 			originalRectangle.setHeight(originalBounds.height);
@@ -191,6 +216,8 @@ public class ToolSelect extends Tool {
 		@Override
 		public void remove(ProjectContext context) {
 			editHandle.overlay.getChildren().removeAll(originalRectangle, rectangle, imageGroup);
+			for (Hotkeys.Action action : actions)
+				context.hotkeys.unregister(action);
 		}
 	}
 
@@ -203,6 +230,30 @@ public class ToolSelect extends Tool {
 		Rectangle inside = new Rectangle(0, 0, 0, 0);
 
 		Interactive mark;
+
+		Hotkeys.Action[] actions = new Hotkeys.Action[] {
+				new Hotkeys.Action(
+						Hotkeys.Scope.EDITOR,
+						"cancel",
+						"Cancel",
+						Hotkeys.Hotkey.create(KeyCode.ESCAPE, false, false, false)
+				) {
+					@Override
+					public void run(ProjectContext context) {
+						setState(context, new StateCreate(context));
+					}
+				},
+				new Hotkeys.Action(Hotkeys.Scope.EDITOR,
+						"lift",
+						"Lift",
+						Hotkeys.Hotkey.create(KeyCode.ENTER, false, false, false)
+				) {
+					@Override
+					public void run(ProjectContext context) {
+						setState(context, new StateCreate(context));
+					}
+				},
+		};
 
 		class LeftHandle extends Interactive {
 			final DoubleVector start;
@@ -327,6 +378,8 @@ public class ToolSelect extends Tool {
 		}
 
 		StateCreate(ProjectContext context) {
+			for (Hotkeys.Action action : actions)
+				context.hotkeys.register(action);
 			editHandle.overlay.getChildren().addAll(rectangle, left, right, top, bottom);
 
 			Runnable copy = () -> {
@@ -422,6 +475,8 @@ public class ToolSelect extends Tool {
 		@Override
 		public void remove(ProjectContext context) {
 			editHandle.overlay.getChildren().removeAll(rectangle, left, right, top, bottom);
+			for (Hotkeys.Action action : actions)
+				context.hotkeys.unregister(action);
 		}
 	}
 

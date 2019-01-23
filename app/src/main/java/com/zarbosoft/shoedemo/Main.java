@@ -11,6 +11,7 @@ import com.zarbosoft.shoedemo.model.ProjectNode;
 import com.zarbosoft.shoedemo.model.TrueColorImageFrame;
 import com.zarbosoft.shoedemo.model.TrueColorImageNode;
 import com.zarbosoft.shoedemo.model.Vector;
+import com.zarbosoft.shoedemo.widgets.WidgetFormBuilder;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.property.*;

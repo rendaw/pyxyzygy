@@ -1,8 +1,10 @@
-package com.zarbosoft.shoedemo.structuretree;
+package com.zarbosoft.shoedemo.wrappers.camera;
 
 import com.zarbosoft.shoedemo.*;
 import com.zarbosoft.shoedemo.model.Camera;
 import com.zarbosoft.shoedemo.model.ProjectNode;
+import com.zarbosoft.shoedemo.widgets.HelperJFX;
+import com.zarbosoft.shoedemo.widgets.WidgetFormBuilder;
 import com.zarbosoft.shoedemo.wrappers.group.GroupNodeWrapper;
 import javafx.scene.Group;
 import javafx.scene.Node;

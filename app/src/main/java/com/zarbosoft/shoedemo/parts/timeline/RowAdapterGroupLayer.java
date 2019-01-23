@@ -13,7 +13,7 @@ import javafx.beans.value.ObservableObjectValue;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.image.Image;
 
-import static com.zarbosoft.shoedemo.HelperJFX.icon;
+import static com.zarbosoft.shoedemo.widgets.HelperJFX.icon;
 
 public class RowAdapterGroupLayer extends RowAdapter {
 	private final GroupNodeWrapper wrapper;

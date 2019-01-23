@@ -5,6 +5,8 @@ import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.shoedemo.*;
 import com.zarbosoft.shoedemo.model.*;
 import com.zarbosoft.shoedemo.modelmirror.*;
+import com.zarbosoft.shoedemo.widgets.HelperJFX;
+import com.zarbosoft.shoedemo.widgets.WidgetFormBuilder;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.Group;

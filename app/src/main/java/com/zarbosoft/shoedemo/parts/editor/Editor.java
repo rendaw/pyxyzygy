@@ -1,6 +1,5 @@
 package com.zarbosoft.shoedemo.parts.editor;
 
-import com.zarbosoft.rendaw.common.DeadCode;
 import com.zarbosoft.shoedemo.*;
 import javafx.beans.binding.Bindings;
 import javafx.beans.value.ChangeListener;
@@ -23,6 +22,35 @@ public class Editor {
 	private final Group canvasInner;
 	private Runnable editCleanup;
 	private Wrapper edit;
+	private Hotkeys.Action[] actions = new Hotkeys.Action[] {
+			new Hotkeys.Action(
+					Hotkeys.Scope.EDITOR,
+					"flip-horizontal",
+					"View horizontal flip",
+					Hotkeys.Hotkey.create(KeyCode.H, false, false, false)
+			) {
+				@Override
+				public void run(ProjectContext context) {
+					Wrapper view = window.selectedForView.get();
+					if (view == null)
+						return;
+					view.getConfig().flipHorizontal.set(!view.getConfig().flipHorizontal.get());
+				}
+			},
+			new Hotkeys.Action(Hotkeys.Scope.EDITOR,
+					"flip-vertical",
+					"View vertical flip",
+					Hotkeys.Hotkey.create(KeyCode.V, false, false, false)
+			) {
+				@Override
+				public void run(ProjectContext context) {
+					Wrapper view = window.selectedForView.get();
+					if (view == null)
+						return;
+					view.getConfig().flipVertical.set(!view.getConfig().flipVertical.get());
+				}
+			}
+	};
 
 	/**
 	 * Returns a vector from a JavaFX canvas point relative to the image origin in image pixels
@@ -95,6 +123,8 @@ public class Editor {
 		this.context = context;
 		this.window = window;
 
+		for (Hotkeys.Action action : actions) context.hotkeys.register(action);
+
 		canvasInner = new Group();
 
 		canvas = new Pane();
@@ -102,11 +132,13 @@ public class Editor {
 
 		outerCanvas = new StackPane();
 		VBox.setVgrow(outerCanvas, Priority.ALWAYS);
-		outerCanvas.backgroundProperty().bind(Bindings.createObjectBinding(() -> new Background(new BackgroundFill(
-				context.config.backgroundColor.get().toJfx(),
-				CornerRadii.EMPTY,
-				Insets.EMPTY
-		)), context.config.backgroundColor));
+		outerCanvas.backgroundProperty().bind(Bindings.createObjectBinding(
+				() -> new Background(new BackgroundFill(context.config.backgroundColor.get().toJfx(),
+						CornerRadii.EMPTY,
+						Insets.EMPTY
+				)),
+				context.config.backgroundColor
+		));
 		outerCanvas.setMouseTransparent(false);
 		outerCanvas.setFocusTraversable(true);
 		Rectangle clip = new Rectangle();
@@ -222,6 +254,7 @@ public class Editor {
 			pointerEventState.previous = end;
 		});
 		outerCanvas.addEventFilter(MouseEvent.MOUSE_MOVED, e -> {
+			outerCanvas.requestFocus();
 			if (edit == null)
 				return;
 			Wrapper view = window.selectedForView.get();
@@ -230,21 +263,7 @@ public class Editor {
 			edit.cursorMoved(context, normalizeEventCoordinates(view, e));
 		});
 		outerCanvas.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
-			if (false) {
-				throw new DeadCode();
-			} else if (e.getCode() == KeyCode.H) {
-				Wrapper view = window.selectedForView.get();
-				if (view == null)
-					return;
-				view.getConfig().flipHorizontal.set(!view.getConfig().flipHorizontal.get());
-			} else if (e.getCode() == KeyCode.V) {
-				Wrapper view = window.selectedForView.get();
-				if (view == null)
-					return;
-				view.getConfig().flipVertical.set(!view.getConfig().flipVertical.get());
-			} else {
-				// pass
-			}
+			context.hotkeys.event(context, Hotkeys.Scope.EDITOR, e);
 		});
 
 		window.selectedForView.addListener(new ChangeListener<Wrapper>() {

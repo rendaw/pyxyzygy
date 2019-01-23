@@ -22,8 +22,8 @@ import java.awt.*;
 
 import static com.zarbosoft.rendaw.common.Common.aeq;
 import static com.zarbosoft.shoedemo.Main.NO_INNER;
-import static com.zarbosoft.shoedemo.HelperJFX.c;
-import static com.zarbosoft.shoedemo.HelperJFX.icon;
+import static com.zarbosoft.shoedemo.widgets.HelperJFX.c;
+import static com.zarbosoft.shoedemo.widgets.HelperJFX.icon;
 
 public class RowTimeRangeWidget {
 	private static final javafx.scene.paint.Color outFill = c(new Color(157, 157, 157));

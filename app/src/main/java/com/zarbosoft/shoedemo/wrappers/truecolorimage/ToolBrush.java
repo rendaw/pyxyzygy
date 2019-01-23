@@ -5,8 +5,9 @@ import com.zarbosoft.shoedemo.*;
 import com.zarbosoft.shoedemo.config.TrueColor;
 import com.zarbosoft.shoedemo.config.TrueColorBrush;
 import com.zarbosoft.shoedemo.model.Rectangle;
-import com.zarbosoft.shoedemo.model.Tile;
+import com.zarbosoft.shoedemo.widgets.HelperJFX;
 import com.zarbosoft.shoedemo.widgets.TrueColorPicker;
+import com.zarbosoft.shoedemo.widgets.WidgetFormBuilder;
 import com.zarbosoft.shoedemo.wrappers.group.Tool;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -19,7 +20,7 @@ import javafx.scene.paint.Color;
 
 import java.util.Optional;
 
-import static com.zarbosoft.shoedemo.HelperJFX.pad;
+import static com.zarbosoft.shoedemo.widgets.HelperJFX.pad;
 
 public class ToolBrush extends Tool {
 	final TrueColorBrush brush;

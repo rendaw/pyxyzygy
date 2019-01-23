@@ -1,7 +1,11 @@
-package com.zarbosoft.shoedemo;
+package com.zarbosoft.shoedemo.widgets;
 
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.Pair;
+import com.zarbosoft.shoedemo.CustomBinding;
+import com.zarbosoft.shoedemo.ProjectContext;
+import com.zarbosoft.shoedemo.TrueColorImage;
+import com.zarbosoft.shoedemo.Window;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;

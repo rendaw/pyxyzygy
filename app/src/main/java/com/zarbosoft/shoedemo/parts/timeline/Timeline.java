@@ -5,7 +5,8 @@ import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.DeadCode;
 import com.zarbosoft.shoedemo.*;
 import com.zarbosoft.shoedemo.model.*;
-import com.zarbosoft.shoedemo.structuretree.CameraWrapper;
+import com.zarbosoft.shoedemo.widgets.HelperJFX;
+import com.zarbosoft.shoedemo.wrappers.camera.CameraWrapper;
 import com.zarbosoft.shoedemo.wrappers.group.GroupNodeWrapper;
 import com.zarbosoft.shoedemo.wrappers.truecolorimage.TrueColorImageNodeWrapper;
 import javafx.beans.Observable;
@@ -94,7 +95,7 @@ public class Timeline {
 		this.window = window;
 		window.selectedForView.addListener(new ChangeListener<Wrapper>() {
 			{
-				changed(null,null ,window.selectedForView.get() );
+				changed(null, null, window.selectedForView.get());
 			}
 
 			@Override
@@ -106,9 +107,7 @@ public class Timeline {
 					deps = new Observable[] {requestedMaxFrame, calculatedMaxFrame};
 				else
 					deps = new Observable[] {
-							requestedMaxFrame,
-							calculatedMaxFrame,
-							window.selectedForView.get().getConfig().frame
+							requestedMaxFrame, calculatedMaxFrame, window.selectedForView.get().getConfig().frame
 					};
 				useMaxFrame.bind(Bindings.createIntegerBinding(() -> {
 					int out = 0;
@@ -123,6 +122,10 @@ public class Timeline {
 		timeScroll.maxProperty().bind(useMaxFrame.multiply(zoom));
 		tree.setRoot(new TreeItem<>());
 		tree.setShowRoot(false);
+		tree.getRoot().getChildren().addListener((ListChangeListener<TreeItem<RowAdapter>>) c -> {
+			if (tree.getSelectionModel().getSelectedItem() == null && !tree.getRoot().getChildren().isEmpty())
+				tree.getSelectionModel().select(tree.getRoot().getChildren().get(0));
+		});
 		scrub.setBackground(Background.EMPTY);
 		scrub.setMinHeight(30);
 		scrub.getChildren().addAll(scrubElements);
@@ -130,7 +133,10 @@ public class Timeline {
 			if (window.selectedForView.get() == null)
 				return;
 			Point2D corner = scrubElements.getLocalToSceneTransform().transform(0, 0);
-			window.selectedForView.get().getConfig().frame.set(Math.max(0, (int) ((e.getSceneX() - corner.getX()) / zoom)));
+			window.selectedForView.get().getConfig().frame.set(Math.max(
+					0,
+					(int) ((e.getSceneX() - corner.getX()) / zoom)
+			));
 			updateFrameMarker();
 		};
 		scrub.addEventFilter(MouseEvent.MOUSE_CLICKED, mouseEventEventHandler);
@@ -138,10 +144,15 @@ public class Timeline {
 		scrub.addEventFilter(KeyEvent.KEY_TYPED, e -> {
 			switch (e.getCode()) {
 				case LEFT:
-					window.selectedForView.get().getConfig().frame.set(Math.max(0, window.selectedForView.get().getConfig().frame.get() - 1));
+					window.selectedForView.get().getConfig().frame.set(Math.max(
+							0,
+							window.selectedForView.get().getConfig().frame.get() - 1
+					));
 					break;
 				case RIGHT:
-					window.selectedForView.get().getConfig().frame.set(window.selectedForView.get().getConfig().frame.get() + 1);
+					window.selectedForView.get().getConfig().frame.set(window.selectedForView
+							.get()
+							.getConfig().frame.get() + 1);
 					break;
 			}
 		});
@@ -155,7 +166,10 @@ public class Timeline {
 					.stream()
 					.filter(c -> c.getTreeItem() != null &&
 							c.getTreeItem().getValue() != null &&
-							c.getTreeItem().getValue().createFrame(context, window, window.selectedForView.get().getConfig().frame.get()))
+							c
+									.getTreeItem()
+									.getValue()
+									.createFrame(context, window, window.selectedForView.get().getConfig().frame.get()))
 					.findFirst();
 		});
 		duplicate = HelperJFX.button("content-copy.svg", "Duplicate");
@@ -171,7 +185,10 @@ public class Timeline {
 							c
 									.getTreeItem()
 									.getValue()
-									.duplicateFrame(context, window,window.selectedForView.get().getConfig().frame.get()))
+									.duplicateFrame(context,
+											window,
+											window.selectedForView.get().getConfig().frame.get()
+									))
 					.findFirst();
 		});
 		remove = HelperJFX.button("minus.svg", "Remove");
@@ -250,7 +267,7 @@ public class Timeline {
 							return;
 						}
 						if (item.hasFrames()) {
-							rowControlsHandle = item.createRowWidget(context,window);
+							rowControlsHandle = item.createRowWidget(context, window);
 							setGraphic(rowControlsHandle.getWidget());
 							updateTime();
 						}
@@ -354,7 +371,10 @@ public class Timeline {
 				return layerItem;
 			}, this::cleanItemSubtree, noopConsumer());
 		} else if (edit instanceof TrueColorImageNodeWrapper) {
-			tree.getRoot().getChildren().add(new TreeItem(new RowAdapterTrueColorImageNode(this, (TrueColorImageNode) edit.getValue())));
+			tree
+					.getRoot()
+					.getChildren()
+					.add(new TreeItem(new RowAdapterTrueColorImageNode(this, (TrueColorImageNode) edit.getValue())));
 		}
 
 		updateTime();
@@ -444,7 +464,8 @@ public class Timeline {
 			}
 
 			// Draw times in region
-			for (int i = 0; i < Math.max(1, (frame.length == NO_LENGTH ? extraFrames : (frame.length - 2)) / step + 1); ++i) {
+			for (int i = 0; i <
+					Math.max(1, (frame.length == NO_LENGTH ? extraFrames : (frame.length - 2)) / step + 1); ++i) {
 				Label label;
 				if (innerIndex >= scrubInnerNumbers.size()) {
 					scrubInnerNumbers.add(label = new Label());

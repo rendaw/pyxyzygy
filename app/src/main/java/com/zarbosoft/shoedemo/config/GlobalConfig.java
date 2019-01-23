@@ -2,11 +2,12 @@ package com.zarbosoft.shoedemo.config;
 
 import com.zarbosoft.interface1.Configuration;
 import com.zarbosoft.shoedemo.ConfigBase;
-import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.SimpleObjectProperty;
+import com.zarbosoft.shoedemo.Hotkeys;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.collections.ObservableMap;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.zarbosoft.shoedemo.Main.appDirs;
 
@@ -23,4 +24,7 @@ public class GlobalConfig extends ConfigBase {
 
 	@Configuration
 	public int tileSize = 32;
+
+	@Configuration
+	public Map<String, Hotkeys.Hotkey> hotkeys = new HashMap<>();
 }

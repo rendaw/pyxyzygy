@@ -1,9 +1,9 @@
 package com.zarbosoft.shoedemo.wrappers.group;
 
 import com.zarbosoft.rendaw.common.Assertion;
-import com.zarbosoft.shoedemo.HelperJFX;
+import com.zarbosoft.shoedemo.widgets.HelperJFX;
 import com.zarbosoft.shoedemo.ProjectContext;
-import com.zarbosoft.shoedemo.WidgetFormBuilder;
+import com.zarbosoft.shoedemo.widgets.WidgetFormBuilder;
 import com.zarbosoft.shoedemo.Wrapper;
 import com.zarbosoft.shoedemo.config.GroupNodeConfig;
 import javafx.beans.binding.Bindings;
@@ -14,12 +14,11 @@ import javafx.scene.Node;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.ToolBar;
-import javafx.scene.shape.Line;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.zarbosoft.shoedemo.HelperJFX.pad;
+import static com.zarbosoft.shoedemo.widgets.HelperJFX.pad;
 import static com.zarbosoft.shoedemo.Main.nodeFormFields;
 
 public class GroupNodeEditHandle extends Wrapper.EditControlsHandle {

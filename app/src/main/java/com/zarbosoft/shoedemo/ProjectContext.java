@@ -38,6 +38,7 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 	public int tileSize = Main.config.tileSize;
 
 	public History history;
+	public Hotkeys hotkeys;
 
 	/**
 	 * Start at count 1 (unwritten) for machine generated names
@@ -188,6 +189,7 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 		ProjectContext out = new ProjectContext(path);
 		out.project = Project.create(out);
 		out.history = new History(out, ImmutableList.of(), ImmutableList.of(), null);
+		out.hotkeys = new Hotkeys();
 		out.initConfig();
 		return out;
 	}
@@ -250,6 +252,7 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 					.findFirst()
 					.ifPresent(p -> out.project = (Project) p);
 			out.history = new History(out, context.undoHistory, context.redoHistory, context.activeChange);
+			out.hotkeys = new Hotkeys();
 			out.initConfig();
 			return out;
 		});

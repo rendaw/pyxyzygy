@@ -1,9 +1,14 @@
-package com.zarbosoft.shoedemo;
+package com.zarbosoft.shoedemo.parts.structure;
 
 import com.google.common.collect.ImmutableList;
 import com.zarbosoft.rendaw.common.ChainComparator;
+import com.zarbosoft.shoedemo.Hotkeys;
+import com.zarbosoft.shoedemo.ProjectContext;
+import com.zarbosoft.shoedemo.Window;
+import com.zarbosoft.shoedemo.Wrapper;
 import com.zarbosoft.shoedemo.model.*;
 import com.zarbosoft.shoedemo.model.Vector;
+import com.zarbosoft.shoedemo.widgets.HelperJFX;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
@@ -11,6 +16,7 @@ import javafx.collections.ListChangeListener;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
@@ -25,8 +31,8 @@ import static com.zarbosoft.rendaw.common.Common.last;
 import static com.zarbosoft.shoedemo.Main.moveTo;
 import static com.zarbosoft.shoedemo.Main.opacityMax;
 import static com.zarbosoft.shoedemo.ProjectContext.uniqueName;
-import static com.zarbosoft.shoedemo.HelperJFX.icon;
 import static com.zarbosoft.shoedemo.Wrapper.TakesChildren.NONE;
+import static com.zarbosoft.shoedemo.widgets.HelperJFX.icon;
 
 public class Structure {
 	private final ProjectContext context;
@@ -37,6 +43,58 @@ public class Structure {
 	Set<Wrapper> taggedViewing = new HashSet<>();
 	Set<Wrapper> taggedLifted = new HashSet<>();
 	Set<Wrapper> taggedCopied = new HashSet<>();
+	Hotkeys.Action[] actions = new Hotkeys.Action[] {
+			new Hotkeys.Action(Hotkeys.Scope.STRUCTURE,
+					"link",
+					"Select to link",
+					Hotkeys.Hotkey.create(KeyCode.C, true, false, false)
+			) {
+				@Override
+				public void run(ProjectContext context) {
+					link();
+				}
+			},
+			new Hotkeys.Action(Hotkeys.Scope.STRUCTURE,
+					"lift",
+					"Lift node",
+					Hotkeys.Hotkey.create(KeyCode.X, true, false, false)
+			) {
+				@Override
+				public void run(ProjectContext context) {
+					lift();
+				}
+			},
+			new Hotkeys.Action(Hotkeys.Scope.STRUCTURE,
+					"place-auto",
+					"Place node or link",
+					Hotkeys.Hotkey.create(KeyCode.V, true, false, false)
+			) {
+				@Override
+				public void run(ProjectContext context) {
+					placeAuto();
+				}
+			},
+			new Hotkeys.Action(Hotkeys.Scope.STRUCTURE,
+					"duplicate",
+					"Duplicate node",
+					Hotkeys.Hotkey.create(KeyCode.D, true, false, false)
+			) {
+				@Override
+				public void run(ProjectContext context) {
+					duplicate();
+				}
+			},
+			new Hotkeys.Action(Hotkeys.Scope.STRUCTURE,
+					"delete",
+					"Delete node",
+					Hotkeys.Hotkey.create(KeyCode.DELETE, false, false, false)
+			) {
+				@Override
+				public void run(ProjectContext context) {
+					duplicate();
+				}
+			}
+	};
 
 	public void selectForEdit(Wrapper wrapper) {
 		Wrapper preParent = wrapper;
@@ -69,7 +127,8 @@ public class Structure {
 	}
 
 	public void treeItemAdded(TreeItem<Wrapper> item) {
-		tree.getSelectionModel().select(item);
+		if (tree.getSelectionModel().getSelectedItem() == null)
+			tree.getSelectionModel().select(item);
 	}
 
 	public void treeItemRemoved(TreeItem<Wrapper> item) {
@@ -100,9 +159,13 @@ public class Structure {
 		});
 	}
 
-	Structure(ProjectContext context, Window window) {
+	public Structure(ProjectContext context, Window window) {
 		this.context = context;
 		this.window = window;
+
+		for (Hotkeys.Action action : actions)
+			context.hotkeys.register(action);
+
 		tree = new TreeView();
 		tree.setShowRoot(false);
 		TreeItem<Wrapper> rootTreeItem = new TreeItem<>();
@@ -110,28 +173,7 @@ public class Structure {
 		tree.setRoot(rootTreeItem);
 		tree.setMinHeight(0);
 		tree.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
-			if (e.isControlDown()) {
-				switch (e.getCode()) {
-					case C:
-						link();
-						break;
-					case X:
-						lift();
-						break;
-					case V:
-						placeAuto();
-						break;
-					case D:
-						duplicate();
-						break;
-				}
-			} else {
-				switch (e.getCode()) {
-					case DELETE:
-						delete(context);
-						break;
-				}
-			}
+			context.hotkeys.event(context, Hotkeys.Scope.STRUCTURE, e);
 		});
 		tree.getSelectionModel().getSelectedItems().addListener((ListChangeListener<TreeItem<Wrapper>>) c -> {
 			while (c.next()) {

@@ -2,28 +2,35 @@ package com.zarbosoft.shoedemo;
 
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.Pair;
+import com.zarbosoft.shoedemo.config.TrueColor;
 import com.zarbosoft.shoedemo.model.*;
 import com.zarbosoft.shoedemo.parts.editor.Editor;
+import com.zarbosoft.shoedemo.parts.structure.Structure;
 import com.zarbosoft.shoedemo.parts.timeline.Timeline;
-import com.zarbosoft.shoedemo.structuretree.CameraWrapper;
+import com.zarbosoft.shoedemo.widgets.TitledPane;
+import com.zarbosoft.shoedemo.widgets.TrueColorPicker;
+import com.zarbosoft.shoedemo.widgets.WidgetFormBuilder;
+import com.zarbosoft.shoedemo.wrappers.camera.CameraWrapper;
 import com.zarbosoft.shoedemo.wrappers.group.GroupLayerWrapper;
 import com.zarbosoft.shoedemo.wrappers.group.GroupNodeWrapper;
 import com.zarbosoft.shoedemo.wrappers.truecolorimage.TrueColorImageNodeWrapper;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.Orientation;
+import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.control.SplitPane;
-import javafx.scene.control.Tab;
-import javafx.scene.control.TabPane;
+import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Supplier;
 
 public class Window {
 	public List<FrameMapEntry> timeMap;
@@ -45,17 +52,79 @@ public class Window {
 		specificLayout.setOrientation(Orientation.VERTICAL);
 		specificLayout.getItems().addAll(editor.getWidget(), timeline.getWidget());
 		SplitPane.setResizableWithParent(timeline.getWidget(), false);
-		specificLayout.setDividerPositions(0.7);
+		specificLayout.setDividerPositions(context.config.timelineSplit);
+		specificLayout
+				.getDividers()
+				.get(0)
+				.positionProperty()
+				.addListener((observable, oldValue, newValue) -> context.config.timelineSplit = newValue.doubleValue());
+
+		VBox configLayout = new VBox();
+		configLayout.setSpacing(3);
+		configLayout.getChildren().addAll(
+				new TitledPane("Project", new WidgetFormBuilder().twoLine("Background color", () -> {
+					TrueColorPicker w = new TrueColorPicker();
+					w.colorProxyProperty.set(context.config.backgroundColor.get().toJfx());
+					w.colorProxyProperty.addListener((observable, oldValue, newValue) -> context.config.backgroundColor.set(
+							TrueColor.fromJfx(newValue)));
+					return w;
+				}).build()),
+				new TitledPane("Global", new WidgetFormBuilder().intSpinner("Max undo", 1, 100000, spinner -> {
+					spinner.getValueFactory().setValue(Main.config.maxUndo);
+					spinner
+							.getValueFactory()
+							.valueProperty()
+							.addListener((observable, oldValue, newValue) -> Main.config.maxUndo = newValue);
+				}).button(button -> {
+					button.setText("Clear undo/redo");
+					button.setOnAction(e -> {
+						Alert confirm =
+								new Alert(Alert.AlertType.CONFIRMATION, "Are you sure you wish to clear undo/redo?");
+						confirm.showAndWait().filter(b -> b == ButtonType.OK).ifPresent(x -> {
+							context.history.clearHistory();
+						});
+					});
+				}).separator().intSpinner("New project tile size", 8, 1024, spinner -> {
+					spinner.getValueFactory().setValue(Main.config.tileSize);
+					spinner
+							.getValueFactory()
+							.valueProperty()
+							.addListener((observable, oldValue, newValue) -> Main.config.tileSize = newValue);
+				}).build()),
+				new TitledPane("Hotkeys", (
+						new Supplier<Node>() {
+							@Override
+							public Node get() {
+								TableColumn<Hotkeys.Action, String> scope = new TableColumn("Scope");
+								scope.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().scope.name()));
+								TableColumn<Hotkeys.Action, String> description = new TableColumn("Description");
+								description.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().description));
+								TableColumn<Hotkeys.Action, String> key = new TableColumn("Key");
+								key.setCellValueFactory(param -> param.getValue().key.asString());
+								TableView<Hotkeys.Action> table = new TableView<>();
+								table.getColumns().addAll(scope, description, key);
+								table.setItems(context.hotkeys.actions);
+								return table;
+							}
+						}
+				).get())
+		);
+		new Tab("Config", configLayout);
 
 		TabPane leftTabs = new TabPane();
 		leftTabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
-		leftTabs.getTabs().add(new Tab("Structure", structure.getWidget()));
+		leftTabs.getTabs().addAll(new Tab("Structure", structure.getWidget()), new Tab("Config", configLayout));
 
 		SplitPane generalLayout = new SplitPane();
 		generalLayout.setOrientation(Orientation.HORIZONTAL);
 		generalLayout.getItems().addAll(leftTabs, specificLayout);
 		SplitPane.setResizableWithParent(leftTabs, false);
-		generalLayout.setDividerPositions(0.3);
+		generalLayout.setDividerPositions(context.config.tabsSplit);
+		generalLayout
+				.getDividers()
+				.get(0)
+				.positionProperty()
+				.addListener((observable, oldValue, newValue) -> context.config.tabsSplit = newValue.doubleValue());
 
 		Scene scene = new Scene(generalLayout, 1200, 800);
 
@@ -66,11 +135,10 @@ public class Window {
 				context.history.redo();
 			}
 		});
-		scene
-				.getStylesheets()
-				.addAll(
-						getClass().getResource("widgets/colorpicker/style.css").toExternalForm(),
-						getClass().getResource("widgets/brushbutton/style.css").toExternalForm());
+		scene.getStylesheets().addAll(
+				getClass().getResource("widgets/colorpicker/style.css").toExternalForm(),
+				getClass().getResource("widgets/brushbutton/style.css").toExternalForm()
+		);
 
 		selectedForEdit.addListener(new ChangeListener<Wrapper>() {
 			{
