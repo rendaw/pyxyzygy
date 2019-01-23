@@ -1,12 +1,7 @@
 package com.zarbosoft.shoedemo;
 
-import com.zarbosoft.luxem.read.StackReader;
-import com.zarbosoft.luxem.write.RawWriter;
-import com.zarbosoft.shoedemo.model.Vector;
-import javafx.geometry.BoundingBox;
-import javafx.geometry.Bounds;
+import com.zarbosoft.internal.shoedemo_seed.model.Vector;
 import javafx.geometry.Point2D;
-import javafx.geometry.Point3D;
 
 public class DoubleVector {
 	public final double x;

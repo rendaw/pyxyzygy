@@ -1,10 +1,7 @@
-package com.zarbosoft.shoedemo.deserialize;
+package com.zarbosoft.internal.shoedemo_seed.deserialize;
 
-import com.zarbosoft.shoedemo.model.ProjectObjectInterface;
+import com.zarbosoft.internal.shoedemo_seed.model.ProjectObjectInterface;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class ChangeDeserializationContext {

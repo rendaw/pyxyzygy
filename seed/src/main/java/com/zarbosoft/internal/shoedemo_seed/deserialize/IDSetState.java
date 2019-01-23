@@ -1,5 +1,6 @@
-package com.zarbosoft.shoedemo.deserialize;
+package com.zarbosoft.internal.shoedemo_seed.deserialize;
 
+import com.zarbosoft.internal.shoedemo_seed.deserialize.ModelDeserializationContext.Finisher;
 import com.zarbosoft.luxem.read.StackReader;
 import com.zarbosoft.rendaw.common.Assertion;
 
@@ -12,7 +13,7 @@ import java.util.stream.Collectors;
 public class IDSetState extends StackReader.State {
 	protected final Set data = new HashSet<>();
 	final List<Long> temp = new ArrayList<>();
-	ModelDeserializationContext.Finisher finisher = new ModelDeserializationContext.Finisher() {
+	Finisher finisher = new ModelDeserializationContext.Finisher() {
 		@Override
 		public void finish(ModelDeserializationContext context) {
 			data.addAll(temp

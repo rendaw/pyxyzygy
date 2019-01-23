@@ -3,7 +3,7 @@ package com.zarbosoft.shoedemo;
 import com.google.common.io.BaseEncoding;
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
-import com.zarbosoft.shoedemo.model.Vector;
+import com.zarbosoft.internal.shoedemo_seed.model.Vector;
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;

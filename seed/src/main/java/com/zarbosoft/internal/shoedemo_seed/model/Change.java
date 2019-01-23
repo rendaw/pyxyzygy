@@ -1,7 +1,6 @@
-package com.zarbosoft.shoedemo.model;
+package com.zarbosoft.internal.shoedemo_seed.model;
 
 import com.zarbosoft.interface1.Configuration;
-import com.zarbosoft.internal.shoedemo_generate.premodel.ProjectObject;
 import com.zarbosoft.luxem.write.RawWriter;
 
 import java.util.function.Consumer;

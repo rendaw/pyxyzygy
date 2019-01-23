@@ -1,4 +1,4 @@
-package com.zarbosoft.shoedemo.deserialize;
+package com.zarbosoft.internal.shoedemo_seed.deserialize;
 
 import com.zarbosoft.luxem.read.StackReader;
 import com.zarbosoft.rendaw.common.Assertion;

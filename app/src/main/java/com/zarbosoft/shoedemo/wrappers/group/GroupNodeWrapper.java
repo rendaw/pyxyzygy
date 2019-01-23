@@ -1,6 +1,7 @@
 package com.zarbosoft.shoedemo.wrappers.group;
 
 import com.google.common.collect.ImmutableList;
+import com.zarbosoft.internal.shoedemo_seed.model.Vector;
 import com.zarbosoft.shoedemo.*;
 import com.zarbosoft.shoedemo.config.GroupNodeConfig;
 import com.zarbosoft.shoedemo.config.NodeConfig;

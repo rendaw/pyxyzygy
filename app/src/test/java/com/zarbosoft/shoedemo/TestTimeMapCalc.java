@@ -2,7 +2,7 @@ package com.zarbosoft.shoedemo;
 
 import com.google.common.collect.ImmutableList;
 import com.zarbosoft.shoedemo.model.GroupTimeFrame;
-import com.zarbosoft.shoedemo.model.ProjectContextBase;
+import com.zarbosoft.internal.shoedemo_seed.model.ProjectContextBase;
 import com.zarbosoft.shoedemo.parts.timeline.Timeline;
 import org.junit.Test;
 

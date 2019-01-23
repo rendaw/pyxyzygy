@@ -4,7 +4,7 @@ import com.zarbosoft.rendaw.common.Pair;
 import com.zarbosoft.shoedemo.*;
 import com.zarbosoft.shoedemo.config.TrueColor;
 import com.zarbosoft.shoedemo.config.TrueColorBrush;
-import com.zarbosoft.shoedemo.model.Rectangle;
+import com.zarbosoft.internal.shoedemo_seed.model.Rectangle;
 import com.zarbosoft.shoedemo.widgets.HelperJFX;
 import com.zarbosoft.shoedemo.widgets.TrueColorPicker;
 import com.zarbosoft.shoedemo.widgets.WidgetFormBuilder;

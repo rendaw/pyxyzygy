@@ -1,10 +1,9 @@
-package com.zarbosoft.shoedemo.deserialize;
+package com.zarbosoft.internal.shoedemo_seed.deserialize;
 
 import com.zarbosoft.luxem.read.StackReader.ArrayState;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class IDListState extends ArrayState {

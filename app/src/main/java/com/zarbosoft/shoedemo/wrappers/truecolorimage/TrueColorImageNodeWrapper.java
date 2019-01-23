@@ -1,10 +1,10 @@
 package com.zarbosoft.shoedemo.wrappers.truecolorimage;
 
+import com.zarbosoft.internal.shoedemo_seed.model.Rectangle;
+import com.zarbosoft.internal.shoedemo_seed.model.Vector;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.shoedemo.*;
 import com.zarbosoft.shoedemo.config.NodeConfig;
-import com.zarbosoft.shoedemo.config.TrueColor;
-import com.zarbosoft.shoedemo.config.TrueColorBrush;
 import com.zarbosoft.shoedemo.config.TrueColorImageNodeConfig;
 import com.zarbosoft.shoedemo.model.*;
 import com.zarbosoft.shoedemo.wrappers.group.Tool;

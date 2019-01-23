@@ -1,11 +1,14 @@
 package com.zarbosoft.shoedemo.model;
 
+import com.zarbosoft.internal.shoedemo_seed.model.Dirtyable;
+import com.zarbosoft.internal.shoedemo_seed.model.ProjectContextBase;
+import com.zarbosoft.internal.shoedemo_seed.model.Vector;
 import com.zarbosoft.luxem.read.StackReader;
 import com.zarbosoft.luxem.write.RawWriter;
 import com.zarbosoft.shoedemo.ProjectContext;
 import com.zarbosoft.shoedemo.TrueColorImage;
-import com.zarbosoft.shoedemo.deserialize.GeneralMapState;
-import com.zarbosoft.shoedemo.deserialize.ModelDeserializationContext;
+import com.zarbosoft.internal.shoedemo_seed.deserialize.GeneralMapState;
+import com.zarbosoft.internal.shoedemo_seed.deserialize.ModelDeserializationContext;
 
 import java.lang.ref.WeakReference;
 import java.nio.file.Files;

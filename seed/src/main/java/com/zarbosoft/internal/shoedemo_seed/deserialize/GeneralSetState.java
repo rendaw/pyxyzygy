@@ -1,16 +1,14 @@
-package com.zarbosoft.shoedemo.deserialize;
+package com.zarbosoft.internal.shoedemo_seed.deserialize;
 
 import com.zarbosoft.luxem.read.StackReader;
 import com.zarbosoft.rendaw.common.Assertion;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.BiFunction;
-import java.util.function.Function;
+import java.util.HashSet;
+import java.util.Set;
 
-public abstract class GeneralListState extends StackReader.State {
-	protected final List data = new ArrayList();
-	protected String type;
+public abstract class GeneralSetState extends StackReader.State {
+	private final Set data = new HashSet();
+	private String type;
 
 	@Override
 	public void type(final String value) {

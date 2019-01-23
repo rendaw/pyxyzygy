@@ -1,4 +1,4 @@
-package com.zarbosoft.shoedemo.model;
+package com.zarbosoft.internal.shoedemo_seed.model;
 
 import com.zarbosoft.luxem.read.StackReader;
 import com.zarbosoft.luxem.write.RawWriter;

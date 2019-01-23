@@ -1,5 +1,7 @@
 package com.zarbosoft.shoedemo;
 
+import com.zarbosoft.internal.shoedemo_seed.model.Rectangle;
+import com.zarbosoft.internal.shoedemo_seed.model.Vector;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.shoedemo.model.*;
 import com.zarbosoft.shoedemo.wrappers.group.GroupLayerWrapper;

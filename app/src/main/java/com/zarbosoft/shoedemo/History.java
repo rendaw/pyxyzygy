@@ -4,9 +4,9 @@ import com.zarbosoft.luxem.read.StackReader;
 import com.zarbosoft.luxem.write.RawWriter;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.WeakCache;
-import com.zarbosoft.shoedemo.deserialize.ChangeDeserializationContext;
-import com.zarbosoft.shoedemo.model.Change;
-import com.zarbosoft.shoedemo.model.ChangeStep;
+import com.zarbosoft.internal.shoedemo_seed.deserialize.ChangeDeserializationContext;
+import com.zarbosoft.internal.shoedemo_seed.model.Change;
+import com.zarbosoft.internal.shoedemo_seed.model.ChangeStep;
 import com.zarbosoft.shoedemo.model.ChangeStepBuilder;
 import com.zarbosoft.shoedemo.model.DeserializeHelper;
 

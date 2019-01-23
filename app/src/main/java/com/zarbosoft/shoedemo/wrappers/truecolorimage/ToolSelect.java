@@ -1,8 +1,8 @@
 package com.zarbosoft.shoedemo.wrappers.truecolorimage;
 
 import com.zarbosoft.shoedemo.*;
-import com.zarbosoft.shoedemo.model.Rectangle;
-import com.zarbosoft.shoedemo.model.Vector;
+import com.zarbosoft.internal.shoedemo_seed.model.Rectangle;
+import com.zarbosoft.internal.shoedemo_seed.model.Vector;
 import com.zarbosoft.shoedemo.widgets.HelperJFX;
 import com.zarbosoft.shoedemo.widgets.WidgetFormBuilder;
 import com.zarbosoft.shoedemo.wrappers.group.Tool;

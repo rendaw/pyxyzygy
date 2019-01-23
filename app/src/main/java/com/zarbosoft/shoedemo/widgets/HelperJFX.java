@@ -2,10 +2,7 @@ package com.zarbosoft.shoedemo.widgets;
 
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.Pair;
-import com.zarbosoft.shoedemo.CustomBinding;
-import com.zarbosoft.shoedemo.ProjectContext;
-import com.zarbosoft.shoedemo.TrueColorImage;
-import com.zarbosoft.shoedemo.Window;
+import com.zarbosoft.shoedemo.*;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -16,15 +13,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import org.apache.batik.dom.svg.SVGDOMImplementation;
-import org.apache.batik.ext.awt.image.codec.PNGEncodeParam;
-import org.apache.batik.ext.awt.image.codec.PNGImageEncoder;
-import org.apache.batik.transcoder.TranscoderException;
-import org.apache.batik.transcoder.TranscoderInput;
-import org.apache.batik.transcoder.TranscoderOutput;
-import org.apache.batik.transcoder.TranscodingHints;
-import org.apache.batik.transcoder.image.ImageTranscoder;
-import org.apache.batik.util.SVGConstants;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
@@ -36,6 +24,7 @@ import java.text.DecimalFormat;
 import java.util.Optional;
 import java.util.function.Function;
 
+import static com.zarbosoft.rendaw.common.Common.getResource;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 
 public class HelperJFX {
@@ -93,40 +82,8 @@ public class HelperJFX {
 		return new Pair<>(out, value);
 	}
 
-	public static Image iconSize(String resource, int width, int height) {
-		return uncheck(() -> {
-			TranscodingHints hints = new TranscodingHints();
-			hints.put(ImageTranscoder.KEY_WIDTH, (float) width); //your image width
-			hints.put(ImageTranscoder.KEY_HEIGHT, (float) height); //your image height
-			hints.put(ImageTranscoder.KEY_DOM_IMPLEMENTATION, SVGDOMImplementation.getDOMImplementation());
-			hints.put(ImageTranscoder.KEY_DOCUMENT_ELEMENT_NAMESPACE_URI, SVGConstants.SVG_NAMESPACE_URI);
-			hints.put(ImageTranscoder.KEY_DOCUMENT_ELEMENT, SVGConstants.SVG_SVG_TAG);
-			hints.put(ImageTranscoder.KEY_XML_PARSER_VALIDATING, false);
-			final BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-			ImageTranscoder transcoder = new ImageTranscoder() {
-				@Override
-				public BufferedImage createImage(int i, int i1) {
-					return image;
-				}
-
-				@Override
-				public void writeImage(
-						BufferedImage bufferedImage, TranscoderOutput transcoderOutput
-				) throws TranscoderException {
-
-				}
-			};
-			transcoder.setTranscodingHints(hints);
-			uncheck(() -> transcoder.transcode(new TranscoderInput(Window.class.getResourceAsStream("icons/" +
-					resource)), null));
-			ByteArrayOutputStream pngOut = new ByteArrayOutputStream();
-			new PNGImageEncoder(pngOut, PNGEncodeParam.getDefaultEncodeParam(image)).encode(image);
-			return new Image(new ByteArrayInputStream(pngOut.toByteArray()));
-		});
-	}
-
 	public static Image icon(String resource) {
-		return ProjectContext.iconCache.computeIfAbsent(resource, r -> iconSize(resource, 16, 16));
+		return ProjectContext.iconCache.computeIfAbsent(resource, r -> new Image(getResource(Main.class,"icons/" + resource)));
 	}
 
 	public static MenuItem menuItem(String icon) {

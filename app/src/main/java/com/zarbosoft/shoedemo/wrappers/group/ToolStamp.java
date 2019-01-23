@@ -1,6 +1,7 @@
 package com.zarbosoft.shoedemo.wrappers.group;
 
 import com.google.common.collect.ImmutableList;
+import com.zarbosoft.internal.shoedemo_seed.model.Rectangle;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.shoedemo.*;
 import com.zarbosoft.shoedemo.model.*;
