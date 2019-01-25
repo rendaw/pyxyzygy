@@ -29,7 +29,7 @@ public class RowTimeRangeWidget {
 	private static final javafx.scene.paint.Color outFill = c(new Color(157, 157, 157));
 	private static final javafx.scene.paint.Color inFill = c(new Color(255, 255, 255));
 	private static final javafx.scene.paint.Color inStroke = c(new Color(0, 0, 0));
-	private static final Image loopIcon = icon("loop-handle.svg");
+	private static final Image loopIcon = icon("loop-handle.png");
 
 	final Pane base = new Pane();
 
@@ -42,7 +42,7 @@ public class RowTimeRangeWidget {
 
 	private final Group outerA = new Group();
 	private final Group outerB = new Group();
-	private final ImageView stopMark = new ImageView(icon("no-inner.svg"));
+	private final ImageView stopMark = new ImageView(icon("no-inner.png"));
 	private final Rectangle stopSeparator;
 
 	private final Group inner = new Group();

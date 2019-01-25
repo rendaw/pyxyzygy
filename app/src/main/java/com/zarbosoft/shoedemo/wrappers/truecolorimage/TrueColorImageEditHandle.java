@@ -48,7 +48,7 @@ public class TrueColorImageEditHandle extends Wrapper.EditControlsHandle {
 		wrapper.canvasHandle.outerDraw.getChildren().add(overlay);
 
 		// Select
-		ToggleButton select = new ToggleButton(null, new ImageView(icon("select.svg"))) {
+		ToggleButton select = new ToggleButton(null, new ImageView(icon("select.png"))) {
 			@Override
 			public void fire() {
 				if (isSelected())
@@ -123,7 +123,7 @@ public class TrueColorImageEditHandle extends Wrapper.EditControlsHandle {
 			Main.config.trueColorBrushes.add(index + 1, brush);
 		});
 
-		MenuButton menuButton = new MenuButton(null, new ImageView(icon("menu.svg")));
+		MenuButton menuButton = new MenuButton(null, new ImageView(icon("menu.png")));
 		menuButton.getItems().addAll(menuNew, menuDelete, menuLeft, menuRight);
 
 		Region menuSpring = new Region();

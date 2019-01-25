@@ -146,7 +146,7 @@ public class ToolSelect extends Tool {
 
 			editHandle.paintTab.setContent(pad(new WidgetFormBuilder().button(b -> {
 				b.setText("Place");
-				b.setGraphic(new ImageView(icon("arrow-collapse-down.svg")));
+				b.setGraphic(new ImageView(icon("arrow-collapse-down.png")));
 				b.setOnAction(e -> {
 					editHandle.wrapper.clear(context, originalBounds);
 
@@ -163,14 +163,14 @@ public class ToolSelect extends Tool {
 				});
 			}).button(b -> {
 				b.setText("Clear");
-				b.setGraphic(new ImageView(icon("eraser-variant.svg")));
+				b.setGraphic(new ImageView(icon("eraser-variant.png")));
 				b.setOnAction(e -> {
 					editHandle.wrapper.clear(context, originalBounds);
 					setState(context, new StateCreate(context));
 				});
 			}).button(b -> {
 				b.setText("Cut");
-				b.setGraphic(new ImageView(icon("content-cut.svg")));
+				b.setGraphic(new ImageView(icon("content-cut.png")));
 				b.setOnAction(e -> uncheck(() -> {
 					copy.run();
 					editHandle.wrapper.clear(context, originalBounds);
@@ -178,7 +178,7 @@ public class ToolSelect extends Tool {
 				}));
 			}).button(b -> {
 				b.setText("Copy");
-				b.setGraphic(new ImageView(icon("content-copy.svg")));
+				b.setGraphic(new ImageView(icon("content-copy.png")));
 				b.setOnAction(e -> {
 					copy.run();
 				});
@@ -390,20 +390,20 @@ public class ToolSelect extends Tool {
 
 			editHandle.paintTab.setContent(pad(new WidgetFormBuilder().button(b -> {
 				b.setText("Lift");
-				b.setGraphic(new ImageView(icon("arrow-expand-up.svg")));
+				b.setGraphic(new ImageView(icon("arrow-expand-up.png")));
 				b.setOnAction(e -> {
 					setState(context, new StateMove(context, inside, render(context)));
 				});
 			}).button(b -> {
 				b.setText("Clear");
-				b.setGraphic(new ImageView(icon("eraser-variant.svg")));
+				b.setGraphic(new ImageView(icon("eraser-variant.png")));
 				b.setOnAction(e -> {
 					editHandle.wrapper.clear(context, inside);
 					setState(context, new StateCreate(context));
 				});
 			}).button(b -> {
 				b.setText("Cut");
-				b.setGraphic(new ImageView(icon("content-cut.svg")));
+				b.setGraphic(new ImageView(icon("content-cut.png")));
 				b.setOnAction(e -> uncheck(() -> {
 					copy.run();
 					editHandle.wrapper.clear(context, inside);
@@ -411,7 +411,7 @@ public class ToolSelect extends Tool {
 				}));
 			}).button(b -> {
 				b.setText("Copy");
-				b.setGraphic(new ImageView(icon("content-copy.svg")));
+				b.setGraphic(new ImageView(icon("content-copy.png")));
 				b.setOnAction(e -> {
 					copy.run();
 				});

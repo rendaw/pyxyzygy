@@ -195,15 +195,15 @@ public class Structure {
 				final SimpleObjectProperty<Wrapper> wrapper = new SimpleObjectProperty<>(null);
 				ChangeListener<Boolean> viewingListener = (observable, oldValue, newValue) -> {
 					if (newValue)
-						showViewing.setImage(icon("eye.svg"));
+						showViewing.setImage(icon("eye.png"));
 					else
 						showViewing.setImage(null);
 				};
 				ChangeListener<Boolean> copyStateListener = (observable, oldValue, newValue) -> {
 					if (wrapper.get().tagCopied.get())
-						showGrabState.setImage(icon("content-copy.svg"));
+						showGrabState.setImage(icon("content-copy.png"));
 					else if (wrapper.get().tagLifted.get())
-						showGrabState.setImage(icon("content-cut.svg"));
+						showGrabState.setImage(icon("content-cut.png"));
 					else
 						showGrabState.setImage(null);
 				};
@@ -297,14 +297,14 @@ public class Structure {
 			image.initialFramesAdd(context, ImmutableList.of(frame));
 			addNew(image);
 		});
-		MenuButton addButton = HelperJFX.menuButton("plus.svg");
+		MenuButton addButton = HelperJFX.menuButton("plus.png");
 		addButton.getItems().addAll(addCamera, addGroup, addImage);
-		Button removeButton = HelperJFX.button("minus.svg", "Remove");
+		Button removeButton = HelperJFX.button("minus.png", "Remove");
 		removeButton.disableProperty().bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedIndices()));
 		removeButton.setOnAction(e -> {
 			delete(context);
 		});
-		Button moveUpButton = HelperJFX.button("arrow-up.svg", "Move Up");
+		Button moveUpButton = HelperJFX.button("arrow-up.png", "Move Up");
 		moveUpButton.disableProperty().bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedIndices()));
 		moveUpButton.setOnAction(e -> {
 			List<TreeItem<Wrapper>> selected = tree.getSelectionModel().getSelectedItems();
@@ -331,7 +331,7 @@ public class Structure {
 			}
 			context.history.finishChange();
 		});
-		Button moveDownButton = HelperJFX.button("arrow-down.svg", "Move Down");
+		Button moveDownButton = HelperJFX.button("arrow-down.png", "Move Down");
 		moveDownButton.disableProperty().bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedIndices()));
 		moveDownButton.setOnAction(e -> {
 			List<TreeItem<Wrapper>> selected = tree.getSelectionModel().getSelectedItems();
@@ -358,7 +358,7 @@ public class Structure {
 			}
 			context.history.finishChange();
 		});
-		Button duplicateButton = HelperJFX.button("content-copy.svg", "Duplicate");
+		Button duplicateButton = HelperJFX.button("content-copy.png", "Duplicate");
 		duplicateButton.disableProperty().bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedIndices()));
 		duplicateButton.setOnAction(e -> {
 			duplicate();
@@ -375,7 +375,7 @@ public class Structure {
 		linkAfterButton.setOnAction(e -> {
 			placeAfter();
 		});
-		MenuButton linkButton = HelperJFX.menuButton("content-paste.svg");
+		MenuButton linkButton = HelperJFX.menuButton("content-paste.png");
 		linkButton.getItems().addAll(linkBeforeButton, linkInButton, linkAfterButton);
 		toolbar = new ToolBar(addButton, duplicateButton, removeButton, moveUpButton, moveDownButton, linkButton);
 		layout.getChildren().addAll(toolbar, tree);

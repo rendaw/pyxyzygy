@@ -1,11 +1,11 @@
-open module com.zarbosoft.shoedemo.internal.shoedemo_generate {
+module com.zarbosoft.shoedemo.internal.shoedemo_generate {
 	requires transitive com.zarbosoft.internal.shoedemo_seed;
-	requires com.zarbosoft.interface1;
+	requires com.zarbosoft.luxem;
 	requires javapoet;
 	requires ant;
-	requires reflections;
+	requires io.github.classgraph;
 	requires java.compiler;
-	requires guava;
+	requires com.google.common;
 	requires javafx.base;
 	exports com.zarbosoft.internal.shoedemo_generate;
 }

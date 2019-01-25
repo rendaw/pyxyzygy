@@ -3,7 +3,7 @@ import subprocess
 import os
 from pathlib import Path
 
-resources = Path('../app/target/resources/com/zarbosoft/shoedemo/icons/')
+resources = Path('../app/target/resources/com/zarbosoft/shoedemo/icons')
 os.makedirs(resources, exist_ok=True)
 
 source_icons = Path.cwd() / 'icons'

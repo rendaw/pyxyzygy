@@ -2,7 +2,10 @@ package com.zarbosoft.shoedemo.widgets;
 
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.Pair;
-import com.zarbosoft.shoedemo.*;
+import com.zarbosoft.shoedemo.CustomBinding;
+import com.zarbosoft.shoedemo.Main;
+import com.zarbosoft.shoedemo.ProjectContext;
+import com.zarbosoft.shoedemo.TrueColorImage;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -14,9 +17,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
@@ -25,7 +26,6 @@ import java.util.Optional;
 import java.util.function.Function;
 
 import static com.zarbosoft.rendaw.common.Common.getResource;
-import static com.zarbosoft.rendaw.common.Common.uncheck;
 
 public class HelperJFX {
 	public static Node pad(Node node) {
@@ -83,7 +83,10 @@ public class HelperJFX {
 	}
 
 	public static Image icon(String resource) {
-		return ProjectContext.iconCache.computeIfAbsent(resource, r -> new Image(getResource(Main.class,"icons/" + resource)));
+		InputStream s = getResource(Main.class, "icons", resource);
+		if (s == null)
+			throw new Assertion(String.format("Can't find resource %s", resource));
+		return ProjectContext.iconCache.computeIfAbsent(resource, r -> new Image(s));
 	}
 
 	public static MenuItem menuItem(String icon) {
@@ -94,7 +97,7 @@ public class HelperJFX {
 		return new MenuButton(null, new ImageView(icon(icon)));
 	}
 
-	public static class IconToggleButton extends ToggleButton{
+	public static class IconToggleButton extends ToggleButton {
 		public IconToggleButton(String icon, String hint) {
 			super(null, new ImageView(icon(icon)));
 			Tooltip.install(this, new Tooltip(hint));
@@ -111,96 +114,96 @@ public class HelperJFX {
 		final int width = image.getWidth() * zoom;
 		final int height = image.getHeight() * zoom;
 		return new WritableImage(new PixelReader() {
-				byte[] premultipliedData;
-				byte[] data;
+			byte[] premultipliedData;
+			byte[] data;
 
-				@Override
-				public PixelFormat getPixelFormat() {
-					return PixelFormat.getByteBgraInstance();
-				}
+			@Override
+			public PixelFormat getPixelFormat() {
+				return PixelFormat.getByteBgraInstance();
+			}
 
-				@Override
-				public int getArgb(int x, int y) {
+			@Override
+			public int getArgb(int x, int y) {
+				throw new Assertion();
+			}
+
+			@Override
+			public Color getColor(int x, int y) {
+				throw new Assertion();
+			}
+
+			@Override
+			public <T extends Buffer> void getPixels(
+					int x, int y, int w, int h, WritablePixelFormat<T> pixelformat, T buffer, int scanlineStride
+			) {
+				if (scanlineStride != w * 4)
 					throw new Assertion();
-				}
-
-				@Override
-				public Color getColor(int x, int y) {
-					throw new Assertion();
-				}
-
-				@Override
-				public <T extends Buffer> void getPixels(
-						int x, int y, int w, int h, WritablePixelFormat<T> pixelformat, T buffer, int scanlineStride
-				) {
-					if (scanlineStride != w * 4)
+				byte[] data = pixelformat.isPremultiplied() ? (
+						premultipliedData == null ?
+								premultipliedData = image.dataPremultiplied(zoom) :
+								premultipliedData
+				) : (this.data == null ? this.data = image.data(zoom) : this.data);
+				if (w == width) {
+					if (x != 0)
 						throw new Assertion();
-					byte[] data = pixelformat.isPremultiplied() ? (
-							premultipliedData == null ?
-									premultipliedData = image.dataPremultiplied(zoom) :
-									premultipliedData
-					) : (this.data == null ? this.data = image.data(zoom) : this.data);
-					if (w == width) {
-						if (x != 0)
-							throw new Assertion();
-						((ByteBuffer) buffer).put(data, y * width * 4, h * width * 4);
-					} else {
-						if (x + w > width)
-							throw new Assertion();
-						if (y + h > height)
-							throw new Assertion();
-						for (int i = y; i < y + h; ++i) {
-							((ByteBuffer) buffer).put(data, (i * width + x) * 4, scanlineStride);
-						}
+					((ByteBuffer) buffer).put(data, y * width * 4, h * width * 4);
+				} else {
+					if (x + w > width)
+						throw new Assertion();
+					if (y + h > height)
+						throw new Assertion();
+					for (int i = y; i < y + h; ++i) {
+						((ByteBuffer) buffer).put(data, (i * width + x) * 4, scanlineStride);
 					}
 				}
+			}
 
-				@Override
-				public void getPixels(
-						int x,
-						int y,
-						int w,
-						int h,
-						WritablePixelFormat<ByteBuffer> pixelformat,
-						byte[] buffer,
-						int offset,
-						int scanlineStride
-				) {
-					if (scanlineStride != w * 4)
+			@Override
+			public void getPixels(
+					int x,
+					int y,
+					int w,
+					int h,
+					WritablePixelFormat<ByteBuffer> pixelformat,
+					byte[] buffer,
+					int offset,
+					int scanlineStride
+			) {
+				if (scanlineStride != w * 4)
+					throw new Assertion();
+				byte[] data = pixelformat.isPremultiplied() ? (
+						premultipliedData == null ?
+								premultipliedData = image.dataPremultiplied(zoom) :
+								premultipliedData
+				) : (this.data == null ? this.data = image.data(zoom) : this.data);
+				if (w == width) {
+					if (x != 0)
 						throw new Assertion();
-					byte[] data = pixelformat.isPremultiplied() ? (
-							premultipliedData == null ?
-									premultipliedData = image.dataPremultiplied(zoom) :
-									premultipliedData
-					) : (this.data == null ? this.data = image.data(zoom) : this.data);
-					if (w == width) {
-						if (x != 0)
-							throw new Assertion();
-						System.arraycopy(data, y * width * 4, buffer, offset, h * width * 4);
-					} else {
-						if (x + w > width)
-							throw new Assertion();
-						if (y + h > height)
-							throw new Assertion();
-						for (int i = y; i < y + h; ++i) {
-							System.arraycopy(data, (i * width + x) * 4, buffer, offset + i * w * 4, scanlineStride);
-						}
+					System.arraycopy(data, y * width * 4, buffer, offset, h * width * 4);
+				} else {
+					if (x + w > width)
+						throw new Assertion();
+					if (y + h > height)
+						throw new Assertion();
+					for (int i = y; i < y + h; ++i) {
+						System.arraycopy(data, (i * width + x) * 4, buffer, offset + i * w * 4, scanlineStride);
 					}
 				}
+			}
 
-				@Override
-				public void getPixels(
-						int x,
-						int y,
-						int w,
-						int h,
-						WritablePixelFormat<IntBuffer> pixelformat,
-						int[] buffer,
-						int offset,
-						int scanlineStride
-				) {
-					throw new Assertion();
-				}
-			}, width, height);
+			@Override
+			public void getPixels(
+					int x,
+					int y,
+					int w,
+					int h,
+					WritablePixelFormat<IntBuffer> pixelformat,
+					int[] buffer,
+					int offset,
+					int scanlineStride
+			) {
+				throw new Assertion();
+			}
+		}, width, height);
 	}
 }

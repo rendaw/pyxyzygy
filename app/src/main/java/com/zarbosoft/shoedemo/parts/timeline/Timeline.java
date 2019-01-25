@@ -156,7 +156,7 @@ public class Timeline {
 					break;
 			}
 		});
-		add = HelperJFX.button("plus.svg", "Add");
+		add = HelperJFX.button("plus.png", "Add");
 		add.setOnAction(e -> {
 			if (window.selectedForView.get() == null)
 				return;
@@ -172,7 +172,7 @@ public class Timeline {
 									.createFrame(context, window, window.selectedForView.get().getConfig().frame.get()))
 					.findFirst();
 		});
-		duplicate = HelperJFX.button("content-copy.svg", "Duplicate");
+		duplicate = HelperJFX.button("content-copy.png", "Duplicate");
 		duplicate.setOnAction(e -> {
 			if (window.selectedForView.get() == null)
 				return;
@@ -191,26 +191,26 @@ public class Timeline {
 									))
 					.findFirst();
 		});
-		remove = HelperJFX.button("minus.svg", "Remove");
+		remove = HelperJFX.button("minus.png", "Remove");
 		remove.setOnAction(e -> {
 			if (selectedFrame.get() == null)
 				return;
 			selectedFrame.get().frame.remove(context);
 			selectedFrame.set(null);
 		});
-		clear = HelperJFX.button("eraser-variant.svg", "Clear");
+		clear = HelperJFX.button("eraser-variant.png", "Clear");
 		clear.setOnAction(e -> {
 			if (selectedFrame.get() == null)
 				return;
 			selectedFrame.get().frame.clear(context);
 		});
-		left = HelperJFX.button("arrow-left.svg", "Left");
+		left = HelperJFX.button("arrow-left.png", "Left");
 		left.setOnAction(e -> {
 			if (selectedFrame.get() == null)
 				return;
 			selectedFrame.get().frame.moveLeft(context);
 		});
-		right = HelperJFX.button("arrow-right.svg", "Right");
+		right = HelperJFX.button("arrow-right.png", "Right");
 		right.setOnAction(e -> {
 			if (selectedFrame.get() == null)
 				return;

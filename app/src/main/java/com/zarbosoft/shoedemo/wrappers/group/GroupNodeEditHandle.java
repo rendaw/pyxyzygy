@@ -76,8 +76,8 @@ public class GroupNodeEditHandle extends Wrapper.EditControlsHandle {
 			}
 		}
 		toolBar.getItems().addAll(
-				new ToolToggle("cursor-move.svg", "Move", GroupNodeConfig.Tool.MOVE),
-				new ToolToggle("stamper.svg", "Stamp", GroupNodeConfig.Tool.STAMP)
+				new ToolToggle("cursor-move.png", "Move", GroupNodeConfig.Tool.MOVE),
+				new ToolToggle("stamper.png", "Stamp", GroupNodeConfig.Tool.STAMP)
 		);
 
 		groupNodeWrapper.config.tool.addListener(new ChangeListener<GroupNodeConfig.Tool>() {

@@ -7,19 +7,22 @@ import com.squareup.javapoet.*;
 import com.zarbosoft.interface1.Configuration;
 import com.zarbosoft.interface1.TypeInfo;
 import com.zarbosoft.interface1.Walk;
-import com.zarbosoft.internal.shoedemo_seed.model.*;
 import com.zarbosoft.internal.shoedemo_generate.premodel.ProjectObject;
+import com.zarbosoft.internal.shoedemo_seed.deserialize.*;
+import com.zarbosoft.internal.shoedemo_seed.model.Change;
+import com.zarbosoft.internal.shoedemo_seed.model.ChangeStep;
+import com.zarbosoft.internal.shoedemo_seed.model.ProjectContextBase;
+import com.zarbosoft.internal.shoedemo_seed.model.ProjectObjectInterface;
 import com.zarbosoft.luxem.read.StackReader;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.Pair;
-import com.zarbosoft.internal.shoedemo_seed.deserialize.*;
+import io.github.classgraph.ClassGraph;
+import io.github.classgraph.ScanResult;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleLongProperty;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
-import org.reflections.Reflections;
-import org.reflections.scanners.SubTypesScanner;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -85,7 +88,7 @@ public class GenerateTask extends Task {
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	public static Object CHANGE_TOKEN_NAME = new Object();
-	public static Reflections reflections = new Reflections("", new SubTypesScanner(false));
+	public static ScanResult scanner = new ClassGraph().enableAllInfo().whitelistPackages("com.zarbosoft").scan();
 
 	public static Method sigObjIncRef = findMethod(ProjectObjectInterface.class, "incRef");
 	public static Method sigObjDecRef = findMethod(ProjectObjectInterface.class, "decRef");
@@ -220,7 +223,7 @@ public class GenerateTask extends Task {
 				recordCode.add("return new $T.Deserializer();\n", toPoet(fieldInfo));
 			} else {
 				recordCode.add("switch (key) {\n").indent();
-				Walk.getDerived(reflections, fieldInfo).forEach(p -> {
+				Walk.getDerived(scanner, fieldInfo).forEach(p -> {
 					recordCode.add("case \"$L\": return new $T.Deserializer();\n", p.first, p.second);
 				});
 				recordCode
@@ -256,13 +259,17 @@ public class GenerateTask extends Task {
 
 	public void buildModel() {
 		// Prep type map
-		for (Class klass : iterable(reflections
-				.getSubTypesOf(ModelRootType.class)
-				.stream()
-				.filter(c -> c.getPackage().getName().equals("com.zarbosoft.internal.shoedemo_generate.premodel")))) {
+		for (Class klass : new ClassGraph()
+				.enableAllInfo()
+				.whitelistPackages("com.zarbosoft.internal.shoedemo_generate.premodel")
+				.scan()
+				.getSubclasses("com.zarbosoft.internal.shoedemo_seed.model.ModelRootType")
+				.loadClasses()) {
 			ClassName name = name(klass.getSimpleName());
 			typeMap.put(klass, new Pair<>(name, TypeSpec.classBuilder(name).addModifiers(PUBLIC)));
 		}
+		if (typeMap.isEmpty())
+			throw new Assertion();
 
 		// Build
 		ClassName changeStepName = ClassName.get(ChangeStep.class);
@@ -1602,21 +1609,16 @@ public class GenerateTask extends Task {
 		}
 
 		write(changeStepBuilderName, changeStepBuilder.build());
-		write(
-				deserializeHelperName,
-				deserializeHelper
-						.addMethod(globalModelDeserialize
-								.addCode(
-										"throw new $T(String.format(\"Unknown type %s\", type));\n",
-										RuntimeException.class
-								)
-								.build())
-						.addMethod(globalChangeDeserialize.addCode(
-								"throw new $T(String.format(\"Unknown change type %s\", type));\n",
+		write(deserializeHelperName, deserializeHelper
+				.addMethod(globalModelDeserialize
+						.addCode("throw new $T(String.format(\"Unknown type %s\", type));\n", RuntimeException.class)
+						.build())
+				.addMethod(globalChangeDeserialize
+						.addCode("throw new $T(String.format(\"Unknown change type %s\", type));\n",
 								RuntimeException.class
-						).build())
-						.build()
-		);
+						)
+						.build())
+				.build());
 	}
 
 	public void write(ClassName name, TypeSpec spec) {
