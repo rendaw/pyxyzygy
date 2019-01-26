@@ -1,0 +1,14 @@
+image: fedora:29
+
+stages:
+  - build
+
+build:
+  stage: build
+  script:
+    - yum install -y maven java-11-openjdk mingw64-gcc mingw64-gcc-c++ mingw64-libpng mingw64-libpng-static wget zip
+    - curl https://download.java.net/java/GA/jdk11/9/GPL/openjdk-11.0.2_windows-x64_bin.zip -o openjdk.zip
+    - echo 'cf39490fe042dba1b61d6e9a395095279a69e70086c8c8d5466d9926d80976d8 openjdk.zip' | sha256sum -c -
+    - unzip openjdk.zip
+    - sed -i -e "s#GEN_PATH#$PWD/jdk-11.0.2#" app/toolchains.xml
+    - mvn clean package -X -e --global-toolchains app/toolchains.xml
