@@ -3,7 +3,7 @@ package com.zarbosoft.shoedemo.wrappers.group;
 import com.zarbosoft.shoedemo.DoubleVector;
 import com.zarbosoft.shoedemo.ProjectContext;
 import com.zarbosoft.shoedemo.model.GroupPositionFrame;
-import com.zarbosoft.shoedemo.model.Vector;
+import com.zarbosoft.internal.shoedemo_seed.model.Vector;
 import javafx.scene.Node;
 
 public class ToolMove extends Tool {

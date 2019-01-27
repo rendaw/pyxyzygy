@@ -39,7 +39,7 @@ public class CameraWrapper extends GroupNodeWrapper {
 	private Spinner<Integer> propertiesEndFrame;
 	private Spinner<Double> propertiesFrameRate;
 	private Path renderPath;
-	private com.zarbosoft.shoedemo.model.Rectangle crop;
+	private com.zarbosoft.internal.shoedemo_seed.model.Rectangle crop;
 
 	public CameraWrapper(ProjectContext context, Wrapper parent, int parentIndex, Camera node) {
 		super(context, parent, parentIndex, node);
@@ -68,7 +68,7 @@ public class CameraWrapper extends GroupNodeWrapper {
 	private void updateCameraBorder() {
 		if (cameraBorder == null)
 			return;
-		this.crop = new com.zarbosoft.shoedemo.model.Rectangle(-node.width() / 2,
+		this.crop = new com.zarbosoft.internal.shoedemo_seed.model.Rectangle(-node.width() / 2,
 				-node.height() / 2,
 				node.width(),
 				node.height()

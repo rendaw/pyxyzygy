@@ -11,8 +11,6 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -39,15 +37,16 @@ public class ConfigBase {
 
 	protected void start() {
 		configFlushTimer.scheduleAtFixedRate(new TimerTask() {
-			Logger logger = LoggerFactory.getLogger(name());
-
 			@Override
 			public void run() {
 				Platform.runLater(() -> {
 					try {
 						flushConfig();
 					} catch (Exception e) {
-						logger.error("Error flushing config", e);
+						System.out.format("Error flushing config");
+						e.printStackTrace();
+						System.out.flush();
+						System.err.flush();
 					}
 				});
 			}

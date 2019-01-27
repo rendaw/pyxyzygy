@@ -2,18 +2,19 @@ package com.zarbosoft.shoedemo;
 
 import com.google.common.collect.ImmutableList;
 import com.zarbosoft.interface1.TypeInfo;
+import com.zarbosoft.internal.shoedemo_seed.deserialize.ModelDeserializationContext;
+import com.zarbosoft.internal.shoedemo_seed.model.Dirtyable;
+import com.zarbosoft.internal.shoedemo_seed.model.ProjectContextBase;
+import com.zarbosoft.internal.shoedemo_seed.model.ProjectObjectInterface;
 import com.zarbosoft.luxem.read.StackReader;
 import com.zarbosoft.luxem.write.RawWriter;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.DeadCode;
 import com.zarbosoft.shoedemo.config.ProjectConfig;
 import com.zarbosoft.shoedemo.config.TrueColor;
-import com.zarbosoft.shoedemo.deserialize.ModelDeserializationContext;
 import com.zarbosoft.shoedemo.model.*;
 import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -172,14 +173,15 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 		if (oldTimer != null)
 			oldTimer.cancel();
 		newTimer.schedule(new TimerTask() {
-			Logger logger = LoggerFactory.getLogger(timerName);
-
 			@Override
 			public void run() {
 				try {
 					flushAll();
 				} catch (Exception e) {
-					logger.error("Error during flush", e);
+					System.out.format("Error duing flush");
+					e.printStackTrace();
+					System.out.flush();
+					System.err.flush();
 				}
 			}
 		}, 5000);

@@ -1,5 +1,7 @@
 package com.zarbosoft.shoedemo.wrappers.truecolorimage;
 
+import com.zarbosoft.internal.shoedemo_seed.model.Rectangle;
+import com.zarbosoft.internal.shoedemo_seed.model.Vector;
 import com.zarbosoft.shoedemo.DoubleRectangle;
 import com.zarbosoft.shoedemo.ProjectContext;
 import com.zarbosoft.shoedemo.WidgetHandle;

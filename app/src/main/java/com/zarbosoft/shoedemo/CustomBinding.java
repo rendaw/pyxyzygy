@@ -5,15 +5,15 @@ import com.zarbosoft.rendaw.common.Pair;
 import javafx.beans.binding.Binding;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.Property;
-import javafx.beans.property.SimpleDoubleProperty;
-import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 public class CustomBinding {
 	public static <A, B> Runnable bindBidirectional(
@@ -80,30 +80,50 @@ public class CustomBinding {
 		});
 	}
 
-	public static void bindMultiple(Runnable update, Property ...dependencies) {
+	public static void bindMultiple(Runnable update, Property... dependencies) {
 		ChangeListener listener = (observable, oldValue, newValue) -> {
 			update.run();
 		};
-		listener.changed(null,null ,null );
-		for (Property dep : dependencies) dep.addListener(listener);
+		listener.changed(null, null, null);
+		for (Property dep : dependencies)
+			dep.addListener(listener);
 	}
 
-	public static Runnable bindBidirectionalMultiple(Pair<Property, Runnable>...properties) {
+	public static class Binder<T> {
+		final Property property;
+		final Supplier<Optional<T>> supplier;
+		final Consumer<T> consumer;
+
+		public Binder(Property property, Supplier<Optional<T>> supplier, Consumer<T> consumer) {
+			this.property = property;
+			this.supplier = supplier;
+			this.consumer = consumer;
+		}
+	}
+
+	public static <T> Runnable bindBidirectionalMultiple(Binder<T>... properties) {
 		List<Pair<Property, ChangeListener>> cleanup = new ArrayList<>();
-		Common.Mutable<Boolean> suppress = new Common.Mutable<>();
-		for (Pair<Property, Runnable> pair : properties) {
+		Common.Mutable<Boolean> suppress = new Common.Mutable<>(false);
+		for (Binder<T> binder : properties) {
 			final ChangeListener listener = (observable, oldValue, newValue) -> {
 				if (suppress.value)
 					return;
 				suppress.value = true;
 				try {
-					pair.second.run();
+					Optional<T> v = binder.supplier.get();
+					if (!v.isPresent())
+						return;
+					for (Binder<T> otherBinder : properties) {
+						if (otherBinder == binder)
+							continue;
+						otherBinder.consumer.accept(v.get());
+					}
 				} finally {
 					suppress.value = false;
 				}
 			};
-			pair.first.addListener(listener);
-			cleanup.add(new Pair<>(pair.first, listener) );
+			binder.property.addListener(listener);
+			cleanup.add(new Pair<>(binder.property, listener));
 		}
 		return () -> cleanup.forEach(pair -> pair.first.removeListener(pair.second));
 	}
@@ -111,6 +131,7 @@ public class CustomBinding {
 	public static Binding absInt(ObservableValue<Number> a) {
 		return Bindings.createIntegerBinding(() -> Math.abs(a.getValue().intValue()), a);
 	}
+
 	public static Binding bindAbs(ObservableValue<Number> a) {
 		return Bindings.createDoubleBinding(() -> Math.abs(a.getValue().doubleValue()), a);
 	}

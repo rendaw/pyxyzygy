@@ -1,0 +1,16 @@
+image: registry.gitlab.com/rendaw/pyxyzygy-builenv
+
+variable:
+  BUILD_WIN_JAVA: /jdk-11.0.2
+  BUILD_WIN_CXX: x86_64-w64-mingw32-g++
+  BUILD_WIN_INCLUDE: /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++
+  BUILD_WIN_LIB: /usr/x86_64-w64-mingw32/sys-root/mingw/lib
+
+stages:
+  - world
+
+build:
+  stage: world
+  script:
+    - sed -i -e "s#GEN_PATH#/jdk-11.0.2#" app/toolchains.xml
+    - mvn clean package -X -e --global-toolchains app/toolchains.xml

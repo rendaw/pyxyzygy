@@ -1,22 +1,14 @@
-package com.zarbosoft.shoedemo.deserialize;
+package com.zarbosoft.internal.shoedemo_seed.deserialize;
 
-import com.zarbosoft.interface1.TypeInfo;
 import com.zarbosoft.luxem.read.StackReader;
 import com.zarbosoft.rendaw.common.Assertion;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.BiFunction;
+import java.util.ArrayList;
+import java.util.List;
 
-public abstract class GeneralMapState extends StackReader.State {
-	protected final Map data = new HashMap<>();
-	protected String key;
+public abstract class GeneralListState extends StackReader.State {
+	protected final List data = new ArrayList();
 	protected String type;
-
-	@Override
-	public void key(String value) {
-		key = value;
-	}
 
 	@Override
 	public void type(final String value) {

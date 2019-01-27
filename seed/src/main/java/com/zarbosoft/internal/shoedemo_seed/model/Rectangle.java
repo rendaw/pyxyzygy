@@ -1,4 +1,4 @@
-package com.zarbosoft.shoedemo.model;
+package com.zarbosoft.internal.shoedemo_seed.model;
 
 import static com.zarbosoft.rendaw.common.Common.ceilDiv;
 

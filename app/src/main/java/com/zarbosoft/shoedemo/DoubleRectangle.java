@@ -1,7 +1,7 @@
 package com.zarbosoft.shoedemo;
 
-import com.zarbosoft.shoedemo.model.Rectangle;
-import com.zarbosoft.shoedemo.model.Vector;
+import com.zarbosoft.internal.shoedemo_seed.model.Rectangle;
+import com.zarbosoft.internal.shoedemo_seed.model.Vector;
 
 import static com.zarbosoft.rendaw.common.Common.ceilDiv;
 

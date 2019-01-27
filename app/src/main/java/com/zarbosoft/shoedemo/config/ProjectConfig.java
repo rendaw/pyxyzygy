@@ -2,7 +2,6 @@ package com.zarbosoft.shoedemo.config;
 
 import com.zarbosoft.interface1.Configuration;
 import com.zarbosoft.shoedemo.ConfigBase;
-import edu.umd.cs.findbugs.annotations.CleanupObligation;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableMap;

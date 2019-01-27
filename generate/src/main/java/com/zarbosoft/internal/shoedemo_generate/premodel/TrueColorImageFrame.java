@@ -1,7 +1,7 @@
 package com.zarbosoft.internal.shoedemo_generate.premodel;
 
 import com.zarbosoft.interface1.Configuration;
-import com.zarbosoft.shoedemo.model.Vector;
+import com.zarbosoft.internal.shoedemo_seed.model.Vector;
 
 import java.util.Map;
 

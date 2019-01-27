@@ -3,7 +3,6 @@ package com.zarbosoft.shoedemo;
 import com.zarbosoft.shoedemo.config.NodeConfig;
 import com.zarbosoft.shoedemo.model.ProjectNode;
 import com.zarbosoft.shoedemo.model.ProjectObject;
-import com.zarbosoft.shoedemo.model.Rectangle;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.Node;

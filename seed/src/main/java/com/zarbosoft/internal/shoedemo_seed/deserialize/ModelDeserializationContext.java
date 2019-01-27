@@ -1,6 +1,4 @@
-package com.zarbosoft.shoedemo.deserialize;
-
-import com.zarbosoft.shoedemo.model.ChangeStep;
+package com.zarbosoft.internal.shoedemo_seed.deserialize;
 
 import java.util.ArrayList;
 import java.util.HashMap;

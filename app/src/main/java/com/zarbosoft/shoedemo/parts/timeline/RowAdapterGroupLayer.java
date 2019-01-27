@@ -106,6 +106,6 @@ public class RowAdapterGroupLayer extends RowAdapter {
 
 	public void treeSelected() {
 		wrapper.setSpecificLayer(layer);
-		stateImage.set(icon("cursor-move.svg"));
+		stateImage.set(icon("cursor-move.png"));
 	}
 }

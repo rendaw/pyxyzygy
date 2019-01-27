@@ -6,7 +6,7 @@ import com.zarbosoft.shoedemo.WidgetHandle;
 import com.zarbosoft.shoedemo.Window;
 import com.zarbosoft.shoedemo.model.GroupLayer;
 import com.zarbosoft.shoedemo.model.GroupPositionFrame;
-import com.zarbosoft.shoedemo.model.Vector;
+import com.zarbosoft.internal.shoedemo_seed.model.Vector;
 import com.zarbosoft.shoedemo.wrappers.group.GroupLayerWrapper;
 import javafx.beans.value.ObservableObjectValue;
 import javafx.beans.value.ObservableValue;

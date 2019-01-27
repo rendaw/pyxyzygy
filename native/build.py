@@ -9,13 +9,17 @@ def main():
     package = ['com', 'zarbosoft', 'shoedemo']
 
     os.chdir(Path(__file__).parent)
-    java = Path('/usr/lib/jvm/java-8-openjdk')
     java_dest = Path() / '..' / 'app' / 'target' / 'src' / '/'.join(package)
     os.makedirs(java_dest, exist_ok=True)
     java_resource_dest = (
         Path() / '..' / 'app' / 'target' / 'resources' / '/'.join(package)
     )
     os.makedirs(java_resource_dest, exist_ok=True)
+
+    win_java = os.environ['BUILD_WIN_JAVA']
+    win_include = os.environ['BUILD_WIN_INCLUDE']
+    win_lib = os.environ['BUILD_WIN_LIB']
+    win_cxx = os.environ['BUILD_WIN_CXX']
 
     def c(*pargs, **kwargs):
         print(*pargs, **kwargs)
@@ -30,33 +34,53 @@ def main():
         'header.hpp',
     ])
 
-    def compile_obj(name):
+    general_flags = [
+        '-Wall', '-pedantic',
+        '-O3',
+    ]
+
+    def compile(key, cc, suffix, includes, libs):
         c([
-            'clang++',
-            '-c',
-            '-Wall', '-pedantic',
-            '-O3',
-            '-o', '{}.o'.format(name),
-            name,
-            '-I/c/jdk1.3.1/include',
-            '-I/c/jdk1.3.1/include/win32',
-            '-I/usr/include',
-            '-I' + str(java / 'include'),
-            '-I' + str(java / 'include/linux'),
+            cc,
+        ] + general_flags + includes + libs + [
+            '-shared',
+            '-fPIC',
+            '-static-libgcc',
+            '-static-libstdc++',
+            '-o', java_resource_dest / '{}.{}'.format(module, suffix),
+            'header_wrap.cxx',
+            'implementation.cxx',
+            '-lpng',
+            '-lz',
         ])
 
-    compile_obj('header_wrap.cxx')
-    compile_obj('implementation.cpp')
-    c([
-        'clang++',
-        '-shared',
-        '-O3',
-        '-L/usr/lib',
-        '-o', java_resource_dest / '{}.so'.format(module),
-        'header_wrap.cxx.o',
-        'implementation.cpp.o',
-        '-lpng',
-    ])
+    compile(
+        'lx64',
+        'g++',
+        'so',
+        [
+            '-I/usr/include',
+            '-I/usr/lib/jvm/java-11-openjdk/include',
+            '-I/usr/lib/jvm/java-11-openjdk/include/linux',
+        ],
+        [
+            '-L/usr/lib',
+        ],
+    )
+    compile(
+        'wx64',
+        win_cxx,
+        'dll',
+        [
+            f'-I{win_include}',
+            f'-I{win_java}/include',
+            f'-I{win_java}/include/win32',
+        ],
+        [
+            f'-L{win_lib}',
+            '-static',
+        ],
+    )
 
 
 main()
