@@ -12,12 +12,7 @@
         <dependency>
             <groupId>com.zarbosoft</groupId>
             <artifactId>appdirsj</artifactId>
-            <version>0.0.2</version>
-        </dependency>
-        <dependency>
-            <groupId>com.zarbosoft</groupId>
-            <artifactId>luxem</artifactId>
-            <version>1.0.1</version>
+            <version>0.0.3</version>
         </dependency>
         <dependency>
             <groupId>com.zarbosoft.internal</groupId>
@@ -337,6 +332,24 @@
                         <id>create-runtime-image</id>
                         <phase>package</phase>
                         <goals>
+                            <goal>create-runtime-image-linux</goal>
+                        </goals>
+                        <configuration>
+                            <modulePath>
+                                <path>${project.build.directory}/modules</path>
+                            </modulePath>
+                            <modules>
+                                <module>com.zarbosoft.shoedemo</module>
+                            </modules>
+                            <outputDirectory>
+                                ${project.build.directory}/jlink-image-linux-x64
+                            </outputDirectory>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>create-runtime-image-windows</id>
+                        <phase>package</phase>
+                        <goals>
                             <goal>create-runtime-image</goal>
                         </goals>
                         <configuration>
@@ -346,9 +359,9 @@
                             <modules>
                                 <module>com.zarbosoft.shoedemo</module>
                             </modules>
-                            <!--<baseJdk>version=11,vendor=openjdk,platform=linux-x64</baseJdk>-->
+                            <baseJdk>version=1.9,vendor=openjdk,platform=windows-x64</baseJdk>
                             <outputDirectory>
-                                ${project.build.directory}/jlink-image-linux-x64
+                                ${project.build.directory}/jlink-image-windows-x64
                             </outputDirectory>
                         </configuration>
                     </execution>
