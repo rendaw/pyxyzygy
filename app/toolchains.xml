@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF8"?>
+<toolchains>
+  <toolchain>
+    <type>jdk</type>
+    <provides>
+      <version>1.9</version>
+      <vendor>openjdk</vendor>
+      <platform>windows-x64</platform>
+    </provides>
+    <configuration>
+      <jdkHome>GEN_PATH</jdkHome>
+    </configuration>
+  </toolchain>
+</toolchains>

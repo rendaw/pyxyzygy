@@ -12,5 +12,7 @@ stages:
 build:
   stage: world
   script:
+    - pwd
+    - ls
     - sed -i -e "s#GEN_PATH#/jdk-11.0.2#" app/toolchains.xml
     - mvn clean package -X -e --global-toolchains app/toolchains.xml
