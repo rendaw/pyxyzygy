@@ -16,10 +16,11 @@ def main():
     )
     os.makedirs(java_resource_dest, exist_ok=True)
 
-    win_java = os.environ['BUILD_WIN_JAVA']
-    win_include = os.environ['BUILD_WIN_INCLUDE']
-    win_lib = os.environ['BUILD_WIN_LIB']
-    win_cxx = os.environ['BUILD_WIN_CXX']
+    linux_java = os.environ['BUILD_LINUX_JAVA']
+    windows_java = os.environ['BUILD_WINDOWS_JAVA']
+    windows_include = os.environ['BUILD_WINDOWS_INCLUDE']
+    windows_lib = os.environ['BUILD_WINDOWS_LIB']
+    windows_cxx = os.environ['BUILD_WINDOWS_CXX']
 
     def c(*pargs, **kwargs):
         print(*pargs, **kwargs)
@@ -60,8 +61,8 @@ def main():
         'so',
         [
             '-I/usr/include',
-            '-I/usr/lib/jvm/java-11-openjdk/include',
-            '-I/usr/lib/jvm/java-11-openjdk/include/linux',
+            f'-I{linux_java}/include',
+            f'-I{linux_java}/include/linux',
         ],
         [
             '-L/usr/lib',
@@ -69,15 +70,15 @@ def main():
     )
     compile(
         'wx64',
-        win_cxx,
+        windows_cxx,
         'dll',
         [
-            f'-I{win_include}',
-            f'-I{win_java}/include',
-            f'-I{win_java}/include/win32',
+            f'-I{windows_include}',
+            f'-I{windows_java}/include',
+            f'-I{windows_java}/include/win32',
         ],
         [
-            f'-L{win_lib}',
+            f'-L{windows_lib}',
             '-static',
         ],
     )

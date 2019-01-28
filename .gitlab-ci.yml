@@ -1,10 +1,11 @@
 image: registry.gitlab.com/rendaw/pyxyzygy-builenv
 
-variable:
-  BUILD_WIN_JAVA: /jdk-11.0.2
-  BUILD_WIN_CXX: x86_64-w64-mingw32-g++
-  BUILD_WIN_INCLUDE: /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++
-  BUILD_WIN_LIB: /usr/x86_64-w64-mingw32/sys-root/mingw/lib
+variables:
+  BUILD_LINUX_JAVA: /usr/lib/jvm/java-11-openjdk
+  BUILD_WINDOWS_JAVA: /jdk-11.0.2
+  BUILD_WINDOWS_CXX: x86_64-w64-mingw32-g++
+  BUILD_WINDOWS_INCLUDE: /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++
+  BUILD_WINDOWS_LIB: /usr/x86_64-w64-mingw32/sys-root/mingw/lib
 
 stages:
   - world
@@ -12,7 +13,6 @@ stages:
 build:
   stage: world
   script:
-    - pwd
-    - ls
     - sed -i -e "s#GEN_PATH#/jdk-11.0.2#" app/toolchains.xml
-    - mvn clean package -X -e --global-toolchains app/toolchains.xml
+    - echo $BUILD_LINUX_JAVA
+    - JAVA_HOME=$BUILD_LINUX_JAVA mvn clean package -X -e --global-toolchains app/toolchains.xml
