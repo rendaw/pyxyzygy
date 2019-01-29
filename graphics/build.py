@@ -9,7 +9,7 @@ os.makedirs(resources, exist_ok=True)
 source_icons = Path.cwd() / 'icons'
 
 for icon in source_icons.glob('*.svg'):
-    if icon.startswith('appicon'):
+    if icon.name.startswith('appicon'):
         sizes = [16, 32, 64]
     else:
         sizes = [16]
