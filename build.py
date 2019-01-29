@@ -8,12 +8,12 @@ def main():
     # Tools
     def c(*pargs, **kwargs):
         print(pargs, kwargs)
+        env_source = kwargs.get('env')
+        if env_source:
+            env = os.environ.copy()
+            env.update(env_source)
+            kwargs['env'] = env
         subprocess.check_call(*pargs, **kwargs)
-
-    def env(**extra):
-        e = os.environ.copy()
-        e.update(extra)
-        return e
 
     java_path = '/usr/lib/jvm/java-11-openjdk'
 
@@ -22,7 +22,7 @@ def main():
             'mvn', *extra,
             '-Dstyle.color=never', '-e',
             '-global-toolchains', 'app/toolchains.xml',
-        ], env=env(JAVA_HOME=java_path))
+        ], env=dict(JAVA_HOME=java_path))
 
     def template(source, dest, extra):
         with open(source) as source_:
@@ -52,7 +52,7 @@ def main():
     mvn('clean')
     c(
         ['python3', 'native/build.py'],
-        env=env(
+        env=dict(
             BUILD_LINUX_JAVA=java_path,
             BUILD_WINDOWS_JAVA='/jdk-11.0.2',
             BUILD_WINDOWS_CXX='x86_64-w64-mingw32-g++',
