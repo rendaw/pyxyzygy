@@ -20,8 +20,7 @@ def main():
     def mvn(*extra):
         c([
             'mvn', *extra,
-            '-Dstyle.color=never',
-            '-X', '-e',
+            '-Dstyle.color=never', '-e',
             '-global-toolchains', 'app/toolchains.xml',
         ], env=env(JAVA_HOME=java_path))
 
