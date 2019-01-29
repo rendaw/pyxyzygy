@@ -15,4 +15,4 @@ build:
   script:
     - sed -i -e "s#GEN_PATH#/jdk-11.0.2#" app/toolchains.xml
     - echo $BUILD_LINUX_JAVA
-    - JAVA_HOME=$BUILD_LINUX_JAVA mvn clean package -X -e --global-toolchains app/toolchains.xml
+    - JAVA_HOME=$BUILD_LINUX_JAVA mvn clean package -Dstyle.color=never -X -e --global-toolchains app/toolchains.xml
