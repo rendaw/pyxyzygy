@@ -8,7 +8,7 @@
       <platform>windows-x64</platform>
     </provides>
     <configuration>
-      <jdkHome>GEN_PATH</jdkHome>
+      <jdkHome>{java_home}</jdkHome>
     </configuration>
   </toolchain>
 </toolchains>

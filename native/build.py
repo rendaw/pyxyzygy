@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/bin/env python3
 def main():
     from subprocess import check_call
     from pathlib import Path
@@ -23,7 +23,7 @@ def main():
     windows_cxx = os.environ['BUILD_WINDOWS_CXX']
 
     def c(*pargs, **kwargs):
-        print(*pargs, **kwargs)
+        print(pargs, kwargs)
         check_call(*pargs, **kwargs)
 
     c([
