@@ -68,15 +68,18 @@ def main():
     raise RuntimeError
     mvn(
         'package',
-        f'-DmoduleOutput={module_path}',
         f'-DlinuxOutput={linux_path / "java"}',
         f'-DwindowsOutput={windows_path / "java"}',
     )
 
     # Prepare itch deploys + deploy
     def platform(name, path, ext):
-        shutil.copytree(module_path, path / 'modules')
-
+        if name == 'linux':
+            c([
+                'strip',
+                '-p', '--strip-unneeded',
+                linux_path / 'lib/server/libjvm.so'
+            ])
         template('itch/manifest.toml', path / '.itch.toml', dict(
             ext=ext,
         ))

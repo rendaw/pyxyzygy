@@ -3,11 +3,18 @@ import subprocess
 import os
 from pathlib import Path
 
+
+def c(*pargs, **kwargs):
+    print(pargs, kwargs)
+    subprocess.check_call(*pargs, **kwargs)
+
+
 resources = Path('../app/target/resources/com/zarbosoft/shoedemo')
 os.makedirs(resources, exist_ok=True)
 
 dest_icons = resources / 'icons'
-source_icons = Path.cwd() / 'icons'
+here = Path(__file__).parent
+source_icons = here / 'icons'
 
 os.makedirs(dest_icons, exist_ok=True)
 
@@ -22,7 +29,7 @@ for icon in source_icons.glob('*.svg'):
         if sizes:
             name = name + size
         name = name + '.png'
-        subprocess.check_call([
+        c([
             'inkscape',
             icon,
             '-z',
