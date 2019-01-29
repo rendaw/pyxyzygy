@@ -3,10 +3,13 @@ import subprocess
 import os
 from pathlib import Path
 
-resources = Path('../app/target/resources/com/zarbosoft/shoedemo/icons')
+resources = Path('../app/target/resources/com/zarbosoft/shoedemo')
 os.makedirs(resources, exist_ok=True)
 
+dest_icons = resources / 'icons'
 source_icons = Path.cwd() / 'icons'
+
+os.makedirs(dest_icons, exist_ok=True)
 
 for icon in source_icons.glob('*.svg'):
     if icon.name.startswith('appicon'):
@@ -23,6 +26,6 @@ for icon in source_icons.glob('*.svg'):
             'inkscape',
             icon,
             '-z',
-            '-e', resources / name,
+            '-e', dest_icons / name,
             '-w', size, '-h', size,
         ])

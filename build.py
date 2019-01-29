@@ -20,6 +20,7 @@ def main():
     def mvn(*extra):
         c([
             'mvn', *extra,
+            '-B',
             '-Dstyle.color=never', '-e',
             '-global-toolchains', 'app/toolchains.xml',
         ], env=dict(JAVA_HOME=java_path))
@@ -61,6 +62,10 @@ def main():
         )
     )
     c(['python3', 'graphics/build.py'])
+    for b, ds, fs in os.walk(root / 'app' / 'src'):
+        for f in fs:
+            print(b, f)
+    raise RuntimeError
     mvn(
         'package',
         f'-DmoduleOutput={module_path}',
