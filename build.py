@@ -71,6 +71,8 @@ def main():
         cxx = 'x86_64-w64-mingw32-g++'
         c_include = '/usr/x86_64-w64-mingw32/sys-root/mingw/include/c++'
         c_lib = '/usr/x86_64-w64-mingw32/sys-root/mingw/lib'
+    else:
+        raise AssertionError
 
     # Build
     template('app/toolchains.xml', 'app/toolchains.xml', dict(

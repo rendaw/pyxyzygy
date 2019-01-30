@@ -16,7 +16,7 @@ linux:
 
 windows:
   stage: world
-  script: ./build.py window ${CI_COMMIT_REF_NAME}
+  script: ./build.py windows ${CI_COMMIT_REF_NAME}
   only:
     - stable
     - experimental
