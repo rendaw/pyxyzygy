@@ -28,8 +28,7 @@
     </dependencies>
     <properties>
         <modulesOutput>${project.build.directory}/modules</modulesOutput>
-        <linuxOutput>${project.build.directory}/reduced-java-linux-x64</linuxOutput>
-        <windowsOutput>${project.build.directory}/reduced-java-windows-x64</windowsOutput>
+        <imageOutput>##NOTSET##</imageOutput>
     </properties>
     <build>
         <plugins>
@@ -303,7 +302,7 @@
                         </configuration>
                     </execution>
                     <execution>
-                        <id>create-runtime-image-linux</id>
+                        <id>create-runtime-image</id>
                         <phase>package</phase>
                         <goals>
                             <goal>create-runtime-image</goal>
@@ -315,24 +314,8 @@
                             <modules>
                                 <module>com.zarbosoft.shoedemo</module>
                             </modules>
-                            <outputDirectory>${linuxOutput}</outputDirectory>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>create-runtime-image-windows</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>create-runtime-image</goal>
-                        </goals>
-                        <configuration>
-                            <modulePath>
-                                <path>${modulesOutput}</path>
-                            </modulePath>
-                            <modules>
-                                <module>com.zarbosoft.shoedemo</module>
-                            </modules>
-                            <baseJdk>version=1.9,vendor=openjdk,platform=windows-x64</baseJdk>
-                            <outputDirectory>${windowsOutput}</outputDirectory>
+                            <baseJdk>version=11,vendor=openjdk</baseJdk>
+                            <outputDirectory>${imageOutput}</outputDirectory>
                         </configuration>
                     </execution>
                 </executions>

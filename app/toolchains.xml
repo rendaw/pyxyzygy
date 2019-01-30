@@ -3,9 +3,8 @@
   <toolchain>
     <type>jdk</type>
     <provides>
-      <version>1.9</version>
+      <version>11</version>
       <vendor>openjdk</vendor>
-      <platform>windows-x64</platform>
     </provides>
     <configuration>
       <jdkHome>{java_home}</jdkHome>

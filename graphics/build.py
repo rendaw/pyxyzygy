@@ -8,12 +8,12 @@ def c(*pargs, **kwargs):
     print(pargs, kwargs)
     subprocess.check_call(*pargs, **kwargs)
 
-
-resources = Path('../app/target/resources/com/zarbosoft/shoedemo')
-os.makedirs(resources, exist_ok=True)
-
-dest_icons = resources / 'icons'
 here = Path(__file__).parent
+print('Operating in {}'.format(here))
+
+resources = (here / '../app/target/resources/com/zarbosoft/shoedemo').resolve()
+os.makedirs(resources, exist_ok=True)
+dest_icons = resources / 'icons'
 source_icons = here / 'icons'
 
 os.makedirs(dest_icons, exist_ok=True)
@@ -26,7 +26,7 @@ for icon in source_icons.glob('*.svg'):
     for size in sizes:
         size = str(size)
         name = icon.stem
-        if sizes:
+        if len(sizes) > 1:
             name = name + size
         name = name + '.png'
         c([
