@@ -95,10 +95,10 @@ class TrueColorImage {
 
 #ifdef SWIG
 %pragma(java) jniclasscode=%{
-  static {
-    System.load(com.zarbosoft.rendaw.common.Common.extractResource(mynative.class, "mynative.so").toAbsolutePath().toString());
-	System.out.println("Loaded mynative");
-	System.out.flush();
-  }
+	static {
+		System.load(com.zarbosoft.rendaw.common.Common.extractResource(mynative.class, "##OUTPUT##").toAbsolutePath().toString());
+		System.out.println("Loaded mynative");
+		System.out.flush();
+	}
 %}
 #endif

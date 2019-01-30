@@ -39,6 +39,14 @@ def main():
         'header.hpp',
     ])
 
+    output = f'{module}.{args.suffix}'
+
+    with open(java_dest / f'{module}JNI.java') as source:
+        sub_java = source.read()
+    sub_java = sub_java.replace('##OUTPUT##', output)
+    with open(java_dest / f'{module}JNI.java', 'w') as dest:
+        dest.write(sub_java)
+
     general_flags = [
         '-Wall', '-pedantic',
         '-O3',
@@ -56,7 +64,7 @@ def main():
     ] + (['-static'] if args.java_platform == 'win32' else []) + [
         '-static-libgcc',
         '-static-libstdc++',
-        '-o', java_resource_dest / '{}.{}'.format(module, args.suffix),
+        '-o', java_resource_dest / output,
         'header_wrap.cxx',
         'implementation.cxx',
         '-lpng',

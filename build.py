@@ -8,6 +8,7 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('platform')
+    parser.add_argument('channel')
     args = parser.parse_args()
 
     # Tools
@@ -120,7 +121,7 @@ def main():
     c([
         '/butler/butler', 'push',
         path,
-        f'rendaw/pyxyzygy:{itch_platform}',
+        f'rendaw/pyxyzygy:{itch_platform}-{args.channel}',
     ])
 
 
