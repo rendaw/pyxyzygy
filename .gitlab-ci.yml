@@ -3,6 +3,10 @@ image: registry.gitlab.com/rendaw/pyxyzygy-builenv
 stages:
   - world
 
+cache:
+  paths:
+    /root/.m2
+
 windows:
   stage: world
   script: ./build.py windows
