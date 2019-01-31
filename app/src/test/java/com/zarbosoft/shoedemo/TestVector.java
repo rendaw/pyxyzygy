@@ -1,9 +1,9 @@
-package com.zarbosoft.shoedemo;
+package com.zarbosoft.pyxyzygy;
 
 import com.google.common.io.BaseEncoding;
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
-import com.zarbosoft.internal.shoedemo_seed.model.Vector;
+import com.zarbosoft.internal.pyxyzygy_seed.model.Vector;
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;

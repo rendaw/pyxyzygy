@@ -16,7 +16,7 @@ def main():
 
     module = 'mynative'
 
-    package = ['com', 'zarbosoft', 'shoedemo']
+    package = ['com', 'zarbosoft', 'pyxyzygy']
 
     os.chdir(Path(__file__).parent)
     java_dest = Path() / '..' / 'app' / 'target' / 'src' / '/'.join(package)

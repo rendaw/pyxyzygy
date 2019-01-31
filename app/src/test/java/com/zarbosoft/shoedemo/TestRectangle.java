@@ -1,6 +1,6 @@
-package com.zarbosoft.shoedemo;
+package com.zarbosoft.pyxyzygy;
 
-import com.zarbosoft.internal.shoedemo_seed.model.Rectangle;
+import com.zarbosoft.internal.pyxyzygy_seed.model.Rectangle;
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;

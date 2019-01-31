@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.zarbosoft</groupId>
-    <artifactId>shoedemo</artifactId>
+    <artifactId>pyxyzygy</artifactId>
     <version>1.0.0</version>
 
     <dependencies>
@@ -16,7 +16,7 @@
         </dependency>
         <dependency>
             <groupId>com.zarbosoft.internal</groupId>
-            <artifactId>shoedemo-seed</artifactId>
+            <artifactId>pyxyzygy-seed</artifactId>
             <version>1.0.0</version>
         </dependency>
         <dependency>
@@ -75,7 +75,7 @@
                         <configuration>
                             <tasks>
                                 <taskdef name="generateTask"
-                                         classname="com.zarbosoft.internal.shoedemo_generate.GenerateTask"
+                                         classname="com.zarbosoft.internal.pyxyzygy_generate.GenerateTask"
                                          classpath="${maven.dependency.classpath}"/>
                                 <generateTask path="${project.build.directory}/src"/>
                             </tasks>
@@ -88,7 +88,7 @@
                 <dependencies>
                     <dependency>
                         <groupId>com.zarbosoft.internal</groupId>
-                        <artifactId>shoedemo-generate</artifactId>
+                        <artifactId>pyxyzygy-generate</artifactId>
                         <version>1.0.0</version>
                     </dependency>
                 </dependencies>
@@ -312,7 +312,7 @@
                                 <path>${modulesOutput}</path>
                             </modulePath>
                             <modules>
-                                <module>com.zarbosoft.shoedemo</module>
+                                <module>com.zarbosoft.pyxyzygy</module>
                             </modules>
                             <baseJdk>version=11,vendor=openjdk</baseJdk>
                             <outputDirectory>${imageOutput}</outputDirectory>

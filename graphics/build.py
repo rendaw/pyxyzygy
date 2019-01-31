@@ -8,10 +8,11 @@ def c(*pargs, **kwargs):
     print(pargs, kwargs)
     subprocess.check_call(*pargs, **kwargs)
 
+
 here = Path(__file__).parent
 print('Operating in {}'.format(here))
 
-resources = (here / '../app/target/resources/com/zarbosoft/shoedemo').resolve()
+resources = (here / '../app/target/resources/com/zarbosoft/pyxyzygy').resolve()
 os.makedirs(resources, exist_ok=True)
 dest_icons = resources / 'icons'
 source_icons = here / 'icons'

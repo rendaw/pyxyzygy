@@ -1,15 +1,15 @@
-package com.zarbosoft.shoedemo;
+package com.zarbosoft.pyxyzygy;
 
 import com.google.common.collect.ImmutableList;
-import com.zarbosoft.shoedemo.model.GroupTimeFrame;
-import com.zarbosoft.internal.shoedemo_seed.model.ProjectContextBase;
-import com.zarbosoft.shoedemo.parts.timeline.Timeline;
+import com.zarbosoft.pyxyzygy.model.GroupTimeFrame;
+import com.zarbosoft.internal.pyxyzygy_seed.model.ProjectContextBase;
+import com.zarbosoft.pyxyzygy.parts.timeline.Timeline;
 import org.junit.Test;
 
 import java.nio.file.Paths;
 import java.util.List;
 
-import static com.zarbosoft.shoedemo.Main.*;
+import static com.zarbosoft.pyxyzygy.Main.*;
 
 public class TestTimeMapCalc {
 	private static ProjectContextBase context = new ProjectContextBase(Paths.get("/"));
