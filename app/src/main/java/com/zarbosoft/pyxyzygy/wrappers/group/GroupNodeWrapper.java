@@ -6,8 +6,6 @@ import com.zarbosoft.pyxyzygy.*;
 import com.zarbosoft.pyxyzygy.config.GroupNodeConfig;
 import com.zarbosoft.pyxyzygy.config.NodeConfig;
 import com.zarbosoft.pyxyzygy.model.*;
-import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.*;
@@ -15,7 +13,6 @@ import javafx.scene.control.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.zarbosoft.pyxyzygy.Main.*;
 import static com.zarbosoft.pyxyzygy.ProjectContext.uniqueName1;
 
 public class GroupNodeWrapper extends Wrapper {
@@ -26,12 +23,7 @@ public class GroupNodeWrapper extends Wrapper {
 	private final Runnable layerListenCleanup;
 
 	GroupLayer specificLayer;
-	int currentFrame = 0;
-	Tool tool = null;
 	GroupNodeCanvasHandle canvasHandle;
-
-	final SimpleIntegerProperty positiveZoom = new SimpleIntegerProperty(0);
-	final SimpleObjectProperty<Vector> mousePosition = new SimpleObjectProperty<>(new Vector(0, 0));
 
 	public GroupNodeWrapper(ProjectContext context, Wrapper parent, int parentIndex, GroupNode node) {
 		this.parentIndex = parentIndex;
@@ -51,7 +43,7 @@ public class GroupNodeWrapper extends Wrapper {
 			for (int i = at; i < children.size(); ++i)
 				children.get(i).parentIndex = i;
 		});
-		mirror(children, tree.get().getChildren(), child -> {
+		Misc.mirror(children, tree.get().getChildren(), child -> {
 			System.out.format("creating group node child 2.\n");
 			child.tree.addListener((observable, oldValue, newValue) -> {
 				tree.get().getChildren().set(child.parentIndex, newValue);
@@ -59,17 +51,12 @@ public class GroupNodeWrapper extends Wrapper {
 			return child.tree.get();
 		}, c -> {
 			System.out.format("removing group node child 2.\n");
-		}, noopConsumer());
+		}, Misc.noopConsumer());
 	}
 
 	@Override
 	public Wrapper getParent() {
 		return parent;
-	}
-
-	@Override
-	public DoubleVector toInner(DoubleVector vector) {
-		return vector;
 	}
 
 	@Override
@@ -83,41 +70,13 @@ public class GroupNodeWrapper extends Wrapper {
 	}
 
 	@Override
-	public void setViewport(
-			ProjectContext context, DoubleRectangle newBounds, int zoom
-	) {
-		this.positiveZoom.set(zoom);
-		children.forEach(c -> c.setViewport(context, newBounds, zoom));
+	public CanvasHandle buildCanvas(ProjectContext context, CanvasHandle parent) {
+		return canvasHandle =new GroupNodeCanvasHandle(context, parent, this);
 	}
 
 	@Override
-	public WidgetHandle buildCanvas(ProjectContext context) {
-		if (canvasHandle == null) {
-			canvasHandle = new GroupNodeCanvasHandle(this, context);
-		}
-		return canvasHandle;
-	}
-
-	@Override
-	public EditControlsHandle buildEditControls(ProjectContext context, TabPane tabPane) {
+	public EditHandle buildEditControls(ProjectContext context, TabPane tabPane) {
 		return new GroupNodeEditHandle(this, context, tabPane);
-	}
-
-	@Override
-	public void markStart(ProjectContext context, DoubleVector start) {
-		if (tool == null)
-			return;
-		start = Window.toLocal(this, start);
-		tool.markStart(context, start);
-	}
-
-	@Override
-	public void mark(ProjectContext context, DoubleVector start, DoubleVector end) {
-		if (tool == null)
-			return;
-		start = Window.toLocal(this, start);
-		end = Window.toLocal(this, end);
-		tool.mark(context, start, end);
 	}
 
 	@Override
@@ -190,12 +149,6 @@ public class GroupNodeWrapper extends Wrapper {
 	}
 
 	@Override
-	public void setFrame(ProjectContext context, int frameNumber) {
-		this.currentFrame = frameNumber;
-		children.forEach(c -> c.setFrame(context, frameNumber));
-	}
-
-	@Override
 	public void remove(ProjectContext context) {
 		layerListenCleanup.run();
 		context.config.nodes.remove(node.id());
@@ -203,10 +156,5 @@ public class GroupNodeWrapper extends Wrapper {
 
 	public void setSpecificLayer(GroupLayer layer) {
 		this.specificLayer = layer;
-	}
-
-	@Override
-	public void cursorMoved(ProjectContext context, DoubleVector vector) {
-		mousePosition.set(vector.toInt());
 	}
 }

@@ -36,7 +36,7 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 	public static Map<String, Integer> names = new HashMap<>();
 	public Project project;
 	public ProjectConfig config;
-	public int tileSize = Main.config.tileSize;
+	public int tileSize;
 
 	public History history;
 	public Hotkeys hotkeys;
@@ -187,8 +187,9 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 		}, 5000);
 	}
 
-	public static ProjectContext create(Path path) {
+	public static ProjectContext create(Path path, int tileSize) {
 		ProjectContext out = new ProjectContext(path);
+		out.tileSize = tileSize;
 		out.project = Project.create(out);
 		out.history = new History(out, ImmutableList.of(), ImmutableList.of(), null);
 		out.hotkeys = new Hotkeys();

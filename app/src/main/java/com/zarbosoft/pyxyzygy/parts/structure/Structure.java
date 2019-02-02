@@ -1,14 +1,14 @@
 package com.zarbosoft.pyxyzygy.parts.structure;
 
 import com.google.common.collect.ImmutableList;
-import com.zarbosoft.rendaw.common.ChainComparator;
+import com.zarbosoft.internal.pyxyzygy_seed.model.Vector;
 import com.zarbosoft.pyxyzygy.Hotkeys;
 import com.zarbosoft.pyxyzygy.ProjectContext;
 import com.zarbosoft.pyxyzygy.Window;
 import com.zarbosoft.pyxyzygy.Wrapper;
 import com.zarbosoft.pyxyzygy.model.*;
 import com.zarbosoft.pyxyzygy.widgets.HelperJFX;
-import com.zarbosoft.internal.pyxyzygy_seed.model.Vector;
+import com.zarbosoft.rendaw.common.ChainComparator;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
@@ -27,12 +27,12 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import static com.zarbosoft.rendaw.common.Common.last;
-import static com.zarbosoft.pyxyzygy.Main.moveTo;
 import static com.zarbosoft.pyxyzygy.Main.opacityMax;
+import static com.zarbosoft.pyxyzygy.Misc.moveTo;
 import static com.zarbosoft.pyxyzygy.ProjectContext.uniqueName;
 import static com.zarbosoft.pyxyzygy.Wrapper.TakesChildren.NONE;
 import static com.zarbosoft.pyxyzygy.widgets.HelperJFX.icon;
+import static com.zarbosoft.rendaw.common.Common.last;
 
 public class Structure {
 	private final ProjectContext context;
@@ -101,7 +101,7 @@ public class Structure {
 		Wrapper parent = wrapper.getParent();
 		boolean found = false;
 		while (parent != null) {
-			if (window.selectedForView.getValue() == parent) {
+			if (window.selectedForView.get().getWrapper() == parent) {
 				found = true;
 				break;
 			}
@@ -109,11 +109,11 @@ public class Structure {
 			parent = parent.getParent();
 		}
 		if (found) {
-			window.selectedForEdit.set(wrapper);
+			window.selectedForEdit.set(wrapper.buildEditControls(context, window.leftTabs));
 		} else {
 			window.selectedForEdit.set(null);
 			selectForView(preParent);
-			window.selectedForEdit.set(wrapper);
+			window.selectedForEdit.set(wrapper.buildEditControls(context, window.leftTabs));
 		}
 	}
 
@@ -123,7 +123,7 @@ public class Structure {
 		taggedViewing.clear();
 		wrapper.tagViewing.set(true);
 		taggedViewing.add(wrapper);
-		window.selectedForView.set(wrapper);
+		window.selectedForView.set(wrapper.buildCanvas(context,null));
 	}
 
 	public void treeItemAdded(TreeItem<Wrapper> item) {
@@ -413,7 +413,7 @@ public class Structure {
 	}
 
 	private void delete(ProjectContext context) {
-		Wrapper edit = window.selectedForEdit.get();
+		Wrapper edit = window.selectedForEdit.get().getWrapper();
 		if (edit == null)
 			return;
 		edit.delete(context);
@@ -421,7 +421,7 @@ public class Structure {
 	}
 
 	private void placeAfter() {
-		Wrapper destination = window.selectedForEdit.get();
+		Wrapper destination = window.selectedForEdit.get().getWrapper();
 		if (destination == null) {
 			place(null, false, null);
 		} else {
@@ -431,7 +431,7 @@ public class Structure {
 	}
 
 	private void placeIn() {
-		Wrapper destination = window.selectedForEdit.get();
+		Wrapper destination = window.selectedForEdit.get().getWrapper();
 		if (destination == null) {
 			place(null, true, null);
 		} else {
@@ -440,7 +440,7 @@ public class Structure {
 	}
 
 	private void placeBefore() {
-		Wrapper destination = window.selectedForEdit.get();
+		Wrapper destination = window.selectedForEdit.get().getWrapper();
 		if (destination == null) {
 			place(null, true, null);
 		} else {
@@ -493,7 +493,7 @@ public class Structure {
 	}
 
 	private void duplicate() {
-		Wrapper destination = window.selectedForEdit.get();
+		Wrapper destination = window.selectedForEdit.get().getWrapper();
 		ProjectNode clone = destination.separateClone(context);
 		addNew(clone);
 	}

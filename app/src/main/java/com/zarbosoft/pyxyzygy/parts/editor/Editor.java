@@ -1,6 +1,7 @@
 package com.zarbosoft.pyxyzygy.parts.editor;
 
 import com.zarbosoft.pyxyzygy.*;
+import com.zarbosoft.pyxyzygy.config.NodeConfig;
 import javafx.beans.binding.Bindings;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -13,43 +14,38 @@ import javafx.scene.layout.*;
 import javafx.scene.shape.Rectangle;
 
 public class Editor {
-	private final ProjectContext context;
 	private final com.zarbosoft.pyxyzygy.Window window;
-	private WidgetHandle viewHandle;
 	private final VBox layout;
 	public final StackPane outerCanvas;
 	public final Pane canvas;
 	private final Group canvasInner;
 	private Runnable editCleanup;
-	private Wrapper edit;
 	private Hotkeys.Action[] actions = new Hotkeys.Action[] {
-			new Hotkeys.Action(
-					Hotkeys.Scope.EDITOR,
+			new Hotkeys.Action(Hotkeys.Scope.EDITOR,
 					"flip-horizontal",
 					"View horizontal flip",
 					Hotkeys.Hotkey.create(KeyCode.H, false, false, false)
 			) {
 				@Override
 				public void run(ProjectContext context) {
-					Wrapper view = window.selectedForView.get();
+					Wrapper.CanvasHandle view = window.selectedForView.get();
 					if (view == null)
 						return;
-					view.getConfig().flipHorizontal.set(!view.getConfig().flipHorizontal.get());
+					view.getWrapper().getConfig().flipHorizontal.set(!view.getWrapper().getConfig().flipHorizontal.get());
 				}
-			},
-			new Hotkeys.Action(Hotkeys.Scope.EDITOR,
-					"flip-vertical",
-					"View vertical flip",
-					Hotkeys.Hotkey.create(KeyCode.V, false, false, false)
-			) {
-				@Override
-				public void run(ProjectContext context) {
-					Wrapper view = window.selectedForView.get();
-					if (view == null)
-						return;
-					view.getConfig().flipVertical.set(!view.getConfig().flipVertical.get());
-				}
-			}
+			}, new Hotkeys.Action(Hotkeys.Scope.EDITOR,
+			"flip-vertical",
+			"View vertical flip",
+			Hotkeys.Hotkey.create(KeyCode.V, false, false, false)
+	) {
+		@Override
+		public void run(ProjectContext context) {
+			Wrapper.CanvasHandle view = window.selectedForView.get();
+			if (view == null)
+				return;
+			view.getWrapper().getConfig().flipVertical.set(!view.getWrapper().getConfig().flipVertical.get());
+		}
+	}
 	};
 
 	/**
@@ -59,8 +55,8 @@ public class Editor {
 	 * @param y
 	 * @return
 	 */
-	private DoubleVector getStandardVector(Wrapper view, double x, double y) {
-		DoubleVector scroll = window.selectedForView.get().getConfig().scroll.get();
+	private DoubleVector getStandardVector(Wrapper.CanvasHandle view, double x, double y) {
+		DoubleVector scroll = window.selectedForView.get().getWrapper().getConfig().scroll.get();
 		DoubleVector coordCentered = new DoubleVector((x - this.canvas.getLayoutBounds().getWidth() / 2),
 				(y - this.canvas.getLayoutBounds().getHeight() / 2)
 		);
@@ -70,7 +66,7 @@ public class Editor {
 		return out;
 	}
 
-	private DoubleVector normalizeEventCoordinates(Wrapper view, MouseEvent e) {
+	private DoubleVector normalizeEventCoordinates(Wrapper.CanvasHandle view, MouseEvent e) {
 		/*
 		Point2D canvasCorner =
 				canvas.getParent().getLocalToSceneTransform().transform(canvas.getLayoutX(), canvas.getLayoutY());
@@ -80,30 +76,29 @@ public class Editor {
 		return getStandardVector(view, e.getSceneX() - canvasCorner.getX(), e.getSceneY() - canvasCorner.getY());
 	}
 
-	public void updateScroll(DoubleVector scroll) {
-		Wrapper view = window.selectedForView.get();
+	public void updateScroll(ProjectContext context, DoubleVector scroll) {
+		Wrapper.CanvasHandle view = window.selectedForView.get();
 		if (view == null)
 			return;
-		view.getConfig().scroll.set(scroll);
-		updateBounds();
+		view.getWrapper().getConfig().scroll.set(scroll);
+		updateBounds(context);
 	}
 
-	public void updateBounds() {
-		Wrapper view = window.selectedForView.get();
-		if (view == null)
+	public void updateBounds(ProjectContext context) {
+		Wrapper.CanvasHandle viewHandle = window.selectedForView.get();
+		if (viewHandle == null)
 			return;
-		DoubleVector scroll = view.getConfig().scroll.get();
+		DoubleVector scroll = viewHandle.getWrapper().getConfig().scroll.get();
 		canvasInner.setLayoutX(scroll.x + outerCanvas.widthProperty().get() / 2);
 		canvasInner.setLayoutY(scroll.y + outerCanvas.heightProperty().get() / 2);
 		DoubleRectangle newBounds = new BoundsBuilder()
-				.circle(getStandardVector(view, 0, 0), 0)
-				.circle(getStandardVector(view,
+				.circle(getStandardVector(viewHandle, 0, 0), 0)
+				.circle(getStandardVector(viewHandle,
 						outerCanvas.getLayoutBounds().getWidth(),
 						outerCanvas.getLayoutBounds().getHeight()
 				), 0)
 				.build();
-		if (window.selectedForView.get() != null)
-			window.selectedForView.get().setViewport(context, newBounds, calculatePositiveZoom(view));
+		viewHandle.setViewport(context, newBounds, calculatePositiveZoom(viewHandle.getWrapper()));
 	}
 
 	public int calculatePositiveZoom(Wrapper view) {
@@ -111,19 +106,20 @@ public class Editor {
 		return zoom < 0 ? 1 : (zoom + 1);
 	}
 
-	public DoubleVector computeViewTransform(Wrapper view) {
-		int zoom = view.getConfig().zoom.get();
-		double scaling = view.getConfig().zoom.get() < 0 ? (1.0 / (1 + -zoom)) : (1 + zoom);
-		return new DoubleVector(scaling * (view.getConfig().flipHorizontal.get() ? -1.0 : 1.0),
-				scaling * (view.getConfig().flipVertical.get() ? -1.0 : 1.0)
+	public DoubleVector computeViewTransform(Wrapper.CanvasHandle view) {
+		final NodeConfig config = view.getWrapper().getConfig();
+		int zoom = config.zoom.get();
+		double scaling = config.zoom.get() < 0 ? (1.0 / (1 + -zoom)) : (1 + zoom);
+		return new DoubleVector(scaling * (config.flipHorizontal.get() ? -1.0 : 1.0),
+				scaling * (config.flipVertical.get() ? -1.0 : 1.0)
 		);
 	}
 
-	public Editor(ProjectContext context, Window window) {
-		this.context = context;
+	public Editor(final ProjectContext context, Window window) {
 		this.window = window;
 
-		for (Hotkeys.Action action : actions) context.hotkeys.register(action);
+		for (Hotkeys.Action action : actions)
+			context.hotkeys.register(action);
 
 		canvasInner = new Group();
 
@@ -132,13 +128,13 @@ public class Editor {
 
 		outerCanvas = new StackPane();
 		VBox.setVgrow(outerCanvas, Priority.ALWAYS);
-		outerCanvas.backgroundProperty().bind(Bindings.createObjectBinding(
-				() -> new Background(new BackgroundFill(context.config.backgroundColor.get().toJfx(),
-						CornerRadii.EMPTY,
-						Insets.EMPTY
-				)),
-				context.config.backgroundColor
-		));
+		outerCanvas
+				.backgroundProperty()
+				.bind(Bindings.createObjectBinding(() -> new Background(new BackgroundFill(context.config.backgroundColor
+								.get()
+								.toJfx(), CornerRadii.EMPTY, Insets.EMPTY)),
+						context.config.backgroundColor
+				));
 		outerCanvas.setMouseTransparent(false);
 		outerCanvas.setFocusTraversable(true);
 		Rectangle clip = new Rectangle();
@@ -157,7 +153,7 @@ public class Editor {
 						outerCanvas.scaleYProperty()
 				));
 		outerCanvas.setClip(clip);
-		ChangeListener<Number> onResize = (observable, oldValue, newValue) -> updateBounds();
+		ChangeListener<Number> onResize = (observable, oldValue, newValue) -> updateBounds(context);
 		outerCanvas.widthProperty().addListener(onResize);
 		outerCanvas.heightProperty().addListener(onResize);
 		outerCanvas.getChildren().addAll(canvas);
@@ -170,7 +166,7 @@ public class Editor {
 
 		class ScrollEventState {
 			boolean longScroll;
-			Wrapper view;
+			Wrapper.CanvasHandle view;
 			int startZoom;
 		}
 		ScrollEventState scrollEventState = new ScrollEventState();
@@ -179,7 +175,7 @@ public class Editor {
 			scrollEventState.view = window.selectedForView.get();
 			if (scrollEventState.view == null)
 				return;
-			scrollEventState.startZoom = scrollEventState.view.getConfig().zoom.get();
+			scrollEventState.startZoom = scrollEventState.view.getWrapper().getConfig().zoom.get();
 		});
 		outerCanvas.addEventFilter(ScrollEvent.SCROLL_FINISHED, e1 -> {
 			scrollEventState.longScroll = false;
@@ -190,22 +186,22 @@ public class Editor {
 				scrollEventState.view = window.selectedForView.get();
 				if (scrollEventState.view == null)
 					return;
-				scrollEventState.view.getConfig().zoom.set(scrollEventState.view.getConfig().zoom.get() + (int) (
+				scrollEventState.view.getWrapper().getConfig().zoom.set(scrollEventState.view.getWrapper().getConfig().zoom.get() + (int) (
 						e1.getTextDeltaYUnits() == ScrollEvent.VerticalTextScrollUnits.NONE ?
 								e1.getDeltaY() / 40 :
 								e1.getTextDeltaY()
 				));
-				System.out.format("  zoom %s\n", scrollEventState.view.getConfig().zoom.get());
+				System.out.format("  zoom %s\n", scrollEventState.view.getWrapper().getConfig().zoom.get());
 			} else {
 				if (scrollEventState.view == null)
 					return;
-				scrollEventState.view.getConfig().zoom.set(scrollEventState.startZoom +
+				scrollEventState.view.getWrapper().getConfig().zoom.set(scrollEventState.startZoom +
 						(int) (e1.getTotalDeltaY() / 40));
 			}
 		});
 		class PointerEventState {
-			public Wrapper view;
-			Wrapper edit;
+			public Wrapper.CanvasHandle view;
+			Wrapper.EditHandle edit;
 			boolean dragged = false;
 			MouseButton button;
 			DoubleVector previous;
@@ -220,7 +216,7 @@ public class Editor {
 			outerCanvas.requestFocus();
 			pointerEventState.button = e.getButton();
 			pointerEventState.previous = normalizeEventCoordinates(pointerEventState.view, e);
-			pointerEventState.startScroll = pointerEventState.view.getConfig().scroll.get();
+			pointerEventState.startScroll = pointerEventState.view.getWrapper().getConfig().scroll.get();
 			pointerEventState.startScrollClick = new DoubleVector(e.getSceneX(), e.getSceneY());
 			pointerEventState.edit = window.selectedForEdit.get();
 			if (e.getButton() == MouseButton.PRIMARY) {
@@ -236,7 +232,7 @@ public class Editor {
 				if (!pointerEventState.dragged) {
 					pointerEventState.edit.mark(context, pointerEventState.previous, pointerEventState.previous);
 				}
-				this.context.history.finishChange();
+				context.history.finishChange();
 			}
 		});
 		outerCanvas.addEventFilter(MouseEvent.MOUSE_DRAGGED, e -> {
@@ -247,7 +243,7 @@ public class Editor {
 					pointerEventState.edit.mark(context, pointerEventState.previous, end);
 				}
 			} else if (pointerEventState.button == MouseButton.MIDDLE) {
-				updateScroll(pointerEventState.startScroll.plus(new DoubleVector(e.getSceneX(), e.getSceneY())
+				updateScroll(context, pointerEventState.startScroll.plus(new DoubleVector(e.getSceneX(), e.getSceneY())
 						.minus(pointerEventState.startScrollClick)
 						.divide(computeViewTransform(pointerEventState.view))));
 			}
@@ -255,9 +251,10 @@ public class Editor {
 		});
 		outerCanvas.addEventFilter(MouseEvent.MOUSE_MOVED, e -> {
 			outerCanvas.requestFocus();
+			Wrapper.EditHandle edit = window.selectedForEdit.get();
 			if (edit == null)
 				return;
-			Wrapper view = window.selectedForView.get();
+			Wrapper.CanvasHandle view = window.selectedForView.get();
 			if (view == null)
 				return;
 			edit.cursorMoved(context, normalizeEventCoordinates(view, e));
@@ -266,7 +263,7 @@ public class Editor {
 			context.hotkeys.event(context, Hotkeys.Scope.EDITOR, e);
 		});
 
-		window.selectedForView.addListener(new ChangeListener<Wrapper>() {
+		window.selectedForView.addListener(new ChangeListener<Wrapper.CanvasHandle>() {
 			Runnable cleanup;
 
 			{
@@ -275,31 +272,30 @@ public class Editor {
 
 			@Override
 			public void changed(
-					ObservableValue<? extends Wrapper> observable, Wrapper oldValue, Wrapper newView
+					ObservableValue<? extends Wrapper.CanvasHandle> observable, Wrapper.CanvasHandle oldValue, Wrapper.CanvasHandle newView
 			) {
 				if (cleanup != null) {
 					cleanup.run();
 					cleanup = null;
 				}
 				if (newView != null) {
-					final ChangeListener<Number> zoomListener = (observable1, oldValue1, newValue) -> updateBounds();
-					newView.getConfig().zoom.addListener(zoomListener);
+					final ChangeListener<Number> zoomListener = (observable1, oldValue1, newValue) -> updateBounds(
+							context);
+					final NodeConfig config = newView.getWrapper().getConfig();
+					config.zoom.addListener(zoomListener);
 					canvas.scaleXProperty().bind(Bindings.createDoubleBinding(() -> computeViewTransform(newView).x,
-							newView.getConfig().zoom,
-							newView.getConfig().flipHorizontal
+							config.zoom,
+							config.flipHorizontal
 					));
 					canvas.scaleYProperty().bind(Bindings.createDoubleBinding(() -> computeViewTransform(newView).y,
-							newView.getConfig().zoom,
-							newView.getConfig().flipVertical
+							config.zoom,
+							config.flipVertical
 					));
-					updateBounds();
-					viewHandle = newView.buildCanvas(context);
-					canvasInner.getChildren().add(viewHandle.getWidget());
+					updateBounds(context);
+					canvasInner.getChildren().add(newView.getWidget());
 					cleanup = () -> {
-						newView.getConfig().zoom.removeListener(zoomListener);
+						newView.getWrapper().getConfig().zoom.removeListener(zoomListener);
 						canvasInner.getChildren().clear();
-						viewHandle.remove();
-						viewHandle = null;
 					};
 				} else {
 					canvas.scaleXProperty().unbind();
@@ -307,25 +303,36 @@ public class Editor {
 				}
 			}
 		});
+
+		window.selectedForEdit.addListener(new ChangeListener<Wrapper.EditHandle>() {
+			{
+				changed(null,null,window.selectedForEdit.get());
+			}
+			@Override
+			public void changed(
+					ObservableValue<? extends Wrapper.EditHandle> observable,
+					Wrapper.EditHandle oldValue,
+					Wrapper.EditHandle newValue
+			) {
+				if (editCleanup != null) {
+					editCleanup.run();
+					editCleanup = null;
+				}
+				if (newValue != null) {
+					Node header = newValue.getProperties();
+					VBox.setVgrow(header, Priority.NEVER);
+					layout.getChildren().add(0, header);
+					if (header != null) {
+						editCleanup = () -> {
+							layout.getChildren().remove(header);
+						};
+					}
+				}
+			}
+		});
 	}
 
 	public Node getWidget() {
 		return layout;
-	}
-
-	public void setEdit(Wrapper edit, Wrapper.EditControlsHandle editControls) {
-		if (editCleanup != null) {
-			editCleanup.run();
-			editCleanup = null;
-		}
-		this.edit = edit;
-		Node header = editControls.getProperties();
-		VBox.setVgrow(header, Priority.NEVER);
-		layout.getChildren().add(0, header);
-		if (header != null) {
-			editCleanup = () -> {
-				layout.getChildren().remove(header);
-			};
-		}
 	}
 }

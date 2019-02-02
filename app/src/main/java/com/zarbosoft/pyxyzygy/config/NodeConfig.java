@@ -2,6 +2,7 @@ package com.zarbosoft.pyxyzygy.config;
 
 import com.zarbosoft.interface1.Configuration;
 import com.zarbosoft.pyxyzygy.DoubleVector;
+import com.zarbosoft.pyxyzygy.ProjectContext;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -21,5 +22,13 @@ public class NodeConfig {
 	public final SimpleIntegerProperty zoom = new SimpleIntegerProperty(0);
 
 	@Configuration
-	public final SimpleObjectProperty<DoubleVector> scroll = new SimpleObjectProperty<>(new DoubleVector(0,0 ));
+	public final SimpleObjectProperty<DoubleVector> scroll = new SimpleObjectProperty<>(new DoubleVector(0, 0));
+
+	public NodeConfig(ProjectContext context) {
+		zoom.set(context.config.defaultZoom);
+	}
+
+	public NodeConfig() {
+
+	}
 }

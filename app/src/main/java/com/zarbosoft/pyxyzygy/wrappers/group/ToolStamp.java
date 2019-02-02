@@ -2,16 +2,19 @@ package com.zarbosoft.pyxyzygy.wrappers.group;
 
 import com.google.common.collect.ImmutableList;
 import com.zarbosoft.internal.pyxyzygy_seed.model.Rectangle;
-import com.zarbosoft.rendaw.common.Assertion;
-import com.zarbosoft.pyxyzygy.*;
+import com.zarbosoft.internal.pyxyzygy_seed.model.Vector;
+import com.zarbosoft.pyxyzygy.DoubleVector;
+import com.zarbosoft.pyxyzygy.ProjectContext;
+import com.zarbosoft.pyxyzygy.Render;
+import com.zarbosoft.pyxyzygy.TrueColorImage;
 import com.zarbosoft.pyxyzygy.model.*;
 import com.zarbosoft.pyxyzygy.modelmirror.*;
 import com.zarbosoft.pyxyzygy.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.widgets.WidgetFormBuilder;
+import com.zarbosoft.rendaw.common.Assertion;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.Group;
-import javafx.scene.Node;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
@@ -22,17 +25,18 @@ import javafx.scene.transform.Scale;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.zarbosoft.pyxyzygy.widgets.HelperJFX.pad;
+
 public class ToolStamp extends Tool {
-	private final Node node;
 	private final MirrorProject mirror;
 	private final GroupNodeEditHandle editHandle;
 	private ProjectNode stampSource;
 	private final SimpleObjectProperty<Rectangle> stampOverlayBounds =
 			new SimpleObjectProperty<>(new Rectangle(0, 0, 0, 0));
-	private GroupNodeWrapper groupNodeWrapper;
+	private final GroupNodeWrapper wrapper;
 	private final Group overlayGroup;
 
-	ToolStamp(GroupNodeWrapper groupNodeWrapper, ProjectContext context, GroupNodeEditHandle editHandle) {
+	ToolStamp(GroupNodeWrapper wrapper, ProjectContext context, GroupNodeEditHandle editHandle) {
 		this.editHandle = editHandle;
 		final TreeView<ObjectMirror> tree = new TreeView<>();
 		tree.setCellFactory(param -> new TreeCell<ObjectMirror>() {
@@ -80,28 +84,23 @@ public class ToolStamp extends Tool {
 		}, null, context.project);
 		tree.setRoot(mirror.tree.get());
 		tree.setShowRoot(false);
-		ObjectMirror found = lookup.get(groupNodeWrapper.config.stampSource.get());
+		ObjectMirror found = lookup.get(wrapper.config.stampSource.get());
 		if (found != null)
 			tree.getSelectionModel().select(found.tree.get());
 		ImageView stampOverlayImage = new ImageView();
 		stampOverlayImage.setOpacity(0.5);
 		overlayGroup = new Group();
-		groupNodeWrapper.positiveZoom.addListener((observable, oldValue, newValue) -> overlayGroup
+		wrapper.canvasHandle.positiveZoom.addListener((observable, oldValue, newValue) -> overlayGroup
 				.getTransforms()
-				.setAll(new Scale(
-						1.0 / groupNodeWrapper.positiveZoom.get(),
-						1.0 / groupNodeWrapper.positiveZoom.get()
+				.setAll(new Scale(1.0 / wrapper.canvasHandle.positiveZoom.get(),
+						1.0 / wrapper.canvasHandle.positiveZoom.get()
 				)));
 		overlayGroup
 				.layoutXProperty()
-				.bind(Bindings.createDoubleBinding(() -> (double) groupNodeWrapper.mousePosition.get().x,
-						groupNodeWrapper.mousePosition
-				));
+				.bind(Bindings.createDoubleBinding(() -> Math.floor(editHandle.mouseX.get()), editHandle.mouseX));
 		overlayGroup
 				.layoutYProperty()
-				.bind(Bindings.createDoubleBinding(() -> (double) groupNodeWrapper.mousePosition.get().y,
-						groupNodeWrapper.mousePosition
-				));
+				.bind(Bindings.createDoubleBinding(() -> Math.floor(editHandle.mouseY.get()), editHandle.mouseY));
 		Line overlayMarker = new Line(0, 0, 10, 10);
 		overlayGroup.getChildren().addAll(stampOverlayImage, overlayMarker);
 		editHandle.overlay.getChildren().add(overlayGroup);
@@ -110,26 +109,26 @@ public class ToolStamp extends Tool {
 			TreeItem<ObjectMirror> item = tree.getSelectionModel().getSelectedItem();
 			if (item == null)
 				return;
-			groupNodeWrapper.config.stampSource.set(item.getValue().getValue().id());
+			wrapper.config.stampSource.set(item.getValue().getValue().id());
 			stampSource = (ProjectNode) item.getValue().getValue();
 			stampOverlayBounds.set(Render.bounds(context, stampSource, 0));
 			if (stampOverlayBounds.get().width == 0 || stampOverlayBounds.get().height == 0)
 				return;
 			TrueColorImage gc = TrueColorImage.create(stampOverlayBounds.get().width, stampOverlayBounds.get().height);
 			Render.render(context, stampSource, gc, 0, stampOverlayBounds.get(), 1);
-			stampOverlayImage.setImage(HelperJFX.toImage(gc, groupNodeWrapper.positiveZoom.get()));
-			stampOverlayImage.setLayoutX((double) stampOverlayBounds.get().x * groupNodeWrapper.positiveZoom.get());
-			stampOverlayImage.setLayoutY((double) stampOverlayBounds.get().y * groupNodeWrapper.positiveZoom.get());
+			stampOverlayImage.setImage(HelperJFX.toImage(gc, wrapper.canvasHandle.positiveZoom.get()));
+			stampOverlayImage.setLayoutX((double) stampOverlayBounds.get().x * wrapper.canvasHandle.positiveZoom.get());
+			stampOverlayImage.setLayoutY((double) stampOverlayBounds.get().y * wrapper.canvasHandle.positiveZoom.get());
 		};
 		tree
 				.getSelectionModel()
 				.selectedItemProperty()
 				.addListener((observable, oldValue, newValue) -> updateStampImage.run());
-		groupNodeWrapper.positiveZoom.addListener((observable, oldValue, newValue) -> updateStampImage.run());
-		node = new WidgetFormBuilder().span(() -> {
+		wrapper.canvasHandle.positiveZoom.addListener((observable, oldValue, newValue) -> updateStampImage.run());
+		editHandle.toolTab.setContent(pad(new WidgetFormBuilder().span(() -> {
 			return tree;
-		}).build();
-		this.groupNodeWrapper = groupNodeWrapper;
+		}).build()));
+		this.wrapper = wrapper;
 	}
 
 	@Override
@@ -140,24 +139,22 @@ public class ToolStamp extends Tool {
 		layer.initialInnerSet(context, stampSource);
 		GroupPositionFrame positionFrame = GroupPositionFrame.create(context);
 		positionFrame.initialLengthSet(context, -1);
-		positionFrame.initialOffsetSet(context, groupNodeWrapper.mousePosition.get());
+		positionFrame.initialOffsetSet(
+				context,
+				new Vector((int) Math.floor(editHandle.mouseX.get()), (int) Math.floor(editHandle.mouseY.get()))
+		);
 		layer.initialPositionFramesAdd(context, ImmutableList.of(positionFrame));
 		GroupTimeFrame timeFrame = GroupTimeFrame.create(context);
 		timeFrame.initialLengthSet(context, -1);
 		timeFrame.initialInnerOffsetSet(context, 0);
 		timeFrame.initialInnerLoopSet(context, 0);
 		layer.initialTimeFramesAdd(context, ImmutableList.of(timeFrame));
-		context.history.change(c -> c.groupNode(groupNodeWrapper.node).layersAdd(layer));
+		context.history.change(c -> c.groupNode(wrapper.node).layersAdd(layer));
 	}
 
 	@Override
 	public void mark(ProjectContext context, DoubleVector start, DoubleVector end) {
 
-	}
-
-	@Override
-	public Node getProperties() {
-		return node;
 	}
 
 	@Override

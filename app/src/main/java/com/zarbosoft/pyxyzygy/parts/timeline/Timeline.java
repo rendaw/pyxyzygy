@@ -1,14 +1,14 @@
 package com.zarbosoft.pyxyzygy.parts.timeline;
 
 import com.google.common.collect.ImmutableList;
-import com.zarbosoft.rendaw.common.Assertion;
-import com.zarbosoft.rendaw.common.DeadCode;
 import com.zarbosoft.pyxyzygy.*;
 import com.zarbosoft.pyxyzygy.model.*;
 import com.zarbosoft.pyxyzygy.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.wrappers.camera.CameraWrapper;
 import com.zarbosoft.pyxyzygy.wrappers.group.GroupNodeWrapper;
 import com.zarbosoft.pyxyzygy.wrappers.truecolorimage.TrueColorImageNodeWrapper;
+import com.zarbosoft.rendaw.common.Assertion;
+import com.zarbosoft.rendaw.common.DeadCode;
 import javafx.beans.Observable;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleIntegerProperty;
@@ -44,8 +44,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.zarbosoft.rendaw.common.Common.sublist;
 import static com.zarbosoft.pyxyzygy.Main.*;
+import static com.zarbosoft.rendaw.common.Common.sublist;
 
 public class Timeline {
 	private final ProjectContext context;
@@ -93,28 +93,32 @@ public class Timeline {
 	public Timeline(ProjectContext context, Window window) {
 		this.context = context;
 		this.window = window;
-		window.selectedForView.addListener(new ChangeListener<Wrapper>() {
+		window.selectedForView.addListener(new ChangeListener<Wrapper.CanvasHandle>() {
 			{
 				changed(null, null, window.selectedForView.get());
 			}
 
 			@Override
 			public void changed(
-					ObservableValue<? extends Wrapper> observable, Wrapper oldValue, Wrapper newValue
+					ObservableValue<? extends Wrapper.CanvasHandle> observable,
+					Wrapper.CanvasHandle oldValue,
+					Wrapper.CanvasHandle newValue
 			) {
 				Observable[] deps;
 				if (newValue == null)
 					deps = new Observable[] {requestedMaxFrame, calculatedMaxFrame};
 				else
 					deps = new Observable[] {
-							requestedMaxFrame, calculatedMaxFrame, window.selectedForView.get().getConfig().frame
+							requestedMaxFrame,
+							calculatedMaxFrame,
+							window.selectedForView.get().getWrapper().getConfig().frame
 					};
 				useMaxFrame.bind(Bindings.createIntegerBinding(() -> {
 					int out = 0;
 					out = Math.max(out, requestedMaxFrame.get());
 					out = Math.max(out, calculatedMaxFrame.get());
 					if (newValue != null)
-						out = Math.max(out, window.selectedForView.get().getConfig().frame.get());
+						out = Math.max(out, window.selectedForView.get().getWrapper().getConfig().frame.get());
 					return out + extraFrames;
 				}, deps));
 			}
@@ -133,8 +137,7 @@ public class Timeline {
 			if (window.selectedForView.get() == null)
 				return;
 			Point2D corner = scrubElements.getLocalToSceneTransform().transform(0, 0);
-			window.selectedForView.get().getConfig().frame.set(Math.max(
-					0,
+			window.selectedForView.get().getWrapper().getConfig().frame.set(Math.max(0,
 					(int) ((e.getSceneX() - corner.getX()) / zoom)
 			));
 			updateFrameMarker();
@@ -144,14 +147,14 @@ public class Timeline {
 		scrub.addEventFilter(KeyEvent.KEY_TYPED, e -> {
 			switch (e.getCode()) {
 				case LEFT:
-					window.selectedForView.get().getConfig().frame.set(Math.max(
-							0,
-							window.selectedForView.get().getConfig().frame.get() - 1
+					window.selectedForView.get().getWrapper().getConfig().frame.set(Math.max(0,
+							window.selectedForView.get().getWrapper().getConfig().frame.get() - 1
 					));
 					break;
 				case RIGHT:
-					window.selectedForView.get().getConfig().frame.set(window.selectedForView
+					window.selectedForView.get().getWrapper().getConfig().frame.set(window.selectedForView
 							.get()
+							.getWrapper()
 							.getConfig().frame.get() + 1);
 					break;
 			}
@@ -169,7 +172,10 @@ public class Timeline {
 							c
 									.getTreeItem()
 									.getValue()
-									.createFrame(context, window, window.selectedForView.get().getConfig().frame.get()))
+									.createFrame(context,
+											window,
+											window.selectedForView.get().getWrapper().getConfig().frame.get()
+									))
 					.findFirst();
 		});
 		duplicate = HelperJFX.button("content-copy.png", "Duplicate");
@@ -187,7 +193,7 @@ public class Timeline {
 									.getValue()
 									.duplicateFrame(context,
 											window,
-											window.selectedForView.get().getConfig().frame.get()
+											window.selectedForView.get().getWrapper().getConfig().frame.get()
 									))
 					.findFirst();
 		});
@@ -331,7 +337,9 @@ public class Timeline {
 			item.getValue().remove(context);
 	}
 
-	public void setNodes(Wrapper root, Wrapper edit) {
+	public void setNodes(Wrapper.CanvasHandle root1, Wrapper.EditHandle edit1) {
+		Wrapper root = root1.getWrapper();
+		Wrapper edit = edit1.getWrapper();
 		updateFrameMarker();
 
 		// Clean up everything
@@ -369,7 +377,7 @@ public class Timeline {
 						new TreeItem(new RowAdapterGroupLayerPosition(this, layer, layerRowAdapter))
 				);
 				return layerItem;
-			}, this::cleanItemSubtree, noopConsumer());
+			}, this::cleanItemSubtree, Misc.noopConsumer());
 		} else if (edit instanceof TrueColorImageNodeWrapper) {
 			tree
 					.getRoot()
@@ -381,7 +389,7 @@ public class Timeline {
 	}
 
 	private void updateButtons() {
-		Wrapper root = window.selectedForView.get();
+		Wrapper.CanvasHandle root = window.selectedForView.get();
 		TreeItem<RowAdapter> nowSelected = tree.getSelectionModel().getSelectedItem();
 		boolean noSelection = root == null ||
 				nowSelected == null ||
@@ -396,11 +404,11 @@ public class Timeline {
 	}
 
 	private void updateFrameMarker() {
-		Wrapper root = window.selectedForView.get();
+		Wrapper.CanvasHandle root = window.selectedForView.get();
 		if (root == null)
 			return;
-		root.setFrame(context, root.getConfig().frame.get());
-		frameMarker.setLayoutX(root.getConfig().frame.getValue() * zoom);
+		root.setFrame(context, root.getWrapper().getConfig().frame.get());
+		frameMarker.setLayoutX(root.getWrapper().getConfig().frame.getValue() * zoom);
 		new Consumer<TreeItem<RowAdapter>>() {
 			@Override
 			public void accept(TreeItem<RowAdapter> item) {
@@ -579,7 +587,7 @@ public class Timeline {
 	}
 
 	public TimeAdapterNode createTimeHandle(ProjectObject object) {
-		if (object == window.selectedForEdit.getValue().getValue())
+		if (object == window.selectedForEdit.get().getWrapper().getValue())
 			return createEndTimeHandle();
 		if (false) {
 			throw new Assertion();
@@ -611,7 +619,7 @@ public class Timeline {
 					// Find the layer that leads to the edited node
 					// First find the layer whose parent is this node
 					Wrapper beforeAt = null;
-					Wrapper at = window.selectedForEdit.get();
+					Wrapper at = window.selectedForEdit.get().getWrapper();
 					while (at != null && at.getValue() != object) {
 						beforeAt = at;
 						at = at.getParent();
@@ -658,7 +666,7 @@ public class Timeline {
 							if (value ==
 									Optional
 											.ofNullable(window.selectedForEdit.get())
-											.map(e -> e.getValue())
+											.map(e -> e.getWrapper().getValue())
 											.orElse(null))
 								child = createTimeHandle(value);
 							else

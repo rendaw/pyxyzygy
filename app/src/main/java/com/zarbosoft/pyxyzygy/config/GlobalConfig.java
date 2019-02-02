@@ -3,6 +3,7 @@ package com.zarbosoft.pyxyzygy.config;
 import com.zarbosoft.interface1.Configuration;
 import com.zarbosoft.pyxyzygy.ConfigBase;
 import com.zarbosoft.pyxyzygy.Hotkeys;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
@@ -23,8 +24,11 @@ public class GlobalConfig extends ConfigBase {
 	public int maxUndo = 1000;
 
 	@Configuration
-	public int tileSize = 32;
-
-	@Configuration
 	public Map<String, Hotkeys.Hotkey> hotkeys = new HashMap<>();
+
+	@Configuration(optional = true)
+	public CreateMode newProjectNormalMode = CreateMode.normal;
+
+	@Configuration(optional = true)
+	public final SimpleBooleanProperty showOrigin = new SimpleBooleanProperty(false);
 }

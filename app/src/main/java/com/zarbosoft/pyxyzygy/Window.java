@@ -1,11 +1,7 @@
 package com.zarbosoft.pyxyzygy;
 
 import com.zarbosoft.pyxyzygy.config.TrueColor;
-import com.zarbosoft.pyxyzygy.model.GroupLayer;
-import com.zarbosoft.pyxyzygy.model.GroupNode;
-import com.zarbosoft.pyxyzygy.model.ProjectObject;
-import com.zarbosoft.pyxyzygy.model.TrueColorImageNode;
-import com.zarbosoft.pyxyzygy.model.Camera;
+import com.zarbosoft.pyxyzygy.model.*;
 import com.zarbosoft.pyxyzygy.parts.editor.Editor;
 import com.zarbosoft.pyxyzygy.parts.structure.Structure;
 import com.zarbosoft.pyxyzygy.parts.timeline.Timeline;
@@ -20,8 +16,6 @@ import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.Pair;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.geometry.Orientation;
 import javafx.scene.Node;
 import javafx.scene.Scene;
@@ -40,16 +34,23 @@ import static com.zarbosoft.pyxyzygy.Main.nameHuman;
 
 public class Window {
 	public List<FrameMapEntry> timeMap;
-	public SimpleObjectProperty<Wrapper> selectedForEdit = new SimpleObjectProperty<>();
-	public SimpleObjectProperty<Wrapper> selectedForView = new SimpleObjectProperty<>();
-	private Wrapper.EditControlsHandle editPropertiesHandle;
+	public SimpleObjectProperty<Wrapper.EditHandle> selectedForEdit = new SimpleObjectProperty<>();
+	public SimpleObjectProperty<Wrapper.CanvasHandle> selectedForView = new SimpleObjectProperty<>();
+	public TabPane leftTabs;
 
 	public void start(ProjectContext context, Stage primaryStage) {
 		primaryStage.setOnCloseRequest(e -> {
 			context.shutdown();
 		});
 
+		leftTabs = new TabPane();
+		leftTabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+		final Tab structureTab = new Tab("Structure");
+		final Tab configTab = new Tab("Config");
+		leftTabs.getTabs().addAll(structureTab, configTab);
+
 		Structure structure = new Structure(context, this);
+		structureTab.setContent(structure.getWidget());
 
 		Editor editor = new Editor(context, this);
 		Timeline timeline = new Timeline(context, this);
@@ -90,36 +91,25 @@ public class Window {
 							context.history.clearHistory();
 						});
 					});
-				}).separator().intSpinner("New project tile size", 8, 1024, spinner -> {
-					spinner.getValueFactory().setValue(Main.config.tileSize);
-					spinner
-							.getValueFactory()
-							.valueProperty()
-							.addListener((observable, oldValue, newValue) -> Main.config.tileSize = newValue);
+				}).check("Show origin", checkBox -> {
+					checkBox.selectedProperty().bindBidirectional(Main.config.showOrigin);
 				}).build()),
 				new TitledPane("Hotkeys", (
-						new Supplier<Node>() {
-							@Override
-							public Node get() {
-								TableColumn<Hotkeys.Action, String> scope = new TableColumn("Scope");
-								scope.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().scope.name()));
-								TableColumn<Hotkeys.Action, String> description = new TableColumn("Description");
-								description.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().description));
-								TableColumn<Hotkeys.Action, String> key = new TableColumn("Key");
-								key.setCellValueFactory(param -> param.getValue().key.asString());
-								TableView<Hotkeys.Action> table = new TableView<>();
-								table.getColumns().addAll(scope, description, key);
-								table.setItems(context.hotkeys.actions);
-								return table;
-							}
+						(Supplier<Node>) () -> {
+							TableColumn<Hotkeys.Action, String> scope = new TableColumn("Scope");
+							scope.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().scope.name()));
+							TableColumn<Hotkeys.Action, String> description = new TableColumn("Description");
+							description.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().description));
+							TableColumn<Hotkeys.Action, String> key = new TableColumn("Key");
+							key.setCellValueFactory(param -> param.getValue().key.asString());
+							TableView<Hotkeys.Action> table = new TableView<>();
+							table.getColumns().addAll(scope, description, key);
+							table.setItems(context.hotkeys.actions);
+							return table;
 						}
 				).get())
 		);
-		new Tab("Config", configLayout);
-
-		TabPane leftTabs = new TabPane();
-		leftTabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
-		leftTabs.getTabs().addAll(new Tab("Structure", structure.getWidget()), new Tab("Config", configLayout));
+		configTab.setContent(configLayout);
 
 		SplitPane generalLayout = new SplitPane();
 		generalLayout.setOrientation(Orientation.HORIZONTAL);
@@ -146,23 +136,9 @@ public class Window {
 				getClass().getResource("widgets/brushbutton/style.css").toExternalForm()
 		);
 
-		selectedForEdit.addListener(new ChangeListener<Wrapper>() {
-			{
-				changed(null, null, selectedForEdit.get());
-			}
-
-			@Override
-			public void changed(
-					ObservableValue<? extends Wrapper> observable, Wrapper oldValue, Wrapper newValue
-			) {
-				if (editPropertiesHandle != null) {
-					editPropertiesHandle.remove(context);
-					editPropertiesHandle = null;
-				}
-				if (newValue != null) {
-					editPropertiesHandle = newValue.buildEditControls(context, leftTabs);
-					editor.setEdit(newValue, editPropertiesHandle);
-				}
+		selectedForEdit.addListener((observable, oldValue, newValue) -> {
+			if (oldValue != null) {
+				oldValue.remove(context);
 			}
 		});
 
@@ -189,9 +165,9 @@ public class Window {
 		return entry.second.innerOffset + outer - entry.first;
 	}
 
-	public static List<Wrapper> getAncestors(Wrapper start, Wrapper target) {
-		List<Wrapper> ancestors = new ArrayList<>();
-		Wrapper at = target.getParent();
+	public static List<Wrapper.CanvasHandle> getAncestors(Wrapper.CanvasHandle start, Wrapper.CanvasHandle target) {
+		List<Wrapper.CanvasHandle> ancestors = new ArrayList<>();
+		Wrapper.CanvasHandle at = target.getParent();
 		while (at != start) {
 			ancestors.add(at);
 			at = at.getParent();
@@ -200,8 +176,8 @@ public class Window {
 		return ancestors;
 	}
 
-	public static DoubleVector toLocal(Wrapper wrapper, DoubleVector v) {
-		for (Wrapper parent : getAncestors(null, wrapper)) {
+	public static DoubleVector toLocal(Wrapper.CanvasHandle wrapper, DoubleVector v) {
+		for (Wrapper.CanvasHandle parent : getAncestors(null, wrapper)) {
 			v = parent.toInner(v);
 		}
 		return v;

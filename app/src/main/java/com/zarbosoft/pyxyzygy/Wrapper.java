@@ -5,6 +5,7 @@ import com.zarbosoft.pyxyzygy.model.ProjectNode;
 import com.zarbosoft.pyxyzygy.model.ProjectObject;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TreeItem;
@@ -20,32 +21,46 @@ public abstract class Wrapper {
 
 	public abstract Wrapper getParent();
 
-	public abstract DoubleVector toInner(DoubleVector vector);
-
 	public abstract ProjectObject getValue();
 
 	public abstract NodeConfig getConfig();
 
-	public abstract void setViewport(ProjectContext context, DoubleRectangle newBounds, int zoom);
+	public abstract static class CanvasHandle {
+		public abstract DoubleVector toInner(DoubleVector vector);
+		private final Group outer = new Group();
+		public final Group inner = new Group();
+		public final Group overlay = new Group();
 
-	public abstract WidgetHandle buildCanvas(ProjectContext context);
+		{
+			outer.getChildren().addAll(inner, overlay);
+		}
 
-	public abstract void cursorMoved(ProjectContext context, DoubleVector vector);
-
-	public abstract static class EditControlsHandle {
-		public abstract Node getProperties();
+		final public Node getWidget() {
+			return outer;
+		}
+		public abstract void setViewport(ProjectContext context, DoubleRectangle newBounds, int positiveZoom);
+		public abstract void setFrame(ProjectContext context, int frameNumber);
 		public abstract void remove(ProjectContext context);
+
+		public abstract Wrapper getWrapper();
+
+		public abstract CanvasHandle getParent();
 	}
 
-	public abstract EditControlsHandle buildEditControls(ProjectContext context, TabPane leftTabs);
+	public abstract CanvasHandle buildCanvas(ProjectContext context, CanvasHandle parent);
 
-	public abstract void mark(ProjectContext context, DoubleVector start, DoubleVector end);
+	public abstract static class EditHandle {
+		public abstract void cursorMoved(ProjectContext context, DoubleVector vector);
+		public abstract Wrapper getWrapper();
+		public abstract Node getProperties();
+		public abstract void remove(ProjectContext context);
+		public abstract void mark(ProjectContext context, DoubleVector start, DoubleVector end);
+		public abstract void markStart(ProjectContext context, DoubleVector start);
+	}
 
-	public abstract void setFrame(ProjectContext context, int frameNumber);
+	public abstract EditHandle buildEditControls(ProjectContext context, TabPane leftTabs);
 
 	public abstract void remove(ProjectContext context);
-
-	public abstract void markStart(ProjectContext context, DoubleVector start);
 
 	/**
 	 * Used in ProjectNode wrappers only

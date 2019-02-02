@@ -340,6 +340,6 @@ public class RowTimeRangeWidget {
 	public void updateFrameMarker(Window window) {
 		if (window.selectedForView.get() == null)
 			return;
-		frameMarker.setLayoutX(window.selectedForView.get().getConfig().frame.getValue() * timeline.zoom);
+		frameMarker.setLayoutX(window.selectedForView.get().getWrapper().getConfig().frame.getValue() * timeline.zoom);
 	}
 }

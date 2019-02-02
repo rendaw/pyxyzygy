@@ -23,4 +23,7 @@ public class TrueColorBrush extends Brush {
 
 	@Configuration
 	public SimpleIntegerProperty blend = new SimpleIntegerProperty();
+
+	@Configuration(optional = true)
+	public SimpleBooleanProperty hard = new SimpleBooleanProperty(false);
 }

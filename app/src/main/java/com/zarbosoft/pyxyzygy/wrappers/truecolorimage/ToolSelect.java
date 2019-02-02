@@ -1,12 +1,13 @@
 package com.zarbosoft.pyxyzygy.wrappers.truecolorimage;
 
-import com.zarbosoft.pyxyzygy.*;
 import com.zarbosoft.internal.pyxyzygy_seed.model.Rectangle;
 import com.zarbosoft.internal.pyxyzygy_seed.model.Vector;
+import com.zarbosoft.pyxyzygy.*;
 import com.zarbosoft.pyxyzygy.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.widgets.WidgetFormBuilder;
 import com.zarbosoft.pyxyzygy.wrappers.group.Tool;
 import javafx.beans.binding.Bindings;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.effect.BlendMode;
@@ -18,9 +19,9 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.StrokeType;
 import javafx.scene.transform.Scale;
 
-import static com.zarbosoft.rendaw.common.Common.uncheck;
 import static com.zarbosoft.pyxyzygy.widgets.HelperJFX.icon;
 import static com.zarbosoft.pyxyzygy.widgets.HelperJFX.pad;
+import static com.zarbosoft.rendaw.common.Common.uncheck;
 
 public class ToolSelect extends Tool {
 	final TrueColorImageEditHandle editHandle;
@@ -46,7 +47,7 @@ public class ToolSelect extends Tool {
 			setFill(Color.TRANSPARENT);
 			setVisible(false);
 			setBlendMode(BlendMode.DIFFERENCE);
-			strokeWidthProperty().bind(Bindings.divide(1.0, editHandle.wrapper.zoom));
+			strokeWidthProperty().bind(Bindings.divide(1.0, editHandle.wrapper.canvasHandle.zoom));
 		}
 	}
 
@@ -86,8 +87,7 @@ public class ToolSelect extends Tool {
 		private DoubleVector start;
 		private Vector startCorner;
 		Hotkeys.Action[] actions = new Hotkeys.Action[] {
-				new Hotkeys.Action(
-						Hotkeys.Scope.EDITOR,
+				new Hotkeys.Action(Hotkeys.Scope.EDITOR,
 						"cancel",
 						"Cancel",
 						Hotkeys.Hotkey.create(KeyCode.ESCAPE, false, false, false)
@@ -125,16 +125,16 @@ public class ToolSelect extends Tool {
 			rectangle.setWidth(bounds.width);
 			rectangle.setHeight(bounds.height);
 			this.buffer = buffer;
+
+			final TrueColorImageCanvasHandle canvasHandle = editHandle.wrapper.canvasHandle;
+			final SimpleIntegerProperty zoom = canvasHandle.zoom;
+
 			ImageView image = new ImageView();
-			image
-					.imageProperty()
-					.bind(Bindings.createObjectBinding(() -> HelperJFX.toImage(buffer, editHandle.wrapper.zoom.get()),
-							editHandle.wrapper.zoom
-					));
+			image.imageProperty().bind(Bindings.createObjectBinding(() -> HelperJFX.toImage(buffer, zoom.get()), zoom));
 			imageGroup.getChildren().add(image);
-			editHandle.wrapper.zoom.addListener((observable, oldValue, newValue) -> imageGroup
+			zoom.addListener((observable, oldValue, newValue) -> imageGroup
 					.getTransforms()
-					.setAll(new Scale(1.0 / editHandle.wrapper.zoom.get(), 1.0 / editHandle.wrapper.zoom.get())));
+					.setAll(new Scale(1.0 / zoom.get(), 1.0 / zoom.get())));
 			editHandle.overlay.getChildren().addAll(originalRectangle, rectangle, imageGroup);
 			setPosition(bounds.corner());
 
@@ -148,16 +148,16 @@ public class ToolSelect extends Tool {
 				b.setText("Place");
 				b.setGraphic(new ImageView(icon("arrow-collapse-down.png")));
 				b.setOnAction(e -> {
-					editHandle.wrapper.clear(context, originalBounds);
+					canvasHandle.clear(context, originalBounds);
 
 					{
 						Rectangle destQuantizedBounds = bounds.quantize(context.tileSize);
 						Rectangle dropBounds = destQuantizedBounds.multiply(context.tileSize);
 						TrueColorImage composeCanvas = TrueColorImage.create(dropBounds.width, dropBounds.height);
-						editHandle.wrapper.render(context, composeCanvas, dropBounds);
+						canvasHandle.render(context, composeCanvas, dropBounds);
 						Vector offset = bounds.corner().minus(dropBounds.corner());
 						composeCanvas.compose(buffer, offset.x, offset.y, 1);
-						editHandle.wrapper.drop(context, destQuantizedBounds, composeCanvas);
+						canvasHandle.drop(context, destQuantizedBounds, composeCanvas);
 					}
 					setState(context, new StateCreate(context));
 				});
@@ -165,7 +165,7 @@ public class ToolSelect extends Tool {
 				b.setText("Clear");
 				b.setGraphic(new ImageView(icon("eraser-variant.png")));
 				b.setOnAction(e -> {
-					editHandle.wrapper.clear(context, originalBounds);
+					canvasHandle.clear(context, originalBounds);
 					setState(context, new StateCreate(context));
 				});
 			}).button(b -> {
@@ -173,7 +173,7 @@ public class ToolSelect extends Tool {
 				b.setGraphic(new ImageView(icon("content-cut.png")));
 				b.setOnAction(e -> uncheck(() -> {
 					copy.run();
-					editHandle.wrapper.clear(context, originalBounds);
+					canvasHandle.clear(context, originalBounds);
 					setState(context, new StateCreate(context));
 				}));
 			}).button(b -> {
@@ -232,8 +232,7 @@ public class ToolSelect extends Tool {
 		Interactive mark;
 
 		Hotkeys.Action[] actions = new Hotkeys.Action[] {
-				new Hotkeys.Action(
-						Hotkeys.Scope.EDITOR,
+				new Hotkeys.Action(Hotkeys.Scope.EDITOR,
 						"cancel",
 						"Cancel",
 						Hotkeys.Hotkey.create(KeyCode.ESCAPE, false, false, false)
@@ -373,7 +372,7 @@ public class ToolSelect extends Tool {
 
 		TrueColorImage render(ProjectContext context) {
 			TrueColorImage buffer = TrueColorImage.create(inside.width, inside.height);
-			editHandle.wrapper.render(context, buffer, inside);
+			editHandle.wrapper.canvasHandle.render(context, buffer, inside);
 			return buffer;
 		}
 
@@ -398,7 +397,7 @@ public class ToolSelect extends Tool {
 				b.setText("Clear");
 				b.setGraphic(new ImageView(icon("eraser-variant.png")));
 				b.setOnAction(e -> {
-					editHandle.wrapper.clear(context, inside);
+					editHandle.wrapper.canvasHandle.clear(context, inside);
 					setState(context, new StateCreate(context));
 				});
 			}).button(b -> {
@@ -406,7 +405,7 @@ public class ToolSelect extends Tool {
 				b.setGraphic(new ImageView(icon("content-cut.png")));
 				b.setOnAction(e -> uncheck(() -> {
 					copy.run();
-					editHandle.wrapper.clear(context, inside);
+					editHandle.wrapper.canvasHandle.clear(context, inside);
 					setState(context, new StateCreate(context));
 				}));
 			}).button(b -> {
@@ -500,11 +499,6 @@ public class ToolSelect extends Tool {
 	@Override
 	public void mark(ProjectContext context, DoubleVector start, DoubleVector end) {
 		state.mark(context, start, end);
-	}
-
-	@Override
-	public Node getProperties() {
-		return null;
 	}
 
 	@Override

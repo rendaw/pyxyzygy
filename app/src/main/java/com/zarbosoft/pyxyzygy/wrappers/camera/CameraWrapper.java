@@ -1,13 +1,17 @@
 package com.zarbosoft.pyxyzygy.wrappers.camera;
 
-import com.zarbosoft.pyxyzygy.*;
+import com.zarbosoft.pyxyzygy.ProjectContext;
+import com.zarbosoft.pyxyzygy.Render;
+import com.zarbosoft.pyxyzygy.TrueColorImage;
+import com.zarbosoft.pyxyzygy.Wrapper;
 import com.zarbosoft.pyxyzygy.model.Camera;
 import com.zarbosoft.pyxyzygy.model.ProjectNode;
 import com.zarbosoft.pyxyzygy.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.widgets.WidgetFormBuilder;
+import com.zarbosoft.pyxyzygy.wrappers.group.GroupNodeCanvasHandle;
+import com.zarbosoft.pyxyzygy.wrappers.group.GroupNodeEditHandle;
 import com.zarbosoft.pyxyzygy.wrappers.group.GroupNodeWrapper;
-import javafx.scene.Group;
-import javafx.scene.Node;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
@@ -21,8 +25,8 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.zarbosoft.pyxyzygy.Misc.nodeFormFields;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
-import static com.zarbosoft.pyxyzygy.Main.nodeFormFields;
 
 public class CameraWrapper extends GroupNodeWrapper {
 	private final Camera node;
@@ -31,15 +35,12 @@ public class CameraWrapper extends GroupNodeWrapper {
 	private final Camera.EndSetListener endListener;
 	private final Camera.FrameRateSetListener framerateListener;
 
-	Group canvas;
-	Rectangle cameraBorder;
-
 	private Spinner<Integer> propertiesWidth;
 	private Spinner<Integer> propertiesHeight;
 	private Spinner<Integer> propertiesEndFrame;
 	private Spinner<Double> propertiesFrameRate;
 	private Path renderPath;
-	private com.zarbosoft.internal.pyxyzygy_seed.model.Rectangle crop;
+	private SimpleObjectProperty<com.zarbosoft.internal.pyxyzygy_seed.model.Rectangle> crop = new SimpleObjectProperty<>(new com.zarbosoft.internal.pyxyzygy_seed.model.Rectangle(0,0,0,0));
 
 	public CameraWrapper(ProjectContext context, Wrapper parent, int parentIndex, Camera node) {
 		super(context, parent, parentIndex, node);
@@ -66,17 +67,11 @@ public class CameraWrapper extends GroupNodeWrapper {
 	}
 
 	private void updateCameraBorder() {
-		if (cameraBorder == null)
-			return;
-		this.crop = new com.zarbosoft.internal.pyxyzygy_seed.model.Rectangle(-node.width() / 2,
+		this.crop.set(new com.zarbosoft.internal.pyxyzygy_seed.model.Rectangle(-node.width() / 2,
 				-node.height() / 2,
 				node.width(),
 				node.height()
-		);
-		cameraBorder.setWidth(crop.width);
-		cameraBorder.setLayoutX(crop.x);
-		cameraBorder.setHeight(crop.height);
-		cameraBorder.setLayoutY(crop.y);
+		));
 	}
 
 	@Override
@@ -89,30 +84,30 @@ public class CameraWrapper extends GroupNodeWrapper {
 	}
 
 	@Override
-	public WidgetHandle buildCanvas(ProjectContext context) {
-		return new WidgetHandle() {
-			WidgetHandle groupHandle = CameraWrapper.super.buildCanvas(context);
+	public CanvasHandle buildCanvas(ProjectContext context, CanvasHandle parent) {
+		return new GroupNodeCanvasHandle(context, parent, this) {
+			Rectangle cameraBorder;
+			CanvasHandle groupHandle = CameraWrapper.super.buildCanvas(context, parent);
 
 			{
-				canvas = new Group();
 				cameraBorder = new Rectangle();
 				cameraBorder.setStrokeWidth(1);
 				cameraBorder.setStrokeType(StrokeType.OUTSIDE);
 				cameraBorder.setFill(Color.TRANSPARENT);
 				cameraBorder.setStroke(HelperJFX.c(new java.awt.Color(128, 128, 128)));
 				updateCameraBorder();
-				canvas.getChildren().addAll(groupHandle.getWidget(), cameraBorder);
+				inner.getChildren().addAll(groupHandle.getWidget(), cameraBorder);
+				crop.addListener((observable, oldValue, newValue) -> {
+					cameraBorder.setWidth(crop.get().width);
+					cameraBorder.setLayoutX(crop.get().x);
+					cameraBorder.setHeight(crop.get().height);
+					cameraBorder.setLayoutY(crop.get().y);
+				});
 			}
 
 			@Override
-			public Node getWidget() {
-				return canvas;
-			}
-
-			@Override
-			public void remove() {
-				groupHandle.remove();
-				canvas = null;
+			public void remove(ProjectContext context) {
+				groupHandle.remove(context);
 				cameraBorder = null;
 			}
 		};
@@ -130,56 +125,55 @@ public class CameraWrapper extends GroupNodeWrapper {
 	}
 
 	@Override
-	public EditControlsHandle buildEditControls(ProjectContext context, TabPane tabPane) {
+	public EditHandle buildEditControls(ProjectContext context, TabPane tabPane) {
 		List<Runnable> miscCleanup = new ArrayList<>();
-		Tab tab = new Tab("Camera", new WidgetFormBuilder()
-				.apply(b -> miscCleanup.add(nodeFormFields(context, b, node)))
-				.intSpinner("Crop width", 1, 99999, s -> {
-					s.getValueFactory().setValue(node.width());
-					propertiesWidth = s;
-				})
-				.intSpinner("Crop height", 1, 99999, s -> {
-					s.getValueFactory().setValue(node.height());
-					propertiesHeight = s;
-				})
-				.intSpinner("End frame", 1, 99999, s -> {
-					s.getValueFactory().setValue(node.end());
-					propertiesEndFrame = s;
-				})
-				.doubleSpinner("Framerate", 1, 999, 1, s -> {
-					s.getValueFactory().setValue(node.frameRate() / 10.0);
-					propertiesFrameRate = s;
-				})
-				.chooseDirectory("Render path", s -> {
-					if (renderPath != null)
-						s.setValue(renderPath.toString());
-					s.addListener((observable, oldValue, newValue) -> renderPath = Paths.get(newValue));
-				})
-				.button(b -> {
-					b.setText("Render");
-					b.setOnAction(e -> uncheck(() -> {
-						if (renderPath == null)
-							return;
-						Files.createDirectories(renderPath);
-						TrueColorImage canvas = TrueColorImage.create(node.width(), node.height());
-						for (int i = 0; i < node.end(); ++i) {
-							if (i != 0)
-								canvas.clear();
-							Render.render(context,node, canvas ,i ,crop , 1.0);
-							canvas.serialize(renderPath.resolve(String.format("frame%06d.png", i)).toString());
-						}
-					}));
-				})
-				.build());
+		Tab tab = new Tab(
+				"Camera",
+				new WidgetFormBuilder()
+						.apply(b -> miscCleanup.add(nodeFormFields(context, b, node)))
+						.intSpinner("Crop width", 1, 99999, s -> {
+							s.getValueFactory().setValue(node.width());
+							propertiesWidth = s;
+						})
+						.intSpinner("Crop height", 1, 99999, s -> {
+							s.getValueFactory().setValue(node.height());
+							propertiesHeight = s;
+						})
+						.intSpinner("End frame", 1, 99999, s -> {
+							s.getValueFactory().setValue(node.end());
+							propertiesEndFrame = s;
+						})
+						.doubleSpinner("Framerate", 1, 999, 1, s -> {
+							s.getValueFactory().setValue(node.frameRate() / 10.0);
+							propertiesFrameRate = s;
+						})
+						.chooseDirectory("Render path", s -> {
+							if (renderPath != null)
+								s.setValue(renderPath.toString());
+							s.addListener((observable, oldValue, newValue) -> renderPath = Paths.get(newValue));
+						})
+						.button(b -> {
+							b.setText("Render");
+							b.setOnAction(e -> uncheck(() -> {
+								if (renderPath == null)
+									return;
+								Files.createDirectories(renderPath);
+								TrueColorImage canvas = TrueColorImage.create(node.width(), node.height());
+								for (int i = 0; i < node.end(); ++i) {
+									if (i != 0)
+										canvas.clear();
+									Render.render(context, node, canvas, i, crop.get(), 1.0);
+									canvas.serialize(renderPath.resolve(String.format("frame%06d.png", i)).toString());
+								}
+							}));
+						})
+						.build()
+		);
 		tabPane.getTabs().addAll(tab);
-		return new EditControlsHandle() {
-			@Override
-			public Node getProperties() {
-				return null;
-			}
-
+		return new GroupNodeEditHandle(this, context, tabPane) {
 			@Override
 			public void remove(ProjectContext context) {
+				super.remove(context);
 				tabPane.getTabs().removeAll(tab);
 				propertiesWidth = null;
 				propertiesHeight = null;

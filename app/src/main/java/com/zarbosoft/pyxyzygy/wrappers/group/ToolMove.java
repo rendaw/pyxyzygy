@@ -9,40 +9,35 @@ import javafx.scene.Node;
 public class ToolMove extends Tool {
 	private DoubleVector markStart;
 	private Vector markStartOffset;
-	private GroupNodeWrapper groupNodeWrapper;
+	private GroupNodeWrapper wrapper;
 
-	public ToolMove(GroupNodeWrapper groupNodeWrapper) {
-		this.groupNodeWrapper = groupNodeWrapper;
+	public ToolMove(GroupNodeWrapper wrapper) {
+		this.wrapper = wrapper;
 	}
 
 	@Override
 	public void markStart(ProjectContext context, DoubleVector start) {
-		if (groupNodeWrapper.specificLayer == null)
+		if (wrapper.specificLayer == null)
 			return;
 		this.markStart = start;
 		GroupPositionFrame pos = GroupLayerWrapper.findPosition(
-				groupNodeWrapper.specificLayer,
-				groupNodeWrapper.currentFrame
+				wrapper.specificLayer,
+				wrapper.canvasHandle.currentFrame
 		).frame;
 		this.markStartOffset = pos.offset();
 	}
 
 	@Override
 	public void mark(ProjectContext context, DoubleVector start, DoubleVector end) {
-		if (groupNodeWrapper.specificLayer == null)
+		if (wrapper.specificLayer == null)
 			return;
 		GroupPositionFrame pos = GroupLayerWrapper.findPosition(
-				groupNodeWrapper.specificLayer,
-				groupNodeWrapper.currentFrame
+				wrapper.specificLayer,
+				wrapper.canvasHandle.currentFrame
 		).frame;
 		context.history.change(c -> c
 				.groupPositionFrame(pos)
 				.offsetSet(end.minus(markStart).plus(markStartOffset).toInt()));
-	}
-
-	@Override
-	public Node getProperties() {
-		return null;
 	}
 
 	@Override

@@ -2,6 +2,7 @@ package com.zarbosoft.pyxyzygy.config;
 
 import com.zarbosoft.interface1.Configuration;
 import com.zarbosoft.pyxyzygy.ConfigBase;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableMap;
@@ -23,4 +24,7 @@ public class ProjectConfig extends ConfigBase {
 
 	@Configuration(optional = true)
 	public double timelineSplit = 0.7;
+
+	@Configuration(optional = true)
+	public int defaultZoom = 0;
 }

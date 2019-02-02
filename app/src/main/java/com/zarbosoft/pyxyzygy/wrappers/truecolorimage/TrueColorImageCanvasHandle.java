@@ -2,12 +2,9 @@ package com.zarbosoft.pyxyzygy.wrappers.truecolorimage;
 
 import com.zarbosoft.internal.pyxyzygy_seed.model.Rectangle;
 import com.zarbosoft.internal.pyxyzygy_seed.model.Vector;
-import com.zarbosoft.pyxyzygy.DoubleRectangle;
-import com.zarbosoft.pyxyzygy.ProjectContext;
-import com.zarbosoft.pyxyzygy.WidgetHandle;
+import com.zarbosoft.pyxyzygy.*;
 import com.zarbosoft.pyxyzygy.model.*;
-import javafx.scene.Group;
-import javafx.scene.Node;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.scene.transform.Scale;
 
 import java.util.HashMap;
@@ -15,63 +12,76 @@ import java.util.Map;
 
 import static com.zarbosoft.pyxyzygy.Main.opacityMax;
 
-public class TrueColorImageCanvasHandle extends WidgetHandle {
+public class TrueColorImageCanvasHandle extends Wrapper.CanvasHandle {
+	final Wrapper.CanvasHandle parent;
 	private final ProjectNode.OpacitySetListener opacityListener;
-	private TrueColorImageNodeWrapper trueColorImageNodeWrapper;
-	Group outerDraw;
-	Group draw;
+	private TrueColorImageNodeWrapper wrapper;
 	private TrueColorImageFrame.TilesPutAllListener tilesPutListener;
 	Map<Long, WrapTile> wrapTiles = new HashMap<>();
+	private int frameNumber = 0;
+	TrueColorImageFrame frame;
+	private final TrueColorImageNode.FramesAddListener framesAddListener;
+	private final TrueColorImageNode.FramesRemoveListener framesRemoveListener;
+	private final TrueColorImageNode.FramesMoveToListener framesMoveListener;
+	DoubleRectangle bounds = new DoubleRectangle(0, 0, 0, 0);
+	SimpleIntegerProperty zoom = new SimpleIntegerProperty(1);
 
 	public TrueColorImageCanvasHandle(
-			ProjectContext context, TrueColorImageNodeWrapper trueColorImageNodeWrapper
+			ProjectContext context, Wrapper.CanvasHandle parent, TrueColorImageNodeWrapper wrapper
 	) {
-		this.trueColorImageNodeWrapper = trueColorImageNodeWrapper;
-		draw = new Group();
-		this.opacityListener = trueColorImageNodeWrapper.node.addOpacitySetListeners((target, value) -> {
-			draw.setOpacity((double) value / opacityMax);
+		this.parent = parent;
+		this.wrapper = wrapper;
+		this.opacityListener = wrapper.node.addOpacitySetListeners((target, value) -> {
+			inner.setOpacity((double) value / opacityMax);
 		});
-		draw
-				.getTransforms()
-				.setAll(new Scale(
-						1.0 / trueColorImageNodeWrapper.zoom.get(),
-						1.0 / trueColorImageNodeWrapper.zoom.get()
-				));
+		inner.getTransforms().setAll(new Scale(1.0 / zoom.get(), 1.0 / zoom.get()));
 
-		outerDraw = new Group();
-		outerDraw.getChildren().add(draw);
+		this.framesAddListener =
+				wrapper.node.addFramesAddListeners((target, at, value) -> setFrame(context, frameNumber));
+		this.framesRemoveListener =
+				wrapper.node.addFramesRemoveListeners((target, at, count) -> setFrame(context, frameNumber));
+		this.framesMoveListener =
+				wrapper.node.addFramesMoveToListeners((target, source, count, dest) -> setFrame(context, frameNumber));
 
 		attachTiles(context);
 	}
 
 	@Override
-	public Node getWidget() {
-		return outerDraw;
+	public void remove(ProjectContext context) {
+		wrapper.canvasHandle = null;
+		wrapper.node.removeOpacitySetListeners(opacityListener);
+		wrapper.node.removeFramesAddListeners(framesAddListener);
+		wrapper.node.removeFramesRemoveListeners(framesRemoveListener);
+		wrapper.node.removeFramesMoveToListeners(framesMoveListener);
+		detachTiles();
 	}
 
 	@Override
-	public void remove() {
-		trueColorImageNodeWrapper.node.removeOpacitySetListeners(opacityListener);
-		detachTiles();
-		trueColorImageNodeWrapper.canvasHandle = null;
+	public Wrapper getWrapper() {
+		return wrapper;
 	}
 
-	public void updateViewport(
-			ProjectContext context, DoubleRectangle oldBounds1, DoubleRectangle newBounds1, boolean zoomChanged
-	) {
+	@Override
+	public Wrapper.CanvasHandle getParent() {
+		return parent;
+	}
+
+	@Override
+	public void setViewport(ProjectContext context, DoubleRectangle newBounds1, int positiveZoom) {
+		System.out.format("image scroll; b %s\n", newBounds1);
+		DoubleRectangle oldBounds1 = this.bounds;
+		this.bounds = newBounds1;
+		boolean zoomChanged = this.zoom.get() == positiveZoom;
+		this.zoom.set(positiveZoom);
+
 		Rectangle oldBounds = oldBounds1.scale(3).quantize(context.tileSize);
 		Rectangle newBounds = newBounds1.scale(3).quantize(context.tileSize);
 		System.out.format("image scroll 2; use bounds %s\n", newBounds);
 
 		if (zoomChanged) {
-			draw.getChildren().clear();
+			inner.getChildren().clear();
 			wrapTiles.clear();
-			draw
-					.getTransforms()
-					.setAll(new Scale(
-							1.0 / trueColorImageNodeWrapper.zoom.get(),
-							1.0 / trueColorImageNodeWrapper.zoom.get()
-					));
+			inner.getTransforms().setAll(new Scale(1.0 / positiveZoom, 1.0 / positiveZoom));
 		} else {
 			// Remove tiles outside view bounds
 			for (int x = 0; x < oldBounds.width; ++x) {
@@ -79,7 +89,7 @@ public class TrueColorImageCanvasHandle extends WidgetHandle {
 					if (newBounds.contains(x, y))
 						continue;
 					long key = oldBounds.corner().to1D();
-					draw.getChildren().remove(wrapTiles.get(key));
+					inner.getChildren().remove(wrapTiles.get(key));
 				}
 			}
 		}
@@ -92,21 +102,30 @@ public class TrueColorImageCanvasHandle extends WidgetHandle {
 				if (wrapTiles.containsKey(key)) {
 					continue;
 				}
-				Tile tile = (Tile) trueColorImageNodeWrapper.frame.tilesGet(key);
+				Tile tile = (Tile) frame.tilesGet(key);
 				if (tile == null) {
 					continue;
 				}
-				WrapTile wrapTile = new WrapTile(
-						context,
+				WrapTile wrapTile = new WrapTile(context,
 						tile,
-						trueColorImageNodeWrapper.zoom.get(),
+						positiveZoom,
 						useIndexes.x * context.tileSize,
 						useIndexes.y * context.tileSize
 				);
 				wrapTiles.put(key, wrapTile);
-				draw.getChildren().add(wrapTile.widget);
+				inner.getChildren().add(wrapTile.widget);
 			}
 		}
+	}
+
+	@Override
+	public void setFrame(ProjectContext context, int frameNumber) {
+		this.frameNumber = frameNumber;
+		TrueColorImageFrame oldFrame = frame;
+		frame = findFrame(frameNumber);
+		System.out.format("set frame %s: %s vs %s\n", frameNumber, oldFrame, frame);
+		if (oldFrame != frame)
+			updateFrame(context);
 	}
 
 	public void updateFrame(ProjectContext context) {
@@ -115,14 +134,14 @@ public class TrueColorImageCanvasHandle extends WidgetHandle {
 	}
 
 	public void attachTiles(ProjectContext context) {
-		trueColorImageNodeWrapper.frame.addTilesPutAllListeners(tilesPutListener = (target, put, remove) -> {
+		frame.addTilesPutAllListeners(tilesPutListener = (target, put, remove) -> {
 			for (Long key : remove) {
 				WrapTile old = wrapTiles.remove(key);
 				if (old != null)
-					draw.getChildren().remove(old.widget);
+					inner.getChildren().remove(old.widget);
 			}
-			Rectangle checkBounds = trueColorImageNodeWrapper.bounds.scale(3).quantize(context.tileSize);
-			System.out.format("attach tiles: %s = q %s\n", trueColorImageNodeWrapper.bounds, checkBounds);
+			Rectangle checkBounds = bounds.scale(3).quantize(context.tileSize);
+			//System.out.format("attach tiles: %s = q %s\n", wrapper.bounds, checkBounds);
 			for (Map.Entry<Long, TileBase> entry : put.entrySet()) {
 				long key = entry.getKey();
 				Vector indexes = Vector.from1D(key);
@@ -134,25 +153,83 @@ public class TrueColorImageCanvasHandle extends WidgetHandle {
 				if (old != null) {
 					old.update(context, value);
 				} else {
-					WrapTile wrap = new WrapTile(
-							context,
+					WrapTile wrap = new WrapTile(context,
 							value,
-							trueColorImageNodeWrapper.zoom.get(),
+							zoom.get(),
 							indexes.x * context.tileSize,
 							indexes.y * context.tileSize
 					);
 					wrapTiles.put(key, wrap);
-					draw.getChildren().add(wrap.widget);
+					inner.getChildren().add(wrap.widget);
 				}
 			}
 		});
 	}
 
 	public void detachTiles() {
-		trueColorImageNodeWrapper.frame.removeTilesPutAllListeners(tilesPutListener);
+		frame.removeTilesPutAllListeners(tilesPutListener);
 		tilesPutListener = null;
-		draw.getChildren().clear();
+		inner.getChildren().clear();
 		wrapTiles.clear();
 	}
 
+	public Rectangle render(ProjectContext context, TrueColorImage gc, Rectangle crop) {
+		Rectangle tileBounds = crop.quantize(context.tileSize);
+		//System.out.format("render tb %s\n", tileBounds);
+		for (int x = 0; x < tileBounds.width; ++x) {
+			for (int y = 0; y < tileBounds.height; ++y) {
+				Tile tile = (Tile) frame.tilesGet(tileBounds.corner().plus(x, y).to1D());
+				if (tile == null)
+					continue;
+				final int renderX = (x + tileBounds.x) * context.tileSize - crop.x;
+				final int renderY = (y + tileBounds.y) * context.tileSize - crop.y;
+				//System.out.format("composing at %s %s op %s\n", renderX, renderY, opacity);
+				System.out.flush();
+				TrueColorImage data = tile.getData(context);
+				gc.compose(data, renderX, renderY, (float) 1);
+			}
+		}
+		return tileBounds;
+	}
+
+	TrueColorImageFrame findFrame(int frameNumber) {
+		return wrapper.findFrame(wrapper.node, frameNumber).frame;
+	}
+
+	public void drop(ProjectContext context, Rectangle unitBounds, TrueColorImage image) {
+		for (int x = 0; x < unitBounds.width; ++x) {
+			for (int y = 0; y < unitBounds.height; ++y) {
+				final int x0 = x;
+				final int y0 = y;
+				System.out.format("\tcopy %s %s: %s %s by %s %s\n",
+						x0,
+						y0,
+						x0 * context.tileSize,
+						y0 * context.tileSize,
+						context.tileSize,
+						context.tileSize
+				);
+				TrueColorImage shot =
+						image.copy(x0 * context.tileSize, y0 * context.tileSize, context.tileSize, context.tileSize);
+				context.history.change(c -> c
+						.trueColorImageFrame(frame)
+						.tilesPut(unitBounds.corner().plus(x0, y0).to1D(), Tile.create(context, shot)));
+			}
+		}
+	}
+
+	void clear(ProjectContext context, Rectangle bounds) {
+		Rectangle quantizedBounds = bounds.quantize(context.tileSize);
+		Rectangle clearBounds = quantizedBounds.multiply(context.tileSize);
+		TrueColorImage clearCanvas = TrueColorImage.create(clearBounds.width, clearBounds.height);
+		render(context, clearCanvas, clearBounds);
+		Vector offset = bounds.corner().minus(clearBounds.corner());
+		clearCanvas.clear(offset.x, offset.y, bounds.width, bounds.height);
+		drop(context, quantizedBounds, clearCanvas);
+	}
+
+	@Override
+	public DoubleVector toInner(DoubleVector vector) {
+		return vector;
+	}
 }

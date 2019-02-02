@@ -1,14 +1,17 @@
 package com.zarbosoft.pyxyzygy.wrappers.truecolorimage;
 
-import com.zarbosoft.rendaw.common.Pair;
+import com.zarbosoft.internal.pyxyzygy_seed.model.Rectangle;
 import com.zarbosoft.pyxyzygy.*;
 import com.zarbosoft.pyxyzygy.config.TrueColor;
 import com.zarbosoft.pyxyzygy.config.TrueColorBrush;
-import com.zarbosoft.internal.pyxyzygy_seed.model.Rectangle;
 import com.zarbosoft.pyxyzygy.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.widgets.TrueColorPicker;
 import com.zarbosoft.pyxyzygy.widgets.WidgetFormBuilder;
 import com.zarbosoft.pyxyzygy.wrappers.group.Tool;
+import com.zarbosoft.rendaw.common.Pair;
+import javafx.beans.binding.Bindings;
+import javafx.beans.binding.DoubleBinding;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
@@ -17,7 +20,10 @@ import javafx.geometry.HPos;
 import javafx.scene.Node;
 import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
+import javafx.scene.shape.StrokeType;
 
+import java.awt.*;
 import java.util.Optional;
 
 import static com.zarbosoft.pyxyzygy.widgets.HelperJFX.pad;
@@ -25,13 +31,40 @@ import static com.zarbosoft.pyxyzygy.widgets.HelperJFX.pad;
 public class ToolBrush extends Tool {
 	final TrueColorBrush brush;
 	private final TrueColorImageEditHandle editHandle;
+	private final javafx.scene.shape.Rectangle cursor = new javafx.scene.shape.Rectangle();
 
-	public ToolBrush(ProjectContext context,
-					 TrueColorImageEditHandle trueColorImageEditHandle,
-					 TrueColorBrush brush
+	public ToolBrush(
+			ProjectContext context, TrueColorImageEditHandle trueColorImageEditHandle, TrueColorBrush brush
 	) {
 		this.editHandle = trueColorImageEditHandle;
 		this.brush = brush;
+
+		cursor.widthProperty().bind(brush.size);
+		cursor.heightProperty().bind(brush.size);
+		cursor.setStroke(Color.BLACK);
+		cursor.setStrokeType(StrokeType.OUTSIDE);
+		cursor.setFill(Color.TRANSPARENT);
+		cursor.setOpacity(0.5);
+		DoubleBinding arcBinding = Bindings.createDoubleBinding(() -> brush.hard.get() ? 0.0 : brush.size.get() / 4.0,
+				brush.hard,
+				brush.size
+		);
+		cursor.arcWidthProperty().bind(arcBinding);
+		cursor.arcHeightProperty().bind(arcBinding);
+		cursor.layoutXProperty().bind(Bindings.createDoubleBinding(() -> {
+			double v = editHandle.mouseX.get() - brush.size.get() / 2.0;
+			if (brush.hard.get())
+				return Math.floor(v);
+			else
+				return v;
+		}, editHandle.mouseX, brush.size, brush.hard));
+		cursor.layoutYProperty().bind(Bindings.createDoubleBinding(() -> {
+			double v = editHandle.mouseY.get() - brush.size.get() / 2.0;
+			if (brush.hard.get())
+				return Math.floor(v);
+			return v;
+		}, editHandle.mouseY, brush.size, brush.hard));
+		this.editHandle.overlay.getChildren().add(cursor);
 
 		TrueColorPicker colorPicker = new TrueColorPicker();
 		GridPane.setHalignment(colorPicker, HPos.CENTER);
@@ -51,9 +84,7 @@ public class ToolBrush extends Tool {
 
 						@Override
 						public void changed(
-								ObservableValue<? extends Boolean> observable,
-								Boolean oldValue,
-								Boolean newValue
+								ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue
 						) {
 							SimpleObjectProperty<TrueColor> color;
 							if (newValue)
@@ -87,6 +118,8 @@ public class ToolBrush extends Tool {
 				})
 				.slider("Blend", 1, 1000, s -> {
 					s.valueProperty().bindBidirectional(brush.blend);
+				}).check("Hard", checkBox -> {
+					checkBox.selectedProperty().bindBidirectional(brush.hard);
 				})
 				.build()));
 	}
@@ -123,9 +156,10 @@ public class ToolBrush extends Tool {
 
 		// Copy tiles to canvas
 		TrueColorImage canvas = TrueColorImage.create(bounds.width, bounds.height);
-		Rectangle tileBounds = editHandle.wrapper.render(context, canvas, bounds);
+		Rectangle tileBounds = editHandle.wrapper.canvasHandle.render(context, canvas, bounds);
 
 		// Do the stroke
+		/*
 		System.out.format("stroke %s %s to %s %s, c %s %s %s %s\n",
 				start.x,
 				start.y,
@@ -136,6 +170,7 @@ public class ToolBrush extends Tool {
 				color.b,
 				color.a
 		);
+		*/
 		canvas.stroke(color.r,
 				color.g,
 				color.b,
@@ -150,16 +185,11 @@ public class ToolBrush extends Tool {
 		);
 
 		// Replace tiles in frame
-		editHandle.wrapper.drop(context,tileBounds ,canvas );
-	}
-
-	@Override
-	public Node getProperties() {
-		return null;
+		editHandle.wrapper.canvasHandle.drop(context, tileBounds, canvas);
 	}
 
 	@Override
 	public void remove(ProjectContext context) {
-
+		editHandle.overlay.getChildren().removeAll(cursor);
 	}
 }

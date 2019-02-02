@@ -4,34 +4,15 @@ import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.pyxyzygy.*;
 import com.zarbosoft.pyxyzygy.config.NodeConfig;
 import com.zarbosoft.pyxyzygy.model.*;
-import javafx.scene.Group;
-import javafx.scene.Node;
 import javafx.scene.control.TabPane;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
-
-import static com.zarbosoft.pyxyzygy.Main.moveTo;
 
 public class GroupLayerWrapper extends Wrapper {
 	private final Wrapper parent;
-	private final GroupLayer node;
+	public final GroupLayer node;
 	private final GroupLayer.InnerSetListener innerSetListener;
-	private final GroupLayer.PositionFramesAddListener positionAddListener;
-	private final GroupLayer.PositionFramesRemoveListener positionRemoveListener;
-	private final GroupLayer.PositionFramesMoveToListener positionMoveListener;
-	private final GroupLayer.TimeFramesAddListener timeAddListener;
-	private final GroupLayer.TimeFramesRemoveListener timeRemoveListener;
-	private final GroupLayer.TimeFramesMoveToListener timeMoveListener;
-	private final List<Runnable> positionCleanup = new ArrayList<>();
-	private final List<Runnable> timeCleanup = new ArrayList<>();
-	private int currentFrame;
-	private Wrapper child;
-	private Group canvas;
-	private WidgetHandle childCanvas;
-	private int zoom;
-	private DoubleRectangle baseBounds;
+	public Wrapper child;
 
 	public GroupLayerWrapper(ProjectContext context, Wrapper parent, int parentIndex, GroupLayer node) {
 		this.parent = parent;
@@ -40,71 +21,13 @@ public class GroupLayerWrapper extends Wrapper {
 
 		this.innerSetListener = node.addInnerSetListeners((target, value) -> {
 			if (child != null) {
-				if (childCanvas != null) {
-					canvas.getChildren().clear();
-					childCanvas.remove();
-				}
 				tree.unbind();
 				child.remove(context);
 			}
 			if (value != null) {
 				child = Window.createNode(context, GroupLayerWrapper.this, 0, value);
 				tree.bind(child.tree);
-				if (canvas != null) {
-					childCanvas = child.buildCanvas(context);
-					canvas.getChildren().add(childCanvas.getWidget());
-					updateChildCanvasPosition(null);
-				}
 			}
-		});
-		// Don't need clear listeners because clear should never happen (1 frame must always be left)
-		this.positionAddListener = node.addPositionFramesAddListeners((target, at, value) -> {
-			updatePosition(context);
-			positionCleanup.addAll(at, value.stream().map(v -> {
-				GroupPositionFrame.LengthSetListener lengthListener = v.addLengthSetListeners((target1, value1) -> {
-					updatePosition(context);
-				});
-				GroupPositionFrame.OffsetSetListener offsetListener =
-						v.addOffsetSetListeners((target12, value12) -> updatePosition(context));
-				return (Runnable) () -> {
-					v.removeLengthSetListeners(lengthListener);
-					v.removeOffsetSetListeners(offsetListener);
-				};
-			}).collect(Collectors.toList()));
-		});
-		this.positionRemoveListener = node.addPositionFramesRemoveListeners((target, at, count) -> {
-			updatePosition(context);
-			List<Runnable> tempClean = positionCleanup.subList(at, at + count);
-			tempClean.forEach(r -> r.run());
-			tempClean.clear();
-		});
-		this.positionMoveListener = node.addPositionFramesMoveToListeners((target, source, count, dest) -> {
-			updatePosition(context);
-			moveTo(positionCleanup, source, count, dest);
-		});
-		this.timeAddListener = node.addTimeFramesAddListeners((target, at, value) -> {
-			updateTime(context);
-			timeCleanup.addAll(at, value.stream().map(v -> {
-				GroupTimeFrame.LengthSetListener lengthListener = v.addLengthSetListeners((target1, value1) -> {
-					updatePosition(context);
-				});
-				GroupTimeFrame.InnerOffsetSetListener offsetListener =
-						v.addInnerOffsetSetListeners((target12, value12) -> updatePosition(context));
-				return (Runnable) () -> {
-					v.removeLengthSetListeners(lengthListener);
-					v.removeInnerOffsetSetListeners(offsetListener);
-				};
-			}).collect(Collectors.toList()));
-		});
-		this.timeRemoveListener = node.addTimeFramesRemoveListeners((target, at, count) -> {
-			updateTime(context);
-			List<Runnable> tempClean = timeCleanup.subList(at, at + count);
-			tempClean.forEach(r -> r.run());
-			tempClean.clear();
-		});
-		this.timeMoveListener = node.addTimeFramesMoveToListeners((target, source, count, dest) -> {
-			updateTime(context);
-			moveTo(timeCleanup, source, count, dest);
 		});
 	}
 
@@ -115,7 +38,7 @@ public class GroupLayerWrapper extends Wrapper {
 		int innerFrame = result.frame.innerOffset() + offset;
 		return innerFrame;
 	}
-	private int findInnerFrame(int frame) {
+	public int findInnerFrame(int frame) {
 		return findInnerFrame(node,frame );
 	}
 
@@ -144,22 +67,9 @@ public class GroupLayerWrapper extends Wrapper {
 		throw new Assertion();
 	}
 
-	private void updateTime(ProjectContext context) {
-		if (child != null)
-			child.setFrame(context, findInnerFrame(currentFrame));
-	}
-
 	@Override
 	public Wrapper getParent() {
 		return parent;
-	}
-
-	private GroupPositionFrame findPosition() {
-		return findPosition(currentFrame);
-	}
-
-	private GroupPositionFrame findPosition(int frame) {
-		return findPosition(node, frame).frame;
 	}
 
 	public static class PositionResult {
@@ -188,12 +98,6 @@ public class GroupLayerWrapper extends Wrapper {
 	}
 
 	@Override
-	public DoubleVector toInner(DoubleVector vector) {
-		GroupPositionFrame pos = findPosition();
-		return vector.minus(pos.offset());
-	}
-
-	@Override
 	public ProjectObject getValue() {
 		return node;
 	}
@@ -204,74 +108,8 @@ public class GroupLayerWrapper extends Wrapper {
 	}
 
 	@Override
-	public void setViewport(
-			ProjectContext context, DoubleRectangle newBounds, int zoom
-	) {
-		this.zoom = zoom;
-		baseBounds = newBounds;
-		updatePosition(context);
-	}
-
-	private void updateChildCanvasPosition(GroupPositionFrame pos) {
-		if (pos == null)
-			pos = findPosition();
-		canvas.setLayoutX(pos.offset().x);
-		canvas.setLayoutY(pos.offset().y);
-	}
-
-	private void updatePosition(ProjectContext context) {
-		GroupPositionFrame pos = findPosition();
-		if (baseBounds == null)
-			return;
-		DoubleRectangle newBounds = baseBounds.minus(pos.offset());
-		if (canvas != null)
-			updateChildCanvasPosition(pos);
-		if (child != null)
-			child.setViewport(context, newBounds, zoom);
-	}
-
-	@Override
-	public WidgetHandle buildCanvas(ProjectContext context) {
-		return new WidgetHandle() {
-			{
-				GroupPositionFrame pos = findPosition();
-				canvas = new Group();
-				if (child != null) {
-					childCanvas = child.buildCanvas(context);
-					canvas.getChildren().add(childCanvas.getWidget());
-					updateChildCanvasPosition(pos);
-				}
-			}
-
-			@Override
-			public Node getWidget() {
-				return canvas;
-			}
-
-			@Override
-			public void remove() {
-				if (childCanvas != null) {
-					childCanvas.remove();
-					childCanvas = null;
-				}
-				canvas = null;
-			}
-		};
-	}
-
-	@Override
-	public void cursorMoved(ProjectContext context, DoubleVector vector) {
-
-	}
-
-	@Override
-	public void markStart(ProjectContext context, DoubleVector start) {
-		throw new Assertion();
-	}
-
-	@Override
-	public void mark(ProjectContext context, DoubleVector start, DoubleVector end) {
-		throw new Assertion();
+	public CanvasHandle buildCanvas(ProjectContext context, CanvasHandle parent) {
+		return new GroupLayerCanvasHandle(this, parent,context);
 	}
 
 	@Override
@@ -303,27 +141,13 @@ public class GroupLayerWrapper extends Wrapper {
 	}
 
 	@Override
-	public void setFrame(ProjectContext context, int frameNumber) {
-		this.currentFrame = frameNumber;
-		updateTime(context);
-		updatePosition(context);
-	}
-
-	@Override
 	public void remove(ProjectContext context) {
 		node.removeInnerSetListeners(innerSetListener);
-		node.removePositionFramesAddListeners(positionAddListener);
-		node.removePositionFramesRemoveListeners(positionRemoveListener);
-		node.removePositionFramesMoveToListeners(positionMoveListener);
-		node.removeTimeFramesAddListeners(timeAddListener);
-		node.removeTimeFramesRemoveListeners(timeRemoveListener);
-		node.removeTimeFramesMoveToListeners(timeMoveListener);
-		positionCleanup.forEach(r -> r.run());
-		timeCleanup.forEach(r -> r.run());
 	}
 
 	@Override
-	public EditControlsHandle buildEditControls(ProjectContext context, TabPane leftTabs) {
+	public EditHandle buildEditControls(ProjectContext context, TabPane leftTabs) {
 		return null;
 	}
+
 }

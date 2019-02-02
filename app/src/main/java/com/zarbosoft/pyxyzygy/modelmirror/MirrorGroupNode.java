@@ -6,8 +6,6 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.TreeItem;
 
-import static com.zarbosoft.pyxyzygy.Main.*;
-
 public class MirrorGroupNode extends ObjectMirror {
 	private final ObjectMirror parent;
 	private final GroupNode node;
@@ -27,12 +25,12 @@ public class MirrorGroupNode extends ObjectMirror {
 			for (int i = at; i < children.size(); ++i)
 				children.get(i).parentIndex = i;
 		});
-		mirror(children, tree.get().getChildren(), child -> {
+		Misc.mirror(children, tree.get().getChildren(), child -> {
 			child.tree.addListener((observable, oldValue, newValue) -> {
 				tree.get().getChildren().set(child.parentIndex, newValue);
 			});
 			return child.tree.get();
-		}, noopConsumer(), noopConsumer());
+		}, Misc.noopConsumer(), Misc.noopConsumer());
 	}
 
 	@Override

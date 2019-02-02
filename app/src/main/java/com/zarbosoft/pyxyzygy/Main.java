@@ -4,32 +4,29 @@ import com.google.common.collect.ImmutableList;
 import com.zarbosoft.appdirsj.AppDirs;
 import com.zarbosoft.interface1.TypeInfo;
 import com.zarbosoft.internal.pyxyzygy_seed.model.Vector;
+import com.zarbosoft.pyxyzygy.config.CreateMode;
 import com.zarbosoft.pyxyzygy.config.GlobalConfig;
 import com.zarbosoft.pyxyzygy.config.TrueColor;
 import com.zarbosoft.pyxyzygy.config.TrueColorBrush;
-import com.zarbosoft.pyxyzygy.model.ProjectNode;
 import com.zarbosoft.pyxyzygy.model.TrueColorImageFrame;
 import com.zarbosoft.pyxyzygy.model.TrueColorImageNode;
 import com.zarbosoft.pyxyzygy.widgets.HelperJFX;
-import com.zarbosoft.pyxyzygy.widgets.WidgetFormBuilder;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.ChainComparator;
 import com.zarbosoft.rendaw.common.Common;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
-import javafx.beans.property.DoubleProperty;
-import javafx.beans.property.Property;
+import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.beans.property.StringProperty;
-import javafx.collections.ListChangeListener;
-import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -43,9 +40,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.*;
-import java.util.function.Consumer;
-import java.util.function.Function;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -61,8 +58,10 @@ public class Main extends Application {
 	public static final Path configPath = configDir.resolve("config.luxem");
 	public final static int opacityMax = 1000;
 	public final static int blendMax = 1000;
-	public static final GlobalConfig config =
-			com.zarbosoft.pyxyzygy.ConfigBase.deserialize(new TypeInfo(GlobalConfig.class), configDir, () -> {
+	public static final GlobalConfig config;
+	static {
+		try {
+			config = com.zarbosoft.pyxyzygy.ConfigBase.deserialize(new TypeInfo(GlobalConfig.class), configDir, () -> {
 				GlobalConfig config = new GlobalConfig();
 				TrueColorBrush transparentBrush = new TrueColorBrush();
 				transparentBrush.name.set("Transparent");
@@ -79,6 +78,11 @@ public class Main extends Application {
 				config.trueColorBrushes.addAll(transparentBrush, defaultBrush);
 				return config;
 			});
+		} catch (Exception e) {
+			Platform.exit();
+			throw e;
+		}
+	}
 
 	public final static int NO_LOOP = 0;
 	public final static int NO_LENGTH = -1;
@@ -86,25 +90,6 @@ public class Main extends Application {
 
 	public static void main(String[] args) {
 		Main.launch(args);
-	}
-
-	public static void moveTo(List list, int source, int count, int dest) {
-		if (list.get(0) instanceof Wrapper)
-			throw new Assertion(); // DEBUG
-		List temp0 = list.subList(source, source + count);
-		List temp1 = new ArrayList(temp0);
-		temp0.clear();
-		list.addAll(dest, temp1);
-	}
-
-	public static void moveWrapperTo(List<Wrapper> list, int source, int count, int dest) {
-		List temp0 = list.subList(source, source + count);
-		List temp1 = new ArrayList(temp0);
-		temp0.clear();
-		list.addAll(dest, temp1);
-		for (int i = Math.min(source, dest); i < list.size(); ++i) {
-			list.get(i).parentIndex = i;
-		}
 	}
 
 	public static void shutdown() {
@@ -143,12 +128,17 @@ public class Main extends Application {
 				final Map<Path, ChooserEntry> entries = new HashMap<>();
 				private final ListView<ChooserEntry> list;
 
-				public ProjectChooser(Consumer<Path> chooseNew, Consumer<Path> chooseOpen, Runnable chooseNone) {
+				public ProjectChooser(Runnable chooseNone) {
 					cwd.addListener((observableValue, path, t1) -> {
 						entries.clear();
 						refresh();
 					});
 					SimpleObjectProperty<Path> resolvedPath = new SimpleObjectProperty<>();
+
+					Label explanation = new Label("Select an existing project directory or create a new one.");
+					explanation.setPadding(new Insets(4));
+					explanation.setWrapText(true);
+					explanation.setMinWidth(50);
 
 					Label here = new Label();
 					here.setTextFill(Color.GRAY);
@@ -159,9 +149,11 @@ public class Main extends Application {
 							return;
 						cwd.set(resolvedPath.get());
 					});
+					HBox.setHgrow(text, Priority.ALWAYS);
 					HBox hereLayout = new HBox();
 					hereLayout.setAlignment(Pos.CENTER_RIGHT);
 					hereLayout.setSpacing(4);
+					hereLayout.setPadding(new Insets(4));
 					hereLayout.getChildren().addAll(here, text);
 
 					Button up = HelperJFX.button("arrow-up.png", "Leave directory");
@@ -229,13 +221,36 @@ public class Main extends Application {
 					VBox listLayout = new VBox();
 					listLayout.getChildren().addAll(toolbar, list);
 
+					RadioButton newNormal = new RadioButton("Normal");
+					newNormal.setUserData(CreateMode.normal);
+					RadioButton newPixel = new RadioButton("Pixel");
+					newPixel.setUserData(CreateMode.pixel);
+					ToggleGroup modeGroup = new ToggleGroup();
+					modeGroup
+							.selectedToggleProperty()
+							.addListener((observable, oldValue, newValue) -> config.newProjectNormalMode =
+									(CreateMode) newValue.getUserData());
+					modeGroup.getToggles().addAll(newNormal, newPixel);
+					switch (config.newProjectNormalMode) {
+						case normal:
+							modeGroup.selectToggle(newNormal);
+							break;
+						case pixel:
+							modeGroup.selectToggle(newPixel);
+							break;
+						default:
+							throw new Assertion();
+					}
 					Button create = new Button("New", new ImageView(icon("folder-plus-outline.png")));
 					create.setOnAction(e -> {
-						chooseNew.accept(resolvedPath.get());
+						newProject(primaryStage,
+								resolvedPath.get(),
+								(CreateMode) modeGroup.getSelectedToggle().getUserData()
+						);
 					});
 					Button open = new Button("Open", new ImageView(projectImage));
 					open.setOnAction(e -> {
-						chooseOpen.accept(resolvedPath.get());
+						openProject(primaryStage, resolvedPath.get());
 					});
 					Button cancel = new Button("Cancel");
 					cancel.setOnAction(e -> {
@@ -244,12 +259,22 @@ public class Main extends Application {
 					HBox buttonLayout = new HBox();
 					buttonLayout.setSpacing(3);
 					buttonLayout.setAlignment(Pos.CENTER_RIGHT);
-					buttonLayout.getChildren().addAll(create, open, cancel);
+					buttonLayout.getChildren().addAll(newNormal, newPixel, create, open, cancel);
 
 					setFillWidth(true);
 					setSpacing(6);
 					setPadding(new Insets(3));
-					getChildren().addAll(hereLayout, listLayout, buttonLayout);
+					getChildren().addAll(explanation, hereLayout, listLayout, buttonLayout);
+
+					addEventFilter(KeyEvent.KEY_PRESSED,e-> {
+						if (e.getCode() == KeyCode.ENTER) {
+							if (!create.isDisable()) create.fire();
+								return;
+						}
+						if (e.getCode() == KeyCode.ESCAPE) {
+							cancel.fire();
+						}
+					});
 
 					cwd.addListener((observableValue, path, t1) -> text.setText(""));
 					cwd.set(Paths.get(Main.config.lastDir));
@@ -280,25 +305,24 @@ public class Main extends Application {
 									}
 								});
 					}
-					com.zarbosoft.pyxyzygy.CustomBinding.<Path>bindBidirectionalMultiple(/*new CustomBinding.Binder<>(resolvedPath,
-									() -> Optional.of(resolvedPath.get()),
-									v -> resolvedPath.set(v)
-							),*/
-							new com.zarbosoft.pyxyzygy.CustomBinding.Binder<>(text.textProperty(),
-									() -> Optional.of(cwd.get().resolve(text.getText())),
-									v -> text.setText(v.getFileName().toString())
-							), new com.zarbosoft.pyxyzygy.CustomBinding.Binder<>(listProxy,
-									() -> Optional.ofNullable(listProxy.get()).map(v -> v.path),
-									v -> listProxy.set(entries.get(v))
-							));
+					com.zarbosoft.pyxyzygy.CustomBinding.<Path>bindBidirectionalMultiple(new com.zarbosoft.pyxyzygy.CustomBinding.Binder<>(
+							text.textProperty(),
+							() -> Optional.of(cwd.get().resolve(text.getText())),
+							v -> text.setText(v.getFileName().toString())
+					), new com.zarbosoft.pyxyzygy.CustomBinding.Binder<>(listProxy,
+							() -> Optional.ofNullable(listProxy.get()).map(v -> v.path),
+							v -> listProxy.set(entries.get(v))
+					));
 					resolvedPath.bind(Bindings.createObjectBinding(() -> cwd.get().resolve(text.getText()),
 							cwd,
 							text.textProperty()
 					));
 					here.textProperty().bind(cwd.asString().concat("/"));
-					create
-							.disableProperty()
-							.bind(Bindings.createBooleanBinding(() -> Files.exists(resolvedPath.get()), resolvedPath));
+					BooleanBinding createBinding =
+							Bindings.createBooleanBinding(() -> Files.exists(resolvedPath.get()), resolvedPath);
+					newNormal.disableProperty().bind(createBinding);
+					newPixel.disableProperty().bind(createBinding);
+					create.disableProperty().bind(createBinding);
 					open.disableProperty().bind(Bindings.createBooleanBinding(() -> {
 						Path check = resolvedPath.get().resolve("project.luxem");
 						return !Files.exists(check);
@@ -309,7 +333,15 @@ public class Main extends Application {
 					list
 							.getItems()
 							.setAll(uncheck(() -> Files.list(cwd.get()))
-									.map(p -> entries.computeIfAbsent(p, ChooserEntry::new))
+									.map(p -> entries.computeIfAbsent(p, p1 -> {
+										try {
+											return new ChooserEntry(p1);
+										} catch (Common.UncheckedNoSuchFileException e) {
+											System.out.format("File list dropping %s: %s\n", p1, e);
+											return null;
+										}
+									}))
+									.filter(e -> e != null)
 									.sorted(new ChainComparator<ChooserEntry>()
 											.greaterFirst(e -> e.isDirectory)
 											.greaterFirst(e -> e.modified)
@@ -317,13 +349,7 @@ public class Main extends Application {
 									.collect(Collectors.toList()));
 				}
 			}
-			primaryStage.setScene(new Scene(new ProjectChooser(p -> {
-				config.lastDir = p.getParent().toString();
-				newProject(primaryStage, p);
-			}, p -> {
-				config.lastDir = p.getParent().toString();
-				openProject(primaryStage, p);
-			}, () -> {
+			primaryStage.setScene(new Scene(new ProjectChooser(() -> {
 				shutdown();
 				Platform.exit();
 			})));
@@ -337,13 +363,16 @@ public class Main extends Application {
 					throw new IllegalArgumentException(String.format("Directory is not a project", path));
 				}
 			} else {
-				newProject(primaryStage, path);
+				CreateMode createMode = CreateMode.valueOf(this.getParameters().getUnnamed().get(1));
+				newProject(primaryStage, path, createMode);
 			}
 		}
 	}
 
-	public void newProject(Stage primaryStage, Path path) {
-		com.zarbosoft.pyxyzygy.ProjectContext context = com.zarbosoft.pyxyzygy.ProjectContext.create(path);
+	public void newProject(Stage primaryStage, Path path, CreateMode createMode) {
+		config.lastDir = path.getParent().toString();
+		ProjectContext context = ProjectContext.create(path, createMode.tileSize());
+		context.config.defaultZoom = createMode.defaultZoom();
 		TrueColorImageNode trueColorImageNode = TrueColorImageNode.create(context);
 		trueColorImageNode.initialNameSet(context, uniqueName("Image"));
 		trueColorImageNode.initialOpacitySet(context, opacityMax);
@@ -357,121 +386,8 @@ public class Main extends Application {
 	}
 
 	public void openProject(Stage primaryStage, Path path) {
-		com.zarbosoft.pyxyzygy.ProjectContext context = com.zarbosoft.pyxyzygy.ProjectContext.deserialize(path);
+		config.lastDir = path.getParent().toString();
+		ProjectContext context = ProjectContext.deserialize(path);
 		new Window().start(context, primaryStage);
-	}
-
-	public static Runnable nodeFormFields(
-			com.zarbosoft.pyxyzygy.ProjectContext context,
-			WidgetFormBuilder builder,
-			ProjectNode node
-	) {
-		return new Runnable() {
-			private ProjectNode.NameSetListener nameSetListener;
-			private ProjectNode.OpacitySetListener opacitySetListener;
-
-			{
-				builder.text("Name", t -> {
-					t.setText(node.name());
-					Main.<StringProperty, String>bind(t.textProperty(),
-							v -> context.history.change(c -> c.projectNode(node).nameSet(v)),
-							setter -> nameSetListener = node.addNameSetListeners((target, value) -> {
-								setter.accept(value);
-							})
-					);
-				});
-				builder.slider("Opacity", 0, opacityMax, slider -> {
-					slider.setValue(node.opacity());
-					Main.<DoubleProperty, Number>bind(slider.valueProperty(),
-							v -> context.history.change(c -> c.projectNode(node).opacitySet(v.intValue())),
-							setter -> opacitySetListener = node.addOpacitySetListeners((target, value) -> {
-								setter.accept(value);
-							})
-					);
-				});
-			}
-
-			@Override
-			public void run() {
-				node.removeNameSetListeners(nameSetListener);
-				node.removeOpacitySetListeners(opacitySetListener);
-			}
-		};
-	}
-
-	public static <T extends Property, V> void bind(T prop, Consumer<V> setter, Consumer<Consumer<V>> listen) {
-		new Object() {
-			boolean blockValueUpdate = false;
-			boolean blockWidgetUpdate = false;
-
-			{
-				prop.addListener((observable, oldValue, newValue) -> {
-					if (blockWidgetUpdate)
-						return;
-					blockValueUpdate = true;
-					try {
-						setter.accept((V) newValue);
-					} finally {
-						blockValueUpdate = false;
-					}
-				});
-				listen.accept(v -> {
-					if (blockValueUpdate)
-						return;
-					blockWidgetUpdate = true;
-					try {
-						prop.setValue(v);
-					} finally {
-						blockWidgetUpdate = false;
-					}
-				});
-			}
-		};
-	}
-
-	public static <T, R> Runnable mirror(
-			ObservableList<T> source, List<R> target, Function<T, R> add, Consumer<R> remove, Consumer<Integer> update
-	) {
-		return new Runnable() {
-			private ListChangeListener<T> listener;
-			private boolean dead = false;
-
-			{
-				listener = c -> {
-					if (dead)
-						return;
-					while (c.next()) {
-						if (c.wasAdded()) {
-							target.addAll(c.getFrom(),
-									c.getAddedSubList().stream().map(add).collect(Collectors.toList())
-							);
-						} else if (c.wasRemoved()) {
-							List<R> removing = target.subList(c.getFrom(), c.getFrom() + c.getRemovedSize());
-							removing.forEach(remove);
-							removing.clear();
-						} else if (c.wasPermutated()) {
-							throw new Assertion();
-						} else if (c.wasUpdated()) {
-							throw new Assertion();
-						}
-						update.accept(c.getFrom());
-					}
-				};
-				source.addListener(listener);
-				target.addAll(source.stream().map(add).collect(Collectors.toList()));
-				update.accept(0);
-			}
-
-			@Override
-			public void run() {
-				dead = true;
-				source.removeListener(listener);
-			}
-		};
-	}
-
-	public static <T> Consumer<T> noopConsumer() {
-		return t -> {
-		};
 	}
 }
