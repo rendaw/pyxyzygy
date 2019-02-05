@@ -10,7 +10,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.ToolBar;
 
-import static com.zarbosoft.pyxyzygy.Main.opacityMax;
+import static com.zarbosoft.pyxyzygy.Launch.opacityMax;
 import static com.zarbosoft.pyxyzygy.Misc.mirror;
 import static com.zarbosoft.pyxyzygy.Misc.noopConsumer;
 

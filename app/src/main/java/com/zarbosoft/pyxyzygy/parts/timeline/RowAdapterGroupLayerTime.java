@@ -20,7 +20,7 @@ import java.util.Optional;
 import java.util.function.Function;
 
 import static com.zarbosoft.rendaw.common.Common.last;
-import static com.zarbosoft.pyxyzygy.Main.NO_INNER;
+import static com.zarbosoft.pyxyzygy.Launch.NO_INNER;
 
 public class RowAdapterGroupLayerTime extends RowAdapter {
 	// TODO setup listeners for inner subtree to keep track of the max inner frame (?)

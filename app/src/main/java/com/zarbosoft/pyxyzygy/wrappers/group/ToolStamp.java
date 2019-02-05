@@ -116,7 +116,7 @@ public class ToolStamp extends Tool {
 				return;
 			TrueColorImage gc = TrueColorImage.create(stampOverlayBounds.get().width, stampOverlayBounds.get().height);
 			Render.render(context, stampSource, gc, 0, stampOverlayBounds.get(), 1);
-			stampOverlayImage.setImage(HelperJFX.toImage(gc, wrapper.canvasHandle.positiveZoom.get()));
+			stampOverlayImage.setImage(HelperJFX.toImage(gc));
 			stampOverlayImage.setLayoutX((double) stampOverlayBounds.get().x * wrapper.canvasHandle.positiveZoom.get());
 			stampOverlayImage.setLayoutY((double) stampOverlayBounds.get().y * wrapper.canvasHandle.positiveZoom.get());
 		};

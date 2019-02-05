@@ -27,7 +27,7 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import static com.zarbosoft.pyxyzygy.Main.opacityMax;
+import static com.zarbosoft.pyxyzygy.Launch.opacityMax;
 import static com.zarbosoft.pyxyzygy.Misc.moveTo;
 import static com.zarbosoft.pyxyzygy.ProjectContext.uniqueName;
 import static com.zarbosoft.pyxyzygy.Wrapper.TakesChildren.NONE;

@@ -1,6 +1,6 @@
 package com.zarbosoft.pyxyzygy.wrappers.truecolorimage;
 
-import com.zarbosoft.pyxyzygy.Main;
+import com.zarbosoft.pyxyzygy.Launch;
 import com.zarbosoft.pyxyzygy.ProjectContext;
 import com.zarbosoft.pyxyzygy.config.TrueColor;
 import com.zarbosoft.pyxyzygy.config.TrueColorBrush;
@@ -40,10 +40,10 @@ public class BrushButton extends ToggleButton {
 
 		selectedProperty().bind(Bindings.createBooleanBinding(
 				() -> trueColorImageNodeWrapper.config.tool.get() == TrueColorImageNodeConfig.Tool.BRUSH &&
-						trueColorImageNodeWrapper.config.brush.get() == Main.config.trueColorBrushes.indexOf(b),
+						trueColorImageNodeWrapper.config.brush.get() == Launch.config.trueColorBrushes.indexOf(b),
 				trueColorImageNodeWrapper.config.tool,
 				trueColorImageNodeWrapper.config.brush,
-				Main.config.trueColorBrushes
+				Launch.config.trueColorBrushes
 		));
 
 		b.useColor.addListener(new ChangeListener<Boolean>() {
@@ -71,6 +71,6 @@ public class BrushButton extends ToggleButton {
 		if (isSelected())
 			return;
 		trueColorImageNodeWrapper.config.tool.set(TrueColorImageNodeConfig.Tool.BRUSH);
-		trueColorImageNodeWrapper.config.brush.set(Main.config.trueColorBrushes.indexOf(brush));
+		trueColorImageNodeWrapper.config.brush.set(Launch.config.trueColorBrushes.indexOf(brush));
 	}
 }

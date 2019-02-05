@@ -21,7 +21,7 @@ import javafx.scene.transform.Affine;
 import java.awt.*;
 
 import static com.zarbosoft.rendaw.common.Common.aeq;
-import static com.zarbosoft.pyxyzygy.Main.NO_INNER;
+import static com.zarbosoft.pyxyzygy.Launch.NO_INNER;
 import static com.zarbosoft.pyxyzygy.widgets.HelperJFX.c;
 import static com.zarbosoft.pyxyzygy.widgets.HelperJFX.icon;
 

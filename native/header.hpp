@@ -69,8 +69,8 @@ class TrueColorImage {
 		static TrueColorImage * create(int w, int h);
 		static TrueColorImage * deserialize(char const * path) throw(std::runtime_error);
 		TrueColorImage * copy(int x, int y, int w, int h) const;
-		ROBytes data(int const zoom);
-		ROBytes dataPremultiplied(int const zoom);
+		ROBytes data();
+		ROBytes dataPremultiplied();
 		int getWidth() const;
 		int getHeight() const;
 		void clear();
@@ -86,7 +86,7 @@ class TrueColorImage {
 		TrueColorImage(TrueColorImage const & other) = delete;
 	private:
 		TrueColorImage(int w, int h, uint8_t * pixels);
-		template <class T> ROBytes calculateZoomedData(int const zoom, T calculate);
+		template <class T> ROBytes calculateData(T calculate);
 
 		int const w;
 		int const h;

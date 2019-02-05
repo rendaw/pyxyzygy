@@ -61,18 +61,14 @@ public class Editor {
 				(y - this.canvas.getLayoutBounds().getHeight() / 2)
 		);
 		DoubleVector viewTransform = computeViewTransform(view);
-		DoubleVector out = coordCentered.minus(scroll.divide(viewTransform)).divide(viewTransform);
-		//System.out.format("standard vect %s %s = cen %s, minus scroll %s, view trans %s\n", x, y, coordCentered, coordCentered.minus(scroll), out);
+		DoubleVector out = coordCentered.divide(viewTransform).minus(scroll);
+		//System.out.format("  standard vect %s %s = cen %s, minus scroll %s, view trans %s\n", x, y, coordCentered, coordCentered.minus(scroll), out);
 		return out;
 	}
 
 	private DoubleVector normalizeEventCoordinates(Wrapper.CanvasHandle view, MouseEvent e) {
-		/*
-		Point2D canvasCorner =
-				canvas.getParent().getLocalToSceneTransform().transform(canvas.getLayoutX(), canvas.getLayoutY());
-				*/
 		Point2D canvasCorner = outerCanvas.getLocalToSceneTransform().transform(0, 0);
-		//System.out.format("norm corner %s %s: layout %s %s\n", canvasCorner.getX(), canvasCorner.getY(), canvas.getLayoutX(), canvas.getLayoutY());
+		//System.out.format("  norm corner %s %s: layout %s %s\n", canvasCorner.getX(), canvasCorner.getY(), canvas.getLayoutX(), canvas.getLayoutY());
 		return getStandardVector(view, e.getSceneX() - canvasCorner.getX(), e.getSceneY() - canvasCorner.getY());
 	}
 
@@ -191,7 +187,7 @@ public class Editor {
 								e1.getDeltaY() / 40 :
 								e1.getTextDeltaY()
 				));
-				System.out.format("  zoom %s\n", scrollEventState.view.getWrapper().getConfig().zoom.get());
+				System.out.format("  (editor) zoomed %s\n", scrollEventState.view.getWrapper().getConfig().zoom.get());
 			} else {
 				if (scrollEventState.view == null)
 					return;
@@ -257,6 +253,7 @@ public class Editor {
 			Wrapper.CanvasHandle view = window.selectedForView.get();
 			if (view == null)
 				return;
+			//System.out.format("mouse 1: %s %s\n", e.getSceneX(), e.getSceneY());
 			edit.cursorMoved(context, normalizeEventCoordinates(view, e));
 		});
 		outerCanvas.addEventFilter(KeyEvent.KEY_PRESSED, e -> {

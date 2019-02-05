@@ -9,7 +9,7 @@ import org.junit.Test;
 import java.nio.file.Paths;
 import java.util.List;
 
-import static com.zarbosoft.pyxyzygy.Main.*;
+import static com.zarbosoft.pyxyzygy.Launch.*;
 
 public class TestTimeMapCalc {
 	private static ProjectContextBase context = new ProjectContextBase(Paths.get("/"));

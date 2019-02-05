@@ -44,7 +44,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.zarbosoft.pyxyzygy.Main.*;
+import static com.zarbosoft.pyxyzygy.Launch.*;
 import static com.zarbosoft.rendaw.common.Common.sublist;
 
 public class Timeline {

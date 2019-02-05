@@ -130,17 +130,14 @@ public class ToolSelect extends Tool {
 			final SimpleIntegerProperty zoom = canvasHandle.zoom;
 
 			ImageView image = new ImageView();
-			image.imageProperty().bind(Bindings.createObjectBinding(() -> HelperJFX.toImage(buffer, zoom.get()), zoom));
+			image.imageProperty().bind(Bindings.createObjectBinding(() -> HelperJFX.toImage(buffer), zoom));
 			imageGroup.getChildren().add(image);
-			zoom.addListener((observable, oldValue, newValue) -> imageGroup
-					.getTransforms()
-					.setAll(new Scale(1.0 / zoom.get(), 1.0 / zoom.get())));
 			editHandle.overlay.getChildren().addAll(originalRectangle, rectangle, imageGroup);
 			setPosition(bounds.corner());
 
 			Runnable copy = () -> {
 				ClipboardContent content = new ClipboardContent();
-				content.putImage(HelperJFX.toImage(buffer, 1));
+				content.putImage(HelperJFX.toImage(buffer));
 				Clipboard.getSystemClipboard().setContent(content);
 			};
 
@@ -383,7 +380,7 @@ public class ToolSelect extends Tool {
 
 			Runnable copy = () -> {
 				ClipboardContent content = new ClipboardContent();
-				content.putImage(HelperJFX.toImage(render(context), 1));
+				content.putImage(HelperJFX.toImage(render(context)));
 				Clipboard.getSystemClipboard().setContent(content);
 			};
 

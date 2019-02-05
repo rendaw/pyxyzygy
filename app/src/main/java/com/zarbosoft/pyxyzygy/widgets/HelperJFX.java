@@ -3,7 +3,7 @@ package com.zarbosoft.pyxyzygy.widgets;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.Pair;
 import com.zarbosoft.pyxyzygy.CustomBinding;
-import com.zarbosoft.pyxyzygy.Main;
+import com.zarbosoft.pyxyzygy.Launch;
 import com.zarbosoft.pyxyzygy.ProjectContext;
 import com.zarbosoft.pyxyzygy.TrueColorImage;
 import javafx.beans.property.SimpleIntegerProperty;
@@ -83,7 +83,7 @@ public class HelperJFX {
 	}
 
 	public static Image icon(String resource) {
-		InputStream s = getResource(Main.class, "icons", resource);
+		InputStream s = getResource(Launch.class, "icons", resource);
 		if (s == null)
 			throw new Assertion(String.format("Can't find resource %s", resource));
 		return ProjectContext.iconCache.computeIfAbsent(resource, r -> new Image(s));
@@ -110,9 +110,9 @@ public class HelperJFX {
 		return out;
 	}
 
-	public static WritableImage toImage(TrueColorImage image, int zoom) {
-		final int width = image.getWidth() * zoom;
-		final int height = image.getHeight() * zoom;
+	public static WritableImage toImage(TrueColorImage image) {
+		final int width = image.getWidth();
+		final int height = image.getHeight();
 		return new WritableImage(new PixelReader() {
 			byte[] premultipliedData;
 			byte[] data;
@@ -140,9 +140,9 @@ public class HelperJFX {
 					throw new Assertion();
 				byte[] data = pixelformat.isPremultiplied() ? (
 						premultipliedData == null ?
-								premultipliedData = image.dataPremultiplied(zoom) :
+								premultipliedData = image.dataPremultiplied() :
 								premultipliedData
-				) : (this.data == null ? this.data = image.data(zoom) : this.data);
+				) : (this.data == null ? this.data = image.data() : this.data);
 				if (w == width) {
 					if (x != 0)
 						throw new Assertion();
@@ -173,9 +173,9 @@ public class HelperJFX {
 					throw new Assertion();
 				byte[] data = pixelformat.isPremultiplied() ? (
 						premultipliedData == null ?
-								premultipliedData = image.dataPremultiplied(zoom) :
+								premultipliedData = image.dataPremultiplied() :
 								premultipliedData
-				) : (this.data == null ? this.data = image.data(zoom) : this.data);
+				) : (this.data == null ? this.data = image.data() : this.data);
 				if (w == width) {
 					if (x != 0)
 						throw new Assertion();

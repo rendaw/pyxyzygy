@@ -1,16 +1,19 @@
 package com.zarbosoft.pyxyzygy.config;
 
 import com.zarbosoft.interface1.Configuration;
-import com.zarbosoft.pyxyzygy.Brush;
-import javafx.beans.property.*;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
 
 @Configuration(name = "true-color-brush")
-public class TrueColorBrush extends Brush {
-	/**
-	 * Size in pixels = `size / 10`
-	 */
+public class TrueColorBrush {
 	@Configuration
 	public SimpleIntegerProperty size = new SimpleIntegerProperty();
+
+	public double sizeInPixels() {
+		return size.get() / 10.0;
+	}
 
 	@Configuration
 	public SimpleStringProperty name = new SimpleStringProperty();
@@ -26,4 +29,7 @@ public class TrueColorBrush extends Brush {
 
 	@Configuration(optional = true)
 	public SimpleBooleanProperty hard = new SimpleBooleanProperty(false);
+
+	@Configuration(optional = true)
+	public SimpleBooleanProperty aligned = new SimpleBooleanProperty(false);
 }

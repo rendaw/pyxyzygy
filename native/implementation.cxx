@@ -11,11 +11,11 @@
 
 static int const channels = 4;
 
-static int posCeilDiv(int x, int y) {
+static inline int posCeilDiv(int const x, int const y) {
 	return (x + y - 1) / y;
 }
 
-template <class T> static T msq(T const &a) {
+template <class T> static inline T msq(T const &a) {
 	return a * a;
 }
 
@@ -34,7 +34,7 @@ static void prepareBitScratch(int const width, int const height) {
 		scratchByteWidth = posCeilDiv(width, 8);
 		scratchHeight = height;
 		delete [] scratch;
-		scratch = new uint8_t[scratchHeight * scratchByteWidth];
+		scratch = (uint8_t *)new uint32_t[posCeilDiv(scratchHeight * scratchByteWidth, 4)];
 	}
 	clearScratch();
 }
@@ -45,7 +45,7 @@ static void prepareByteScratch(int const width, int const height) {
 		scratchBitWidth = width * 8;
 		scratchHeight = height;
 		delete [] scratch;
-		scratch = new uint8_t[scratchHeight * scratchByteWidth];
+		scratch = (uint8_t *)new uint32_t[posCeilDiv(scratchHeight * scratchByteWidth, 4)];
 	}
 	clearScratch();
 }
@@ -110,7 +110,7 @@ TrueColorImage::~TrueColorImage() {
 }
 
 TrueColorImage * TrueColorImage::create(int w, int h) {
-	auto out = new TrueColorImage(w, h, new uint8_t[w * h * channels]);
+	auto out = new TrueColorImage(w, h, (uint8_t *)new uint32_t[w * h]);
 	out->clear();
 	return out;
 }
@@ -123,7 +123,7 @@ TrueColorImage * TrueColorImage::deserialize(char const * const path) throw(std:
 		throw std::runtime_error(std::string(img.message));
 	}
 	img.format = PNG_FORMAT_BGRA;
-	auto pixels = new uint8_t[PNG_IMAGE_SIZE(img)];
+	auto pixels = (uint8_t *)new uint32_t[PNG_IMAGE_SIZE(img) / 4];
 	if (!png_image_finish_read(&img, nullptr, pixels, 0, nullptr)) {
 		throw std::runtime_error(std::string(img.message));
 	}
@@ -144,47 +144,29 @@ TrueColorImage * TrueColorImage::copy(int x0, int y0, int w0, int h0) const {
 	return out;
 }
 
-template <class T> ROBytes TrueColorImage::calculateZoomedData(int const zoom, T calculate) {
-	prepareByteScratch(w * zoom * channels, h * zoom);
+template <class T> inline ROBytes TrueColorImage::calculateData(T calculate) {
+	prepareByteScratch(w * channels, h);
 	for (int y = 0; y < h; ++y) {
 		for (int x = 0; x < w; ++x) {
 			uint8_t const * const source = &pixels[(y * w + x) * channels];
-			uint8_t *dest = &scratch[((y * zoom) * (w * zoom) + x * zoom) * channels];
-			calculate(zoom, dest, source);
-		}
-		uint8_t const * const source = &scratch[(y * zoom) * (w * zoom) * channels];
-		for (int j = 1; j < zoom; ++j) {
-			uint8_t *dest = &scratch[(y * zoom + j) * (w * zoom) * channels];
-			memcpy(dest, source, (w * zoom) * channels);
+			uint8_t *dest = &scratch[(y * w + x) * channels];
+			calculate(dest, source);
 		}
 	}
 	return {scratchByteWidth * scratchHeight, scratch};
 }
 
-ROBytes TrueColorImage::data(int const zoom) {
-	assert(zoom > 0);
-	if (zoom == 1)
-		return {(size_t)(w * h * channels), pixels};
-	else {
-		return calculateZoomedData(zoom, [](int const zoom, uint8_t *dest, uint8_t const * const source) {
-			for (int i = 0; i < zoom; ++i) {
-				memcpy(dest, source, channels);
-				dest += channels;
-			}
-		});
-	}
+ROBytes TrueColorImage::data() {
+    return {(size_t)(w * h * channels), pixels};
 }
 
-ROBytes TrueColorImage::dataPremultiplied(int const zoom) {
-	assert(zoom > 0);
-	return calculateZoomedData(zoom, [&](int const zoom, uint8_t *dest, uint8_t const * const source) {
-		for (int i = 0; i < zoom; ++i) {
-			float const alpha = (source[3] / 255.0f);
-			for (int i = 0; i < channels - 1; ++i)
-				dest[i] = source[i] * alpha;
-			dest[3] = source[3];
-			dest += channels;
-		}
+ROBytes TrueColorImage::dataPremultiplied() {
+	return calculateData([&](uint8_t *dest, uint8_t const * const source) {
+		int32_t const alpha = source[3];
+        for (int i = 0; i < channels - 1; ++i)
+            dest[i] = (source[i] * alpha) >> 8;
+        dest[3] = alpha & 0xFF;
+        dest += channels;
 	});
 }
 

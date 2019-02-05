@@ -7,7 +7,7 @@ import com.zarbosoft.pyxyzygy.model.*;
 import com.zarbosoft.pyxyzygy.wrappers.group.GroupLayerWrapper;
 import com.zarbosoft.pyxyzygy.wrappers.truecolorimage.TrueColorImageNodeWrapper;
 
-import static com.zarbosoft.pyxyzygy.Main.opacityMax;
+import static com.zarbosoft.pyxyzygy.Launch.opacityMax;
 
 public class Render {
 

@@ -5,19 +5,10 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.zarbosoft.internal</groupId>
-    <artifactId>pyxyzygy-seed</artifactId>
+    <artifactId>jarhacks</artifactId>
     <version>1.0.0</version>
+
     <dependencies>
-        <dependency>
-            <groupId>com.zarbosoft</groupId>
-            <artifactId>luxem</artifactId>
-            <version>1.0.3</version>
-        </dependency>
-        <dependency>
-            <groupId>com.zarbosoft.rendaw</groupId>
-            <artifactId>common</artifactId>
-            <version>1.0.6</version>
-        </dependency>
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
@@ -44,9 +35,24 @@
                     <source>1.9</source>
                     <target>1.9</target>
                     <compilerArgs>
-                        <arg>-parameters</arg>
-                        <arg>--add-exports=javafx.graphics/com.sun.javafx.sg.prism=com.zarbosoft.pyxyzygy_seed</arg>
+                        <arg>--add-exports=javafx.graphics/com.sun.javafx.sg.prism=com.zarbosoft.internal.jarhacks</arg>
                     </compilerArgs>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.1.1</version>
+                <configuration>
+                    <archive>
+                        <manifestEntries>
+                            <Premain-Class>com.zarbosoft.internal.jarhacks.MakeImageViewGoodAgent</Premain-Class>
+                            <Agent-Class>com.zarbosoft.internal.jarhacks.MakeImageViewGoodAgent</Agent-Class>
+                            <Can-Redefine-Classes>true</Can-Redefine-Classes>
+                            <Can-Retransform-Classes>true</Can-Retransform-Classes>
+                            <Can-Set-Native-Method-Prefix>true</Can-Set-Native-Method-Prefix>
+                        </manifestEntries>
+                    </archive>
                 </configuration>
             </plugin>
         </plugins>

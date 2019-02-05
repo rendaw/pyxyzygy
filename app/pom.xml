@@ -25,6 +25,12 @@
             <version>4.12</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.zarbosoft.internal</groupId>
+            <artifactId>jarhacks</artifactId>
+            <version>1.0.0</version>
+            <scope>runtime</scope>
+        </dependency>
     </dependencies>
     <properties>
         <modulesOutput>${project.build.directory}/modules</modulesOutput>
@@ -100,6 +106,16 @@
                 <configuration>
                     <source>1.9</source>
                     <target>1.9</target>
+                    <compilerArgs>
+                        <arg>--add-exports=javafx.graphics/com.sun.glass.ui=com.zarbosoft.pyxyzygy</arg>
+                        <arg>--add-exports=javafx.graphics/com.sun.prism=com.zarbosoft.pyxyzygy</arg>
+                        <arg>--add-exports=javafx.graphics/com.sun.prism.paint=com.zarbosoft.pyxyzygy</arg>
+                        <arg>--add-exports=javafx.graphics/com.sun.javafx.font=com.zarbosoft.pyxyzygy</arg>
+                        <arg>--add-exports=javafx.graphics/com.sun.javafx.geom=com.zarbosoft.pyxyzygy</arg>
+                        <arg>--add-exports=javafx.graphics/com.sun.javafx.geom.transform=com.zarbosoft.pyxyzygy</arg>
+                        <arg>--add-exports=javafx.graphics/com.sun.javafx.scene.text=com.zarbosoft.pyxyzygy</arg>
+                        <arg>--add-exports=javafx.graphics/com.sun.javafx.sg.prism=com.zarbosoft.pyxyzygy</arg>
+                    </compilerArgs>
                 </configuration>
             </plugin>
             <plugin>

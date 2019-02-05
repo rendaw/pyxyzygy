@@ -30,7 +30,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
 
-import static com.zarbosoft.pyxyzygy.Main.nameHuman;
+import static com.zarbosoft.pyxyzygy.Launch.nameHuman;
 
 public class Window {
 	public List<FrameMapEntry> timeMap;
@@ -77,11 +77,11 @@ public class Window {
 					return w;
 				}).build()),
 				new TitledPane("Global", new WidgetFormBuilder().intSpinner("Max undo", 1, 100000, spinner -> {
-					spinner.getValueFactory().setValue(Main.config.maxUndo);
+					spinner.getValueFactory().setValue(Launch.config.maxUndo);
 					spinner
 							.getValueFactory()
 							.valueProperty()
-							.addListener((observable, oldValue, newValue) -> Main.config.maxUndo = newValue);
+							.addListener((observable, oldValue, newValue) -> Launch.config.maxUndo = newValue);
 				}).button(button -> {
 					button.setText("Clear undo/redo");
 					button.setOnAction(e -> {
@@ -92,7 +92,7 @@ public class Window {
 						});
 					});
 				}).check("Show origin", checkBox -> {
-					checkBox.selectedProperty().bindBidirectional(Main.config.showOrigin);
+					checkBox.selectedProperty().bindBidirectional(Launch.config.showOrigin);
 				}).build()),
 				new TitledPane("Hotkeys", (
 						(Supplier<Node>) () -> {

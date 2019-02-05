@@ -51,6 +51,7 @@
                     <target>1.9</target>
                     <compilerArgs>
                         <arg>-parameters</arg>
+                        <arg>--add-exports=javafx.graphics/com.sun.prism=com.zarbosoft.pyxyzygy.internal.pyxyzygy_generate</arg>
                     </compilerArgs>
                 </configuration>
             </plugin>

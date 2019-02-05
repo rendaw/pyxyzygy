@@ -5,12 +5,11 @@ import com.zarbosoft.internal.pyxyzygy_seed.model.Vector;
 import com.zarbosoft.pyxyzygy.*;
 import com.zarbosoft.pyxyzygy.model.*;
 import javafx.beans.property.SimpleIntegerProperty;
-import javafx.scene.transform.Scale;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.zarbosoft.pyxyzygy.Main.opacityMax;
+import static com.zarbosoft.pyxyzygy.Launch.opacityMax;
 
 public class TrueColorImageCanvasHandle extends Wrapper.CanvasHandle {
 	final Wrapper.CanvasHandle parent;
@@ -34,7 +33,6 @@ public class TrueColorImageCanvasHandle extends Wrapper.CanvasHandle {
 		this.opacityListener = wrapper.node.addOpacitySetListeners((target, value) -> {
 			inner.setOpacity((double) value / opacityMax);
 		});
-		inner.getTransforms().setAll(new Scale(1.0 / zoom.get(), 1.0 / zoom.get()));
 
 		this.framesAddListener =
 				wrapper.node.addFramesAddListeners((target, at, value) -> setFrame(context, frameNumber));
@@ -68,21 +66,14 @@ public class TrueColorImageCanvasHandle extends Wrapper.CanvasHandle {
 
 	@Override
 	public void setViewport(ProjectContext context, DoubleRectangle newBounds1, int positiveZoom) {
-		System.out.format("image scroll; b %s\n", newBounds1);
+		//System.out.format("set viewport; b %s old z %s, z %s\n", newBounds1, this.zoom.get(),positiveZoom);
+		this.zoom.set(positiveZoom);
 		DoubleRectangle oldBounds1 = this.bounds;
 		this.bounds = newBounds1;
-		boolean zoomChanged = this.zoom.get() == positiveZoom;
-		this.zoom.set(positiveZoom);
 
 		Rectangle oldBounds = oldBounds1.scale(3).quantize(context.tileSize);
 		Rectangle newBounds = newBounds1.scale(3).quantize(context.tileSize);
-		System.out.format("image scroll 2; use bounds %s\n", newBounds);
 
-		if (zoomChanged) {
-			inner.getChildren().clear();
-			wrapTiles.clear();
-			inner.getTransforms().setAll(new Scale(1.0 / positiveZoom, 1.0 / positiveZoom));
-		} else {
 			// Remove tiles outside view bounds
 			for (int x = 0; x < oldBounds.width; ++x) {
 				for (int y = 0; y < oldBounds.height; ++y) {
@@ -92,7 +83,6 @@ public class TrueColorImageCanvasHandle extends Wrapper.CanvasHandle {
 					inner.getChildren().remove(wrapTiles.get(key));
 				}
 			}
-		}
 
 		// Add missing tiles in bounds
 		for (int x = 0; x < newBounds.width; ++x) {
@@ -108,7 +98,6 @@ public class TrueColorImageCanvasHandle extends Wrapper.CanvasHandle {
 				}
 				WrapTile wrapTile = new WrapTile(context,
 						tile,
-						positiveZoom,
 						useIndexes.x * context.tileSize,
 						useIndexes.y * context.tileSize
 				);
@@ -124,13 +113,10 @@ public class TrueColorImageCanvasHandle extends Wrapper.CanvasHandle {
 		TrueColorImageFrame oldFrame = frame;
 		frame = findFrame(frameNumber);
 		System.out.format("set frame %s: %s vs %s\n", frameNumber, oldFrame, frame);
-		if (oldFrame != frame)
-			updateFrame(context);
-	}
-
-	public void updateFrame(ProjectContext context) {
-		detachTiles();
-		attachTiles(context);
+		if (oldFrame != frame) {
+			detachTiles();
+			attachTiles(context);
+		}
 	}
 
 	public void attachTiles(ProjectContext context) {
@@ -155,7 +141,6 @@ public class TrueColorImageCanvasHandle extends Wrapper.CanvasHandle {
 				} else {
 					WrapTile wrap = new WrapTile(context,
 							value,
-							zoom.get(),
 							indexes.x * context.tileSize,
 							indexes.y * context.tileSize
 					);
@@ -201,6 +186,7 @@ public class TrueColorImageCanvasHandle extends Wrapper.CanvasHandle {
 			for (int y = 0; y < unitBounds.height; ++y) {
 				final int x0 = x;
 				final int y0 = y;
+				/*
 				System.out.format("\tcopy %s %s: %s %s by %s %s\n",
 						x0,
 						y0,
@@ -209,6 +195,7 @@ public class TrueColorImageCanvasHandle extends Wrapper.CanvasHandle {
 						context.tileSize,
 						context.tileSize
 				);
+				*/
 				TrueColorImage shot =
 						image.copy(x0 * context.tileSize, y0 * context.tileSize, context.tileSize, context.tileSize);
 				context.history.change(c -> c

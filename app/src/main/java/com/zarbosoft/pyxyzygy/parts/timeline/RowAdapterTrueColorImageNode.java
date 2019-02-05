@@ -20,7 +20,7 @@ import java.util.Optional;
 import java.util.function.Function;
 
 import static com.zarbosoft.rendaw.common.Common.last;
-import static com.zarbosoft.pyxyzygy.Main.NO_INNER;
+import static com.zarbosoft.pyxyzygy.Launch.NO_INNER;
 
 class RowAdapterTrueColorImageNode extends RowAdapter {
 	private final Timeline timeline;

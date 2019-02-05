@@ -4,6 +4,11 @@ open module com.zarbosoft.pyxyzygy {
 	requires javafx.controls;
 	requires com.zarbosoft.appdirsj;
 	requires java.desktop;
+	requires net.bytebuddy;
+	requires net.bytebuddy.agent;
+	requires java.instrument;
+	requires jdk.attach;
+	requires java.management;
 	exports com.zarbosoft.pyxyzygy;
 	exports com.zarbosoft.pyxyzygy.config;
 	exports com.zarbosoft.pyxyzygy.model;

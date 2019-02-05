@@ -136,7 +136,7 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 			timer.cancel();
 		flushAll();
 		config.shutdown();
-		Main.shutdown();
+		Launch.shutdown();
 	}
 
 	public ProjectContext(Path path) {

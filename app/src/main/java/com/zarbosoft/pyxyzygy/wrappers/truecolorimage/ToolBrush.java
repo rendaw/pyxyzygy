@@ -11,7 +11,6 @@ import com.zarbosoft.pyxyzygy.wrappers.group.Tool;
 import com.zarbosoft.rendaw.common.Pair;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.DoubleBinding;
-import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
@@ -20,10 +19,8 @@ import javafx.geometry.HPos;
 import javafx.scene.Node;
 import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
-import javafx.scene.paint.Paint;
 import javafx.scene.shape.StrokeType;
 
-import java.awt.*;
 import java.util.Optional;
 
 import static com.zarbosoft.pyxyzygy.widgets.HelperJFX.pad;
@@ -39,31 +36,30 @@ public class ToolBrush extends Tool {
 		this.editHandle = trueColorImageEditHandle;
 		this.brush = brush;
 
-		cursor.widthProperty().bind(brush.size);
-		cursor.heightProperty().bind(brush.size);
+		DoubleBinding sizeBinding = Bindings.createDoubleBinding(() -> brush.sizeInPixels(), brush.size);
+		cursor.widthProperty().bind(sizeBinding);
+		cursor.heightProperty().bind(sizeBinding);
 		cursor.setStroke(Color.BLACK);
+		cursor.strokeWidthProperty().bind(Bindings.divide(1.0, editHandle.positiveZoom));
 		cursor.setStrokeType(StrokeType.OUTSIDE);
 		cursor.setFill(Color.TRANSPARENT);
+		cursor
+				.visibleProperty()
+				.bind(Bindings.createBooleanBinding(
+						() -> brush.aligned.get() &&
+								brush.hard.get() &&
+								editHandle.positiveZoom.get() > 1,
+						editHandle.positiveZoom,
+						brush.hard,
+						brush.aligned
+				));
 		cursor.setOpacity(0.5);
-		DoubleBinding arcBinding = Bindings.createDoubleBinding(() -> brush.hard.get() ? 0.0 : brush.size.get() / 4.0,
-				brush.hard,
-				brush.size
-		);
-		cursor.arcWidthProperty().bind(arcBinding);
-		cursor.arcHeightProperty().bind(arcBinding);
 		cursor.layoutXProperty().bind(Bindings.createDoubleBinding(() -> {
-			double v = editHandle.mouseX.get() - brush.size.get() / 2.0;
-			if (brush.hard.get())
-				return Math.floor(v);
-			else
-				return v;
-		}, editHandle.mouseX, brush.size, brush.hard));
+			return Math.floor(editHandle.mouseX.get()) - brush.sizeInPixels() / 2.0 + 0.5;
+		}, editHandle.mouseX, brush.size, brush.aligned));
 		cursor.layoutYProperty().bind(Bindings.createDoubleBinding(() -> {
-			double v = editHandle.mouseY.get() - brush.size.get() / 2.0;
-			if (brush.hard.get())
-				return Math.floor(v);
-			return v;
-		}, editHandle.mouseY, brush.size, brush.hard));
+			return Math.floor(editHandle.mouseY.get()) - brush.sizeInPixels() / 2.0 + 0.5;
+		}, editHandle.mouseY, brush.size, brush.aligned));
 		this.editHandle.overlay.getChildren().add(cursor);
 
 		TrueColorPicker colorPicker = new TrueColorPicker();
@@ -118,8 +114,12 @@ public class ToolBrush extends Tool {
 				})
 				.slider("Blend", 1, 1000, s -> {
 					s.valueProperty().bindBidirectional(brush.blend);
-				}).check("Hard", checkBox -> {
+				})
+				.check("Hard", checkBox -> {
 					checkBox.selectedProperty().bindBidirectional(brush.hard);
+				})
+				.check("Aligned", checkBox -> {
+					checkBox.selectedProperty().bindBidirectional(brush.aligned);
 				})
 				.build()));
 	}
@@ -137,6 +137,7 @@ public class ToolBrush extends Tool {
 		final double endRadius = brush.size.get() / 20.0;
 
 		// Get frame-local coordinates
+		/*
 		System.out.format("stroke start %s %s to %s %s rad %s %s\n",
 				start.x,
 				start.y,
@@ -145,6 +146,7 @@ public class ToolBrush extends Tool {
 				startRadius,
 				endRadius
 		);
+		*/
 
 		// Calculate mark bounds
 		Rectangle bounds = new BoundsBuilder()
@@ -152,7 +154,7 @@ public class ToolBrush extends Tool {
 				.circle(end, endRadius)
 				.quantize(context.tileSize)
 				.buildInt();
-		System.out.format("stroke bounds: %s\n", bounds);
+		//System.out.format("stroke bounds: %s\n", bounds);
 
 		// Copy tiles to canvas
 		TrueColorImage canvas = TrueColorImage.create(bounds.width, bounds.height);

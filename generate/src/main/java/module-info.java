@@ -7,5 +7,6 @@ module com.zarbosoft.pyxyzygy.internal.pyxyzygy_generate {
 	requires java.compiler;
 	requires com.google.common;
 	requires javafx.base;
+	requires javafx.graphics;
 	exports com.zarbosoft.internal.pyxyzygy_generate;
 }

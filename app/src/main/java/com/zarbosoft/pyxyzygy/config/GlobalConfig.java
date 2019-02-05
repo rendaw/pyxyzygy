@@ -10,7 +10,7 @@ import javafx.collections.ObservableList;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.zarbosoft.pyxyzygy.Main.appDirs;
+import static com.zarbosoft.pyxyzygy.Launch.appDirs;
 
 @Configuration
 public class GlobalConfig extends ConfigBase {
