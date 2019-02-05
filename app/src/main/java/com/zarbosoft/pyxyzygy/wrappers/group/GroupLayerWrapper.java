@@ -7,6 +7,7 @@ import com.zarbosoft.pyxyzygy.model.*;
 import javafx.scene.control.TabPane;
 
 import java.util.List;
+import java.util.Optional;
 
 public class GroupLayerWrapper extends Wrapper {
 	private final Wrapper parent;

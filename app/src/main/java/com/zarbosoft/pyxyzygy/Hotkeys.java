@@ -10,10 +10,16 @@ import javafx.scene.input.KeyEvent;
 
 public class Hotkeys {
 	public static enum Scope {
-		EDITOR {
+		GLOBAL{
 			@Override
 			public String toString() {
-				return "editor";
+				return "global";
+			}
+		},
+		CANVAS {
+			@Override
+			public String toString() {
+				return "canvas";
 			}
 		},
 		TIMELINE {
@@ -90,7 +96,7 @@ public class Hotkeys {
 		actions.remove(action);
 	}
 
-	public void event(ProjectContext context, Scope scope, KeyEvent e) {
+	public boolean event(ProjectContext context, Scope scope, KeyEvent e) {
 		for (Action action : ImmutableList.copyOf(actions)) {
 			if (action.scope != scope)
 				continue;
@@ -103,6 +109,8 @@ public class Hotkeys {
 			if (action.key.get().shift != e.isShiftDown())
 				continue;
 			action.run(context);
+			return true;
 		}
+		return false;
 	}
 }

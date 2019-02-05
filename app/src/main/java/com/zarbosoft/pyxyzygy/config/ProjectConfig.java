@@ -27,4 +27,7 @@ public class ProjectConfig extends ConfigBase {
 
 	@Configuration(optional = true)
 	public int defaultZoom = 0;
+
+	@Configuration(optional = true)
+	public SimpleBooleanProperty maxCanvas = new SimpleBooleanProperty(false);
 }

@@ -20,6 +20,7 @@ import javafx.scene.control.ToolBar;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static com.zarbosoft.pyxyzygy.Misc.nodeFormFields;
 import static com.zarbosoft.pyxyzygy.widgets.HelperJFX.pad;
@@ -45,7 +46,7 @@ public class GroupNodeEditHandle extends Wrapper.EditHandle {
 		// Group tab
 		groupTab = new Tab(
 				"Group",
-				pad(new WidgetFormBuilder().apply(b -> cleanup.add(nodeFormFields(context, b, wrapper.node))).build())
+				pad(new WidgetFormBuilder().apply(b -> cleanup.add(nodeFormFields(context, b, wrapper))).build())
 		);
 
 		// Tool tab
@@ -151,6 +152,11 @@ public class GroupNodeEditHandle extends Wrapper.EditHandle {
 	}
 
 	@Override
+	public Wrapper.CanvasHandle getCanvas() {
+		return wrapper.canvasHandle;
+	}
+
+	@Override
 	public void mark(ProjectContext context, DoubleVector start, DoubleVector end) {
 		if (tool == null)
 			return;
@@ -163,5 +169,14 @@ public class GroupNodeEditHandle extends Wrapper.EditHandle {
 	public void cursorMoved(ProjectContext context, DoubleVector vector) {
 		mouseX.set(vector.x);
 		mouseY.set(vector.y);
+	}
+
+	@Override
+	public Optional<Integer> previousFrame(int frame) {
+		if (wrapper.specificLayer == null) return Optional.empty();
+		if (wrapper.specificLayer.positionFramesLength() == 1) return Optional.empty();
+		int p = GroupLayerWrapper.findPosition(wrapper.specificLayer, frame).at - 1;
+		if (p == 0) p = wrapper.specificLayer.positionFramesLength() - 1;
+		return Optional.of(p);
 	}
 }

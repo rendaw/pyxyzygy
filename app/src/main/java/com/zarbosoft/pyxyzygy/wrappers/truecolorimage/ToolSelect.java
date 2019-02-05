@@ -9,7 +9,6 @@ import com.zarbosoft.pyxyzygy.wrappers.group.Tool;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.scene.Group;
-import javafx.scene.Node;
 import javafx.scene.effect.BlendMode;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.Clipboard;
@@ -17,7 +16,6 @@ import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.KeyCode;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.StrokeType;
-import javafx.scene.transform.Scale;
 
 import static com.zarbosoft.pyxyzygy.widgets.HelperJFX.icon;
 import static com.zarbosoft.pyxyzygy.widgets.HelperJFX.pad;
@@ -87,7 +85,7 @@ public class ToolSelect extends Tool {
 		private DoubleVector start;
 		private Vector startCorner;
 		Hotkeys.Action[] actions = new Hotkeys.Action[] {
-				new Hotkeys.Action(Hotkeys.Scope.EDITOR,
+				new Hotkeys.Action(Hotkeys.Scope.CANVAS,
 						"cancel",
 						"Cancel",
 						Hotkeys.Hotkey.create(KeyCode.ESCAPE, false, false, false)
@@ -97,7 +95,7 @@ public class ToolSelect extends Tool {
 						setState(context, new StateCreate(context));
 					}
 				},
-				new Hotkeys.Action(Hotkeys.Scope.EDITOR,
+				new Hotkeys.Action(Hotkeys.Scope.CANVAS,
 						"place",
 						"Place",
 						Hotkeys.Hotkey.create(KeyCode.ENTER, false, false, true)
@@ -229,7 +227,7 @@ public class ToolSelect extends Tool {
 		Interactive mark;
 
 		Hotkeys.Action[] actions = new Hotkeys.Action[] {
-				new Hotkeys.Action(Hotkeys.Scope.EDITOR,
+				new Hotkeys.Action(Hotkeys.Scope.CANVAS,
 						"cancel",
 						"Cancel",
 						Hotkeys.Hotkey.create(KeyCode.ESCAPE, false, false, false)
@@ -239,7 +237,7 @@ public class ToolSelect extends Tool {
 						setState(context, new StateCreate(context));
 					}
 				},
-				new Hotkeys.Action(Hotkeys.Scope.EDITOR,
+				new Hotkeys.Action(Hotkeys.Scope.CANVAS,
 						"lift",
 						"Lift",
 						Hotkeys.Hotkey.create(KeyCode.ENTER, false, false, false)

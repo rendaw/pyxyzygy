@@ -130,7 +130,7 @@ public class CameraWrapper extends GroupNodeWrapper {
 		Tab tab = new Tab(
 				"Camera",
 				new WidgetFormBuilder()
-						.apply(b -> miscCleanup.add(nodeFormFields(context, b, node)))
+						.apply(b -> miscCleanup.add(nodeFormFields(context, b, this)))
 						.intSpinner("Crop width", 1, 99999, s -> {
 							s.getValueFactory().setValue(node.width());
 							propertiesWidth = s;

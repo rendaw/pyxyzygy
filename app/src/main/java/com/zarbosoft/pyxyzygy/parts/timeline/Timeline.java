@@ -27,6 +27,7 @@ import javafx.scene.control.*;
 import javafx.scene.effect.BlendMode;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Background;
@@ -93,6 +94,37 @@ public class Timeline {
 	public Timeline(ProjectContext context, Window window) {
 		this.context = context;
 		this.window = window;
+
+		Stream.of(
+				new Hotkeys.Action(
+					Hotkeys.Scope.TIMELINE,
+					"previous-frame",
+					"Previous frame",
+					Hotkeys.Hotkey.create(KeyCode.LEFT, false, false, false)
+			) {
+				@Override
+				public void run(ProjectContext context) {
+					window.selectedForView.get().getWrapper().getConfig().frame.set(Math.max(0,
+							window.selectedForView.get().getWrapper().getConfig().frame.get() - 1
+					));
+				}
+			},
+			new Hotkeys.Action(
+					Hotkeys.Scope.TIMELINE,
+					"next-frame",
+					"Next frame",
+					Hotkeys.Hotkey.create(KeyCode.RIGHT, false, false, false)
+			) {
+				@Override
+				public void run(ProjectContext context) {
+					window.selectedForView.get().getWrapper().getConfig().frame.set(window.selectedForView
+							.get()
+							.getWrapper()
+							.getConfig().frame.get() + 1);
+				}
+			}
+		).forEach(context.hotkeys::register);
+
 		window.selectedForView.addListener(new ChangeListener<Wrapper.CanvasHandle>() {
 			{
 				changed(null, null, window.selectedForView.get());
@@ -144,21 +176,6 @@ public class Timeline {
 		};
 		scrub.addEventFilter(MouseEvent.MOUSE_CLICKED, mouseEventEventHandler);
 		scrub.addEventFilter(MouseEvent.MOUSE_DRAGGED, mouseEventEventHandler);
-		scrub.addEventFilter(KeyEvent.KEY_TYPED, e -> {
-			switch (e.getCode()) {
-				case LEFT:
-					window.selectedForView.get().getWrapper().getConfig().frame.set(Math.max(0,
-							window.selectedForView.get().getWrapper().getConfig().frame.get() - 1
-					));
-					break;
-				case RIGHT:
-					window.selectedForView.get().getWrapper().getConfig().frame.set(window.selectedForView
-							.get()
-							.getWrapper()
-							.getConfig().frame.get() + 1);
-					break;
-			}
-		});
 		add = HelperJFX.button("plus.png", "Add");
 		add.setOnAction(e -> {
 			if (window.selectedForView.get() == null)
@@ -283,24 +300,30 @@ public class Timeline {
 			}
 		});
 		tree.getColumns().addAll(nameColumn, framesColumn);
-		tree.getSelectionModel().getSelectedItems().addListener((ListChangeListener<TreeItem<RowAdapter>>) c -> {
-			while (c.next()) {
-				for (TreeItem<RowAdapter> removed : c.getRemoved()) {
-					if (removed == null)
-						continue; // ??
-					if (removed.getValue() == null)
-						continue;
-					removed.getValue().deselected();
-				}
-				for (TreeItem<RowAdapter> added : c.getAddedSubList()) {
-					if (added == null)
-						continue; // ??
-					if (added.getValue() == null)
-						continue;
-					added.getValue().selected();
-				}
+		tree.getSelectionModel().getSelectedItems().addListener(new ListChangeListener<TreeItem<RowAdapter>>() {
+			{
+				onChanged(null);
 			}
-			updateButtons();
+			@Override
+			public void onChanged(Change<? extends TreeItem<RowAdapter>> c) {
+				while (c != null && c.next()) {
+					for (TreeItem<RowAdapter> removed : c.getRemoved()) {
+						if (removed == null)
+							continue; // ??
+						if (removed.getValue() == null)
+							continue;
+						removed.getValue().deselected();
+					}
+					for (TreeItem<RowAdapter> added : c.getAddedSubList()) {
+						if (added == null)
+							continue; // ??
+						if (added.getValue() == null)
+							continue;
+						added.getValue().selected();
+					}
+				}
+				Timeline.this.updateButtons();
+			}
 		});
 		framesColumn
 				.prefWidthProperty()
@@ -309,6 +332,11 @@ public class Timeline {
 						.subtract(nameColumn.widthProperty())
 						.subtract(25 /* No way to get actual inner width? Also leave room for scrollbar :& */));
 		foreground.getChildren().addAll(toolBar, tree, scrub, timeScroll);
+
+		foreground.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
+			if (context.hotkeys.event(context, Hotkeys.Scope.TIMELINE, e))
+				e.consume();
+		});
 
 		timeScroll.setMin(0);
 		scrubElements.layoutXProperty().bind(Bindings.createDoubleBinding(() -> {
@@ -338,8 +366,6 @@ public class Timeline {
 	}
 
 	public void setNodes(Wrapper.CanvasHandle root1, Wrapper.EditHandle edit1) {
-		Wrapper root = root1.getWrapper();
-		Wrapper edit = edit1.getWrapper();
 		updateFrameMarker();
 
 		// Clean up everything
@@ -354,8 +380,11 @@ public class Timeline {
 			outerTimeHandle = null;
 		}
 
-		if (root == null || edit == null)
+		if (root1 == null || edit1 == null)
 			return;
+
+		Wrapper root = root1.getWrapper();
+		Wrapper edit = edit1.getWrapper();
 
 		// Prepare time translation
 		outerTimeHandle = createTimeHandle(root.getValue());
@@ -390,7 +419,12 @@ public class Timeline {
 
 	private void updateButtons() {
 		Wrapper.CanvasHandle root = window.selectedForView.get();
-		TreeItem<RowAdapter> nowSelected = tree.getSelectionModel().getSelectedItem();
+		TreeItem<RowAdapter> nowSelected = tree.getSelectionModel().getSelectedItems().stream().findFirst().orElse(null);
+		System.out.format("update buttos: %s==n %s==n %s==n %s\n", root ,
+				nowSelected ,
+				nowSelected == null ? "n" : nowSelected.getValue() ,
+				nowSelected == null || nowSelected.getValue() == null ? "n" : !nowSelected.getValue().hasFrames()
+				);
 		boolean noSelection = root == null ||
 				nowSelected == null ||
 				nowSelected.getValue() == null ||

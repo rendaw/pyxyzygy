@@ -17,12 +17,10 @@ public class TrueColorImageCanvasHandle extends Wrapper.CanvasHandle {
 	private TrueColorImageNodeWrapper wrapper;
 	private TrueColorImageFrame.TilesPutAllListener tilesPutListener;
 	Map<Long, WrapTile> wrapTiles = new HashMap<>();
-	private int frameNumber = 0;
 	TrueColorImageFrame frame;
 	private final TrueColorImageNode.FramesAddListener framesAddListener;
 	private final TrueColorImageNode.FramesRemoveListener framesRemoveListener;
 	private final TrueColorImageNode.FramesMoveToListener framesMoveListener;
-	DoubleRectangle bounds = new DoubleRectangle(0, 0, 0, 0);
 	SimpleIntegerProperty zoom = new SimpleIntegerProperty(1);
 
 	public TrueColorImageCanvasHandle(
@@ -35,11 +33,11 @@ public class TrueColorImageCanvasHandle extends Wrapper.CanvasHandle {
 		});
 
 		this.framesAddListener =
-				wrapper.node.addFramesAddListeners((target, at, value) -> setFrame(context, frameNumber));
+				wrapper.node.addFramesAddListeners((target, at, value) -> updateFrame(context));
 		this.framesRemoveListener =
-				wrapper.node.addFramesRemoveListeners((target, at, count) -> setFrame(context, frameNumber));
+				wrapper.node.addFramesRemoveListeners((target, at, count) -> updateFrame(context));
 		this.framesMoveListener =
-				wrapper.node.addFramesMoveToListeners((target, source, count, dest) -> setFrame(context, frameNumber));
+				wrapper.node.addFramesMoveToListeners((target, source, count, dest) -> updateFrame(context));
 
 		attachTiles(context);
 	}
@@ -68,8 +66,8 @@ public class TrueColorImageCanvasHandle extends Wrapper.CanvasHandle {
 	public void setViewport(ProjectContext context, DoubleRectangle newBounds1, int positiveZoom) {
 		//System.out.format("set viewport; b %s old z %s, z %s\n", newBounds1, this.zoom.get(),positiveZoom);
 		this.zoom.set(positiveZoom);
-		DoubleRectangle oldBounds1 = this.bounds;
-		this.bounds = newBounds1;
+		DoubleRectangle oldBounds1 = this.bounds.get();
+		this.bounds.set(newBounds1);
 
 		Rectangle oldBounds = oldBounds1.scale(3).quantize(context.tileSize);
 		Rectangle newBounds = newBounds1.scale(3).quantize(context.tileSize);
@@ -109,10 +107,14 @@ public class TrueColorImageCanvasHandle extends Wrapper.CanvasHandle {
 
 	@Override
 	public void setFrame(ProjectContext context, int frameNumber) {
-		this.frameNumber = frameNumber;
+		this.frameNumber.set(frameNumber);
+		updateFrame(context);
+	}
+
+	public void updateFrame(ProjectContext context) {
 		TrueColorImageFrame oldFrame = frame;
-		frame = findFrame(frameNumber);
-		System.out.format("set frame %s: %s vs %s\n", frameNumber, oldFrame, frame);
+		frame = findFrame(frameNumber.get());
+		//System.out.format("set frame %s: %s vs %s\n", frameNumber, oldFrame, frame);
 		if (oldFrame != frame) {
 			detachTiles();
 			attachTiles(context);
@@ -126,7 +128,7 @@ public class TrueColorImageCanvasHandle extends Wrapper.CanvasHandle {
 				if (old != null)
 					inner.getChildren().remove(old.widget);
 			}
-			Rectangle checkBounds = bounds.scale(3).quantize(context.tileSize);
+			Rectangle checkBounds = bounds.get().scale(3).quantize(context.tileSize);
 			//System.out.format("attach tiles: %s = q %s\n", wrapper.bounds, checkBounds);
 			for (Map.Entry<Long, TileBase> entry : put.entrySet()) {
 				long key = entry.getKey();

@@ -27,6 +27,7 @@ import javafx.scene.layout.Region;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -62,33 +63,32 @@ public class TrueColorImageEditHandle extends Wrapper.EditHandle {
 
 		positiveZoom.bind(wrapper.canvasHandle.zoom);
 
-		actions = Streams.concat(Stream.of(new Hotkeys.Action(Hotkeys.Scope.EDITOR,
-												   "last-brush",
-												   "Last brush",
-												   Hotkeys.Hotkey.create(KeyCode.SPACE, false, false, false)
-										   ) {
-											   @Override
-											   public void run(ProjectContext context) {
-												   if (wrapper.config.tool.get() == TrueColorImageNodeConfig.Tool.BRUSH) {
-													   if (wrapper.config.lastBrush < 0 || wrapper.config.lastBrush >= Launch.config.trueColorBrushes.size())
-														   return;
-													   setBrush(wrapper.config.lastBrush);
-												   } else {
-													   wrapper.config.tool.set(TrueColorImageNodeConfig.Tool.BRUSH);
-												   }
-											   }
-										   },
-										   new Hotkeys.Action(Hotkeys.Scope.EDITOR,
-												   "select",
-												   "Select",
-												   Hotkeys.Hotkey.create(KeyCode.S, false, false, false)
-										   ) {
-											   @Override
-											   public void run(ProjectContext context) {
-												   wrapper.config.tool.set(TrueColorImageNodeConfig.Tool.SELECT);
-											   }
-										   }
-		), enumerate(Stream.of(KeyCode.DIGIT1,
+		actions = Streams.concat(Stream.of(new Hotkeys.Action(Hotkeys.Scope.CANVAS,
+				"last-brush",
+				"Last brush",
+				Hotkeys.Hotkey.create(KeyCode.SPACE, false, false, false)
+		) {
+			@Override
+			public void run(ProjectContext context) {
+				if (wrapper.config.tool.get() == TrueColorImageNodeConfig.Tool.BRUSH) {
+					if (wrapper.config.lastBrush < 0 ||
+							wrapper.config.lastBrush >= Launch.config.trueColorBrushes.size())
+						return;
+					setBrush(wrapper.config.lastBrush);
+				} else {
+					wrapper.config.tool.set(TrueColorImageNodeConfig.Tool.BRUSH);
+				}
+			}
+		}, new Hotkeys.Action(Hotkeys.Scope.CANVAS,
+				"select",
+				"Select",
+				Hotkeys.Hotkey.create(KeyCode.S, false, false, false)
+		) {
+			@Override
+			public void run(ProjectContext context) {
+				wrapper.config.tool.set(TrueColorImageNodeConfig.Tool.SELECT);
+			}
+		}), enumerate(Stream.of(KeyCode.DIGIT1,
 				KeyCode.DIGIT2,
 				KeyCode.DIGIT3,
 				KeyCode.DIGIT4,
@@ -98,7 +98,7 @@ public class TrueColorImageEditHandle extends Wrapper.EditHandle {
 				KeyCode.DIGIT8,
 				KeyCode.DIGIT9,
 				KeyCode.DIGIT0
-		)).map(p -> new Hotkeys.Action(Hotkeys.Scope.EDITOR,
+		)).map(p -> new Hotkeys.Action(Hotkeys.Scope.CANVAS,
 				String.format("brush-%s", p.first + 1),
 				String.format("Brush %s", p.first + 1),
 				Hotkeys.Hotkey.create(p.second, false, false, false)
@@ -204,8 +204,7 @@ public class TrueColorImageEditHandle extends Wrapper.EditHandle {
 		box.setFillHeight(true);
 		box.getChildren().addAll(selectToolbar, brushToolbar, menuToolbar);
 
-		brushesCleanup = Misc.mirror(
-				Launch.config.trueColorBrushes,
+		brushesCleanup = Misc.mirror(Launch.config.trueColorBrushes,
 				brushToolbar.getItems(),
 				b -> new BrushButton(context, wrapper, b),
 				Misc.noopConsumer(),
@@ -215,7 +214,7 @@ public class TrueColorImageEditHandle extends Wrapper.EditHandle {
 		// Tab
 		Tab generalTab = new Tab("Image");
 		generalTab.setContent(pad(new WidgetFormBuilder()
-				.apply(b -> cleanup.add(Misc.nodeFormFields(context, b, wrapper.node)))
+				.apply(b -> cleanup.add(Misc.nodeFormFields(context, b, wrapper)))
 				.build()));
 
 		paintTab = new Tab("Paint");
@@ -319,6 +318,11 @@ public class TrueColorImageEditHandle extends Wrapper.EditHandle {
 	}
 
 	@Override
+	public Wrapper.CanvasHandle getCanvas() {
+		return wrapper.canvasHandle;
+	}
+
+	@Override
 	public void mark(ProjectContext context, DoubleVector start, DoubleVector end) {
 		if (tool == null)
 			return;
@@ -327,4 +331,11 @@ public class TrueColorImageEditHandle extends Wrapper.EditHandle {
 		tool.mark(context, start, end);
 	}
 
+	@Override
+	public Optional<Integer> previousFrame(int frame) {
+		if (wrapper.node.framesLength() == 1) return Optional.empty();
+		int p = wrapper.findFrame(wrapper.node,frame).at - 1;
+		if (p == 0) p = wrapper.node.framesLength() - 1;
+		return Optional.of(p);
+	}
 }

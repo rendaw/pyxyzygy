@@ -19,7 +19,6 @@ public class GroupNodeCanvasHandle extends Wrapper.CanvasHandle {
 	private final ProjectNode.OpacitySetListener opacityListener;
 	private final ObservableList<Wrapper.CanvasHandle> childHandles = FXCollections.observableArrayList();
 	private final Wrapper.CanvasHandle parent;
-	int currentFrame = 0;
 	final SimpleIntegerProperty positiveZoom = new SimpleIntegerProperty(0);
 
 	ToolBar toolBar = new ToolBar();
@@ -49,7 +48,7 @@ public class GroupNodeCanvasHandle extends Wrapper.CanvasHandle {
 
 	@Override
 	public void setFrame(ProjectContext context, int frameNumber) {
-		this.currentFrame = frameNumber;
+		this.frameNumber.set(frameNumber);
 		childHandles.forEach(c -> c.setFrame(context, frameNumber));
 	}
 

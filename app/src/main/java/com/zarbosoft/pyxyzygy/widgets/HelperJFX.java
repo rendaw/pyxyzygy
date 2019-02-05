@@ -1,11 +1,13 @@
 package com.zarbosoft.pyxyzygy.widgets;
 
-import com.zarbosoft.rendaw.common.Assertion;
-import com.zarbosoft.rendaw.common.Pair;
+import com.sun.javafx.sg.prism.NGImageView;
+import com.sun.prism.Graphics;
 import com.zarbosoft.pyxyzygy.CustomBinding;
 import com.zarbosoft.pyxyzygy.Launch;
 import com.zarbosoft.pyxyzygy.ProjectContext;
 import com.zarbosoft.pyxyzygy.TrueColorImage;
+import com.zarbosoft.rendaw.common.Assertion;
+import com.zarbosoft.rendaw.common.Pair;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -16,8 +18,11 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import net.bytebuddy.ByteBuddy;
+import net.bytebuddy.implementation.MethodDelegation;
 
 import java.io.InputStream;
+import java.lang.reflect.Constructor;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
@@ -26,8 +31,36 @@ import java.util.Optional;
 import java.util.function.Function;
 
 import static com.zarbosoft.rendaw.common.Common.getResource;
+import static com.zarbosoft.rendaw.common.Common.uncheck;
+import static net.bytebuddy.matcher.ElementMatchers.named;
 
 public class HelperJFX {
+	private final static Constructor<ImageView> newNearestNeighborImageView;
+
+	public static class NearestNeighborNGImageView extends NGImageView {
+		@Override
+		protected void renderContent(Graphics g) {
+			super.renderContent(new NearestNeighborGraphics(g));
+		}
+	}
+
+	static {
+		newNearestNeighborImageView = uncheck(() -> {
+			return (Constructor<ImageView>) new ByteBuddy()
+					.subclass(ImageView.class)
+					.method(named("doCreatePeerPublic"))
+					.intercept(MethodDelegation.toConstructor(NearestNeighborNGImageView.class))
+					.make()
+					.load(ClassLoader.getSystemClassLoader())
+					.getLoaded()
+					.getConstructor();
+		});
+	}
+
+	public static ImageView nearestNeighborImageView() {
+		return uncheck(() -> newNearestNeighborImageView.newInstance());
+	}
+
 	public static Node pad(Node node) {
 		VBox out = new VBox();
 		out.setPadding(new Insets(3));
@@ -139,9 +172,7 @@ public class HelperJFX {
 				if (scanlineStride != w * 4)
 					throw new Assertion();
 				byte[] data = pixelformat.isPremultiplied() ? (
-						premultipliedData == null ?
-								premultipliedData = image.dataPremultiplied() :
-								premultipliedData
+						premultipliedData == null ? premultipliedData = image.dataPremultiplied() : premultipliedData
 				) : (this.data == null ? this.data = image.data() : this.data);
 				if (w == width) {
 					if (x != 0)
@@ -172,9 +203,7 @@ public class HelperJFX {
 				if (scanlineStride != w * 4)
 					throw new Assertion();
 				byte[] data = pixelformat.isPremultiplied() ? (
-						premultipliedData == null ?
-								premultipliedData = image.dataPremultiplied() :
-								premultipliedData
+						premultipliedData == null ? premultipliedData = image.dataPremultiplied() : premultipliedData
 				) : (this.data == null ? this.data = image.data() : this.data);
 				if (w == width) {
 					if (x != 0)

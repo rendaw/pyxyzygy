@@ -36,8 +36,9 @@ public class Misc {
 	}
 
 	public static Runnable nodeFormFields(
-			ProjectContext context, WidgetFormBuilder builder, ProjectNode node
+			ProjectContext context, WidgetFormBuilder builder, Wrapper wrapper
 	) {
+		ProjectNode node = (ProjectNode) wrapper.getValue();
 		return new Runnable() {
 			private ProjectNode.NameSetListener nameSetListener;
 			private ProjectNode.OpacitySetListener opacitySetListener;
@@ -60,6 +61,9 @@ public class Misc {
 								setter.accept(value);
 							})
 					);
+				});
+				builder.check("Onion skin", checkBox -> {
+					checkBox.selectedProperty().bindBidirectional(wrapper.getConfig().onionSkin);
 				});
 			}
 

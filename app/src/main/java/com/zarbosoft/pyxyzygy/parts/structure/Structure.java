@@ -173,7 +173,7 @@ public class Structure {
 		tree.setRoot(rootTreeItem);
 		tree.setMinHeight(0);
 		tree.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
-			context.hotkeys.event(context, Hotkeys.Scope.STRUCTURE, e);
+			if (context.hotkeys.event(context, Hotkeys.Scope.STRUCTURE, e))e.consume();
 		});
 		tree.getSelectionModel().getSelectedItems().addListener((ListChangeListener<TreeItem<Wrapper>>) c -> {
 			while (c.next()) {

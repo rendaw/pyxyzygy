@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.zarbosoft.internal</groupId>
-    <artifactId>jarhacks</artifactId>
+    <artifactId>pyxyzygy-imageviewscaling</artifactId>
     <version>1.0.0</version>
 
     <dependencies>
@@ -35,7 +35,7 @@
                     <source>1.9</source>
                     <target>1.9</target>
                     <compilerArgs>
-                        <arg>--add-exports=javafx.graphics/com.sun.javafx.sg.prism=com.zarbosoft.internal.jarhacks</arg>
+                        <arg>--add-exports=javafx.graphics/com.sun.javafx.sg.prism=com.zarbosoft.internal.pyxyzygy_imageviewscaling</arg>
                     </compilerArgs>
                 </configuration>
             </plugin>
@@ -46,8 +46,8 @@
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <Premain-Class>com.zarbosoft.internal.jarhacks.MakeImageViewGoodAgent</Premain-Class>
-                            <Agent-Class>com.zarbosoft.internal.jarhacks.MakeImageViewGoodAgent</Agent-Class>
+                            <Premain-Class>com.zarbosoft.internal.jarhacks.ImageViewScalingAgent</Premain-Class>
+                            <Agent-Class>com.zarbosoft.internal.jarhacks.ImageViewScalingAgent</Agent-Class>
                             <Can-Redefine-Classes>true</Can-Redefine-Classes>
                             <Can-Retransform-Classes>true</Can-Retransform-Classes>
                             <Can-Set-Native-Method-Prefix>true</Can-Set-Native-Method-Prefix>

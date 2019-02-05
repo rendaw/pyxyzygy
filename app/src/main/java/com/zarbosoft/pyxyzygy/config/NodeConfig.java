@@ -24,6 +24,9 @@ public class NodeConfig {
 	@Configuration
 	public final SimpleObjectProperty<DoubleVector> scroll = new SimpleObjectProperty<>(new DoubleVector(0, 0));
 
+	@Configuration
+	public final SimpleBooleanProperty onionSkin = new SimpleBooleanProperty(false);
+
 	public NodeConfig(ProjectContext context) {
 		zoom.set(context.config.defaultZoom);
 	}

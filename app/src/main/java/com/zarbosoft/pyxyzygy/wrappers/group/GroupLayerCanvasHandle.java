@@ -15,7 +15,6 @@ public class GroupLayerCanvasHandle extends Wrapper.CanvasHandle {
 	private final Wrapper.CanvasHandle parent;
 	private int zoom;
 	private Wrapper.CanvasHandle childCanvas;
-	private int currentFrame;
 	private final GroupLayer.InnerSetListener innerSetListener;
 	private final GroupLayer.PositionFramesAddListener positionAddListener;
 	private final GroupLayer.PositionFramesRemoveListener positionRemoveListener;
@@ -26,7 +25,6 @@ public class GroupLayerCanvasHandle extends Wrapper.CanvasHandle {
 	private final List<Runnable> positionCleanup;
 	private final List<Runnable> timeCleanup;
 	private GroupLayerWrapper wrapper;
-	private DoubleRectangle baseBounds;
 
 	public GroupLayerCanvasHandle(GroupLayerWrapper wrapper, Wrapper.CanvasHandle parent, ProjectContext context) {
 		this.parent = parent;
@@ -107,7 +105,7 @@ public class GroupLayerCanvasHandle extends Wrapper.CanvasHandle {
 	}
 
 	private GroupPositionFrame findPosition() {
-		return findPosition(currentFrame);
+		return findPosition(frameNumber.get());
 	}
 
 	private GroupPositionFrame findPosition(int frame) {
@@ -116,7 +114,7 @@ public class GroupLayerCanvasHandle extends Wrapper.CanvasHandle {
 
 	private void updateTime(ProjectContext context) {
 		if (childCanvas != null)
-			childCanvas.setFrame(context, wrapper.findInnerFrame(currentFrame));
+			childCanvas.setFrame(context, wrapper.findInnerFrame(frameNumber.get()));
 	}
 
 	@Override
@@ -141,15 +139,15 @@ public class GroupLayerCanvasHandle extends Wrapper.CanvasHandle {
 			ProjectContext context, DoubleRectangle newBounds, int positiveZoom
 	) {
 		this.zoom = positiveZoom;
-		baseBounds = newBounds;
+		bounds.set(newBounds);
 		updatePosition(context);
 	}
 
 	private void updatePosition(ProjectContext context) {
 		GroupPositionFrame pos = findPosition();
-		if (baseBounds == null)
+		if (bounds.get() == null)
 			return;
-		DoubleRectangle newBounds = baseBounds.minus(pos.offset());
+		DoubleRectangle newBounds = bounds.get().minus(pos.offset());
 		updateChildCanvasPosition(pos);
 		if (childCanvas != null)
 			childCanvas.setViewport(context, newBounds, zoom);
@@ -157,7 +155,7 @@ public class GroupLayerCanvasHandle extends Wrapper.CanvasHandle {
 
 	@Override
 	public void setFrame(ProjectContext context, int frameNumber) {
-		this.currentFrame = frameNumber;
+		this.frameNumber.set( frameNumber);
 		updateTime(context);
 		updatePosition(context);
 	}

@@ -27,7 +27,7 @@
         </dependency>
         <dependency>
             <groupId>com.zarbosoft.internal</groupId>
-            <artifactId>jarhacks</artifactId>
+            <artifactId>pyxyzygy-imageviewscaling</artifactId>
             <version>1.0.0</version>
             <scope>runtime</scope>
         </dependency>
