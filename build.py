@@ -48,6 +48,11 @@ def main():
     shutil.rmtree(path, ignore_errors=True)
     path.mkdir(parents=True, exist_ok=True)
 
+    os.makedirs('/root/.m2', exist_ok=True)
+    template(
+        root / 'build' / 'maven_settings.xml', '/root/.m2/settings.xml',
+        dict(PATH=root / '.m2' / 'repository'))
+
     # More variables
     if False:
         pass
@@ -96,6 +101,13 @@ def main():
         f'-DimageOutput={path / "java"}',
         f'-Djavafx.platform={jfx_platform}',
     )
+    shutil.copy(
+        (
+            root / 'imageviewscaling' / 'target' /
+            'pyxyzygy-imageviewscaling-1.0.0.jar'
+        ),
+        path / 'java',
+    )
 
     # Prepare itch deploys + deploy
     if args.platform == 'linux':
@@ -104,7 +116,7 @@ def main():
             '-p', '--strip-unneeded',
             path / 'java/lib/server/libjvm.so'
         ])
-    template('itch/manifest.toml', path / '.itch.toml', dict(
+    template('build/itch_manifest.toml', path / '.itch.toml', dict(
         ext=exe_ext,
     ))
     for b, ds, fs in os.walk(path):

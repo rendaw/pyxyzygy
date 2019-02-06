@@ -9,6 +9,6 @@
         <module>seed</module>
         <module>generate</module>
         <module>app</module>
-        <module>jarhacks</module>
+        <module>imageviewscaling</module>
     </modules>
 </project>

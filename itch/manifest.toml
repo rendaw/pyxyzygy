@@ -1,4 +1,0 @@
-[[actions]]
-name = "run"
-path = "java/bin/java{ext}"
-args = ["-p", "modules", "-m", "com.zarbosoft.shoedemo/com.zarbosoft.shoedemo.Main"]

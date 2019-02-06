@@ -46,8 +46,8 @@
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <Premain-Class>com.zarbosoft.internal.jarhacks.ImageViewScalingAgent</Premain-Class>
-                            <Agent-Class>com.zarbosoft.internal.jarhacks.ImageViewScalingAgent</Agent-Class>
+                            <Premain-Class>com.zarbosoft.internal.pyxyzygy_imageviewscaling.ImageViewScalingAgent</Premain-Class>
+                            <Agent-Class>com.zarbosoft.internal.pyxyzygy_imageviewscaling.ImageViewScalingAgent</Agent-Class>
                             <Can-Redefine-Classes>true</Can-Redefine-Classes>
                             <Can-Retransform-Classes>true</Can-Retransform-Classes>
                             <Can-Set-Native-Method-Prefix>true</Can-Set-Native-Method-Prefix>

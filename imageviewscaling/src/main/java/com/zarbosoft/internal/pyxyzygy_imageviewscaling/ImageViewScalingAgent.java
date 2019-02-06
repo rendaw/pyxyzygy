@@ -1,4 +1,4 @@
-package com.zarbosoft.internal.jarhacks;
+package com.zarbosoft.internal.pyxyzygy_imageviewscaling;
 
 import com.sun.javafx.sg.prism.NGImageView;
 import net.bytebuddy.ByteBuddy;
