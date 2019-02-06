@@ -1,4 +1,4 @@
-#include "header.hpp"
+#include "header.hxx"
 
 #include <algorithm>
 #include <cmath>
@@ -221,7 +221,7 @@ template<class HandleMeasures, class SetPixelLine> static void strokeSolid(
    	HandleMeasures &&handleMeasures, SetPixelLine &&setPixelLine
 ) {
 	struct FillEdge {
-		virtual std::pair<int, int> getX(int y) const = 0;
+		virtual std::pair<float, float> getX(int y) const = 0;
 	};
 
 	auto const fill = [&](float const yTop, float const yBottom, FillEdge const &edge1, FillEdge const &edge2) {
@@ -234,6 +234,7 @@ template<class HandleMeasures, class SetPixelLine> static void strokeSolid(
 
 		auto const x1 = edge1.getX(intTop);
 		auto const x2 = edge2.getX(intTop);
+		//printf("x1 %f %f x2 %f %f\n", x1.first, x1.second, x2.first, x2.second);
 		FillEdge const *left, *right;
 		if (x1.first < x2.first) {
 			left = &edge1;
@@ -286,12 +287,12 @@ template<class HandleMeasures, class SetPixelLine> static void strokeSolid(
 			};
 		}
 
-		std::pair<int, int> getX(int y) const override {
+		std::pair<float, float> getX(int y) const override {
 			float const x = std::sqrt(msq(radius) - msq((y + 0.5) - center.y));
 			float const start = center.x - x;
 			float const end = center.x + x;
 			//printf("circ y: %d, x: %f %f\n", y, start, end);
-			return {std::floor(start), std::ceil(end)};
+			return {start, end};
 		}
 	};
 
@@ -342,10 +343,10 @@ template<class HandleMeasures, class SetPixelLine> static void strokeSolid(
 			Segment(Vector const &pTop, Vector const &pBottom) :
 			   	pTop(pTop), pBottom(pBottom), xDiff(pBottom.x - pTop.x), yDiff(pBottom.y - pTop.y) {}
 
-			std::pair<int, int> getX(int y) const override {
+			std::pair<float, float> getX(int y) const override {
 				float const x = pTop.x + ((y + 0.5) - pTop.y) * xDiff / yDiff;
 				//printf("seg y: %d, x: %f\n", y, x);
-				return {std::floor(x), std::ceil(x)};
+				return {x, x};
 			}
 		};
 		auto const createSegment = [](Vector const &p1, Vector const &p2) -> Segment {
@@ -416,17 +417,11 @@ template<class HandleMeasures, class SetPixelLine> static void strokeSolid(
 		//	fill scratch pixels
 		if (topCircle.bottom >= bottomCircle.bottom) {
 			// Roughly horizontal - circles overlap eachother entirely
-			//printf("a1\n");
 			fill(topCircle.top, topSegment.pTop.y, topCircle, topCircle);
-			//printf("a2\n");
 			fill(topSegment.pTop.y, topSegment.pBottom.y, topCircle, topSegment);
-			//printf("a3\n");
 			fill(topSegment.pBottom.y, bottomSegment.pTop.y, topCircle, bottomCircle);
-			//printf("a4\n");
 			fill(bottomSegment.pTop.y, bottomSegment.pBottom.y, topCircle, bottomSegment);
-			//printf("a5\n");
 			fill(bottomSegment.pBottom.y, topCircle.bottom, topCircle, topCircle);
-			//printf("a6\n");
 		} else if (topSegment.pBottom.y < bottomSegment.pTop.y) {
 			// Segments don't overlap - circ circ overlap in the middle
 			fill(topCircle.top, topSegment.pTop.y, topCircle, topCircle);
@@ -436,17 +431,11 @@ template<class HandleMeasures, class SetPixelLine> static void strokeSolid(
 			fill(bottomSegment.pBottom.y, bottomCircle.bottom, bottomCircle, bottomCircle);
 		} else {
 			// Roughly vertical - segments overlap eachother
-			//printf("z1\n");
 			fill(topCircle.top, topSegment.pTop.y, topCircle, topCircle);
-			//printf("z2\n");
 			fill(topSegment.pTop.y, bottomSegment.pTop.y, topCircle, topSegment);
-			//printf("z3\n");
 			fill(bottomSegment.pTop.y, topSegment.pBottom.y, topSegment, bottomSegment);
-			//printf("z4\n");
 			fill(topSegment.pBottom.y, bottomSegment.pBottom.y, bottomSegment, bottomCircle);
-			//printf("z5\n");
 			fill(bottomSegment.pBottom.y, bottomCircle.bottom, bottomCircle, bottomCircle);
-			//printf("z6\n");
 		}
 	}
 }
@@ -459,7 +448,7 @@ void TrueColorImage::setPixel(uint8_t cr, uint8_t cg, uint8_t cb, uint8_t ca, in
 	pixel[3] = ca;
 }
 
-void TrueColorImage::stroke(uint8_t cr, uint8_t cg, uint8_t cb, uint8_t ca, double x1_0, double y1_0, double r1_0, double x2_0, double y2_0, double r2_0, double blend) {
+void TrueColorImage::strokeSoft(uint8_t cr, uint8_t cg, uint8_t cb, uint8_t ca, double x1_0, double y1_0, double r1_0, double x2_0, double y2_0, double r2_0, double blend) {
 	uint8_t const colors[] {cb, cg, cr, ca};
 
 	int const subpixels = 2;
@@ -482,7 +471,7 @@ void TrueColorImage::stroke(uint8_t cr, uint8_t cg, uint8_t cb, uint8_t ca, doub
 			//printf("got extents: o %d %d, t %d b %d l %d r %d\n", offsetX, offsetY, subpixelTop, subpixelBottom, subpixelLeft, subpixelRight);
 			prepareBitScratch(subpixelRight, subpixelBottom);
 		},
-		setBitScratchLine
+		[](unsigned int const y, float const start, float const end) { setBitScratchLine(y, std::floor(start), std::ceil(end)); }
 	);
 
 	// merge + scale down (w/h / 2)
@@ -544,6 +533,30 @@ void TrueColorImage::stroke(uint8_t cr, uint8_t cg, uint8_t cb, uint8_t ca, doub
 	}
 }
 
+void TrueColorImage::strokeHard(uint8_t cr, uint8_t cg, uint8_t cb, uint8_t ca, double x1_0, double y1_0, double r1_0, double x2_0, double y2_0, double r2_0, double blend) {
+	uint8_t const colors[] {cb, cg, cr, ca};
+	int offsetX;
+	int offsetY;
+	strokeSolid(
+		x1_0, y1_0, r1_0, x2_0, y2_0, r2_0, 1,
+		[&](int const offsetX_0, int const offsetY_0, int const top, int const bottom, int const left, int const right) {
+			offsetX = offsetX_0;
+			offsetY = offsetY_0;
+		},
+		[&](unsigned int y, float start, float end) {
+			//printf("fill line %u: %f - %f\n", y, start, end);
+			y += offsetY;
+			start = std::floor(start + offsetX);
+			end = std::floor(end + offsetX);
+			for (unsigned int x = start; x < end; ++x) {
+				for (unsigned int i = 0; i < channels; ++i) {
+					pixels[(y * w + x) * channels + i] = colors[i];
+				}
+			}
+		}
+	);
+}
+
 void TrueColorImage::compose(TrueColorImage const &source, int x0, int y0, double opacity) {
 	//printf("composing wh %d %d source wh %d %d at %d %d op %f\n", w, h, source.w, source.h, x0, y0, opacity);
 	fflush(stdout);
@@ -567,7 +580,7 @@ void TrueColorImage::compose(TrueColorImage const &source, int x0, int y0, doubl
 			//printf("\tcomp %d %d, dest %d %d, source %d %d span span %d %d\n", x1, y1, x.dest + x1, y.dest + y1, x.source + x1, y.source + y1, x.span, y.span);
 			uint8_t * const destPixel = &pixels[((y.dest + y1) * w + (x.dest + x1)) * channels];
 			uint8_t const * const sourcePixel = &source.pixels[((y.source + y1) * source.w + (x.source + x1)) * channels];
-			float const sourceAlpha = sourcePixel[3] / 255.0;
+			float const sourceAlpha = sourcePixel[3] / 255.0 * opacity;
 			float const destAlpha = destPixel[3] / 255.0;
 			float const outAlpha = destAlpha * (1.0 - sourceAlpha) + sourceAlpha;
 			/*

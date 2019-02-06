@@ -1,4 +1,4 @@
-#include "header.hpp"
+#include "header.hxx"
 #include <cassert>
 #include <memory>
 #include <sstream>
@@ -8,7 +8,7 @@ int main(int argc, char **argv) {
 
 	auto const draw = [&](float const x, float const y, float const r) {
 		std::unique_ptr<TrueColorImage> i(TrueColorImage::create(10, 10));
-		i->stroke(
+		i->strokeSoft(
 			255, 127, 0, 255,
 			x, y, r,
 			x, y, r,

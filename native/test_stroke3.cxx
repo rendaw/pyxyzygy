@@ -1,18 +1,18 @@
-#include "header.hpp"
+#include "header.hxx"
 #include <cassert>
 #include <memory>
 #include <sstream>
 
 int main(int argc, char **argv) {
 	std::unique_ptr<TrueColorImage> i(TrueColorImage::create(10, 10));
-	i->stroke(
+	i->strokeSoft(
 		255, 127, 0, 255,
 		4, 4, 2,
 		4, 4, 2,
 		1
 	);
 	printf("\n\n stroke 2\n");
-	i->stroke(
+	i->strokeSoft(
 		255, 127, 0, 255,
 		6, 6, 2,
 		6, 6, 2,

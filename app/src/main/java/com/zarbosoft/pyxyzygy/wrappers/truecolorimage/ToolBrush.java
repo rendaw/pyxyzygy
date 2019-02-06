@@ -45,8 +45,7 @@ public class ToolBrush extends Tool {
 		cursor.setFill(Color.TRANSPARENT);
 		cursor
 				.visibleProperty()
-				.bind(Bindings.createBooleanBinding(
-						() -> brush.aligned.get() &&
+				.bind(Bindings.createBooleanBinding(() -> brush.aligned.get() &&
 								brush.hard.get() &&
 								editHandle.positiveZoom.get() > 1,
 						editHandle.positiveZoom,
@@ -137,7 +136,6 @@ public class ToolBrush extends Tool {
 		final double endRadius = brush.size.get() / 20.0;
 
 		// Get frame-local coordinates
-		/*
 		System.out.format("stroke start %s %s to %s %s rad %s %s\n",
 				start.x,
 				start.y,
@@ -146,7 +144,6 @@ public class ToolBrush extends Tool {
 				startRadius,
 				endRadius
 		);
-		*/
 
 		// Calculate mark bounds
 		Rectangle bounds = new BoundsBuilder()
@@ -173,18 +170,32 @@ public class ToolBrush extends Tool {
 				color.a
 		);
 		*/
-		canvas.stroke(color.r,
-				color.g,
-				color.b,
-				color.a,
-				start.x - bounds.x,
-				start.y - bounds.y,
-				startRadius,
-				end.x - bounds.x,
-				end.y - bounds.y,
-				endRadius,
-				brush.blend.get() / 1000.0
-		);
+		if (brush.hard.get())
+			canvas.strokeHard(color.r,
+					color.g,
+					color.b,
+					color.a,
+					start.x - bounds.x,
+					start.y - bounds.y,
+					startRadius,
+					end.x - bounds.x,
+					end.y - bounds.y,
+					endRadius,
+					brush.blend.get() / 1000.0
+			);
+		else
+			canvas.strokeSoft(color.r,
+					color.g,
+					color.b,
+					color.a,
+					start.x - bounds.x,
+					start.y - bounds.y,
+					startRadius,
+					end.x - bounds.x,
+					end.y - bounds.y,
+					endRadius,
+					brush.blend.get() / 1000.0
+			);
 
 		// Replace tiles in frame
 		editHandle.wrapper.canvasHandle.drop(context, tileBounds, canvas);

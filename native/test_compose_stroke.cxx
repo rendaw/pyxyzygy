@@ -1,4 +1,4 @@
-#include "header.hpp"
+#include "header.hxx"
 #include <memory>
 #include <cassert>
 #include <sstream>
@@ -12,7 +12,7 @@ int main(int argc, char **argv) {
 		i->setPixel(255, 0, 0, 0, 10, y);
 		i->setPixel(255, 0, 0, 10, 11, y);
 	}
-	i->stroke(
+	i->strokeSoft(
 		0, 0, 255, 128,
 		9, 5, 3,
 		9, 5, 3,

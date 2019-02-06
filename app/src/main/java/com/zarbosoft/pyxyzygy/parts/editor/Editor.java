@@ -246,6 +246,7 @@ public class Editor {
 			pointerEventState.startScroll = pointerEventState.view.getWrapper().getConfig().scroll.get();
 			pointerEventState.startScrollClick = new DoubleVector(e.getSceneX(), e.getSceneY());
 			pointerEventState.edit = window.selectedForEdit.get();
+			pointerEventState.dragged = false;
 			if (e.getButton() == MouseButton.PRIMARY) {
 				if (pointerEventState.edit != null) {
 					pointerEventState.edit.markStart(context, pointerEventState.previous);

@@ -36,7 +36,7 @@ def main():
         '-c++',
         '-package', '.'.join(package),
         '-outdir', java_dest,
-        'header.hpp',
+        'header.hxx',
     ])
 
     output = f'{module}.{args.suffix}'

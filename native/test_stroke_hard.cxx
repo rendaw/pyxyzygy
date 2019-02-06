@@ -13,7 +13,7 @@ int main(int argc, char **argv) {
 	auto const draw = [&](float const x1, float const y1, float const r1, float const x2, float const y2, float const r2) {
 		assert(r1 < pad);
 		assert(r2 < pad);
-		i->strokeSoft(
+		i->strokeHard(
 			255, 127, 0, 255,
 			x + x1, y + y1, r1,
 			x + x2, y + y2, r2,
@@ -23,10 +23,21 @@ int main(int argc, char **argv) {
 		maxX = std::max(maxX, (int)(x + std::max(x1 + r1, x2 + r2)));
 		y += std::max(y1 + r1, y2 + r1) + pad;
 	};
-	auto const colFeed = [&]() {
-		x = maxX + pad;
-		y = pad;
-	};
+
+	draw(5, 4.99, 0.5, 5, 4.99, 0.5);
+	draw(5, 5, 0.5, 5, 5, 0.50001);
+	draw(5.5, 5.5, 0.5, 5.5, 5.5, 0.5);
+	draw(5.3, 5.5, 0.5, 5.5, 5.5, 0.5);
+	draw(5.5, 5.3, 0.5, 5.5, 5.5, 0.5);
+	draw(5.5, 5.5, 0.5, 5.7, 5.5, 0.5);
+	draw(5.5, 5.5, 0.5, 5.5, 5.7, 0.5);
+
+	draw(5, 5, 0.55, 5, 5, 0.55);
+	draw(5.5, 5.5, 0.55, 5.5, 5.5, 0.55);
+	draw(5.3, 5.5, 0.55, 5.5, 5.5, 0.55);
+	draw(5.5, 5.3, 0.55, 5.5, 5.5, 0.55);
+	draw(5.5, 5.5, 0.55, 5.7, 5.5, 0.55);
+	draw(5.5, 5.5, 0.55, 5.5, 5.7, 0.55);
 	
 	// 1 - 3px concentric
 	draw(
