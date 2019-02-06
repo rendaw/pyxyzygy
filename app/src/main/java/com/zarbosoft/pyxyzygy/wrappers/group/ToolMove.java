@@ -2,6 +2,7 @@ package com.zarbosoft.pyxyzygy.wrappers.group;
 
 import com.zarbosoft.pyxyzygy.DoubleVector;
 import com.zarbosoft.pyxyzygy.ProjectContext;
+import com.zarbosoft.pyxyzygy.Window;
 import com.zarbosoft.pyxyzygy.model.GroupPositionFrame;
 import com.zarbosoft.internal.pyxyzygy_seed.model.Vector;
 
@@ -15,7 +16,7 @@ public class ToolMove extends Tool {
 	}
 
 	@Override
-	public void markStart(ProjectContext context, DoubleVector start) {
+	public void markStart(ProjectContext context, Window window, DoubleVector start) {
 		if (wrapper.specificLayer == null)
 			return;
 		this.markStart = start;
@@ -27,7 +28,7 @@ public class ToolMove extends Tool {
 	}
 
 	@Override
-	public void mark(ProjectContext context, DoubleVector start, DoubleVector end) {
+	public void mark(ProjectContext context, Window window, DoubleVector start, DoubleVector end) {
 		if (wrapper.specificLayer == null)
 			return;
 		GroupPositionFrame pos = GroupLayerWrapper.findPosition(

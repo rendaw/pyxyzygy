@@ -29,7 +29,7 @@ public class DoubleVector {
 	}
 
 	public Vector toInt() {
-		return new Vector((int) x, (int) y);
+		return new Vector((int) Math.floor( x), (int)Math.floor( y));
 	}
 
 	public DoubleVector divide(double factor) {

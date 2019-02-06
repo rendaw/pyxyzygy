@@ -4,15 +4,11 @@ import com.zarbosoft.pyxyzygy.config.NodeConfig;
 import com.zarbosoft.pyxyzygy.model.ProjectNode;
 import com.zarbosoft.pyxyzygy.model.ProjectObject;
 import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.scene.Group;
-import javafx.scene.Node;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TreeItem;
 
 import java.util.List;
-import java.util.Optional;
 
 public abstract class Wrapper {
 	public int parentIndex;
@@ -27,43 +23,7 @@ public abstract class Wrapper {
 
 	public abstract NodeConfig getConfig();
 
-	public abstract static class CanvasHandle {
-		public final SimpleIntegerProperty frameNumber = new SimpleIntegerProperty(0);
-		public final SimpleObjectProperty<DoubleRectangle> bounds = new SimpleObjectProperty<>(new DoubleRectangle(0,0,0,0));
-
-		public abstract DoubleVector toInner(DoubleVector vector);
-		private final Group outer = new Group();
-		public final Group inner = new Group();
-		public final Group overlay = new Group();
-
-		{
-			outer.getChildren().addAll(inner, overlay);
-		}
-
-		final public Node getWidget() {
-			return outer;
-		}
-		public abstract void setViewport(ProjectContext context, DoubleRectangle newBounds, int positiveZoom);
-		public abstract void setFrame(ProjectContext context, int frameNumber);
-		public abstract void remove(ProjectContext context);
-
-		public abstract Wrapper getWrapper();
-
-		public abstract CanvasHandle getParent();
-	}
-
 	public abstract CanvasHandle buildCanvas(ProjectContext context, CanvasHandle parent);
-
-	public abstract static class EditHandle {
-		public abstract void cursorMoved(ProjectContext context, DoubleVector vector);
-		public abstract Wrapper getWrapper();
-		public abstract Node getProperties();
-		public abstract void remove(ProjectContext context);
-		public abstract void mark(ProjectContext context, DoubleVector start, DoubleVector end);
-		public abstract void markStart(ProjectContext context, DoubleVector start);
-		public abstract CanvasHandle getCanvas();
-		public abstract Optional<Integer> previousFrame(int frame);
-	}
 
 	public abstract EditHandle buildEditControls(ProjectContext context, TabPane leftTabs);
 

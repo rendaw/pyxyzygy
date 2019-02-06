@@ -1,6 +1,7 @@
 package com.zarbosoft.pyxyzygy.wrappers.truecolorimage;
 
 import com.zarbosoft.internal.pyxyzygy_seed.model.Rectangle;
+import com.zarbosoft.internal.pyxyzygy_seed.model.Vector;
 import com.zarbosoft.pyxyzygy.*;
 import com.zarbosoft.pyxyzygy.config.TrueColor;
 import com.zarbosoft.pyxyzygy.config.TrueColorBrush;
@@ -8,6 +9,7 @@ import com.zarbosoft.pyxyzygy.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.widgets.TrueColorPicker;
 import com.zarbosoft.pyxyzygy.widgets.WidgetFormBuilder;
 import com.zarbosoft.pyxyzygy.wrappers.group.Tool;
+import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.Pair;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.DoubleBinding;
@@ -17,6 +19,7 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.HPos;
 import javafx.scene.Node;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.StrokeType;
@@ -124,12 +127,54 @@ public class ToolBrush extends Tool {
 	}
 
 	@Override
-	public void markStart(ProjectContext context, DoubleVector start) {
+	public void markStart(ProjectContext context, Window window, DoubleVector start) {
 
 	}
 
+	private void setColor(ProjectContext context, Color color) {
+		if (brush.useColor.get()) {
+			brush.color.set(TrueColor.fromJfx(color));
+		} else {
+			context.config.trueColor.set(TrueColor.fromJfx(color));
+		}
+	}
+
 	@Override
-	public void mark(ProjectContext context, DoubleVector start, DoubleVector end) {
+	public void mark(ProjectContext context, Window window, DoubleVector start, DoubleVector end) {
+		do {
+			if (false) {
+				throw new Assertion();
+			} else if (window.pressed.contains(KeyCode.CONTROL) && window.pressed.contains(KeyCode.SHIFT)) {
+				DoubleVector outer = Window.toGlobal(editHandle.wrapper.canvasHandle, end);
+				TrueColorImage out = TrueColorImage.create(1, 1);
+				Render.render(context,
+						window.selectedForView.get().getWrapper().getValue(),
+						out,
+						window.selectedForView.get().frameNumber.get(),
+						new Rectangle((int) Math.floor(outer.x), (int) Math.floor(outer.y), 1, 1),
+						1
+				);
+				setColor(context, HelperJFX.toImage(out).getPixelReader().getColor(0, 0));
+			} else if (window.pressed.contains(KeyCode.CONTROL)) {
+				Vector quantizedCorner = end.divide(context.tileSize).toInt();
+				WrapTile tile = editHandle.wrapper.canvasHandle.wrapTiles.get(quantizedCorner.to1D());
+				if (tile == null) {
+					setColor(context, Color.TRANSPARENT);
+				} else {
+					Vector intEnd = end.toInt();
+					Vector tileCorner = quantizedCorner.multiply(context.tileSize);
+					setColor(context,
+							tile.widget
+									.getImage()
+									.getPixelReader()
+									.getColor(intEnd.x - tileCorner.x, intEnd.y - tileCorner.y)
+					);
+				}
+			} else
+				break;
+			return;
+		} while (false);
+
 		TrueColor color = brush.useColor.get() ? brush.color.get() : context.config.trueColor.get();
 
 		final double startRadius = brush.size.get() / 20.0;

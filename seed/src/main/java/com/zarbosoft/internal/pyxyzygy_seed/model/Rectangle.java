@@ -24,7 +24,7 @@ public class Rectangle {
 	}
 
 	public Rectangle multiply(int factor) {
-		return new Rectangle(x * factor,y * factor ,width * factor ,height * factor );
+		return new Rectangle(x * factor, y * factor, width * factor, height * factor);
 	}
 
 	/**
@@ -41,6 +41,10 @@ public class Rectangle {
 
 	public Rectangle plus(Vector offset) {
 		return new Rectangle(x + offset.x, y + offset.y, width, height);
+	}
+
+	public Rectangle minus(Vector offset) {
+		return new Rectangle(x - offset.x, y - offset.y, width, height);
 	}
 
 	public Vector corner() {
@@ -65,9 +69,5 @@ public class Rectangle {
 
 	public boolean contains(Vector vector) {
 		return contains(vector.x, vector.y);
-	}
-
-	public Rectangle shift(Vector vector) {
-		return new Rectangle(x+vector.x, y+vector.y,width ,height );
 	}
 }

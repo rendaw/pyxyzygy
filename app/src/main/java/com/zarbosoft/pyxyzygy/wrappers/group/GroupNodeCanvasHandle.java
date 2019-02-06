@@ -1,9 +1,6 @@
 package com.zarbosoft.pyxyzygy.wrappers.group;
 
-import com.zarbosoft.pyxyzygy.DoubleRectangle;
-import com.zarbosoft.pyxyzygy.DoubleVector;
-import com.zarbosoft.pyxyzygy.ProjectContext;
-import com.zarbosoft.pyxyzygy.Wrapper;
+import com.zarbosoft.pyxyzygy.*;
 import com.zarbosoft.pyxyzygy.model.ProjectNode;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.collections.FXCollections;
@@ -14,18 +11,18 @@ import static com.zarbosoft.pyxyzygy.Launch.opacityMax;
 import static com.zarbosoft.pyxyzygy.Misc.mirror;
 import static com.zarbosoft.pyxyzygy.Misc.noopConsumer;
 
-public class GroupNodeCanvasHandle extends Wrapper.CanvasHandle {
+public class GroupNodeCanvasHandle extends CanvasHandle {
 	private final Runnable layerListenCleanup;
 	private final ProjectNode.OpacitySetListener opacityListener;
-	private final ObservableList<Wrapper.CanvasHandle> childHandles = FXCollections.observableArrayList();
-	private final Wrapper.CanvasHandle parent;
+	private final ObservableList<CanvasHandle> childHandles = FXCollections.observableArrayList();
+	private final CanvasHandle parent;
 	final SimpleIntegerProperty positiveZoom = new SimpleIntegerProperty(0);
 
 	ToolBar toolBar = new ToolBar();
 	private GroupNodeWrapper wrapper;
 
 	public GroupNodeCanvasHandle(
-			ProjectContext context, Wrapper.CanvasHandle parent, GroupNodeWrapper wrapper
+			ProjectContext context, CanvasHandle parent, GroupNodeWrapper wrapper
 	) {
 		this.parent = parent;
 		layerListenCleanup = mirror(wrapper.children, childHandles, c -> {
@@ -66,7 +63,7 @@ public class GroupNodeCanvasHandle extends Wrapper.CanvasHandle {
 	}
 
 	@Override
-	public Wrapper.CanvasHandle getParent() {
+	public CanvasHandle getParent() {
 		return parent;
 	}
 

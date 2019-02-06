@@ -178,11 +178,9 @@ public class Structure {
 		tree.getSelectionModel().getSelectedItems().addListener((ListChangeListener<TreeItem<Wrapper>>) c -> {
 			while (c.next()) {
 				List<? extends TreeItem<Wrapper>> added = c.getAddedSubList();
-				System.out.format("select added %s\n", added.size());
 				if (added.isEmpty())
 					return;
 				TreeItem<Wrapper> first = added.get(0);
-				System.out.format("select added first %s\n", first);
 				if (first.getValue() == null)
 					return;
 				selectForEdit(first.getValue());

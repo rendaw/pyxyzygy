@@ -125,16 +125,16 @@ public class Timeline {
 			}
 		).forEach(context.hotkeys::register);
 
-		window.selectedForView.addListener(new ChangeListener<Wrapper.CanvasHandle>() {
+		window.selectedForView.addListener(new ChangeListener<CanvasHandle>() {
 			{
 				changed(null, null, window.selectedForView.get());
 			}
 
 			@Override
 			public void changed(
-					ObservableValue<? extends Wrapper.CanvasHandle> observable,
-					Wrapper.CanvasHandle oldValue,
-					Wrapper.CanvasHandle newValue
+					ObservableValue<? extends CanvasHandle> observable,
+					CanvasHandle oldValue,
+					CanvasHandle newValue
 			) {
 				Observable[] deps;
 				if (newValue == null)
@@ -365,7 +365,7 @@ public class Timeline {
 			item.getValue().remove(context);
 	}
 
-	public void setNodes(Wrapper.CanvasHandle root1, Wrapper.EditHandle edit1) {
+	public void setNodes(CanvasHandle root1, EditHandle edit1) {
 		updateFrameMarker();
 
 		// Clean up everything
@@ -418,7 +418,7 @@ public class Timeline {
 	}
 
 	private void updateButtons() {
-		Wrapper.CanvasHandle root = window.selectedForView.get();
+		CanvasHandle root = window.selectedForView.get();
 		TreeItem<RowAdapter> nowSelected = tree.getSelectionModel().getSelectedItems().stream().findFirst().orElse(null);
 		System.out.format("update buttos: %s==n %s==n %s==n %s\n", root ,
 				nowSelected ,
@@ -438,7 +438,7 @@ public class Timeline {
 	}
 
 	private void updateFrameMarker() {
-		Wrapper.CanvasHandle root = window.selectedForView.get();
+		CanvasHandle root = window.selectedForView.get();
 		if (root == null)
 			return;
 		root.setFrame(context, root.getWrapper().getConfig().frame.get());

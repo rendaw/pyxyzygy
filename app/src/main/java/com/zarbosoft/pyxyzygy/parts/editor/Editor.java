@@ -3,7 +3,6 @@ package com.zarbosoft.pyxyzygy.parts.editor;
 import com.zarbosoft.pyxyzygy.*;
 import com.zarbosoft.pyxyzygy.config.NodeConfig;
 import javafx.beans.binding.Bindings;
-import javafx.beans.binding.DoubleBinding;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.Insets;
@@ -12,8 +11,9 @@ import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.input.*;
 import javafx.scene.layout.*;
-import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
+
+import static com.zarbosoft.rendaw.common.Common.uncheck;
 
 public class Editor {
 	private final com.zarbosoft.pyxyzygy.Window window;
@@ -30,7 +30,7 @@ public class Editor {
 			) {
 				@Override
 				public void run(ProjectContext context) {
-					Wrapper.CanvasHandle view = window.selectedForView.get();
+					CanvasHandle view = window.selectedForView.get();
 					if (view == null)
 						return;
 					view.getWrapper().getConfig().flipHorizontal.set(!view
@@ -45,7 +45,7 @@ public class Editor {
 			) {
 				@Override
 				public void run(ProjectContext context) {
-					Wrapper.CanvasHandle view = window.selectedForView.get();
+					CanvasHandle view = window.selectedForView.get();
 					if (view == null)
 						return;
 					view.getWrapper().getConfig().flipVertical.set(!view.getWrapper().getConfig().flipVertical.get());
@@ -68,7 +68,7 @@ public class Editor {
 			) {
 				@Override
 				public void run(ProjectContext context) {
-					Wrapper.EditHandle e = window.selectedForEdit.get();
+					EditHandle e = window.selectedForEdit.get();
 					if (e == null)
 						return;
 					e.getWrapper().getConfig().onionSkin.set(!e.getWrapper().getConfig().onionSkin.get());
@@ -84,7 +84,7 @@ public class Editor {
 	 * @param y
 	 * @return
 	 */
-	private DoubleVector getStandardVector(Wrapper.CanvasHandle view, double x, double y) {
+	private DoubleVector getStandardVector(CanvasHandle view, double x, double y) {
 		DoubleVector scroll = window.selectedForView.get().getWrapper().getConfig().scroll.get();
 		DoubleVector coordCentered = new DoubleVector((x - this.canvas.getLayoutBounds().getWidth() / 2),
 				(y - this.canvas.getLayoutBounds().getHeight() / 2)
@@ -95,14 +95,14 @@ public class Editor {
 		return out;
 	}
 
-	private DoubleVector normalizeEventCoordinates(Wrapper.CanvasHandle view, MouseEvent e) {
+	private DoubleVector normalizeEventCoordinates(CanvasHandle view, MouseEvent e) {
 		Point2D canvasCorner = outerCanvas.getLocalToSceneTransform().transform(0, 0);
 		//System.out.format("  norm corner %s %s: layout %s %s\n", canvasCorner.getX(), canvasCorner.getY(), canvas.getLayoutX(), canvas.getLayoutY());
 		return getStandardVector(view, e.getSceneX() - canvasCorner.getX(), e.getSceneY() - canvasCorner.getY());
 	}
 
 	public void updateScroll(ProjectContext context, DoubleVector scroll) {
-		Wrapper.CanvasHandle view = window.selectedForView.get();
+		CanvasHandle view = window.selectedForView.get();
 		if (view == null)
 			return;
 		view.getWrapper().getConfig().scroll.set(scroll);
@@ -110,7 +110,7 @@ public class Editor {
 	}
 
 	public void updateBounds(ProjectContext context) {
-		Wrapper.CanvasHandle viewHandle = window.selectedForView.get();
+		CanvasHandle viewHandle = window.selectedForView.get();
 		if (viewHandle == null)
 			return;
 		DoubleVector scroll = viewHandle.getWrapper().getConfig().scroll.get();
@@ -153,13 +153,13 @@ public class Editor {
 
 		outerCanvas = new StackPane();
 		VBox.setVgrow(outerCanvas, Priority.ALWAYS);
-		outerCanvas
-				.backgroundProperty()
-				.bind(Bindings.createObjectBinding(() -> new Background(new BackgroundFill(context.config.backgroundColor
-								.get()
-								.toJfx(), CornerRadii.EMPTY, Insets.EMPTY)),
-						context.config.backgroundColor
-				));
+		outerCanvas.backgroundProperty().bind(Bindings.createObjectBinding(
+				() -> new Background(new BackgroundFill(context.config.backgroundColor.get().toJfx(),
+						CornerRadii.EMPTY,
+						Insets.EMPTY
+				)),
+				context.config.backgroundColor
+		));
 		outerCanvas.setMouseTransparent(false);
 		outerCanvas.setFocusTraversable(true);
 		Rectangle clip = new Rectangle();
@@ -191,7 +191,7 @@ public class Editor {
 
 		class ScrollEventState {
 			boolean longScroll;
-			Wrapper.CanvasHandle view;
+			CanvasHandle view;
 			int startZoom;
 		}
 		ScrollEventState scrollEventState = new ScrollEventState();
@@ -227,8 +227,8 @@ public class Editor {
 			}
 		});
 		class PointerEventState {
-			public Wrapper.CanvasHandle view;
-			Wrapper.EditHandle edit;
+			public CanvasHandle view;
+			EditHandle edit;
 			boolean dragged = false;
 			MouseButton button;
 			DoubleVector previous;
@@ -249,7 +249,7 @@ public class Editor {
 			pointerEventState.dragged = false;
 			if (e.getButton() == MouseButton.PRIMARY) {
 				if (pointerEventState.edit != null) {
-					pointerEventState.edit.markStart(context, pointerEventState.previous);
+					pointerEventState.edit.markStart(context, window, pointerEventState.previous);
 				}
 			}
 		});
@@ -258,7 +258,11 @@ public class Editor {
 				return;
 			if (pointerEventState.button == MouseButton.PRIMARY) {
 				if (!pointerEventState.dragged) {
-					pointerEventState.edit.mark(context, pointerEventState.previous, pointerEventState.previous);
+					pointerEventState.edit.mark(context,
+							window,
+							pointerEventState.previous,
+							pointerEventState.previous
+					);
 				}
 				context.history.finishChange();
 			}
@@ -268,7 +272,8 @@ public class Editor {
 			DoubleVector end = normalizeEventCoordinates(pointerEventState.view, e);
 			if (pointerEventState.button == MouseButton.PRIMARY) {
 				if (pointerEventState.edit != null) {
-					pointerEventState.edit.mark(context, pointerEventState.previous, end);
+					System.out.format("edi %s\n", end);
+					pointerEventState.edit.mark(context, window, pointerEventState.previous, end);
 				}
 			} else if (pointerEventState.button == MouseButton.MIDDLE) {
 				updateScroll(context,
@@ -281,20 +286,21 @@ public class Editor {
 		});
 		outerCanvas.addEventFilter(MouseEvent.MOUSE_MOVED, e -> {
 			outerCanvas.requestFocus();
-			Wrapper.EditHandle edit = window.selectedForEdit.get();
+			EditHandle edit = window.selectedForEdit.get();
 			if (edit == null)
 				return;
-			Wrapper.CanvasHandle view = window.selectedForView.get();
+			CanvasHandle view = window.selectedForView.get();
 			if (view == null)
 				return;
 			//System.out.format("mouse 1: %s %s\n", e.getSceneX(), e.getSceneY());
 			edit.cursorMoved(context, normalizeEventCoordinates(view, e));
 		});
 		outerCanvas.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
-			if (context.hotkeys.event(context, Hotkeys.Scope.CANVAS, e)) e.consume();
+			if (context.hotkeys.event(context, Hotkeys.Scope.CANVAS, e))
+				e.consume();
 		});
 
-		window.selectedForView.addListener(new ChangeListener<Wrapper.CanvasHandle>() {
+		window.selectedForView.addListener(new ChangeListener<CanvasHandle>() {
 			Runnable cleanup;
 
 			{
@@ -303,9 +309,9 @@ public class Editor {
 
 			@Override
 			public void changed(
-					ObservableValue<? extends Wrapper.CanvasHandle> observable,
-					Wrapper.CanvasHandle oldValue,
-					Wrapper.CanvasHandle newView
+					ObservableValue<? extends CanvasHandle> observable,
+					CanvasHandle oldValue,
+					CanvasHandle newView
 			) {
 				if (cleanup != null) {
 					cleanup.run();
@@ -341,16 +347,16 @@ public class Editor {
 			}
 		});
 
-		window.selectedForEdit.addListener(new ChangeListener<Wrapper.EditHandle>() {
+		window.selectedForEdit.addListener(new ChangeListener<EditHandle>() {
 			{
 				changed(null, null, window.selectedForEdit.get());
 			}
 
 			@Override
 			public void changed(
-					ObservableValue<? extends Wrapper.EditHandle> observable,
-					Wrapper.EditHandle oldValue,
-					Wrapper.EditHandle newValue
+					ObservableValue<? extends EditHandle> observable,
+					EditHandle oldValue,
+					EditHandle newValue
 			) {
 				if (editCleanup != null) {
 					editCleanup.run();

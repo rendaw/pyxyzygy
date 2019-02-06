@@ -14,7 +14,6 @@ import com.zarbosoft.pyxyzygy.wrappers.group.GroupNodeWrapper;
 import com.zarbosoft.pyxyzygy.wrappers.truecolorimage.TrueColorImageNodeWrapper;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.Pair;
-import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ChangeListener;
@@ -28,9 +27,7 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -38,9 +35,11 @@ import static com.zarbosoft.pyxyzygy.Launch.nameHuman;
 
 public class Window {
 	public List<FrameMapEntry> timeMap;
-	public SimpleObjectProperty<Wrapper.EditHandle> selectedForEdit = new SimpleObjectProperty<>();
-	public SimpleObjectProperty<Wrapper.CanvasHandle> selectedForView = new SimpleObjectProperty<>();
+	public SimpleObjectProperty<EditHandle> selectedForEdit = new SimpleObjectProperty<>();
+	public SimpleObjectProperty<CanvasHandle> selectedForView = new SimpleObjectProperty<>();
 	public TabPane leftTabs;
+	public Set<KeyCode> pressed = new HashSet<>();
+	public Editor editor;
 
 	public void start(ProjectContext context, Stage primaryStage) {
 		primaryStage.setOnCloseRequest(e -> {
@@ -81,7 +80,7 @@ public class Window {
 		Structure structure = new Structure(context, this);
 		structureTab.setContent(structure.getWidget());
 
-		Editor editor = new Editor(context, this);
+		editor = new Editor(context, this);
 		Timeline timeline = new Timeline(context, this);
 
 		SplitPane specificLayout = new SplitPane();
@@ -176,8 +175,14 @@ public class Window {
 				.addListener((observable, oldValue, newValue) -> context.config.tabsSplit = newValue.doubleValue());
 
 		scene.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
+			pressed.add(e.getCode());
+			System.out.format("(on) pressed: %s\n", pressed);
 			if (context.hotkeys.event(context, Hotkeys.Scope.GLOBAL, e))
 				e.consume();
+		});
+		scene.addEventFilter(KeyEvent.KEY_RELEASED,e -> {
+			pressed.remove(e.getCode());
+			System.out.format("(off) pressed: %s\n", pressed);
 		});
 		scene.getStylesheets().addAll(getClass().getResource("widgets/colorpicker/style.css").toExternalForm(),
 				getClass().getResource("widgets/brushbutton/style.css").toExternalForm()
@@ -212,20 +217,38 @@ public class Window {
 		return entry.second.innerOffset + outer - entry.first;
 	}
 
-	public static List<Wrapper.CanvasHandle> getAncestors(Wrapper.CanvasHandle start, Wrapper.CanvasHandle target) {
-		List<Wrapper.CanvasHandle> ancestors = new ArrayList<>();
-		Wrapper.CanvasHandle at = target.getParent();
+	public static List<CanvasHandle> getAncestorsOutward(CanvasHandle start, CanvasHandle target) {
+		List<CanvasHandle> ancestors = new ArrayList<>();
+		CanvasHandle at = target.getParent();
 		while (at != start) {
 			ancestors.add(at);
 			at = at.getParent();
 		}
+		return ancestors;
+	}
+	public static List<CanvasHandle> getAncestorsInward(CanvasHandle start, CanvasHandle target) {
+		List<CanvasHandle> ancestors = getAncestorsOutward(start, target);
 		Collections.reverse(ancestors);
 		return ancestors;
 	}
 
-	public static DoubleVector toLocal(Wrapper.CanvasHandle wrapper, DoubleVector v) {
-		for (Wrapper.CanvasHandle parent : getAncestors(null, wrapper)) {
+	public static DoubleVector toLocal(CanvasHandle wrapper, DoubleVector v) {
+		for (CanvasHandle parent : getAncestorsInward(null, wrapper)) {
 			v = parent.toInner(v);
+		}
+		return v;
+	}
+
+	/**
+	 * Not really global but canvas-space
+	 * @param wrapper
+	 * @param v
+	 * @return
+	 */
+	public static DoubleVector toGlobal(CanvasHandle wrapper, DoubleVector v) {
+		DoubleVector zero = new DoubleVector(0,0);
+		for (CanvasHandle parent : getAncestorsOutward(null, wrapper)) {
+			v = v.minus(parent.toInner(zero));
 		}
 		return v;
 	}

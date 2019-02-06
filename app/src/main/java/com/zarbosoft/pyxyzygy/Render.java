@@ -35,7 +35,7 @@ public class Render {
 	/**
 	 * @param context
 	 * @param node1   subtree to render
-	 * @param gc      for canvas with w/h = crop w/h
+	 * @param out      for canvas with w/h = crop w/h
 	 * @param frame   frame to render
 	 * @param crop    viewport of render
 	 * @param opacity opacity of this subtree
@@ -55,7 +55,7 @@ public class Render {
 			GroupPositionFrame pos = GroupLayerWrapper.findPosition(node, frame).frame;
 			int frame1 = GroupLayerWrapper.findInnerFrame(node, frame);
 			if (node.inner() != null)
-				render(context, node.inner(), out, frame1, crop.plus(pos.offset()), opacity);
+				render(context, node.inner(), out, frame1, crop.minus(pos.offset()), opacity);
 		} else if (node1 instanceof TrueColorImageNode) {
 			TrueColorImageNode node = (TrueColorImageNode) node1;
 			render(

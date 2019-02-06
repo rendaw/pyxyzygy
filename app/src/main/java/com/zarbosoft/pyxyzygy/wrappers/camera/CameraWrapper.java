@@ -1,9 +1,6 @@
 package com.zarbosoft.pyxyzygy.wrappers.camera;
 
-import com.zarbosoft.pyxyzygy.ProjectContext;
-import com.zarbosoft.pyxyzygy.Render;
-import com.zarbosoft.pyxyzygy.TrueColorImage;
-import com.zarbosoft.pyxyzygy.Wrapper;
+import com.zarbosoft.pyxyzygy.*;
 import com.zarbosoft.pyxyzygy.model.Camera;
 import com.zarbosoft.pyxyzygy.model.ProjectNode;
 import com.zarbosoft.pyxyzygy.widgets.HelperJFX;

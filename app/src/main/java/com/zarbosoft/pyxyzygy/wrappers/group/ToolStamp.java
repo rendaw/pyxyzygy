@@ -3,10 +3,7 @@ package com.zarbosoft.pyxyzygy.wrappers.group;
 import com.google.common.collect.ImmutableList;
 import com.zarbosoft.internal.pyxyzygy_seed.model.Rectangle;
 import com.zarbosoft.internal.pyxyzygy_seed.model.Vector;
-import com.zarbosoft.pyxyzygy.DoubleVector;
-import com.zarbosoft.pyxyzygy.ProjectContext;
-import com.zarbosoft.pyxyzygy.Render;
-import com.zarbosoft.pyxyzygy.TrueColorImage;
+import com.zarbosoft.pyxyzygy.*;
 import com.zarbosoft.pyxyzygy.model.*;
 import com.zarbosoft.pyxyzygy.modelmirror.*;
 import com.zarbosoft.pyxyzygy.widgets.HelperJFX;
@@ -132,7 +129,7 @@ public class ToolStamp extends Tool {
 	}
 
 	@Override
-	public void markStart(ProjectContext context, DoubleVector start) {
+	public void markStart(ProjectContext context, Window window, DoubleVector start) {
 		if (stampSource == null)
 			return;
 		GroupLayer layer = GroupLayer.create(context);
@@ -153,7 +150,7 @@ public class ToolStamp extends Tool {
 	}
 
 	@Override
-	public void mark(ProjectContext context, DoubleVector start, DoubleVector end) {
+	public void mark(ProjectContext context, Window window, DoubleVector start, DoubleVector end) {
 
 	}
 

@@ -487,12 +487,12 @@ public class ToolSelect extends Tool {
 	}
 
 	@Override
-	public void markStart(ProjectContext context, DoubleVector start) {
+	public void markStart(ProjectContext context, Window window, DoubleVector start) {
 		state.markStart(context, start);
 	}
 
 	@Override
-	public void mark(ProjectContext context, DoubleVector start, DoubleVector end) {
+	public void mark(ProjectContext context, Window window, DoubleVector start, DoubleVector end) {
 		state.mark(context, start, end);
 	}
 

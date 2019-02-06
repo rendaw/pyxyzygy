@@ -8,10 +8,10 @@ import javafx.scene.image.ImageView;
 
 public class OnionSkin {
 	final ImageView widget = HelperJFX.nearestNeighborImageView();
-	private final Wrapper.EditHandle editHandle;
+	private final EditHandle editHandle;
 	private int frame = -1;
 
-	public OnionSkin(ProjectContext context, Wrapper.EditHandle editHandle) {
+	public OnionSkin(ProjectContext context, EditHandle editHandle) {
 		this.editHandle = editHandle;
 		editHandle.getCanvas().overlay.getChildren().add(widget);
 		widget.visibleProperty().bind(editHandle.getWrapper().getConfig().onionSkin);

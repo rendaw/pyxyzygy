@@ -4,6 +4,8 @@ import com.zarbosoft.pyxyzygy.*;
 import com.zarbosoft.pyxyzygy.model.GroupLayer;
 import com.zarbosoft.pyxyzygy.model.GroupPositionFrame;
 import com.zarbosoft.pyxyzygy.model.GroupTimeFrame;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,11 +13,10 @@ import java.util.stream.Collectors;
 
 import static com.zarbosoft.pyxyzygy.Misc.moveTo;
 
-public class GroupLayerCanvasHandle extends Wrapper.CanvasHandle {
-	private final Wrapper.CanvasHandle parent;
+public class GroupLayerCanvasHandle extends CanvasHandle {
+	private final CanvasHandle parent;
 	private int zoom;
-	private Wrapper.CanvasHandle childCanvas;
-	private final GroupLayer.InnerSetListener innerSetListener;
+	private CanvasHandle childCanvas;
 	private final GroupLayer.PositionFramesAddListener positionAddListener;
 	private final GroupLayer.PositionFramesRemoveListener positionRemoveListener;
 	private final GroupLayer.PositionFramesMoveToListener positionMoveListener;
@@ -26,30 +27,32 @@ public class GroupLayerCanvasHandle extends Wrapper.CanvasHandle {
 	private final List<Runnable> timeCleanup;
 	private GroupLayerWrapper wrapper;
 
-	public GroupLayerCanvasHandle(GroupLayerWrapper wrapper, Wrapper.CanvasHandle parent, ProjectContext context) {
+	public GroupLayerCanvasHandle(GroupLayerWrapper wrapper, CanvasHandle parent, ProjectContext context) {
+		this.wrapper = wrapper;
 		this.parent = parent;
 		positionCleanup = new ArrayList<>();
 		timeCleanup = new ArrayList<>();
-		GroupPositionFrame pos = findPosition();
-		if (wrapper.child != null) {
-			childCanvas = wrapper.child.buildCanvas(context, this);
-			inner.getChildren().add(childCanvas.getWidget());
-			updateChildCanvasPosition(pos);
-		}
 
-		this.innerSetListener = wrapper.node.addInnerSetListeners((target, value) -> {
-			if (wrapper.child != null) {
-				if (childCanvas != null) {
-					inner.getChildren().clear();
-					childCanvas.remove(context);
-				}
-				wrapper.child.remove(context);
+		wrapper.child.addListener(new ChangeListener<Wrapper>() {
+			{
+				changed(null, null, wrapper.child.get());
 			}
-			if (value != null) {
-				wrapper.child = Window.createNode(context, wrapper, 0, value);
-				childCanvas = wrapper.child.buildCanvas(context, this);
-				inner.getChildren().add(childCanvas.getWidget());
-				updateChildCanvasPosition(null);
+
+			@Override
+			public void changed(
+					ObservableValue<? extends Wrapper> observable, Wrapper oldValue, Wrapper newValue
+			) {
+				if (oldValue != null) {
+					if (childCanvas != null) {
+						inner.getChildren().clear();
+						childCanvas.remove(context);
+					}
+				}
+				if (newValue != null) {
+					childCanvas = newValue.buildCanvas(context, GroupLayerCanvasHandle.this);
+					inner.getChildren().add(childCanvas.getWidget());
+					GroupLayerCanvasHandle.this.updateChildCanvasPosition(null);
+				}
 			}
 		});
 		// Don't need clear listeners because clear should never happen (1 frame must always be left)
@@ -101,7 +104,6 @@ public class GroupLayerCanvasHandle extends Wrapper.CanvasHandle {
 			updateTime(context);
 			moveTo(timeCleanup, source, count, dest);
 		});
-		this.wrapper = wrapper;
 	}
 
 	private GroupPositionFrame findPosition() {
@@ -123,7 +125,6 @@ public class GroupLayerCanvasHandle extends Wrapper.CanvasHandle {
 			childCanvas.remove(context);
 			childCanvas = null;
 		}
-		wrapper.node.removeInnerSetListeners(innerSetListener);
 		wrapper.node.removePositionFramesAddListeners(positionAddListener);
 		wrapper.node.removePositionFramesRemoveListeners(positionRemoveListener);
 		wrapper.node.removePositionFramesMoveToListeners(positionMoveListener);
@@ -155,7 +156,7 @@ public class GroupLayerCanvasHandle extends Wrapper.CanvasHandle {
 
 	@Override
 	public void setFrame(ProjectContext context, int frameNumber) {
-		this.frameNumber.set( frameNumber);
+		this.frameNumber.set(frameNumber);
 		updateTime(context);
 		updatePosition(context);
 	}
@@ -179,7 +180,7 @@ public class GroupLayerCanvasHandle extends Wrapper.CanvasHandle {
 	}
 
 	@Override
-	public Wrapper.CanvasHandle getParent() {
+	public CanvasHandle getParent() {
 		return parent;
 	}
 }

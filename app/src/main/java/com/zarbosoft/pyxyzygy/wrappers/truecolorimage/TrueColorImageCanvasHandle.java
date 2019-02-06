@@ -11,8 +11,8 @@ import java.util.Map;
 
 import static com.zarbosoft.pyxyzygy.Launch.opacityMax;
 
-public class TrueColorImageCanvasHandle extends Wrapper.CanvasHandle {
-	final Wrapper.CanvasHandle parent;
+public class TrueColorImageCanvasHandle extends CanvasHandle {
+	final CanvasHandle parent;
 	private final ProjectNode.OpacitySetListener opacityListener;
 	private TrueColorImageNodeWrapper wrapper;
 	private TrueColorImageFrame.TilesPutAllListener tilesPutListener;
@@ -24,7 +24,7 @@ public class TrueColorImageCanvasHandle extends Wrapper.CanvasHandle {
 	SimpleIntegerProperty zoom = new SimpleIntegerProperty(1);
 
 	public TrueColorImageCanvasHandle(
-			ProjectContext context, Wrapper.CanvasHandle parent, TrueColorImageNodeWrapper wrapper
+			ProjectContext context, CanvasHandle parent, TrueColorImageNodeWrapper wrapper
 	) {
 		this.parent = parent;
 		this.wrapper = wrapper;
@@ -58,7 +58,7 @@ public class TrueColorImageCanvasHandle extends Wrapper.CanvasHandle {
 	}
 
 	@Override
-	public Wrapper.CanvasHandle getParent() {
+	public CanvasHandle getParent() {
 		return parent;
 	}
 

@@ -1,15 +1,20 @@
 package com.zarbosoft.pyxyzygy.wrappers.truecolorimage;
 
-import com.zarbosoft.rendaw.common.Assertion;
-import com.zarbosoft.pyxyzygy.*;
+import com.zarbosoft.pyxyzygy.CanvasHandle;
+import com.zarbosoft.pyxyzygy.EditHandle;
+import com.zarbosoft.pyxyzygy.ProjectContext;
+import com.zarbosoft.pyxyzygy.Wrapper;
 import com.zarbosoft.pyxyzygy.config.NodeConfig;
 import com.zarbosoft.pyxyzygy.config.TrueColorImageNodeConfig;
-import com.zarbosoft.pyxyzygy.model.*;
+import com.zarbosoft.pyxyzygy.model.ProjectNode;
+import com.zarbosoft.pyxyzygy.model.ProjectObject;
+import com.zarbosoft.pyxyzygy.model.TrueColorImageFrame;
+import com.zarbosoft.pyxyzygy.model.TrueColorImageNode;
+import com.zarbosoft.rendaw.common.Assertion;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TreeItem;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.zarbosoft.pyxyzygy.ProjectContext.uniqueName1;
@@ -23,7 +28,9 @@ public class TrueColorImageNodeWrapper extends Wrapper {
 	// Cache values when there's no canvas
 	public TrueColorImageNodeWrapper(ProjectContext context, Wrapper parent, int parentIndex, TrueColorImageNode node) {
 		this.node = node;
-		this.config = (TrueColorImageNodeConfig) context.config.nodes.computeIfAbsent(node.id(), id -> new TrueColorImageNodeConfig(context));
+		this.config = (TrueColorImageNodeConfig) context.config.nodes.computeIfAbsent(node.id(),
+				id -> new TrueColorImageNodeConfig(context)
+		);
 		this.parent = parent;
 		this.parentIndex = parentIndex;
 		tree.set(new TreeItem<>(this));
@@ -46,8 +53,9 @@ public class TrueColorImageNodeWrapper extends Wrapper {
 
 	@Override
 	public CanvasHandle buildCanvas(ProjectContext context, CanvasHandle parent) {
-		System.out.format("building image canvas\n");
-		return canvasHandle=new TrueColorImageCanvasHandle(context,parent,this);
+		if (canvasHandle == null)
+			canvasHandle = new TrueColorImageCanvasHandle(context, parent, this);
+		return canvasHandle;
 	}
 
 	@Override

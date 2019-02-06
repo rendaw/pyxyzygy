@@ -1,19 +1,19 @@
 package com.zarbosoft.pyxyzygy.wrappers.group;
 
-import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.pyxyzygy.*;
 import com.zarbosoft.pyxyzygy.config.NodeConfig;
 import com.zarbosoft.pyxyzygy.model.*;
+import com.zarbosoft.rendaw.common.Assertion;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.control.TabPane;
 
 import java.util.List;
-import java.util.Optional;
 
 public class GroupLayerWrapper extends Wrapper {
 	private final Wrapper parent;
 	public final GroupLayer node;
 	private final GroupLayer.InnerSetListener innerSetListener;
-	public Wrapper child;
+	public final SimpleObjectProperty<Wrapper> child = new SimpleObjectProperty<>();
 
 	public GroupLayerWrapper(ProjectContext context, Wrapper parent, int parentIndex, GroupLayer node) {
 		this.parent = parent;
@@ -21,13 +21,14 @@ public class GroupLayerWrapper extends Wrapper {
 		this.node = node;
 
 		this.innerSetListener = node.addInnerSetListeners((target, value) -> {
-			if (child != null) {
+			if (child.get() != null) {
 				tree.unbind();
-				child.remove(context);
+				child.get().remove(context);
+				child.set(null);
 			}
 			if (value != null) {
-				child = Window.createNode(context, GroupLayerWrapper.this, 0, value);
-				tree.bind(child.tree);
+				child.set(Window.createNode(context, GroupLayerWrapper.this, 0, value));
+				tree.bind(child.get().tree);
 			}
 		});
 	}
@@ -35,12 +36,14 @@ public class GroupLayerWrapper extends Wrapper {
 	public static int findInnerFrame(GroupLayer node, int frame) {
 		TimeResult result = findTime(node, frame);
 		int offset = (frame - result.at);
-		if (result.frame.innerLoop() != 0) offset = offset % result.frame.innerLoop();
+		if (result.frame.innerLoop() != 0)
+			offset = offset % result.frame.innerLoop();
 		int innerFrame = result.frame.innerOffset() + offset;
 		return innerFrame;
 	}
+
 	public int findInnerFrame(int frame) {
-		return findInnerFrame(node,frame );
+		return findInnerFrame(node, frame);
 	}
 
 	public static class TimeResult {
@@ -110,7 +113,7 @@ public class GroupLayerWrapper extends Wrapper {
 
 	@Override
 	public CanvasHandle buildCanvas(ProjectContext context, CanvasHandle parent) {
-		return new GroupLayerCanvasHandle(this, parent,context);
+		return new GroupLayerCanvasHandle(this, parent, context);
 	}
 
 	@Override

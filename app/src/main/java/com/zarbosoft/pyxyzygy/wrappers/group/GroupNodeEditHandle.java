@@ -1,9 +1,6 @@
 package com.zarbosoft.pyxyzygy.wrappers.group;
 
-import com.zarbosoft.pyxyzygy.DoubleVector;
-import com.zarbosoft.pyxyzygy.ProjectContext;
-import com.zarbosoft.pyxyzygy.Window;
-import com.zarbosoft.pyxyzygy.Wrapper;
+import com.zarbosoft.pyxyzygy.*;
 import com.zarbosoft.pyxyzygy.config.GroupNodeConfig;
 import com.zarbosoft.pyxyzygy.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.widgets.WidgetFormBuilder;
@@ -25,7 +22,7 @@ import java.util.Optional;
 import static com.zarbosoft.pyxyzygy.Misc.nodeFormFields;
 import static com.zarbosoft.pyxyzygy.widgets.HelperJFX.pad;
 
-public class GroupNodeEditHandle extends Wrapper.EditHandle {
+public class GroupNodeEditHandle extends EditHandle {
 	private Tab groupTab;
 	public Tab toolTab;
 	List<Runnable> cleanup = new ArrayList<>();
@@ -144,29 +141,30 @@ public class GroupNodeEditHandle extends Wrapper.EditHandle {
 	}
 
 	@Override
-	public void markStart(ProjectContext context, DoubleVector start) {
+	public void markStart(ProjectContext context, Window window, DoubleVector start) {
 		if (tool == null)
 			return;
 		start = Window.toLocal(wrapper.canvasHandle, start);
-		tool.markStart(context, start);
+		tool.markStart(context, window, start);
 	}
 
 	@Override
-	public Wrapper.CanvasHandle getCanvas() {
+	public CanvasHandle getCanvas() {
 		return wrapper.canvasHandle;
 	}
 
 	@Override
-	public void mark(ProjectContext context, DoubleVector start, DoubleVector end) {
+	public void mark(ProjectContext context, Window window, DoubleVector start, DoubleVector end) {
 		if (tool == null)
 			return;
 		start = Window.toLocal(wrapper.canvasHandle, start);
 		end = Window.toLocal(wrapper.canvasHandle, end);
-		tool.mark(context, start, end);
+		tool.mark(context, window, start, end);
 	}
 
 	@Override
 	public void cursorMoved(ProjectContext context, DoubleVector vector) {
+		vector = Window.toLocal(wrapper.canvasHandle,vector);
 		mouseX.set(vector.x);
 		mouseY.set(vector.y);
 	}
