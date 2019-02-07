@@ -1,6 +1,6 @@
-module com.zarbosoft.internal.pyxyzygy_imageviewscaling {
+module com.zarbosoft.pyxyzygy.imageviewscaling {
 	requires java.instrument;
 	requires net.bytebuddy;
 	requires javafx.graphics;
-	exports com.zarbosoft.internal.pyxyzygy_imageviewscaling;
+	exports com.zarbosoft.pyxyzygy.imageviewscaling;
 }

@@ -4,8 +4,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.zarbosoft.internal</groupId>
-    <artifactId>pyxyzygy-generate</artifactId>
+    <groupId>com.zarbosoft.pyxyzygy</groupId>
+    <artifactId>generate</artifactId>
     <version>1.0.0</version>
 
     <dependencies>
@@ -30,8 +30,8 @@
             <version>2.1.2</version>
         </dependency>
         <dependency>
-            <groupId>com.zarbosoft.internal</groupId>
-            <artifactId>pyxyzygy-seed</artifactId>
+            <groupId>com.zarbosoft.pyxyzygy</groupId>
+            <artifactId>seed</artifactId>
             <version>1.0.0</version>
         </dependency>
         <dependency>
@@ -51,7 +51,7 @@
                     <target>1.9</target>
                     <compilerArgs>
                         <arg>-parameters</arg>
-                        <arg>--add-exports=javafx.graphics/com.sun.prism=com.zarbosoft.pyxyzygy.internal.pyxyzygy_generate</arg>
+                        <arg>--add-exports=javafx.graphics/com.sun.prism=com.zarbosoft.pyxyzygy.generate</arg>
                     </compilerArgs>
                 </configuration>
             </plugin>

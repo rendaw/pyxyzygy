@@ -1,8 +1,8 @@
-open module com.zarbosoft.internal.pyxyzygy_seed {
-	requires transitive com.zarbosoft.luxem;
-	requires transitive net.bytebuddy;
-	requires transitive java.instrument;
+open module com.zarbosoft.pyxyzygy.seed {
+	requires com.zarbosoft.luxem;
+	requires net.bytebuddy;
+	requires java.instrument;
 	requires javafx.graphics;
-	exports com.zarbosoft.internal.pyxyzygy_seed.model;
-	exports com.zarbosoft.internal.pyxyzygy_seed.deserialize;
+	exports com.zarbosoft.pyxyzygy.seed.model;
+	exports com.zarbosoft.pyxyzygy.seed.deserialize;
 }

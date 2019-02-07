@@ -16,13 +16,13 @@ def main():
 
     module = 'mynative'
 
-    package = ['com', 'zarbosoft', 'pyxyzygy']
+    package = ['com', 'zarbosoft', 'pyxyzygy', 'core']
 
     os.chdir(Path(__file__).parent)
-    java_dest = Path() / '..' / 'app' / 'target' / 'src' / '/'.join(package)
+    java_dest = Path() / '..' / 'core' / 'target' / 'src' / '/'.join(package)
     os.makedirs(java_dest, exist_ok=True)
     java_resource_dest = (
-        Path() / '..' / 'app' / 'target' / 'resources' / '/'.join(package)
+        Path() / '..' / 'core' / 'target' / 'resources' / '/'.join(package)
     )
     os.makedirs(java_resource_dest, exist_ok=True)
 
