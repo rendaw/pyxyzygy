@@ -388,12 +388,12 @@ public class Launch extends Application {
 		trueColorImageNode.initialFramesAdd(context, ImmutableList.of(trueColorImageFrame));
 		context.history.change(c -> c.project(context.project).topAdd(trueColorImageNode));
 		context.history.finishChange();
-		new Window().start(context, primaryStage);
+		new Window().start(context, primaryStage, true);
 	}
 
 	public void openProject(Stage primaryStage, Path path) {
 		config.lastDir = path.getParent().toString();
 		ProjectContext context = ProjectContext.deserialize(path);
-		new Window().start(context, primaryStage);
+		new Window().start(context, primaryStage, true);
 	}
 }

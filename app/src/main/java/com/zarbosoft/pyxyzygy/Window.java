@@ -29,6 +29,7 @@ import javafx.stage.Stage;
 
 import java.util.*;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.zarbosoft.pyxyzygy.Launch.nameHuman;
@@ -41,7 +42,7 @@ public class Window {
 	public Set<KeyCode> pressed = new HashSet<>();
 	public Editor editor;
 
-	public void start(ProjectContext context, Stage primaryStage) {
+	public void start(ProjectContext context, Stage primaryStage, boolean main) {
 		primaryStage.setOnCloseRequest(e -> {
 			context.shutdown();
 		});
@@ -77,7 +78,7 @@ public class Window {
 		final Tab configTab = new Tab("Config");
 		leftTabs.getTabs().addAll(structureTab, configTab);
 
-		Structure structure = new Structure(context, this);
+		Structure structure = new Structure(context, this, main);
 		structureTab.setContent(structure.getWidget());
 
 		editor = new Editor(context, this);

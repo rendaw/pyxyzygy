@@ -9,6 +9,7 @@ import javafx.scene.control.TabPane;
 import javafx.scene.control.TreeItem;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 public abstract class Wrapper {
 	public int parentIndex;

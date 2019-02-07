@@ -8,10 +8,14 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableMap;
 import javafx.scene.paint.Color;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Configuration
 public class ProjectConfig extends ConfigBase {
 	@Configuration
-	public final SimpleObjectProperty<TrueColor> backgroundColor = new SimpleObjectProperty<>(TrueColor.fromJfx(Color.WHITE));
+	public final SimpleObjectProperty<TrueColor> backgroundColor =
+			new SimpleObjectProperty<>(TrueColor.fromJfx(Color.WHITE));
 
 	@Configuration
 	public final SimpleObjectProperty<TrueColor> trueColor = new SimpleObjectProperty<>(TrueColor.fromJfx(Color.BLACK));
@@ -30,4 +34,10 @@ public class ProjectConfig extends ConfigBase {
 
 	@Configuration(optional = true)
 	public SimpleBooleanProperty maxCanvas = new SimpleBooleanProperty(false);
+
+	@Configuration(optional = true)
+	public List<Integer> viewPath = new ArrayList<>();
+
+	@Configuration(optional = true)
+	public List<Integer> editPath = new ArrayList<>();
 }

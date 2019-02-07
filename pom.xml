@@ -10,5 +10,6 @@
         <module>generate</module>
         <module>app</module>
         <module>imageviewscaling</module>
+        <module>pyxyzygy-cli</module>
     </modules>
 </project>

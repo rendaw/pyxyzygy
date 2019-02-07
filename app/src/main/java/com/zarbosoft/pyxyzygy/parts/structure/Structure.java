@@ -26,6 +26,7 @@ import javafx.scene.layout.VBox;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.zarbosoft.pyxyzygy.Launch.opacityMax;
 import static com.zarbosoft.pyxyzygy.Misc.moveTo;
@@ -33,6 +34,7 @@ import static com.zarbosoft.pyxyzygy.ProjectContext.uniqueName;
 import static com.zarbosoft.pyxyzygy.Wrapper.TakesChildren.NONE;
 import static com.zarbosoft.pyxyzygy.widgets.HelperJFX.icon;
 import static com.zarbosoft.rendaw.common.Common.last;
+import static com.zarbosoft.rendaw.common.Common.sublist;
 
 public class Structure {
 	private final ProjectContext context;
@@ -115,6 +117,14 @@ public class Structure {
 			selectForView(preParent);
 			window.selectedForEdit.set(wrapper.buildEditControls(context, window.leftTabs));
 		}
+		context.config.editPath = getPath(wrapper.tree.get()).collect(Collectors.toList());
+	}
+
+	public static Stream<Integer> getPath(TreeItem<Wrapper> leaf) {
+		if (leaf.getParent() == null)
+			return Stream.empty();
+		else
+			return Stream.concat(getPath(leaf.getParent()), Stream.of(leaf.getParent().getChildren().indexOf(leaf)));
 	}
 
 	public void selectForView(Wrapper wrapper) {
@@ -124,6 +134,7 @@ public class Structure {
 		wrapper.tagViewing.set(true);
 		taggedViewing.add(wrapper);
 		window.selectedForView.set(wrapper.buildCanvas(context,null));
+		context.config.viewPath = getPath(wrapper.tree.get()).collect(Collectors.toList());
 	}
 
 	public void treeItemAdded(TreeItem<Wrapper> item) {
@@ -159,7 +170,7 @@ public class Structure {
 		});
 	}
 
-	public Structure(ProjectContext context, Window window) {
+	public Structure(ProjectContext context, Window window, boolean main) {
 		this.context = context;
 		this.window = window;
 
@@ -408,6 +419,16 @@ public class Structure {
 			tree.getRoot().getChildren().forEach(c -> c.getValue().remove(context));
 			tree.getRoot().getChildren().clear();
 		});
+
+		if (main) {
+			selectForView(findNode(rootTreeItem, context.config.viewPath));
+			selectForEdit(findNode(rootTreeItem, context.config.viewPath));
+		}
+	}
+
+	private static Wrapper findNode(TreeItem<Wrapper> root, List<Integer> path) {
+		if (path.isEmpty()) return root.getValue();
+		return findNode(root.getChildren().get(path.get(0)), sublist(path,1));
 	}
 
 	private void delete(ProjectContext context) {

@@ -6,6 +6,8 @@ def main():
     import shutil
     import argparse
 
+    root = (Path(__file__).parent).resolve()
+
     parser = argparse.ArgumentParser()
     parser.add_argument('platform')
     parser.add_argument('channel')
@@ -27,7 +29,9 @@ def main():
         c([
             'mvn', *extra,
             '-B',
-            '-Dstyle.color=never', '-e',
+            '-Dstyle.color=never',
+            f'-Dmaven.repo.local={root / ".m2" / "repository"}',
+            '-e',
             '-global-toolchains', 'app/toolchains.xml',
         ], env=dict(JAVA_HOME=java_path))
 
@@ -43,15 +47,11 @@ def main():
     print('LS', list(Path.cwd().iterdir()))
 
     # Set up directories
-    root = (Path(__file__).parent).resolve()
     path = root / '_build'
     shutil.rmtree(path, ignore_errors=True)
     path.mkdir(parents=True, exist_ok=True)
 
     os.makedirs('/root/.m2', exist_ok=True)
-    template(
-        root / 'build' / 'maven_settings.xml', '/root/.m2/settings.xml',
-        dict(PATH=root / '.m2' / 'repository'))
 
     # More variables
     if False:
