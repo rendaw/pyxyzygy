@@ -12,7 +12,8 @@ def c(*pargs, **kwargs):
 here = Path(__file__).parent
 print('Operating in {}'.format(here))
 
-resources = (here / '../app/target/resources/com/zarbosoft/pyxyzygy').resolve()
+resources = (
+    here / '../app/target/resources/com/zarbosoft/pyxyzygy/app').resolve()
 os.makedirs(resources, exist_ok=True)
 dest_icons = resources / 'icons'
 source_icons = here / 'icons'

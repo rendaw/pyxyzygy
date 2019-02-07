@@ -32,7 +32,7 @@ def main():
             '-Dstyle.color=never',
             f'-Dmaven.repo.local={root / ".m2" / "repository"}',
             '-e',
-            '-global-toolchains', 'app/toolchains.xml',
+            '-global-toolchains', 'build/toolchains.xml',
         ], env=dict(JAVA_HOME=java_path))
 
     def template(source, dest, extra):
@@ -80,7 +80,7 @@ def main():
         raise AssertionError
 
     # Build
-    template('app/toolchains.xml', 'app/toolchains.xml', dict(
+    template('build/toolchains.xml', 'build/toolchains.xml', dict(
         java_home=java_toolchain,
     ))
 
@@ -103,8 +103,8 @@ def main():
     )
     shutil.copy(
         (
-            root / 'imageviewscaling' / 'target' /
-            'pyxyzygy-imageviewscaling-1.0.0.jar'
+            root / 'nearestneighborimageviewagent' / 'target' /
+            'nearestneighborimageviewagent-1.0.0.jar'
         ),
         path / 'java',
     )
@@ -140,4 +140,3 @@ def main():
 
 
 main()
-

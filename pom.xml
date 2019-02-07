@@ -1,15 +1,16 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.zarbosoft.internal</groupId>
-    <artifactId>pyxyzygy-aggregate</artifactId>
+    <groupId>com.zarbosoft.pyxyzygy</groupId>
+    <artifactId>aggregate</artifactId>
     <version>0.0.0</version>
     <packaging>pom</packaging>
     <modules>
         <module>seed</module>
         <module>generate</module>
+        <module>core</module>
+        <module>nearestneighborimageview</module>
+        <module>nearestneighborimageviewagent</module>
         <module>app</module>
-        <module>imageviewscaling</module>
-        <module>pyxyzygy-cli</module>
     </modules>
 </project>

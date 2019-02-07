@@ -1,5 +1,5 @@
-module com.zarbosoft.pyxyzygy.internal.pyxyzygy_generate {
-	requires transitive com.zarbosoft.internal.pyxyzygy_seed;
+module com.zarbosoft.pyxyzygy.generate {
+	requires com.zarbosoft.pyxyzygy.seed;
 	requires com.zarbosoft.luxem;
 	requires javapoet;
 	requires ant;
@@ -8,5 +8,6 @@ module com.zarbosoft.pyxyzygy.internal.pyxyzygy_generate {
 	requires com.google.common;
 	requires javafx.base;
 	requires javafx.graphics;
-	exports com.zarbosoft.internal.pyxyzygy_generate;
+	requires com.zarbosoft.rendaw.common;
+	exports com.zarbosoft.pyxyzygy.generate;
 }

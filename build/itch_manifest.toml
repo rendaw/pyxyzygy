@@ -7,5 +7,5 @@ args = [
 	"--add-opens", "javafx.graphics/com.sun.javafx.sg.prism=com.zarbosoft.pyxyzygy",
 	"--add-opens", "javafx.graphics/com.sun.prism=com.zarbosoft.pyxyzygy",
 	"--add-exports=javafx.graphics/com.sun.javafx.sg.prism=ALL-UNNAMED",
-	"-javaagent:java/pyxyzygy-imageviewscaling-1.0.0.jar",
+	"-javaagent:java/nearestneighborimageviewagent-1.0.0.jar",
 ]
