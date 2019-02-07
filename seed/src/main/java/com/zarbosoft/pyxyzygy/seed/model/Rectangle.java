@@ -70,4 +70,8 @@ public class Rectangle {
 	public boolean contains(Vector vector) {
 		return contains(vector.x, vector.y);
 	}
+
+	public Vector span() {
+		return new Vector(width,height);
+	}
 }

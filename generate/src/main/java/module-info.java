@@ -1,5 +1,5 @@
 module com.zarbosoft.pyxyzygy.generate {
-	requires transitive com.zarbosoft.pyxyzygy.seed;
+	requires com.zarbosoft.pyxyzygy.seed;
 	requires com.zarbosoft.luxem;
 	requires javapoet;
 	requires ant;

@@ -9,8 +9,8 @@
         <module>seed</module>
         <module>generate</module>
         <module>core</module>
-        <module>imageviewscaling</module>
-        <module>gui</module>
-        <module>cli</module>
+        <module>nearestneighborimageview</module>
+        <module>nearestneighborimageviewagent</module>
+        <module>app</module>
     </modules>
 </project>

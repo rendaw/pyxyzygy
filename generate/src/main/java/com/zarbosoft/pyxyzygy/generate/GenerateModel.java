@@ -7,9 +7,9 @@ import com.squareup.javapoet.*;
 import com.zarbosoft.interface1.Configuration;
 import com.zarbosoft.interface1.TypeInfo;
 import com.zarbosoft.interface1.Walk;
+import com.zarbosoft.luxem.read.StackReader;
 import com.zarbosoft.pyxyzygy.seed.deserialize.*;
 import com.zarbosoft.pyxyzygy.seed.model.*;
-import com.zarbosoft.luxem.read.StackReader;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.Pair;
 import io.github.classgraph.ClassGraph;
@@ -20,34 +20,40 @@ import javafx.beans.property.SimpleLongProperty;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.zarbosoft.rendaw.common.Common.*;
+import static com.zarbosoft.rendaw.common.Common.iterable;
 import static javax.lang.model.element.Modifier.*;
 
-public class GenerateModel {
-	private final Path path;
+/**
+ * Serialization occurs on all fields and recurses collections of exactly 1 depth.  For greater depth you need to make
+ * an intermediate object that contains the next container level.  This way also simplifies mutation, which all can be
+ * described with a reference to an object, a field, and maybe 1 or two other values for the change.
+ * <p>
+ * Objects should be created either by their Deserializer or by their static create() method.
+ */
+public class GenerateModel extends TaskBase {
 	public static Object CHANGE_TOKEN_NAME = new Object();
 	public static ScanResult scanner = new ClassGraph().enableAllInfo().whitelistPackages("com.zarbosoft").scan();
 
-	public static Method sigObjIncRef = GenerateTask.findMethod(ProjectObjectInterface.class, "incRef");
-	public static Method sigObjDecRef = GenerateTask.findMethod(ProjectObjectInterface.class, "decRef");
-	public static Method sigObjSerialize = GenerateTask.findMethod(ProjectObjectInterface.class, "serialize");
-	public static Method sigChangeDebugCounts = GenerateTask.findMethod(Change.class, "debugRefCounts");
-	public static Method sigChangeMerge = GenerateTask.findMethod(Change.class, "merge");
-	public static Method sigChangeApply = GenerateTask.findMethod(Change.class, "apply");
-	public static Method sigChangeDelete = GenerateTask.findMethod(Change.class, "delete");
-	public static Method sigChangeSerialize = GenerateTask.findMethod(Change.class, "serialize");
-	public static Method sigStateValue = GenerateTask.findMethod(StackReader.State.class, "value");
-	public static Method sigStateArray = GenerateTask.findMethod(StackReader.State.class, "array");
-	public static Method sigStateRecord = GenerateTask.findMethod(StackReader.State.class, "record");
-	public static Method sigStateGet = GenerateTask.findMethod(StackReader.State.class, "get");
-	public static Method sigFinisherFinish = GenerateTask.findMethod(ModelDeserializationContext.Finisher.class, "finish");
+	public static Method sigObjIncRef = Helper.findMethod(ProjectObjectInterface.class, "incRef");
+	public static Method sigObjDecRef = Helper.findMethod(ProjectObjectInterface.class, "decRef");
+	public static Method sigObjSerialize = Helper.findMethod(ProjectObjectInterface.class, "serialize");
+	public static Method sigChangeDebugCounts = Helper.findMethod(Change.class, "debugRefCounts");
+	public static Method sigChangeMerge = Helper.findMethod(Change.class, "merge");
+	public static Method sigChangeApply = Helper.findMethod(Change.class, "apply");
+	public static Method sigChangeDelete = Helper.findMethod(Change.class, "delete");
+	public static Method sigChangeSerialize = Helper.findMethod(Change.class, "serialize");
+	public static Method sigStateValue = Helper.findMethod(StackReader.State.class, "value");
+	public static Method sigStateArray = Helper.findMethod(StackReader.State.class, "array");
+	public static Method sigStateRecord = Helper.findMethod(StackReader.State.class, "record");
+	public static Method sigStateGet = Helper.findMethod(StackReader.State.class, "get");
+	public static Method sigFinisherFinish =
+			Helper.findMethod(ModelDeserializationContext.Finisher.class, "finish");
 
 	public Map<Class, Pair<ClassName, TypeSpec.Builder>> typeMap = new HashMap<>();
 	public ClassName deserializeHelperName = name("DeserializeHelper");
@@ -65,15 +71,15 @@ public class GenerateModel {
 			.addParameter(ChangeDeserializationContext.class, "context")
 			.addParameter(String.class, "type");
 
-	public GenerateModel(Path path) {
-		this.path = path;
-	}
 	public TypeName toPoet(TypeInfo type) {
-		return GenerateTask.toPoet(type, typeMap);
+		return Helper.toPoet(type, typeMap);
 	}
 
 	public ClassName name(String... parts) {
-		return ClassName.get("com.zarbosoft.pyxyzygy.core.model", Arrays.stream(parts).collect(Collectors.joining("_")));
+		return ClassName.get(
+				"com.zarbosoft.pyxyzygy.core.model",
+				Arrays.stream(parts).collect(Collectors.joining("_"))
+		);
 	}
 
 	private CodeBlock generateScalarSerialize(TypeInfo fieldInfo, String key) {
@@ -103,7 +109,7 @@ public class GenerateModel {
 			throw new Assertion();
 		} else if (((Class) fieldInfo.type).isAssignableFrom(HashMap.class)) {
 			throw new Assertion();
-		} else if (GenerateTask.flattenPoint(fieldInfo)) {
+		} else if (Helper.flattenPoint(fieldInfo)) {
 			return CodeBlock
 					.builder()
 					.add("if ($L == null)\n", key)
@@ -154,7 +160,7 @@ public class GenerateModel {
 			throw new Assertion();
 		} else if (((Class) fieldInfo.type).isAssignableFrom(HashMap.class)) {
 			throw new Assertion();
-		} else if (GenerateTask.flattenPoint(fieldInfo)) {
+		} else if (Helper.flattenPoint(fieldInfo)) {
 			// skip this case
 			return null;
 		} else {
@@ -177,10 +183,11 @@ public class GenerateModel {
 	}
 
 	public MethodSpec.Builder poetMethod(Method method) {
-		return GenerateTask.poetMethod(method, typeMap);
+		return Helper.poetMethod(method, typeMap);
 	}
 
-	public void buildModel() {
+	@Override
+	public void run() {
 		// Prep type map
 		ModelRootType.class.getSimpleName();
 		for (Class klass : new ClassGraph()
@@ -219,8 +226,10 @@ public class GenerateModel {
 			// Set up clone core
 			final ClassName cloneName = entry.getValue().first;
 			TypeSpec.Builder clone = entry.getValue().second;
-			CodeBlock.Builder cloneSerialize =
-					CodeBlock.builder().add("writer.type(\"$L\");\n", GenerateTask.decideName(klass)).add("writer.recordBegin();\n");
+			CodeBlock.Builder cloneSerialize = CodeBlock
+					.builder()
+					.add("writer.type(\"$L\");\n", Helper.decideName(klass))
+					.add("writer.recordBegin();\n");
 			CodeBlock.Builder cloneDeserializeValue = CodeBlock.builder();
 			CodeBlock.Builder cloneDeserializeArray = CodeBlock.builder();
 			CodeBlock.Builder cloneDeserializeRecord = CodeBlock.builder();
@@ -249,7 +258,7 @@ public class GenerateModel {
 							.addCode("this.target = target;\n")
 							.build());
 			changeStepBuilder.addMethod(MethodSpec
-					.methodBuilder(GenerateTask.lowerFirst(klass.getSimpleName()))
+					.methodBuilder(Helper.lowerFirst(klass.getSimpleName()))
 					.addModifiers(PUBLIC)
 					.returns(typeChangeStepBuilderName)
 					.addParameter(cloneName, "target")
@@ -288,8 +297,8 @@ public class GenerateModel {
 							String fieldName, String action
 					) {
 						listenerName = cloneName.nestedClass(String.format("%s%sListener",
-								GenerateTask.capFirst(fieldName),
-								GenerateTask.capFirst(action)
+								Helper.capFirst(fieldName),
+								Helper.capFirst(action)
 						));
 						listener = TypeSpec
 								.interfaceBuilder(listenerName)
@@ -299,7 +308,7 @@ public class GenerateModel {
 								.methodBuilder("accept")
 								.addModifiers(PUBLIC, ABSTRACT)
 								.addParameter(cloneName, "target");
-						listenersFieldName = String.format("%s%sListeners", fieldName, GenerateTask.capFirst(action));
+						listenersFieldName = String.format("%s%sListeners", fieldName, Helper.capFirst(action));
 						clone.addField(FieldSpec
 								.builder(ParameterizedTypeName.get(ClassName.get(List.class), listenerName),
 										listenersFieldName
@@ -310,12 +319,12 @@ public class GenerateModel {
 						listenersAdd = CodeBlock.builder();
 						merge = CodeBlock.builder();
 						deserializerName = cloneName.nestedClass(String.format("%s%sDeserializer",
-								GenerateTask.capFirst(fieldName),
-								GenerateTask.capFirst(action)
+								Helper.capFirst(fieldName),
+								Helper.capFirst(action)
 						));
 						changeName = cloneName.nestedClass(String.format("%s%sChange",
-								GenerateTask.capFirst(fieldName),
-								GenerateTask.capFirst(action)
+								Helper.capFirst(fieldName),
+								Helper.capFirst(action)
 						));
 						change = TypeSpec
 								.classBuilder(changeName)
@@ -339,7 +348,7 @@ public class GenerateModel {
 								.addParameter(ProjectContextBase.class, "project")
 								.addParameter(cloneName, "target")
 								.addCode("this.target = target;\n");
-						if (GenerateTask.flattenPoint(classInfo))
+						if (Helper.flattenPoint(classInfo))
 							changeConstructor.addCode("this.target.incRef(project);\n");
 						changeApply = CodeBlock.builder();
 						changeApply2 = CodeBlock.builder();
@@ -350,10 +359,10 @@ public class GenerateModel {
 								listenersFieldName
 						);
 						changeDelete = poetMethod(sigChangeDelete);
-						if (GenerateTask.flattenPoint(classInfo))
+						if (Helper.flattenPoint(classInfo))
 							changeDelete.addCode("target.decRef(project);\n");
 						changeInvoke = MethodSpec
-								.methodBuilder(String.format("%s%s", fieldName, GenerateTask.capFirst(action)))
+								.methodBuilder(String.format("%s%s", fieldName, Helper.capFirst(action)))
 								.addModifiers(PUBLIC)
 								.returns(changeStepBuilderName);
 						changeDebugCounts = CodeBlock.builder().add("increment.accept(target);\n");
@@ -387,7 +396,7 @@ public class GenerateModel {
 						listenerAccept.addParameter(map, name);
 						change.addField(FieldSpec.builder(map, name).addModifiers(PUBLIC).build());
 						changeConstructor.addParameter(map, name).addCode(String.format("this.%s = %s;\n", name, name));
-						if (GenerateTask.flattenPoint(value)) {
+						if (Helper.flattenPoint(value)) {
 							Function<Boolean, CodeBlock> incDecBuilder = inc0 -> {
 								CodeBlock.Builder out = CodeBlock.builder();
 								out
@@ -430,7 +439,7 @@ public class GenerateModel {
 								.add("@Override\n")
 								.add("public void value(Object value) {\n")
 								.indent();
-						if (GenerateTask.flattenPoint(value)) {
+						if (Helper.flattenPoint(value)) {
 							serializeBlock.add("writer.primitive($T.toString((($T) e.getValue()).id()));\n",
 									Objects.class,
 									ProjectObjectInterface.class
@@ -462,7 +471,7 @@ public class GenerateModel {
 						changeConstructor
 								.addParameter(list, name)
 								.addCode(String.format("this.%s = %s;\n", name, name));
-						if (GenerateTask.flattenPoint(type)) {
+						if (Helper.flattenPoint(type)) {
 							Function<Boolean, CodeBlock> incDecBuilder = inc0 -> {
 								CodeBlock.Builder out = CodeBlock.builder();
 								out.add("for ($T e : $L) {\n", element, name).indent();
@@ -500,7 +509,7 @@ public class GenerateModel {
 								.add("@Override\n")
 								.add("public void value(Object value) {\n")
 								.indent();
-						if (GenerateTask.flattenPoint(type)) {
+						if (Helper.flattenPoint(type)) {
 							changeSerialize.addCode("writer.primitive($T.toString((($T)e).id()));\n",
 									Objects.class,
 									ProjectObjectInterface.class
@@ -526,7 +535,7 @@ public class GenerateModel {
 						changeConstructor
 								.addParameter(toPoet(type), name)
 								.addCode(String.format("this.%s = %s;\n", name, name));
-						if (GenerateTask.flattenPoint(type)) {
+						if (Helper.flattenPoint(type)) {
 							Function<Boolean, CodeBlock> incDecBuilder = inc0 -> {
 								CodeBlock.Builder out = CodeBlock.builder().add("if ($L != null)\n", name).indent();
 								if (inc0)
@@ -545,7 +554,7 @@ public class GenerateModel {
 						invokeForward.add(name);
 						changeSerialize.addCode("writer.key(\"$L\")", name);
 						deserializerValue.add("if (\"$L\".equals(key)) {\n", name).indent();
-						if (GenerateTask.flattenPoint(type)) {
+						if (Helper.flattenPoint(type)) {
 							changeSerialize.addCode(".primitive($L == null ? \"null\" : $T.toString($L.id()));\n",
 									name,
 									Objects.class,
@@ -605,7 +614,7 @@ public class GenerateModel {
 						listener.addMethod(listenerAccept.build());
 						clone.addType(listener.build());
 						clone.addMethod(MethodSpec
-								.methodBuilder(String.format("add%s", GenerateTask.capFirst(listenersFieldName)))
+								.methodBuilder(String.format("add%s", Helper.capFirst(listenersFieldName)))
 								.returns(listenerName)
 								.addModifiers(PUBLIC)
 								.addParameter(listenerName, "listener")
@@ -614,7 +623,7 @@ public class GenerateModel {
 								.addCode("return listener;\n")
 								.build());
 						clone.addMethod(MethodSpec
-								.methodBuilder(String.format("remove%s", GenerateTask.capFirst(listenersFieldName)))
+								.methodBuilder(String.format("remove%s", Helper.capFirst(listenersFieldName)))
 								.addModifiers(PUBLIC)
 								.addParameter(listenerName, "listener")
 								.addCode("$L.remove(listener);\n", listenersFieldName)
@@ -635,7 +644,7 @@ public class GenerateModel {
 										.build())
 								.addMethod(changeSerialize.addCode("writer.recordEnd();\n").build())
 								.addMethod(changeDelete.build());
-						if (GenerateTask.flattenPoint(classInfo))
+						if (Helper.flattenPoint(classInfo))
 							change.addMethod(poetMethod(sigChangeDebugCounts)
 									.addCode(changeDebugCounts.build())
 									.build());
@@ -713,10 +722,10 @@ public class GenerateModel {
 									"if (other.getClass() != getClass() || (($T)other).target == target) return false;\n",
 									setBuilder.changeName
 							);
-							if (GenerateTask.flattenPoint(field))
+							if (Helper.flattenPoint(field))
 								changeMerge.add("value.decRef(context);\n");
 							changeMerge.add("value = (($T)other).value;\n", setBuilder.changeName);
-							if (GenerateTask.flattenPoint(field))
+							if (Helper.flattenPoint(field))
 								changeMerge.add("value.incRef(context);\n");
 							changeMerge.add("return true;\n");
 							setBuilder
@@ -735,9 +744,9 @@ public class GenerateModel {
 									.builder()
 									.add("if (refCount > 0) throw new $T();\n", Assertion.class)
 									.add("this.$L = value;\n", fieldName);
-							if (GenerateTask.flattenPoint(field))
+							if (Helper.flattenPoint(field))
 								initialSetCode.add("value.incRef(project);\n");
-							String initialSetName = String.format("initial%sSet", GenerateTask.capFirst(fieldName));
+							String initialSetName = String.format("initial%sSet", Helper.capFirst(fieldName));
 							clone.addMethod(MethodSpec
 									.methodBuilder(initialSetName)
 									.addModifiers(PUBLIC)
@@ -764,14 +773,14 @@ public class GenerateModel {
 						}
 
 						// Dec ref
-						if (GenerateTask.flattenPoint(field)) {
+						if (Helper.flattenPoint(field)) {
 							cloneDecRef.add("(($T) $L).decRef(project);\n", ProjectObjectInterface.class, fieldName);
 						}
 					}
 				}
 				GenerateScalar generateScalar = new GenerateScalar();
 
-				FieldSpec.Builder field = FieldSpec.builder(toPoet(fieldInfo), fieldName);
+				FieldSpec.Builder field = FieldSpec.builder(toPoet(fieldInfo), fieldName).addModifiers(PROTECTED);
 				cloneSerialize.add("writer.key(\"$L\");\n", fieldName);
 
 				// Create initializer, getters + mutators, changes
@@ -824,9 +833,9 @@ public class GenerateModel {
 								.builder()
 								.add("if (refCount > 0) throw new $T();\n", Assertion.class)
 								.add("this.$L.addAll(values);\n", fieldName);
-						if (GenerateTask.flattenPoint(elementType))
+						if (Helper.flattenPoint(elementType))
 							initialAddCode.add("values.forEach(v -> v.incRef(project));\n");
-						String initialSetName = String.format("initial%sAdd", GenerateTask.capFirst(fieldName));
+						String initialSetName = String.format("initial%sAdd", Helper.capFirst(fieldName));
 						clone.addMethod(MethodSpec
 								.methodBuilder(initialSetName)
 								.addModifiers(PUBLIC)
@@ -860,7 +869,7 @@ public class GenerateModel {
 										addBuilder.getName(),
 										ArrayList.class
 								);
-						if (GenerateTask.flattenPoint(elementType))
+						if (Helper.flattenPoint(elementType))
 							removeBuilder.addCode("sublist.forEach(e -> e.decRef(project));\n");
 						removeBuilder.addCode("sublist.clear();\n").finish();
 						ChangeBuilder clearBuilder = new ChangeBuilder(fieldName, "clear").addCode(
@@ -869,7 +878,7 @@ public class GenerateModel {
 								ArrayList.class,
 								fieldName
 						);
-						if (GenerateTask.flattenPoint(elementType))
+						if (Helper.flattenPoint(elementType))
 							clearBuilder.addCode("target.$L.forEach(e -> e.decRef(project));\n", fieldName);
 						clearBuilder.addCode("target.$L.clear();\n", fieldName).mergeAdd(
 								"return other.getClass() == $T.class && (($T)other).target == target;\n",
@@ -924,7 +933,7 @@ public class GenerateModel {
 								.addCode("target.$L.addAll(dest, readd);\n", fieldName);
 						moveToBuilder.finish();
 						typeChangeStepBuilder.addMethod(MethodSpec
-								.methodBuilder(String.format("%sMoveUp", GenerateTask.capFirst(fieldName)))
+								.methodBuilder(String.format("%sMoveUp", Helper.capFirst(fieldName)))
 								.returns(changeStepBuilderName)
 								.addParameter(int.class, "at")
 								.addParameter(int.class, "count")
@@ -932,7 +941,7 @@ public class GenerateModel {
 								.addCode("return $LMoveTo(at, count, at - 1);\n", fieldName)
 								.build());
 						typeChangeStepBuilder.addMethod(MethodSpec
-								.methodBuilder(String.format("%sMoveDown", GenerateTask.capFirst(fieldName)))
+								.methodBuilder(String.format("%sMoveDown", Helper.capFirst(fieldName)))
 								.returns(changeStepBuilderName)
 								.addParameter(int.class, "at")
 								.addParameter(int.class, "count")
@@ -941,20 +950,17 @@ public class GenerateModel {
 								.build());
 
 						clone.addMethod(MethodSpec
-								.methodBuilder(String.format("mirror%s", GenerateTask.capFirst(fieldName)))
+								.methodBuilder(String.format("mirror%s", Helper.capFirst(fieldName)))
 								.returns(Runnable.class)
 								.addTypeVariable(TypeVariableName.get("T"))
 								.addModifiers(PUBLIC)
 								.addParameter(ParameterizedTypeName.get(ClassName.get(List.class),
 										TypeVariableName.get("T")
 								), "list")
-								.addParameter(
-										ParameterizedTypeName.get(ClassName.get(Function.class),
-												toPoet(elementType),
-												TypeVariableName.get("T")
-										),
-										"create"
-								)
+								.addParameter(ParameterizedTypeName.get(ClassName.get(Function.class),
+										toPoet(elementType),
+										TypeVariableName.get("T")
+								), "create")
 								.addParameter(ParameterizedTypeName.get(ClassName.get(Consumer.class),
 										TypeVariableName.get("T")
 								), "remove")
@@ -970,7 +976,7 @@ public class GenerateModel {
 										.add(
 												"$T addListener = add$LAddListeners((target, at, values) -> {\n",
 												addBuilder.getListenerName(),
-												GenerateTask.capFirst(fieldName)
+												Helper.capFirst(fieldName)
 										)
 										.indent()
 										.add("if (dead) return;\n")
@@ -984,7 +990,7 @@ public class GenerateModel {
 										.add(
 												"$T removeListener = add$LRemoveListeners((target, at, count) -> {\n",
 												removeBuilder.getListenerName(),
-												GenerateTask.capFirst(fieldName)
+												Helper.capFirst(fieldName)
 										)
 										.indent()
 										.add("if (dead) return;\n")
@@ -998,7 +1004,7 @@ public class GenerateModel {
 										.add("});\n")
 										.add("$T clearListener = add$LClearListeners((target) -> {\n",
 												clearBuilder.getListenerName(),
-												GenerateTask.capFirst(fieldName)
+												Helper.capFirst(fieldName)
 										)
 										.indent()
 										.add("if (dead) return;\n")
@@ -1009,7 +1015,7 @@ public class GenerateModel {
 										.add(
 												"$T moveToListener = add$LMoveToListeners((target, source, count, dest) -> {\n",
 												moveToBuilder.getListenerName(),
-												GenerateTask.capFirst(fieldName)
+												Helper.capFirst(fieldName)
 										)
 										.indent()
 										.add("if (dead) return;\n")
@@ -1028,10 +1034,19 @@ public class GenerateModel {
 										.add("public void run() {\n")
 										.indent()
 										.add("dead = true;\n")
-										.add("remove$LAddListeners(addListener);\n", GenerateTask.capFirst(fieldName))
-										.add("remove$LRemoveListeners(removeListener);\n", GenerateTask.capFirst(fieldName))
-										.add("remove$LMoveToListeners(moveToListener);\n", GenerateTask.capFirst(fieldName))
-										.add("remove$LClearListeners(clearListener);\n", GenerateTask.capFirst(fieldName))
+										.add("remove$LAddListeners(addListener);\n", Helper.capFirst(fieldName))
+										.add(
+												"remove$LRemoveListeners(removeListener);\n",
+												Helper.capFirst(fieldName)
+										)
+										.add(
+												"remove$LMoveToListeners(moveToListener);\n",
+												Helper.capFirst(fieldName)
+										)
+										.add(
+												"remove$LClearListeners(clearListener);\n",
+												Helper.capFirst(fieldName)
+										)
 										.unindent()
 										.add("}\n")
 										.unindent()
@@ -1101,7 +1116,7 @@ public class GenerateModel {
 								addBuilder.getName(),
 								ArrayList.class
 						);
-						if (GenerateTask.flattenPoint(elementType))
+						if (Helper.flattenPoint(elementType))
 							clearBuilder.addCode("target.$L.forEach(e -> e.decRef(project));\n");
 						clearBuilder.addCode("target.$L.clear();\n", fieldName).mergeAdd(
 								"return other.getClass() == $T.class && (($T)other).target == target;\n",
@@ -1150,9 +1165,9 @@ public class GenerateModel {
 								.builder()
 								.add("if (refCount > 0) throw new $T();\n", Assertion.class)
 								.add("this.$L.putAll(values);\n", fieldName);
-						if (GenerateTask.flattenPoint(fieldInfo.parameters[1]))
+						if (Helper.flattenPoint(fieldInfo.parameters[1]))
 							initialPutAllCode.add("values.values().forEach(v -> v.incRef(project));\n");
-						String initialSetName = String.format("initial%sPutAll", GenerateTask.capFirst(fieldName));
+						String initialSetName = String.format("initial%sPutAll", Helper.capFirst(fieldName));
 						clone.addMethod(MethodSpec
 								.methodBuilder(initialSetName)
 								.addModifiers(PUBLIC)
@@ -1194,7 +1209,7 @@ public class GenerateModel {
 								)
 								.unindent()
 								.add("));\n");
-						if (GenerateTask.flattenPoint(fieldInfo.parameters[1]))
+						if (Helper.flattenPoint(fieldInfo.parameters[1]))
 							putCode.add("removing.entrySet().forEach(e -> e.getValue().decRef(project));\n");
 						putCode
 								.add("remove.forEach(k -> target.$L.remove(k));\n", fieldName)
@@ -1211,7 +1226,7 @@ public class GenerateModel {
 								.indent()
 								.add("if (put.containsKey(k) || remove.contains(k)) return;\n")
 								.add("put.put(k, v);\n");
-						if (GenerateTask.flattenPoint(fieldInfo.parameters[1]))
+						if (Helper.flattenPoint(fieldInfo.parameters[1]))
 							putMergeCode.add("v.incRef(context);\n");
 						putMergeCode.unindent().add("});\n").add("return true;\n");
 						putBuilder
@@ -1244,7 +1259,7 @@ public class GenerateModel {
 								clearBuilder.changeName,
 								clearBuilder.changeName
 						).finish();
-					} else if (GenerateTask.flattenPoint(fieldInfo)) {
+					} else if (Helper.flattenPoint(fieldInfo)) {
 						generateScalar.applyFieldOrigin(fieldInfo);
 					} else {
 						generateScalar.applyFieldOrigin(fieldInfo);
@@ -1283,7 +1298,7 @@ public class GenerateModel {
 
 						// Deserialize
 						cloneDeserializeArray.add("if (\"$L\".equals(key)) return new ", fieldName);
-						if (GenerateTask.flattenPoint(fieldInfo.parameters[0])) {
+						if (Helper.flattenPoint(fieldInfo.parameters[0])) {
 							cloneDeserializeArray.add("$T(context);\n", IDListState.class);
 							cloneDecRef.add("for ($T e : $L) (($T) e).decRef(project);\n",
 									toPoet(fieldInfo.parameters[0]),
@@ -1325,7 +1340,7 @@ public class GenerateModel {
 
 						// Deserialize
 						cloneDeserializeArray.add("if (\"$L\".equals(key)) return new ", fieldName);
-						if (GenerateTask.flattenPoint(fieldInfo.parameters[0])) {
+						if (Helper.flattenPoint(fieldInfo.parameters[0])) {
 							cloneDeserializeArray.add("$T(context);\n", IDSetState.class);
 							cloneDecRef.add("for ($T e : $L) (($T) e).decRef(project);\n",
 									toPoet(fieldInfo.parameters[0]),
@@ -1372,7 +1387,7 @@ public class GenerateModel {
 
 						// Deserialize
 						cloneDeserializeRecord.add("if (\"$L\".equals(key)) return ", fieldName);
-						if (GenerateTask.flattenPoint(fieldInfo.parameters[1])) {
+						if (Helper.flattenPoint(fieldInfo.parameters[1])) {
 							cloneDeserializeRecord.add("new $T(context, k -> {\n", IDMapState.class).indent().add(
 									"return $L;\n",
 									generateScalarFromString(fieldInfo.parameters[0], "k", cloneDeserializeRecord, null)
@@ -1415,7 +1430,7 @@ public class GenerateModel {
 							cloneDeserializeRecord.unindent().add("};\n");
 						}
 						cloneDeserializeValue.add("out.$L = ($T) value;\n", fieldName, toPoet(fieldInfo));
-					} else if (GenerateTask.flattenPoint(fieldInfo)) {
+					} else if (Helper.flattenPoint(fieldInfo)) {
 						generateScalar.applyLeaf(fieldInfo);
 
 						// Deserialize
@@ -1440,7 +1455,7 @@ public class GenerateModel {
 			}
 
 			write(typeChangeStepBuilderName, typeChangeStepBuilder.build());
-			clone.addMethod(MethodSpec.constructorBuilder().build());
+			clone.addMethod(MethodSpec.constructorBuilder().addModifiers(PROTECTED).build());
 			if (Walk.isConcrete(classInfo)) {
 				ClassName deserializerName = cloneName.nestedClass("Deserializer");
 				ClassName finisherName = deserializerName.nestedClass("Finisher");
@@ -1519,7 +1534,7 @@ public class GenerateModel {
 								.addCode(cloneSerialize.add("writer.recordEnd();\n").build())
 								.build());
 				globalModelDeserialize.addCode("if (\"$L\".equals(type)) return new $T.Deserializer(context);\n",
-						GenerateTask.decideName(klass),
+						Helper.decideName(klass),
 						cloneName
 				);
 			}
@@ -1533,20 +1548,25 @@ public class GenerateModel {
 		}
 
 		write(changeStepBuilderName, changeStepBuilder.build());
-		write(deserializeHelperName, deserializeHelper
-				.addMethod(globalModelDeserialize
-						.addCode("throw new $T(String.format(\"Unknown type %s\", type));\n", RuntimeException.class)
-						.build())
-				.addMethod(globalChangeDeserialize
-						.addCode("throw new $T(String.format(\"Unknown change type %s\", type));\n",
+		write(
+				deserializeHelperName,
+				deserializeHelper
+						.addMethod(globalModelDeserialize
+								.addCode(
+										"throw new $T(String.format(\"Unknown type %s\", type));\n",
+										RuntimeException.class
+								)
+								.build())
+						.addMethod(globalChangeDeserialize.addCode(
+								"throw new $T(String.format(\"Unknown change type %s\", type));\n",
 								RuntimeException.class
-						)
-						.build())
-				.build());
+						).build())
+						.build()
+		);
 	}
 
 	public void write(ClassName name, TypeSpec spec) {
-		GenerateTask.write(path, name, spec);
+		Helper.write(path, name, spec);
 	}
 
 }
