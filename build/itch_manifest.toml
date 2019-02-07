@@ -5,6 +5,6 @@ args = [
 	"-p", "modules",
 	"--add-opens", "javafx.graphics/com.sun.prism=com.zarbosoft.pyxyzygy.nearestneighborimageview",
 	"--add-exports=javafx.graphics/com.sun.javafx.sg.prism=com.zarbosoft.pyxyzygy.nearestneighborimageview",
-	"-javaagent:java/nearestneighborimageviewagent-1.0.0.jar",
+	"-javaagent:../nearestneighborimageviewagent-1.0.0.jar",
 	"-m", "com.zarbosoft.pyxyzygy.app/com.zarbosoft.pyxyzygy.app.GUIMain",
 ]
