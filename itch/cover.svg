@@ -29,8 +29,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.7"
-     inkscape:cx="-40.964151"
-     inkscape:cy="106.7926"
+     inkscape:cx="-382.58608"
+     inkscape:cy="159.5077"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -57,7 +57,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -67,15 +67,15 @@
      id="layer1"
      transform="translate(2.3920856,108.42234)">
     <rect
-       style="opacity:1;fill:#fafbfb;fill-opacity:1;stroke:none;stroke-width:3.60872126;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:36.56099701;stroke-opacity:1"
+       style="opacity:1;fill:#fafbfb;fill-opacity:1;stroke:none;stroke-width:3.60872674;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:36.56099701;stroke-opacity:1"
        id="rect4275"
-       width="166.6875"
+       width="166.688"
        height="132.29167"
        x="-2.3920856"
        y="-108.42234" />
     <g
        id="g4231"
-       transform="matrix(2.5530033,0,0,2.5530033,18.592585,-77.436558)">
+       transform="matrix(2.553011,0,0,2.5530033,19.651006,-77.436558)">
       <g
          transform="translate(-38.020863,-118.77052)"
          id="g2228"
@@ -131,7 +131,7 @@
     </g>
     <g
        id="g4241"
-       transform="matrix(2.5530033,0,0,2.5530033,-34.629626,-50.417273)">
+       transform="matrix(2.553011,0,0,2.5530033,-33.571365,-50.417273)">
       <g
          id="g2213"
          transform="translate(-38.680974,-118.77052)"
@@ -180,7 +180,7 @@
     </g>
     <g
        style="opacity:1"
-       transform="matrix(2.5530033,0,0,2.5530033,-150.53382,-333.283)"
+       transform="matrix(2.553011,0,0,2.5530033,-149.47591,-333.283)"
        id="g2224">
       <ellipse
          ry="2.1166666"
@@ -198,7 +198,7 @@
          style="opacity:1;fill:none;fill-opacity:1;stroke:#000000;stroke-width:1.10099995;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:36.56099701;stroke-opacity:1" />
     </g>
     <g
-       transform="matrix(2.689119,0,0,2.6891665,-16.396099,39.278873)"
+       transform="matrix(2.6891271,0,0,2.6891665,-15.337783,39.278873)"
        id="g4391"
        style="display:inline">
       <g
