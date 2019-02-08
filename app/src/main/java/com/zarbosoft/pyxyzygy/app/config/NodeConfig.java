@@ -8,7 +8,7 @@ import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 
 @Configuration
-public class NodeConfig {
+public abstract class NodeConfig {
 	@Configuration
 	public final SimpleIntegerProperty frame = new SimpleIntegerProperty(0);
 

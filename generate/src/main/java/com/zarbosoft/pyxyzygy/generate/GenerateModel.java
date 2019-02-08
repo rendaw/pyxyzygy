@@ -52,8 +52,7 @@ public class GenerateModel extends TaskBase {
 	public static Method sigStateArray = Helper.findMethod(StackReader.State.class, "array");
 	public static Method sigStateRecord = Helper.findMethod(StackReader.State.class, "record");
 	public static Method sigStateGet = Helper.findMethod(StackReader.State.class, "get");
-	public static Method sigFinisherFinish =
-			Helper.findMethod(ModelDeserializationContext.Finisher.class, "finish");
+	public static Method sigFinisherFinish = Helper.findMethod(ModelDeserializationContext.Finisher.class, "finish");
 
 	public Map<Class, Pair<ClassName, TypeSpec.Builder>> typeMap = new HashMap<>();
 	public ClassName deserializeHelperName = name("DeserializeHelper");
@@ -76,8 +75,7 @@ public class GenerateModel extends TaskBase {
 	}
 
 	public ClassName name(String... parts) {
-		return ClassName.get(
-				"com.zarbosoft.pyxyzygy.core.model",
+		return ClassName.get("com.zarbosoft.pyxyzygy.core.model",
 				Arrays.stream(parts).collect(Collectors.joining("_"))
 		);
 	}
@@ -552,10 +550,10 @@ public class GenerateModel extends TaskBase {
 						changeApplyNotify.add(String.format(", %s", name));
 						changeInvoke.addParameter(toPoet(type), name);
 						invokeForward.add(name);
-						changeSerialize.addCode("writer.key(\"$L\")", name);
+						changeSerialize.addCode("writer.key(\"$L\");\n", name);
 						deserializerValue.add("if (\"$L\".equals(key)) {\n", name).indent();
 						if (Helper.flattenPoint(type)) {
-							changeSerialize.addCode(".primitive($L == null ? \"null\" : $T.toString($L.id()));\n",
+							changeSerialize.addCode("writer.primitive($L == null ? \"null\" : $T.toString($L.id()));\n",
 									name,
 									Objects.class,
 									name
@@ -568,7 +566,7 @@ public class GenerateModel extends TaskBase {
 									String.class
 							);
 						} else {
-							changeSerialize.addCode(".primitive($T.toString($L));\n", Objects.class, name);
+							changeSerialize.addCode(generateScalarSerialize(type, name));
 							deserializerRecord.add("if (\"$L\".equals(key)) {\n", name).indent();
 							deserializerValue
 									.add("out.$L = ", name)
@@ -957,10 +955,13 @@ public class GenerateModel extends TaskBase {
 								.addParameter(ParameterizedTypeName.get(ClassName.get(List.class),
 										TypeVariableName.get("T")
 								), "list")
-								.addParameter(ParameterizedTypeName.get(ClassName.get(Function.class),
-										toPoet(elementType),
-										TypeVariableName.get("T")
-								), "create")
+								.addParameter(
+										ParameterizedTypeName.get(ClassName.get(Function.class),
+												toPoet(elementType),
+												TypeVariableName.get("T")
+										),
+										"create"
+								)
 								.addParameter(ParameterizedTypeName.get(ClassName.get(Consumer.class),
 										TypeVariableName.get("T")
 								), "remove")
@@ -1035,18 +1036,13 @@ public class GenerateModel extends TaskBase {
 										.indent()
 										.add("dead = true;\n")
 										.add("remove$LAddListeners(addListener);\n", Helper.capFirst(fieldName))
-										.add(
-												"remove$LRemoveListeners(removeListener);\n",
+										.add("remove$LRemoveListeners(removeListener);\n",
 												Helper.capFirst(fieldName)
 										)
-										.add(
-												"remove$LMoveToListeners(moveToListener);\n",
+										.add("remove$LMoveToListeners(moveToListener);\n",
 												Helper.capFirst(fieldName)
 										)
-										.add(
-												"remove$LClearListeners(clearListener);\n",
-												Helper.capFirst(fieldName)
-										)
+										.add("remove$LClearListeners(clearListener);\n", Helper.capFirst(fieldName))
 										.unindent()
 										.add("}\n")
 										.unindent()
@@ -1548,21 +1544,17 @@ public class GenerateModel extends TaskBase {
 		}
 
 		write(changeStepBuilderName, changeStepBuilder.build());
-		write(
-				deserializeHelperName,
-				deserializeHelper
-						.addMethod(globalModelDeserialize
-								.addCode(
-										"throw new $T(String.format(\"Unknown type %s\", type));\n",
-										RuntimeException.class
-								)
-								.build())
-						.addMethod(globalChangeDeserialize.addCode(
-								"throw new $T(String.format(\"Unknown change type %s\", type));\n",
+		write(deserializeHelperName, deserializeHelper
+				.addMethod(globalModelDeserialize
+						.addCode("throw new $T(String.format(\"Unknown type %s\", type));\n",
 								RuntimeException.class
-						).build())
-						.build()
-		);
+						)
+						.build())
+				.addMethod(globalChangeDeserialize.addCode(
+						"throw new $T(String.format(\"Unknown change type %s\", type));\n",
+						RuntimeException.class
+				).build())
+				.build());
 	}
 
 	public void write(ClassName name, TypeSpec spec) {

@@ -9,6 +9,7 @@ import javafx.collections.ObservableMap;
 import javafx.scene.paint.Color;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -36,8 +37,8 @@ public class ProjectConfig extends ConfigBase {
 	public SimpleBooleanProperty maxCanvas = new SimpleBooleanProperty(false);
 
 	@Configuration(optional = true)
-	public List<Integer> viewPath = new ArrayList<>();
+	public List<Integer> viewPath = Arrays.asList(0);
 
 	@Configuration(optional = true)
-	public List<Integer> editPath = new ArrayList<>();
+	public List<Integer> editPath = Arrays.asList(0);
 }

@@ -71,6 +71,12 @@ public class Window {
 					})
 				.forEach(context.hotkeys::register);
 
+		selectedForEdit.addListener((observable, oldValue, newValue) -> {
+			if (oldValue != null) {
+				oldValue.remove(context);
+			}
+		});
+
 		leftTabs = new TabPane();
 		leftTabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
 		final Tab structureTab = new Tab("Structure");
@@ -187,12 +193,6 @@ public class Window {
 		scene.getStylesheets().addAll(getClass().getResource("widgets/colorpicker/style.css").toExternalForm(),
 				getClass().getResource("widgets/brushbutton/style.css").toExternalForm()
 		);
-
-		selectedForEdit.addListener((observable, oldValue, newValue) -> {
-			if (oldValue != null) {
-				oldValue.remove(context);
-			}
-		});
 
 		primaryStage.setTitle(String.format("%s - %s", context.path.getFileName().toString(), nameHuman));
 		primaryStage.setScene(scene);

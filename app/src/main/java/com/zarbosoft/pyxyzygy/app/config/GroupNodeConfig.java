@@ -4,7 +4,7 @@ import com.zarbosoft.interface1.Configuration;
 import javafx.beans.property.SimpleLongProperty;
 import javafx.beans.property.SimpleObjectProperty;
 
-@Configuration
+@Configuration(name = "group")
 public class GroupNodeConfig extends NodeConfig{
 	@Configuration
 	public static enum Tool {

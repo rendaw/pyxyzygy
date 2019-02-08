@@ -39,6 +39,7 @@ import static com.zarbosoft.rendaw.common.Common.sublist;
 public class Structure {
 	private final ProjectContext context;
 	private final Window window;
+	private final boolean main;
 	VBox layout = new VBox();
 	TreeView<Wrapper> tree;
 	ToolBar toolbar;
@@ -99,6 +100,7 @@ public class Structure {
 	};
 
 	public void selectForEdit(Wrapper wrapper) {
+		if (wrapper == null) return;
 		Wrapper preParent = wrapper;
 		Wrapper parent = wrapper.getParent();
 		boolean found = false;
@@ -117,6 +119,7 @@ public class Structure {
 			selectForView(preParent);
 			window.selectedForEdit.set(wrapper.buildEditControls(context, window.leftTabs));
 		}
+		if (main)
 		context.config.editPath = getPath(wrapper.tree.get()).collect(Collectors.toList());
 	}
 
@@ -131,10 +134,13 @@ public class Structure {
 		for (Wrapper w : taggedViewing)
 			w.tagViewing.set(false);
 		taggedViewing.clear();
-		wrapper.tagViewing.set(true);
-		taggedViewing.add(wrapper);
-		window.selectedForView.set(wrapper.buildCanvas(context, null));
-		context.config.viewPath = getPath(wrapper.tree.get()).collect(Collectors.toList());
+		if (wrapper != null) {
+			wrapper.tagViewing.set(true);
+			taggedViewing.add(wrapper);
+			window.selectedForView.set(wrapper.buildCanvas(context, null));
+			if (main)
+				context.config.viewPath = getPath(wrapper.tree.get()).collect(Collectors.toList());
+		}
 	}
 
 	public void treeItemAdded(TreeItem<Wrapper> item) {
@@ -171,8 +177,12 @@ public class Structure {
 	}
 
 	public Structure(ProjectContext context, Window window, boolean main) {
+		this.main = main;
 		this.context = context;
 		this.window = window;
+
+		List<Integer> editPath = context.config.editPath;
+		List<Integer> viewPath = context.config.viewPath;
 
 		for (Hotkeys.Action action : actions)
 			context.hotkeys.register(action);
@@ -422,8 +432,8 @@ public class Structure {
 		});
 
 		if (main) {
-			selectForView(findNode(rootTreeItem, context.config.viewPath));
-			selectForEdit(findNode(rootTreeItem, context.config.viewPath));
+			selectForView(findNode(rootTreeItem, viewPath));
+			tree.getSelectionModel().select(findNode(rootTreeItem, editPath).tree.get());
 		}
 	}
 

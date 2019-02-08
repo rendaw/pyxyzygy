@@ -5,6 +5,7 @@ import com.zarbosoft.pyxyzygy.app.ProjectContext;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 
+@Configuration(name = "truecolorimage")
 public class TrueColorImageNodeConfig extends NodeConfig{
 	public TrueColorImageNodeConfig(ProjectContext context) {
 		super(context);

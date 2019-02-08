@@ -5,10 +5,7 @@ import com.zarbosoft.interface1.TypeInfo;
 import com.zarbosoft.luxem.Luxem;
 import com.zarbosoft.luxem.read.ReadTypeGrammar;
 import javafx.application.Platform;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.SimpleObjectProperty;
-import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.*;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
 
@@ -100,6 +97,22 @@ public class ConfigBase {
 				@Override
 				public TypeInfo serializedType(TypeInfo info) {
 					return new TypeInfo(info.field, int.class);
+				}
+			})
+			.add(new TypeInfo(SimpleLongProperty.class), new ReadTypeGrammar.TypeMapEntry<SimpleLongProperty>() {
+				@Override
+				public void setIn(Object object, TypeInfo field, Object value) {
+					uncheck(() -> ((SimpleLongProperty) field.field.get(object)).set((Long) value));
+				}
+
+				@Override
+				public Object convertOut(SimpleLongProperty source) {
+					return source.get();
+				}
+
+				@Override
+				public TypeInfo serializedType(TypeInfo info) {
+					return new TypeInfo(info.field, long.class);
 				}
 			})
 			.add(new TypeInfo(SimpleStringProperty.class), new ReadTypeGrammar.TypeMapEntry<SimpleStringProperty>() {
