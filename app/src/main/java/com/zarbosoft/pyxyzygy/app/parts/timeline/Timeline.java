@@ -14,6 +14,7 @@ import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableObjectValue;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
 import javafx.event.EventHandler;
@@ -66,7 +67,7 @@ public class Timeline {
 	List<Rectangle> scrubRegionMarkers = new ArrayList<>();
 	List<Canvas> scrubRegions = new ArrayList<>();
 	SimpleObjectProperty<FrameWidget> selectedFrame = new SimpleObjectProperty<>();
-	private Runnable editHandle = null;
+	private List<Runnable> editCleanup = new ArrayList<>();
 	private final Button add;
 	private final Button duplicate;
 	private final Button remove;
@@ -369,10 +370,8 @@ public class Timeline {
 
 		// Clean up everything
 		cleanItemSubtree(tree.getRoot());
-		if (editHandle != null) {
-			editHandle.run();
-			editHandle = null;
-		}
+		editCleanup.forEach(Runnable::run);
+		editCleanup.clear();
 		tree.getRoot().getChildren().clear();
 		if (outerTimeHandle != null) {
 			outerTimeHandle.remove();
@@ -392,12 +391,76 @@ public class Timeline {
 			throw new Assertion(); // DEBUG
 
 		// Prepare rows
-		if (false) {
-			throw new DeadCode();
-		} else if (edit instanceof CameraWrapper) {
-			// nop
-		} else if (edit instanceof GroupNodeWrapper) {
-			editHandle = ((GroupNode) edit.getValue()).mirrorLayers(tree.getRoot().getChildren(), layer -> {
+		if (edit instanceof CameraWrapper) {
+			tree.getRoot().getChildren().add(new TreeItem<>(new RowAdapter() {
+				@Override
+				public ObservableValue<String> getName() {
+					return new SimpleObjectProperty<>("Viewport");
+				}
+
+				@Override
+				public boolean hasFrames() {
+					return false;
+				}
+
+				@Override
+				public boolean createFrame(ProjectContext context, Window window, int outer) {
+					return false;
+				}
+
+				@Override
+				public ObservableObjectValue<Image> getStateImage() {
+					return new SimpleObjectProperty<>();
+				}
+
+				@Override
+				public void deselected() {
+((CameraWrapper) edit).adjustViewport = false;
+				}
+
+				@Override
+				public void selected() {
+					((CameraWrapper) edit).adjustViewport = true;
+				}
+
+				@Override
+				public boolean duplicateFrame(ProjectContext context, Window window, int outer) {
+					return false;
+				}
+
+				@Override
+				public WidgetHandle createRowWidget(ProjectContext context, Window window) {
+					return new WidgetHandle() {
+						@Override
+						public Node getWidget() {
+							return null;
+						}
+
+						@Override
+						public void remove() {
+
+						}
+					};
+				}
+
+				@Override
+				public int updateTime(ProjectContext context, Window window) {
+					return 0;
+				}
+
+				@Override
+				public void updateFrameMarker(ProjectContext context, Window window) {
+
+				}
+
+				@Override
+				public void remove(ProjectContext context) {
+					((CameraWrapper) edit).adjustViewport = false;
+				}
+			}));
+		}
+		if (edit instanceof GroupNodeWrapper) {
+			editCleanup.add( ((GroupNode) edit.getValue()).mirrorLayers(tree.getRoot().getChildren(), layer -> {
 				RowAdapterGroupLayer layerRowAdapter = new RowAdapterGroupLayer((GroupNodeWrapper) edit, layer);
 				TreeItem<RowAdapter> layerItem = new TreeItem(layerRowAdapter);
 				layerItem.setExpanded(true);
@@ -405,8 +468,9 @@ public class Timeline {
 						new TreeItem(new RowAdapterGroupLayerPosition(this, layer, layerRowAdapter))
 				);
 				return layerItem;
-			}, this::cleanItemSubtree, Misc.noopConsumer());
-		} else if (edit instanceof TrueColorImageNodeWrapper) {
+			}, this::cleanItemSubtree, Misc.noopConsumer()));
+		}
+		if (edit instanceof TrueColorImageNodeWrapper) {
 			tree
 					.getRoot()
 					.getChildren()

@@ -349,6 +349,7 @@ public class Structure {
 		Button moveUpButton = HelperJFX.button("arrow-up.png", "Move Up");
 		moveUpButton.disableProperty().bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedIndices()));
 		moveUpButton.setOnAction(e -> {
+			context.history.finishChange();
 			List<TreeItem<Wrapper>> selected = tree.getSelectionModel().getSelectedItems();
 			TreeItem<Wrapper> firstParent = selected.get(0).getParent();
 			List<TreeItem<Wrapper>> removeOrder = selected
@@ -376,6 +377,7 @@ public class Structure {
 		Button moveDownButton = HelperJFX.button("arrow-down.png", "Move Down");
 		moveDownButton.disableProperty().bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedIndices()));
 		moveDownButton.setOnAction(e -> {
+			context.history.finishChange();
 			List<TreeItem<Wrapper>> selected = tree.getSelectionModel().getSelectedItems();
 			TreeItem<Wrapper> firstParent = selected.get(0).getParent();
 			List<TreeItem<Wrapper>> removeOrder = selected
@@ -466,6 +468,7 @@ public class Structure {
 	}
 
 	private void delete(ProjectContext context) {
+		context.history.finishChange();
 		Wrapper edit = window.selectedForEdit.get().getWrapper();
 		if (edit == null)
 			return;
@@ -561,6 +564,7 @@ public class Structure {
 	 * @param node
 	 */
 	private void addNew(ProjectNode node) {
+		context.history.finishChange();
 		Wrapper edit = getSelection();
 		Wrapper placeAt = edit;
 		int index = 0;
@@ -582,6 +586,7 @@ public class Structure {
 	 * @param reference
 	 */
 	private void place(Wrapper pasteParent, boolean before, Wrapper reference) {
+		context.history.finishChange();
 		List<ProjectNode> nodes = new ArrayList<>();
 		Consumer<Wrapper> check = wrapper -> {
 			// Can't place relative to copied element

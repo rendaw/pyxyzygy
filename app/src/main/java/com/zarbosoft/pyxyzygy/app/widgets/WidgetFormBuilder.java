@@ -35,7 +35,7 @@ public class WidgetFormBuilder {
 		editColumn.setHgrow(Priority.ALWAYS);
 		gridPane.getColumnConstraints().addAll(labelColumn, editColumn);
 		gridPane.setHgap(3);
-		gridPane.setVgap(3);
+		gridPane.setVgap(6);
 	}
 
 	public WidgetFormBuilder apply(Consumer<WidgetFormBuilder> cb) {
@@ -51,8 +51,29 @@ public class WidgetFormBuilder {
 		return this;
 	}
 
+	public static class ButtonsBuilder {
+		HBox box = new HBox(3);{
+			box.setAlignment(Pos.CENTER);
+		}
+
+		public ButtonsBuilder button(Consumer<Button> cb) {
+			Button button = new Button();
+			cb.accept(button);
+			box.getChildren().add(button);
+			return this;
+		}
+	}
+
+	public WidgetFormBuilder buttons(Consumer<ButtonsBuilder> cb) {
+		ButtonsBuilder buttonsBuilder = new ButtonsBuilder();
+		cb.accept(buttonsBuilder);
+		gridPane.add(buttonsBuilder.box, 0, row++, 2, 1);
+		return this;
+	}
+
 	public WidgetFormBuilder text(String name, Consumer<TextField> cb) {
 		TextField widget = new TextField();
+		widget.setMaxWidth(Double.MAX_VALUE);
 		GridPane.setFillWidth(widget,true);
 		cb.accept(widget);
 		gridPane.addRow(row++, fieldLabel(name), widget);
@@ -61,6 +82,8 @@ public class WidgetFormBuilder {
 
 	public WidgetFormBuilder intSpinner(String name, int min, int max, Consumer<Spinner<Integer>> cb) {
 		Spinner<Integer> widget = new Spinner<Integer>();
+		widget.setMaxWidth(Double.MAX_VALUE);
+		widget.setEditable(true);
 		GridPane.setFillWidth(widget,true);
 		widget.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(min, max));
 		cb.accept(widget);
@@ -72,6 +95,8 @@ public class WidgetFormBuilder {
 			String name, double min, double max, double step, Consumer<Spinner<Double>> cb
 	) {
 		Spinner<Double> widget = new Spinner<Double>();
+		widget.setMaxWidth(Double.MAX_VALUE);
+		widget.setEditable(true);
 		GridPane.setFillWidth(widget,true);
 		widget.setValueFactory(new SpinnerValueFactory.DoubleSpinnerValueFactory(min, max, min, step));
 		cb.accept(widget);

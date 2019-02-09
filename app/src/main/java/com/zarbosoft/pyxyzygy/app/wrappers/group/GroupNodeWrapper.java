@@ -79,7 +79,7 @@ public class GroupNodeWrapper extends Wrapper {
 	public EditHandle buildEditControls(
 			ProjectContext context, Window window, TabPane tabPane
 	) {
-		return new GroupNodeEditHandle(this, context, tabPane);
+		return new GroupNodeEditHandle(context, this, tabPane);
 	}
 
 	@Override

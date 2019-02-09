@@ -60,7 +60,7 @@ public class History {
 		}
 		context.setDirty(change.changeStep);
 		context.setDirty(context);
-		context.debugCheckRefCounts();
+		//context.debugCheckRefCounts();
 		inChange = false;
 	}
 
@@ -128,7 +128,7 @@ public class History {
 		context.setDirty(redo);
 		context.setDirty(context);
 		stepLookup.add(redo);
-		context.debugCheckRefCounts();
+		//context.debugCheckRefCounts();
 	}
 
 	public void redo() {
@@ -141,7 +141,7 @@ public class History {
 		context.setDirty(context);
 		undoHistory.add(undo.cacheId);
 		stepLookup.add(undo);
-		context.debugCheckRefCounts();
+		//context.debugCheckRefCounts();
 	}
 
 	public void serialize(RawWriter writer) {

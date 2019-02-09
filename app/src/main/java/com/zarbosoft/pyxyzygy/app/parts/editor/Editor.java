@@ -243,6 +243,7 @@ public class Editor {
 			pointerEventState.dragged = false;
 			if (e.getButton() == MouseButton.PRIMARY) {
 				if (pointerEventState.edit != null) {
+					context.history.finishChange();
 					pointerEventState.edit.markStart(context, window, pointerEventState.previous);
 				}
 			}

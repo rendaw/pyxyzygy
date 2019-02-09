@@ -31,11 +31,15 @@ public class GroupNodeEditHandle extends EditHandle {
 	Group overlay;
 
 	ToolBar toolBar = new ToolBar();
-	private GroupNodeWrapper wrapper;
+	public GroupNodeWrapper wrapper;
 	public final SimpleDoubleProperty mouseX = new SimpleDoubleProperty(0);
 	public final SimpleDoubleProperty mouseY = new SimpleDoubleProperty(0);
 
-	public GroupNodeEditHandle(final GroupNodeWrapper wrapper, ProjectContext context, TabPane tabPane) {
+	public GroupNodeEditHandle(
+			ProjectContext context, final GroupNodeWrapper wrapper, TabPane tabPane
+	) {
+		this.wrapper = wrapper;
+
 		// Canvas overlay
 		overlay = new Group();
 		wrapper.canvasHandle.overlay.getChildren().add(overlay);
@@ -98,7 +102,7 @@ public class GroupNodeEditHandle extends EditHandle {
 				}
 				switch (newValue) {
 					case MOVE:
-						tool = new ToolMove(wrapper);
+						tool = createToolMove(wrapper);
 						break;
 					case STAMP:
 						tool = new ToolStamp(wrapper, context, GroupNodeEditHandle.this);
@@ -113,7 +117,10 @@ public class GroupNodeEditHandle extends EditHandle {
 		cleanup.add(() -> {
 			tabPane.getTabs().removeAll(groupTab, toolTab);
 		});
-		this.wrapper = wrapper;
+	}
+
+	protected ToolMove createToolMove(GroupNodeWrapper wrapper) {
+		return new ToolMove(wrapper);
 	}
 
 	public Tab buildNodeTab(ProjectContext context) {
@@ -168,17 +175,20 @@ public class GroupNodeEditHandle extends EditHandle {
 
 	@Override
 	public void cursorMoved(ProjectContext context, DoubleVector vector) {
-		vector = Window.toLocal(wrapper.canvasHandle,vector);
+		vector = Window.toLocal(wrapper.canvasHandle, vector);
 		mouseX.set(vector.x);
 		mouseY.set(vector.y);
 	}
 
 	@Override
 	public Optional<Integer> previousFrame(int frame) {
-		if (wrapper.specificLayer == null) return Optional.empty();
-		if (wrapper.specificLayer.positionFramesLength() == 1) return Optional.empty();
+		if (wrapper.specificLayer == null)
+			return Optional.empty();
+		if (wrapper.specificLayer.positionFramesLength() == 1)
+			return Optional.empty();
 		int p = GroupLayerWrapper.findPosition(wrapper.specificLayer, frame).at - 1;
-		if (p == 0) p = wrapper.specificLayer.positionFramesLength() - 1;
+		if (p == 0)
+			p = wrapper.specificLayer.positionFramesLength() - 1;
 		return Optional.of(p);
 	}
 }

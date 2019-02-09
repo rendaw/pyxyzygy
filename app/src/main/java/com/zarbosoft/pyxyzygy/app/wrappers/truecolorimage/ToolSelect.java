@@ -3,7 +3,6 @@ package com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage;
 import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
-import com.zarbosoft.pyxyzygy.app.Tool;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.pyxyzygy.seed.model.Rectangle;
 import com.zarbosoft.pyxyzygy.seed.model.Vector;
@@ -140,7 +139,7 @@ public class ToolSelect extends Tool {
 				Clipboard.getSystemClipboard().setContent(content);
 			};
 
-			editHandle.paintTab.setContent(pad(new WidgetFormBuilder().button(b -> {
+			editHandle.paintTab.setContent(pad(new WidgetFormBuilder().buttons(u -> u.button(b -> {
 				b.setText("Place");
 				b.setGraphic(new ImageView(icon("arrow-collapse-down.png")));
 				b.setOnAction(e -> {
@@ -178,7 +177,7 @@ public class ToolSelect extends Tool {
 				b.setOnAction(e -> {
 					copy.run();
 				});
-			}).separator().button(b -> {
+			})).separator().button(b -> {
 				b.setText("Cancel");
 				b.setOnAction(e -> {
 					setState(context, new StateCreate(context));

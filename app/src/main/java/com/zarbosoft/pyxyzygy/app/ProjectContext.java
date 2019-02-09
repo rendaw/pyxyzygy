@@ -246,6 +246,7 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 			out.history = new History(out, context.undoHistory, context.redoHistory, context.activeChange);
 			out.hotkeys = new Hotkeys();
 			out.initConfig();
+			out.debugCheckRefCounts();
 			return out;
 		});
 	}

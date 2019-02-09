@@ -8,7 +8,7 @@ import com.zarbosoft.pyxyzygy.core.model.GroupPositionFrame;
 import com.zarbosoft.pyxyzygy.seed.model.Vector;
 
 public class ToolMove extends Tool {
-	private DoubleVector markStart;
+	protected DoubleVector markStart;
 	private Vector markStartOffset;
 	private GroupNodeWrapper wrapper;
 
