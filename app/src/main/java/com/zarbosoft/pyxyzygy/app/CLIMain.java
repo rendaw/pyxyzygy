@@ -37,7 +37,14 @@ public class CLIMain {
 		public String path;
 
 		public void run() {
-			runImpl(Global.deserialize(Paths.get(path)));
+			com.zarbosoft.pyxyzygy.seed.model.ProjectContext rawContext = Global.deserialize(Paths.get(path));
+			ProjectContext context;
+			if (rawContext.needsMigrate()) {
+				context = (ProjectContext) rawContext.migrate();
+			} else {
+				context = (ProjectContext) rawContext;
+			}
+			runImpl(context);
 		}
 
 		public abstract void runImpl(ProjectContext context);

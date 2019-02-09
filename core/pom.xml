@@ -65,7 +65,7 @@
                         <configuration>
                             <tasks>
                                 <taskdef name="generateTask"
-                                         classname="com.zarbosoft.pyxyzygy.generate.GenerateModel"
+                                         classname="com.zarbosoft.pyxyzygy.generate.model.v0.GenerateModelV0"
                                          classpath="${maven.dependency.classpath}"/>
                                 <generateTask path="${project.build.directory}/src"/>
                             </tasks>

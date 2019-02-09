@@ -15,6 +15,16 @@ public class TestTimeMapCalc {
 		public Object migrate() {
 			return this;
 		}
+
+		@Override
+		public boolean needsMigrate() {
+			return false;
+		}
+
+		@Override
+		public void clearHistory() {
+
+		}
 	};
 
 	private static GroupTimeFrame inner(int length, int offset, int loop) {

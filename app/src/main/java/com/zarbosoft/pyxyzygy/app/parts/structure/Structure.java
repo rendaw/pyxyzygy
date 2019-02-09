@@ -295,10 +295,10 @@ public class Structure {
 				}
 			};
 		});
-		MenuItem addCamera = new MenuItem("Add Crop");
+		MenuItem addCamera = new MenuItem("Add Camera");
 		addCamera.setOnAction(e -> {
 			Camera camera = Camera.create(context);
-			camera.initialNameSet(context, uniqueName("Crop"));
+			camera.initialNameSet(context, uniqueName("Camera"));
 			camera.initialOpacitySet(context, opacityMax);
 			camera.initialEndSet(context, 50);
 			camera.initialFrameRateSet(context, 120);

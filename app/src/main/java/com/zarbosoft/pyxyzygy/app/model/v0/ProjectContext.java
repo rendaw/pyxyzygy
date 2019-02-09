@@ -207,7 +207,17 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 
 	@Override
 	public Object migrate() {
-		return this;
+		throw new Assertion();
+	}
+
+	@Override
+	public void clearHistory() {
+		history.clearHistory();
+	}
+
+	@Override
+	public boolean needsMigrate() {
+		return false;
 	}
 
 	public static class Deserializer extends StackReader.RecordState {

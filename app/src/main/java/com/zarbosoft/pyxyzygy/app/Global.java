@@ -35,7 +35,7 @@ public class Global {
 		return out;
 	}
 
-	public static ProjectContext deserialize(Path path) {
+	public static com.zarbosoft.pyxyzygy.seed.model.ProjectContext deserialize(Path path) {
 		return uncheck(() -> {
 			ModelDeserializationContext context = new ModelDeserializationContext();
 			ProjectContext out;
@@ -48,7 +48,7 @@ public class Global {
 
 					@Override
 					public void value(Object value) {
-						data.add((ProjectContext) ((com.zarbosoft.pyxyzygy.seed.model.ProjectContext) value).migrate());
+						data.add(value);
 					}
 
 					@Override
