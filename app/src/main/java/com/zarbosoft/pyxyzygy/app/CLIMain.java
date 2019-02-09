@@ -9,6 +9,7 @@ import com.zarbosoft.pyxyzygy.core.model.v0.*;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
 import com.zarbosoft.rendaw.common.Assertion;
 import io.github.classgraph.ClassGraph;
+import io.github.classgraph.ScanResult;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -19,8 +20,18 @@ import java.util.List;
 import static com.zarbosoft.rendaw.common.Common.sublist;
 
 public class CLIMain {
+
+	public static class Commandline {
+		@Configuration(name = "--help")
+		@Command.Argument(shortName = "-h", earlyExit = true, description = "Show this help text")
+		public boolean help = false;
+
+		@Configuration(optional = true)
+		public Subcommand subcommand;
+	}
+
 	@Configuration
-	public abstract static class Subcommand {
+	public static abstract class Subcommand {
 		@Configuration
 		@Command.Argument(index = 0, description = "Path to a pyxyzygy project")
 		public String path;
@@ -171,9 +182,13 @@ public class CLIMain {
 	}
 
 	public static void main(String[] args) {
-		Command.<Subcommand>parse(new ClassGraph()
+		ScanResult scan = new ClassGraph()
 				.enableAllInfo()
 				.whitelistPackages("com.zarbosoft.pyxyzygy.cli")
-				.scan(), Subcommand.class, args).run();
+				.scan();
+		Commandline got = Command.<Commandline>parse(scan, Commandline.class, args);
+		if (got.help || got.subcommand == null) {
+			Command.showHelp(scan, Commandline.class,args[0]);
+		}
 	}
 }
