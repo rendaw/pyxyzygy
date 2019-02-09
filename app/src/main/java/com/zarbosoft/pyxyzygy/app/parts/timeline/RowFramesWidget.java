@@ -78,15 +78,6 @@ public class RowFramesWidget extends Pane {
 							foundSelectedFrame = frame;
 						}
 					}
-					/*
-					System.out.format("fr set il %s; inn off %s; outer at %s; prev inn at %s; inn at %s\n",
-							innerLeft,
-							outer.innerOffset,
-							outerAt,
-							previousInnerAt,
-							innerAt
-					);
-					*/
 					frame.set(timeline.zoom,
 							useFrameIndex,
 							inner,

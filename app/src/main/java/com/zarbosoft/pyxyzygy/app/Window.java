@@ -31,9 +31,10 @@ import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import static com.zarbosoft.pyxyzygy.app.GUILaunch.nameHuman;
+import static com.zarbosoft.pyxyzygy.app.Global.nameHuman;
 
 public class Window {
+	public Stage stage;
 	public List<FrameMapEntry> timeMap;
 	public SimpleObjectProperty<EditHandle> selectedForEdit = new SimpleObjectProperty<>();
 	public SimpleObjectProperty<CanvasHandle> selectedForView = new SimpleObjectProperty<>();
@@ -42,6 +43,7 @@ public class Window {
 	public Editor editor;
 
 	public void start(ProjectContext context, Stage primaryStage, boolean main) {
+		this.stage = stage;
 		primaryStage.setOnCloseRequest(e -> {
 			context.shutdown();
 		});
@@ -182,13 +184,11 @@ public class Window {
 
 		scene.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
 			pressed.add(e.getCode());
-			System.out.format("(on) pressed: %s\n", pressed);
 			if (context.hotkeys.event(context, Hotkeys.Scope.GLOBAL, e))
 				e.consume();
 		});
 		scene.addEventFilter(KeyEvent.KEY_RELEASED,e -> {
 			pressed.remove(e.getCode());
-			System.out.format("(off) pressed: %s\n", pressed);
 		});
 		scene.getStylesheets().addAll(getClass().getResource("widgets/colorpicker/style.css").toExternalForm(),
 				getClass().getResource("widgets/brushbutton/style.css").toExternalForm()

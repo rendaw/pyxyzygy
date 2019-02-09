@@ -1,12 +1,12 @@
 package com.zarbosoft.pyxyzygy.app.parts.structure;
 
 import com.google.common.collect.ImmutableList;
-import com.zarbosoft.pyxyzygy.app.Hotkeys;
-import com.zarbosoft.pyxyzygy.app.ProjectContext;
-import com.zarbosoft.pyxyzygy.app.Window;
-import com.zarbosoft.pyxyzygy.app.Wrapper;
+import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
+import com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage.TrueColorImageCanvasHandle;
+import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.pyxyzygy.core.model.*;
+import com.zarbosoft.pyxyzygy.seed.model.Rectangle;
 import com.zarbosoft.pyxyzygy.seed.model.Vector;
 import com.zarbosoft.rendaw.common.ChainComparator;
 import javafx.beans.binding.Bindings;
@@ -22,13 +22,15 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
 
+import java.io.File;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.zarbosoft.pyxyzygy.app.GUILaunch.opacityMax;
+import static com.zarbosoft.pyxyzygy.app.Global.opacityMax;
 import static com.zarbosoft.pyxyzygy.app.Misc.moveTo;
 import static com.zarbosoft.pyxyzygy.app.ProjectContext.uniqueName;
 import static com.zarbosoft.pyxyzygy.app.Wrapper.TakesChildren.NONE;
@@ -100,7 +102,8 @@ public class Structure {
 	};
 
 	public void selectForEdit(Wrapper wrapper) {
-		if (wrapper == null) return;
+		if (wrapper == null)
+			return;
 		Wrapper preParent = wrapper;
 		Wrapper parent = wrapper.getParent();
 		boolean found = false;
@@ -113,14 +116,14 @@ public class Structure {
 			parent = parent.getParent();
 		}
 		if (found) {
-			window.selectedForEdit.set(wrapper.buildEditControls(context, window.leftTabs));
+			window.selectedForEdit.set(wrapper.buildEditControls(context, window, window.leftTabs));
 		} else {
 			window.selectedForEdit.set(null);
 			selectForView(preParent);
-			window.selectedForEdit.set(wrapper.buildEditControls(context, window.leftTabs));
+			window.selectedForEdit.set(wrapper.buildEditControls(context, window, window.leftTabs));
 		}
 		if (main)
-		context.config.editPath = getPath(wrapper.tree.get()).collect(Collectors.toList());
+			context.config.editPath = getPath(wrapper.tree.get()).collect(Collectors.toList());
 	}
 
 	public static Stream<Integer> getPath(TreeItem<Wrapper> leaf) {
@@ -316,6 +319,25 @@ public class Structure {
 			frame.initialOffsetSet(context, new Vector(0, 0));
 			image.initialFramesAdd(context, ImmutableList.of(frame));
 			addNew(image);
+		});
+		MenuItem importImage = new MenuItem("Import True Color");
+		importImage.setOnAction(e -> {
+			FileChooser fileChooser = new FileChooser();
+			fileChooser.setInitialDirectory(new File(GUILaunch.config.importDir));
+			fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PNG Image", "*.png"));
+			Optional.ofNullable(fileChooser.showOpenDialog(window.stage)).map(f -> f.toPath()).ifPresent(p -> {
+				TrueColorImage data = TrueColorImage.deserialize(p.toString());
+				TrueColorImageNode image = TrueColorImageNode.create(context);
+				image.initialOpacitySet(context, opacityMax);
+				image.initialNameSet(context, uniqueName(p.getFileName().toString()));
+				TrueColorImageFrame frame = TrueColorImageFrame.create(context);
+				frame.initialLengthSet(context, -1);
+				frame.initialOffsetSet(context, new Vector(0, 0));
+				image.initialFramesAdd(context, ImmutableList.of(frame));
+				Rectangle base = new Rectangle(0, 0, data.getWidth(), data.getHeight());
+				TrueColorImageCanvasHandle.drop(context, frame, base.plus(base.span().divide(2)), data);
+				addNew(image);
+			});
 		});
 		MenuButton addButton = HelperJFX.menuButton("plus.png");
 		addButton.getItems().addAll(addCamera, addGroup, addImage);

@@ -9,7 +9,7 @@ import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupLayerWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage.TrueColorImageNodeWrapper;
 import com.zarbosoft.rendaw.common.Assertion;
 
-import static com.zarbosoft.pyxyzygy.app.GUILaunch.opacityMax;
+import static com.zarbosoft.pyxyzygy.app.Global.opacityMax;
 
 public class Render {
 
@@ -51,7 +51,6 @@ public class Render {
 			ProjectContext context, TrueColorImage gc, TrueColorImageFrame frame, Rectangle crop, double opacity
 	) {
 		Rectangle tileBounds = crop.quantize(context.tileSize);
-		//System.out.format("render tb %s\n", tileBounds);
 		for (int x = 0; x < tileBounds.width; ++x) {
 			for (int y = 0; y < tileBounds.height; ++y) {
 				Tile tile = (Tile) frame.tilesGet(tileBounds.corner().plus(x, y).to1D());
@@ -59,8 +58,6 @@ public class Render {
 					continue;
 				final int renderX = (x + tileBounds.x) * context.tileSize - crop.x;
 				final int renderY = (y + tileBounds.y) * context.tileSize - crop.y;
-				//System.out.format("composing at %s %s op %s\n", renderX, renderY, opacity);
-				System.out.flush();
 				TrueColorImage data = tile.getData(context);
 				gc.compose(data, renderX, renderY, (float) opacity);
 			}

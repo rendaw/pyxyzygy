@@ -20,7 +20,7 @@ import javafx.scene.transform.Affine;
 
 import java.awt.*;
 
-import static com.zarbosoft.pyxyzygy.app.GUILaunch.NO_INNER;
+import static com.zarbosoft.pyxyzygy.app.Global.NO_INNER;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.c;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 import static com.zarbosoft.rendaw.common.Common.aeq;
@@ -282,19 +282,16 @@ public class RowTimeRangeWidget {
 			dragMouseStart = null;
 		});
 		base.addEventFilter(MouseEvent.MOUSE_DRAGGED, e -> {
-			//System.out.format("dra y %s : ba %s\n", dragMouseStart.y, Timeline.baseSize);
 			if (dragMouseStart.y < Timeline.baseSize) {
 				// nop
 			} else if (dragMouseStart.y < Timeline.baseSize * 2) {
 				DoubleVector dragAt = getRelative(e.getSceneX(), e.getSceneY());
 				double diff = dragAt.x - dragMouseStart.x;
 				int quantized = (int) (diff / timeline.zoom);
-				//System.out.format("drag main: start %s, at %s, quantized %s\n", dragMouseStart.x, dragAt.x, quantized);
 				adapter.changeStart(Math.max(-1, dragFrameStart + -quantized));
 			} else {
 				DoubleVector dragAt = getRelative(e.getSceneX(), e.getSceneY());
 				int quantized = (int) (dragAt.x / timeline.zoom);
-				//System.out.format("drag end: start %s, quantized %s\n", dragMouseStart.x, quantized);
 				adapter.changeLength(Math.max(0, quantized - adapter.getOuterAt()));
 			}
 		});
@@ -308,11 +305,6 @@ public class RowTimeRangeWidget {
 	public void set(TimeRangeAdapter adapter) {
 		this.adapter = adapter;
 
-		System.out.format("set at %s s %s l %s\n",
-				adapter.getOuterAt(),
-				adapter.getInnerStart(),
-				adapter.getInnerLength()
-		);
 		outerA.setLayoutX((adapter.getOuterAt() - adapter.getInnerStart()) * timeline.zoom);
 
 		inner.setLayoutX(adapter.getOuterAt() * timeline.zoom);

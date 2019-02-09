@@ -77,7 +77,6 @@ public class History {
 		excessUndo.clear();
 		change = new ChangeStepBuilder(context, new ChangeStep(new ChangeStep.CacheId(context.nextId++)));
 		context.setDirty(change.changeStep);
-		System.out.format("change done; undo %s, redo %s\n", undoHistory.size(), redoHistory.size());
 	}
 
 	public ChangeStep get(ChangeStep.CacheId id) {
@@ -129,7 +128,6 @@ public class History {
 		context.setDirty(redo);
 		context.setDirty(context);
 		stepLookup.add(redo);
-		System.out.format("undo done; undo %s, redo %s\n", undoHistory.size(), redoHistory.size());
 		context.debugCheckRefCounts();
 	}
 
@@ -143,7 +141,6 @@ public class History {
 		context.setDirty(context);
 		undoHistory.add(undo.cacheId);
 		stepLookup.add(undo);
-		System.out.format("redo done; undo %s, redo %s\n", undoHistory.size(), redoHistory.size());
 		context.debugCheckRefCounts();
 	}
 

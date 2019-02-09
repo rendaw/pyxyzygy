@@ -150,7 +150,9 @@ public class GroupLayerWrapper extends Wrapper {
 	}
 
 	@Override
-	public EditHandle buildEditControls(ProjectContext context, TabPane leftTabs) {
+	public EditHandle buildEditControls(
+			ProjectContext context, Window window, TabPane leftTabs
+	) {
 		return null;
 	}
 

@@ -7,7 +7,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.ToolBar;
 
-import static com.zarbosoft.pyxyzygy.app.GUILaunch.opacityMax;
+import static com.zarbosoft.pyxyzygy.app.Global.opacityMax;
 import static com.zarbosoft.pyxyzygy.app.Misc.mirror;
 import static com.zarbosoft.pyxyzygy.app.Misc.noopConsumer;
 

@@ -1,4 +1,4 @@
-package com.zarbosoft.pyxyzygy.app.wrappers.group;
+package com.zarbosoft.pyxyzygy.app;
 
 import com.zarbosoft.pyxyzygy.app.DoubleVector;
 import com.zarbosoft.pyxyzygy.app.ProjectContext;

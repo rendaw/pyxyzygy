@@ -3,7 +3,7 @@ package com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage;
 import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
-import com.zarbosoft.pyxyzygy.app.wrappers.group.Tool;
+import com.zarbosoft.pyxyzygy.app.Tool;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.pyxyzygy.seed.model.Rectangle;
 import com.zarbosoft.pyxyzygy.seed.model.Vector;

@@ -9,8 +9,6 @@ import org.junit.Test;
 import java.nio.file.Paths;
 import java.util.List;
 
-import static com.zarbosoft.pyxyzygy.app.GUILaunch.*;
-
 public class TestTimeMapCalc {
 	private static ProjectContextBase context = new ProjectContextBase(Paths.get("/"));
 
@@ -56,98 +54,98 @@ public class TestTimeMapCalc {
 	@Test
 	public void testBase() {
 		compare(
-				Timeline.computeSubMap(ImmutableList.of(new FrameMapEntry(NO_LENGTH, 0)),
-						ImmutableList.of(inner(NO_LENGTH, 0, NO_LOOP))
+				Timeline.computeSubMap(ImmutableList.of(new FrameMapEntry(Global.NO_LENGTH, 0)),
+						ImmutableList.of(inner(Global.NO_LENGTH, 0, Global.NO_LOOP))
 				),
-				ImmutableList.of(new FrameMapEntry(NO_LENGTH, 0))
+				ImmutableList.of(new FrameMapEntry(Global.NO_LENGTH, 0))
 		);
 	}
 
 	@Test
 	public void testOuterNoInner() {
-		compare(Timeline.computeSubMap(ImmutableList.of(new FrameMapEntry(NO_LENGTH, NO_INNER)),
-				ImmutableList.of(inner(NO_LENGTH, 0, NO_LOOP))
-		), ImmutableList.of(new FrameMapEntry(NO_LENGTH, NO_INNER)));
+		compare(Timeline.computeSubMap(ImmutableList.of(new FrameMapEntry(Global.NO_LENGTH, Global.NO_INNER)),
+				ImmutableList.of(inner(Global.NO_LENGTH, 0, Global.NO_LOOP))
+		), ImmutableList.of(new FrameMapEntry(Global.NO_LENGTH, Global.NO_INNER)));
 	}
 
 	@Test
 	public void testInnerNoInner() {
-		compare(Timeline.computeSubMap(ImmutableList.of(new FrameMapEntry(NO_LENGTH, 0)),
-				ImmutableList.of(inner(NO_LENGTH, NO_INNER, NO_LOOP))
-		), ImmutableList.of(new FrameMapEntry(NO_LENGTH, NO_INNER)));
+		compare(Timeline.computeSubMap(ImmutableList.of(new FrameMapEntry(Global.NO_LENGTH, 0)),
+				ImmutableList.of(inner(Global.NO_LENGTH, Global.NO_INNER, Global.NO_LOOP))
+		), ImmutableList.of(new FrameMapEntry(Global.NO_LENGTH, Global.NO_INNER)));
 	}
 
 	@Test
 	public void testTwoOuter() {
-		compare(Timeline.computeSubMap(ImmutableList.of(new FrameMapEntry(10, 0), new FrameMapEntry(NO_LENGTH, 0)),
-				ImmutableList.of(inner(NO_LENGTH, 0, NO_LOOP))
-		), ImmutableList.of(new FrameMapEntry(10, 0), new FrameMapEntry(NO_LENGTH, 0)));
+		compare(Timeline.computeSubMap(ImmutableList.of(new FrameMapEntry(10, 0), new FrameMapEntry(Global.NO_LENGTH, 0)),
+				ImmutableList.of(inner(Global.NO_LENGTH, 0, Global.NO_LOOP))
+		), ImmutableList.of(new FrameMapEntry(10, 0), new FrameMapEntry(Global.NO_LENGTH, 0)));
 	}
 
 	@Test
 	public void testTwoInner() {
-		compare(Timeline.computeSubMap(ImmutableList.of(new FrameMapEntry(NO_LENGTH, 0)),
-				ImmutableList.of(inner(10, 0, NO_LOOP), inner(NO_LENGTH, 0, NO_LOOP))
-		), ImmutableList.of(new FrameMapEntry(10, 0), new FrameMapEntry(NO_LENGTH, 0)));
+		compare(Timeline.computeSubMap(ImmutableList.of(new FrameMapEntry(Global.NO_LENGTH, 0)),
+				ImmutableList.of(inner(10, 0, Global.NO_LOOP), inner(Global.NO_LENGTH, 0, Global.NO_LOOP))
+		), ImmutableList.of(new FrameMapEntry(10, 0), new FrameMapEntry(Global.NO_LENGTH, 0)));
 	}
 
 	@Test
 	public void testInnerOffset() {
-		compare(Timeline.computeSubMap(ImmutableList.of(new FrameMapEntry(NO_LENGTH, 30)),
-				ImmutableList.of(inner(30, 5, NO_LOOP), inner(NO_LENGTH, 11, NO_LOOP))
-		), ImmutableList.of(new FrameMapEntry(NO_LENGTH, 11)));
+		compare(Timeline.computeSubMap(ImmutableList.of(new FrameMapEntry(Global.NO_LENGTH, 30)),
+				ImmutableList.of(inner(30, 5, Global.NO_LOOP), inner(Global.NO_LENGTH, 11, Global.NO_LOOP))
+		), ImmutableList.of(new FrameMapEntry(Global.NO_LENGTH, 11)));
 	}
 
 	@Test
 	public void testInnerOffsetSpanStart() {
-		compare(Timeline.computeSubMap(ImmutableList.of(new FrameMapEntry(NO_LENGTH, 35)),
-				ImmutableList.of(inner(30, 5, NO_LOOP), inner(NO_LENGTH, 11, NO_LOOP))
-		), ImmutableList.of(new FrameMapEntry(NO_LENGTH, 16)));
+		compare(Timeline.computeSubMap(ImmutableList.of(new FrameMapEntry(Global.NO_LENGTH, 35)),
+				ImmutableList.of(inner(30, 5, Global.NO_LOOP), inner(Global.NO_LENGTH, 11, Global.NO_LOOP))
+		), ImmutableList.of(new FrameMapEntry(Global.NO_LENGTH, 16)));
 	}
 
 	@Test
 	public void testSpanInnerEnd() {
-		compare(Timeline.computeSubMap(ImmutableList.of(new FrameMapEntry(NO_LENGTH, 5)),
-				ImmutableList.of(inner(10, 0, NO_LOOP), inner(NO_LENGTH, 0, NO_LOOP))
-		), ImmutableList.of(new FrameMapEntry(5, 5), new FrameMapEntry(NO_LENGTH, 0)));
+		compare(Timeline.computeSubMap(ImmutableList.of(new FrameMapEntry(Global.NO_LENGTH, 5)),
+				ImmutableList.of(inner(10, 0, Global.NO_LOOP), inner(Global.NO_LENGTH, 0, Global.NO_LOOP))
+		), ImmutableList.of(new FrameMapEntry(5, 5), new FrameMapEntry(Global.NO_LENGTH, 0)));
 	}
 
 	@Test
 	public void testSpanInnerEndSum() {
 		compare(Timeline.computeSubMap(ImmutableList.of(new FrameMapEntry(15, 0),
-				new FrameMapEntry(NO_LENGTH, NO_INNER)
-		), ImmutableList.of(inner(4, 0, NO_LOOP),
-				inner(5, 0, NO_LOOP),
-				inner(9, 0, NO_LOOP),
-				inner(NO_LENGTH, 0, NO_LOOP)
+				new FrameMapEntry(Global.NO_LENGTH, Global.NO_INNER)
+		), ImmutableList.of(inner(4, 0, Global.NO_LOOP),
+				inner(5, 0, Global.NO_LOOP),
+				inner(9, 0, Global.NO_LOOP),
+				inner(Global.NO_LENGTH, 0, Global.NO_LOOP)
 		)), ImmutableList.of(new FrameMapEntry(4, 0),
 				new FrameMapEntry(5, 0),
 				new FrameMapEntry(6, 0),
-				new FrameMapEntry(NO_LENGTH, NO_INNER)
+				new FrameMapEntry(Global.NO_LENGTH, Global.NO_INNER)
 		));
 	}
 
 	@Test
 	public void testSpanInnerStart() {
 		compare(Timeline.computeSubMap(ImmutableList.of(new FrameMapEntry(6, 5),
-				new FrameMapEntry(NO_LENGTH, NO_INNER)
+				new FrameMapEntry(Global.NO_LENGTH, Global.NO_INNER)
 				),
-				ImmutableList.of(inner(7, 0, NO_LOOP), inner(10, 0, NO_LOOP), inner(NO_LENGTH, 0, NO_LOOP))
-		), ImmutableList.of(new FrameMapEntry(2, 5), new FrameMapEntry(4, 0), new FrameMapEntry(NO_LENGTH, NO_INNER)));
+				ImmutableList.of(inner(7, 0, Global.NO_LOOP), inner(10, 0, Global.NO_LOOP), inner(Global.NO_LENGTH, 0, Global.NO_LOOP))
+		), ImmutableList.of(new FrameMapEntry(2, 5), new FrameMapEntry(4, 0), new FrameMapEntry(Global.NO_LENGTH, Global.NO_INNER)));
 	}
 
 	@Test
 	public void testLoopNoLength() {
 		compare(
-				Timeline.computeSubMap(ImmutableList.of(new FrameMapEntry(NO_LENGTH, 0)),
-						ImmutableList.of(inner(NO_LENGTH, 0, 10))
+				Timeline.computeSubMap(ImmutableList.of(new FrameMapEntry(Global.NO_LENGTH, 0)),
+						ImmutableList.of(inner(Global.NO_LENGTH, 0, 10))
 				),
 				ImmutableList.of(new FrameMapEntry(10, 0),
 						new FrameMapEntry(10, 0),
 						new FrameMapEntry(10, 0),
 						new FrameMapEntry(10, 0),
 						new FrameMapEntry(10, 0),
-						new FrameMapEntry(NO_LENGTH, 0)
+						new FrameMapEntry(Global.NO_LENGTH, 0)
 				)
 		);
 	}
@@ -155,15 +153,15 @@ public class TestTimeMapCalc {
 	@Test
 	public void testLoopNoLengthSpanEnd() {
 		compare(
-				Timeline.computeSubMap(ImmutableList.of(new FrameMapEntry(NO_LENGTH, 5)),
-						ImmutableList.of(inner(NO_LENGTH, 0, 10))
+				Timeline.computeSubMap(ImmutableList.of(new FrameMapEntry(Global.NO_LENGTH, 5)),
+						ImmutableList.of(inner(Global.NO_LENGTH, 0, 10))
 				),
 				ImmutableList.of(new FrameMapEntry(5, 5),
 						new FrameMapEntry(10, 0),
 						new FrameMapEntry(10, 0),
 						new FrameMapEntry(10, 0),
 						new FrameMapEntry(10, 0),
-						new FrameMapEntry(NO_LENGTH, 0)
+						new FrameMapEntry(Global.NO_LENGTH, 0)
 				)
 		);
 	}
@@ -171,36 +169,36 @@ public class TestTimeMapCalc {
 	@Test
 	public void testLoopWithLength() {
 		compare(Timeline.computeSubMap(ImmutableList.of(new FrameMapEntry(10, 0),
-				new FrameMapEntry(NO_LENGTH, NO_INNER)
+				new FrameMapEntry(Global.NO_LENGTH, Global.NO_INNER)
 				),
-				ImmutableList.of(inner(NO_LENGTH, 0, 10))
-		), ImmutableList.of(new FrameMapEntry(10, 0), new FrameMapEntry(NO_LENGTH, NO_INNER)));
+				ImmutableList.of(inner(Global.NO_LENGTH, 0, 10))
+		), ImmutableList.of(new FrameMapEntry(10, 0), new FrameMapEntry(Global.NO_LENGTH, Global.NO_INNER)));
 	}
 
 	@Test
 	public void testLoopSpanEnd() {
 		compare(Timeline.computeSubMap(ImmutableList.of(new FrameMapEntry(15, 5),
-				new FrameMapEntry(NO_LENGTH, NO_INNER)
+				new FrameMapEntry(Global.NO_LENGTH, Global.NO_INNER)
 				),
-				ImmutableList.of(inner(NO_LENGTH, 0, 10))
-		), ImmutableList.of(new FrameMapEntry(5, 5), new FrameMapEntry(10, 0), new FrameMapEntry(NO_LENGTH, NO_INNER)));
+				ImmutableList.of(inner(Global.NO_LENGTH, 0, 10))
+		), ImmutableList.of(new FrameMapEntry(5, 5), new FrameMapEntry(10, 0), new FrameMapEntry(Global.NO_LENGTH, Global.NO_INNER)));
 	}
 
 	@Test
 	public void testLoopSpanEndFar() {
 		compare(Timeline.computeSubMap(ImmutableList.of(new FrameMapEntry(15, 25),
-				new FrameMapEntry(NO_LENGTH, NO_INNER)
+				new FrameMapEntry(Global.NO_LENGTH, Global.NO_INNER)
 				),
-				ImmutableList.of(inner(NO_LENGTH, 0, 10))
-		), ImmutableList.of(new FrameMapEntry(5, 5), new FrameMapEntry(10, 0), new FrameMapEntry(NO_LENGTH, NO_INNER)));
+				ImmutableList.of(inner(Global.NO_LENGTH, 0, 10))
+		), ImmutableList.of(new FrameMapEntry(5, 5), new FrameMapEntry(10, 0), new FrameMapEntry(Global.NO_LENGTH, Global.NO_INNER)));
 	}
 
 	@Test
 	public void skipEarly() {
-		compare(Timeline.computeSubMap(ImmutableList.of(new FrameMapEntry(NO_LENGTH, 10)),
-				ImmutableList.of(inner(7, NO_INNER, NO_LOOP),
-						inner(3, NO_INNER, NO_LOOP),
-						inner(NO_LENGTH, 0, NO_LOOP)
-				)), ImmutableList.of(new FrameMapEntry(NO_LENGTH, 0)));
+		compare(Timeline.computeSubMap(ImmutableList.of(new FrameMapEntry(Global.NO_LENGTH, 10)),
+				ImmutableList.of(inner(7, Global.NO_INNER, Global.NO_LOOP),
+						inner(3, Global.NO_INNER, Global.NO_LOOP),
+						inner(Global.NO_LENGTH, 0, Global.NO_LOOP)
+				)), ImmutableList.of(new FrameMapEntry(Global.NO_LENGTH, 0)));
 	}
 }

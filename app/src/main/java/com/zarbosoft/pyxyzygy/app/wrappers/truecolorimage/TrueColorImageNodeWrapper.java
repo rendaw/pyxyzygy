@@ -1,9 +1,6 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage;
 
-import com.zarbosoft.pyxyzygy.app.CanvasHandle;
-import com.zarbosoft.pyxyzygy.app.EditHandle;
-import com.zarbosoft.pyxyzygy.app.ProjectContext;
-import com.zarbosoft.pyxyzygy.app.Wrapper;
+import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.config.NodeConfig;
 import com.zarbosoft.pyxyzygy.app.config.TrueColorImageNodeConfig;
 import com.zarbosoft.pyxyzygy.core.model.ProjectNode;
@@ -59,7 +56,9 @@ public class TrueColorImageNodeWrapper extends Wrapper {
 	}
 
 	@Override
-	public EditHandle buildEditControls(ProjectContext context, TabPane tabPane) {
+	public EditHandle buildEditControls(
+			ProjectContext context, Window window, TabPane tabPane
+	) {
 		return new TrueColorImageEditHandle(context, this, tabPane);
 	}
 

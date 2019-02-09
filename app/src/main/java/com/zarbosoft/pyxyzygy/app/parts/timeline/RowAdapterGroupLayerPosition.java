@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
-import static com.zarbosoft.pyxyzygy.app.GUILaunch.NO_INNER;
+import static com.zarbosoft.pyxyzygy.app.Global.NO_INNER;
 import static com.zarbosoft.pyxyzygy.app.parts.timeline.Timeline.emptyStateImage;
 import static com.zarbosoft.rendaw.common.Common.last;
 
@@ -192,13 +192,6 @@ public class RowAdapterGroupLayerPosition extends RowAdapter {
 		int offset = inner - previous.at;
 		if (offset <= 0)
 			throw new Assertion();
-		System.out.format("P create frame\n");
-		layer.positionFrames().forEach(f -> System.out.format("  pos fr %s\n", f.length()));
-		System.out.format("  offset %s; previous l %s; previous i %s\n",
-				offset,
-				previous.frame.length(),
-				previous.frameIndex
-		);
 		if (previous.frame.length() == -1) {
 			newFrame.initialLengthSet(context, -1);
 		} else {

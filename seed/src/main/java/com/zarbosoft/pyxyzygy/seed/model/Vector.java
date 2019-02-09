@@ -43,6 +43,10 @@ public class Vector {
 		return new Vector(x - other.x, y - other.y);
 	}
 
+	public Vector divide(int factor) {
+		return new Vector(x / factor, y / factor);
+	}
+
 	public static class Deserializer extends StackReader.RecordState {
 		int x;
 		int y;

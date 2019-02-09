@@ -6,7 +6,6 @@ import com.zarbosoft.pyxyzygy.app.config.TrueColorBrush;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.app.widgets.TrueColorPicker;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
-import com.zarbosoft.pyxyzygy.app.wrappers.group.Tool;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.pyxyzygy.seed.model.Rectangle;
 import com.zarbosoft.pyxyzygy.seed.model.Vector;
@@ -33,6 +32,7 @@ public class ToolBrush extends Tool {
 	final TrueColorBrush brush;
 	private final TrueColorImageEditHandle editHandle;
 	private final javafx.scene.shape.Rectangle cursor = new javafx.scene.shape.Rectangle();
+	private DoubleVector lastEnd;
 
 	public ToolBrush(
 			ProjectContext context, TrueColorImageEditHandle trueColorImageEditHandle, TrueColorBrush brush
@@ -140,56 +140,11 @@ public class ToolBrush extends Tool {
 		}
 	}
 
-	@Override
-	public void mark(ProjectContext context, Window window, DoubleVector start, DoubleVector end) {
-		do {
-			if (false) {
-				throw new Assertion();
-			} else if (window.pressed.contains(KeyCode.CONTROL) && window.pressed.contains(KeyCode.SHIFT)) {
-				DoubleVector outer = Window.toGlobal(editHandle.wrapper.canvasHandle, end);
-				TrueColorImage out = TrueColorImage.create(1, 1);
-				Render.render(context,
-						window.selectedForView.get().getWrapper().getValue(),
-						out,
-						window.selectedForView.get().frameNumber.get(),
-						new Rectangle((int) Math.floor(outer.x), (int) Math.floor(outer.y), 1, 1),
-						1
-				);
-				setColor(context, HelperJFX.toImage(out).getPixelReader().getColor(0, 0));
-			} else if (window.pressed.contains(KeyCode.CONTROL)) {
-				Vector quantizedCorner = end.divide(context.tileSize).toInt();
-				WrapTile tile = editHandle.wrapper.canvasHandle.wrapTiles.get(quantizedCorner.to1D());
-				if (tile == null) {
-					setColor(context, Color.TRANSPARENT);
-				} else {
-					Vector intEnd = end.toInt();
-					Vector tileCorner = quantizedCorner.multiply(context.tileSize);
-					setColor(context,
-							tile.widget
-									.getImage()
-									.getPixelReader()
-									.getColor(intEnd.x - tileCorner.x, intEnd.y - tileCorner.y)
-					);
-				}
-			} else
-				break;
-			return;
-		} while (false);
-
+	private void stroke(ProjectContext context, DoubleVector start, DoubleVector end) {
 		TrueColor color = brush.useColor.get() ? brush.color.get() : context.config.trueColor.get();
 
 		final double startRadius = brush.size.get() / 20.0;
 		final double endRadius = brush.size.get() / 20.0;
-
-		// Get frame-local coordinates
-		System.out.format("stroke start %s %s to %s %s rad %s %s\n",
-				start.x,
-				start.y,
-				end.x,
-				end.y,
-				startRadius,
-				endRadius
-		);
 
 		// Calculate mark bounds
 		Rectangle bounds = new BoundsBuilder()
@@ -197,25 +152,12 @@ public class ToolBrush extends Tool {
 				.circle(end, endRadius)
 				.quantize(context.tileSize)
 				.buildInt();
-		//System.out.format("stroke bounds: %s\n", bounds);
 
 		// Copy tiles to canvas
 		TrueColorImage canvas = TrueColorImage.create(bounds.width, bounds.height);
 		Rectangle tileBounds = editHandle.wrapper.canvasHandle.render(context, canvas, bounds);
 
 		// Do the stroke
-		/*
-		System.out.format("stroke %s %s to %s %s, c %s %s %s %s\n",
-				start.x,
-				start.y,
-				end.x,
-				end.y,
-				color.r,
-				color.g,
-				color.b,
-				color.a
-		);
-		*/
 		if (brush.hard.get())
 			canvas.strokeHard(color.r,
 					color.g,
@@ -245,6 +187,46 @@ public class ToolBrush extends Tool {
 
 		// Replace tiles in frame
 		editHandle.wrapper.canvasHandle.drop(context, tileBounds, canvas);
+
+		lastEnd = end;
+	}
+
+	@Override
+	public void mark(ProjectContext context, Window window, DoubleVector start, DoubleVector end) {
+		if (false) {
+			throw new Assertion();
+		} else if (window.pressed.contains(KeyCode.CONTROL) && window.pressed.contains(KeyCode.SHIFT)) {
+			DoubleVector outer = Window.toGlobal(editHandle.wrapper.canvasHandle, end);
+			TrueColorImage out = TrueColorImage.create(1, 1);
+			Render.render(context,
+					window.selectedForView.get().getWrapper().getValue(),
+					out,
+					window.selectedForView.get().frameNumber.get(),
+					new Rectangle((int) Math.floor(outer.x), (int) Math.floor(outer.y), 1, 1),
+					1
+			);
+			setColor(context, HelperJFX.toImage(out).getPixelReader().getColor(0, 0));
+		} else if (window.pressed.contains(KeyCode.SHIFT)) {
+			if (lastEnd == null)
+				lastEnd = end;
+			stroke(context, lastEnd, end);
+		} else if (window.pressed.contains(KeyCode.CONTROL)) {
+			Vector quantizedCorner = end.divide(context.tileSize).toInt();
+			WrapTile tile = editHandle.wrapper.canvasHandle.wrapTiles.get(quantizedCorner.to1D());
+			if (tile == null) {
+				setColor(context, Color.TRANSPARENT);
+			} else {
+				Vector intEnd = end.toInt();
+				Vector tileCorner = quantizedCorner.multiply(context.tileSize);
+				setColor(context,
+						tile.widget
+								.getImage()
+								.getPixelReader()
+								.getColor(intEnd.x - tileCorner.x, intEnd.y - tileCorner.y)
+				);
+			}
+		} else
+			stroke(context, start, end);
 	}
 
 	@Override

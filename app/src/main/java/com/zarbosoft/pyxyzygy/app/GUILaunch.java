@@ -1,15 +1,14 @@
 package com.zarbosoft.pyxyzygy.app;
 
 import com.google.common.collect.ImmutableList;
-import com.zarbosoft.appdirsj.AppDirs;
 import com.zarbosoft.interface1.TypeInfo;
-import com.zarbosoft.pyxyzygy.core.model.TrueColorImageFrame;
-import com.zarbosoft.pyxyzygy.core.model.TrueColorImageNode;
 import com.zarbosoft.pyxyzygy.app.config.CreateMode;
 import com.zarbosoft.pyxyzygy.app.config.GlobalConfig;
 import com.zarbosoft.pyxyzygy.app.config.TrueColor;
 import com.zarbosoft.pyxyzygy.app.config.TrueColorBrush;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
+import com.zarbosoft.pyxyzygy.core.model.TrueColorImageFrame;
+import com.zarbosoft.pyxyzygy.core.model.TrueColorImageNode;
 import com.zarbosoft.pyxyzygy.seed.model.Vector;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.ChainComparator;
@@ -51,42 +50,35 @@ import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 
 public class GUILaunch extends Application {
-	public static String nameSymbol = "pyxyzygy";
-	public static String nameHuman = "pyxyzygy";
-	public static AppDirs appDirs = new AppDirs().set_appname(nameSymbol).set_appauthor("zarbosoft");
-	public static final Path configDir = appDirs.user_config_dir();
-	public static final Path configPath = configDir.resolve("config.luxem");
-	public final static int opacityMax = 1000;
-	public final static int blendMax = 1000;
 	public static final GlobalConfig config;
+
 	static {
 		try {
-			config = com.zarbosoft.pyxyzygy.app.ConfigBase.deserialize(new TypeInfo(GlobalConfig.class), configDir, () -> {
-				GlobalConfig config = new GlobalConfig();
-				TrueColorBrush transparentBrush = new TrueColorBrush();
-				transparentBrush.name.set("Transparent");
-				transparentBrush.size.set(50);
-				transparentBrush.blend.set(blendMax);
-				transparentBrush.color.set(TrueColor.fromJfx(Color.TRANSPARENT));
-				transparentBrush.useColor.set(true);
-				TrueColorBrush defaultBrush = new TrueColorBrush();
-				defaultBrush.name.set("Default");
-				defaultBrush.size.set(10);
-				defaultBrush.blend.set(blendMax);
-				defaultBrush.color.set(TrueColor.fromJfx(Color.BLACK));
-				defaultBrush.useColor.set(true);
-				config.trueColorBrushes.addAll(transparentBrush, defaultBrush);
-				return config;
-			});
+			config = com.zarbosoft.pyxyzygy.app.ConfigBase.deserialize(new TypeInfo(GlobalConfig.class),
+					Global.configDir,
+					() -> {
+						GlobalConfig config = new GlobalConfig();
+						TrueColorBrush transparentBrush = new TrueColorBrush();
+						transparentBrush.name.set("Transparent");
+						transparentBrush.size.set(50);
+						transparentBrush.blend.set(Global.blendMax);
+						transparentBrush.color.set(TrueColor.fromJfx(Color.TRANSPARENT));
+						transparentBrush.useColor.set(true);
+						TrueColorBrush defaultBrush = new TrueColorBrush();
+						defaultBrush.name.set("Default");
+						defaultBrush.size.set(10);
+						defaultBrush.blend.set(Global.blendMax);
+						defaultBrush.color.set(TrueColor.fromJfx(Color.BLACK));
+						defaultBrush.useColor.set(true);
+						config.trueColorBrushes.addAll(transparentBrush, defaultBrush);
+						return config;
+					}
+			);
 		} catch (Exception e) {
 			Platform.exit();
 			throw e;
 		}
 	}
-
-	public final static int NO_LOOP = 0;
-	public final static int NO_LENGTH = -1;
-	public final static int NO_INNER = -1;
 
 	public static void main(String[] args) {
 		launch(args);
@@ -100,7 +92,7 @@ public class GUILaunch extends Application {
 	public void start(Stage primaryStage) throws Exception {
 		new com.zarbosoft.pyxyzygy.core.mynativeJNI();
 		if (getParameters().getUnnamed().isEmpty()) {
-			primaryStage.setTitle(String.format("%s - Choose project", nameHuman));
+			primaryStage.setTitle(String.format("%s - Choose project", Global.nameHuman));
 			Stream
 					.of("appicon16.png", "appicon32.png", "appicon64.png")
 					.forEach(s -> primaryStage.getIcons().add(icon(s)));
@@ -266,10 +258,11 @@ public class GUILaunch extends Application {
 					setPadding(new Insets(3));
 					getChildren().addAll(explanation, hereLayout, listLayout, buttonLayout);
 
-					addEventFilter(KeyEvent.KEY_PRESSED,e-> {
+					addEventFilter(KeyEvent.KEY_PRESSED, e -> {
 						if (e.getCode() == KeyCode.ENTER) {
-							if (!create.isDisable()) create.fire();
-								return;
+							if (!create.isDisable())
+								create.fire();
+							return;
 						}
 						if (e.getCode() == KeyCode.ESCAPE) {
 							cancel.fire();
@@ -337,7 +330,6 @@ public class GUILaunch extends Application {
 										try {
 											return new ChooserEntry(p1);
 										} catch (Common.UncheckedNoSuchFileException e) {
-											System.out.format("File list dropping %s: %s\n", p1, e);
 											return null;
 										}
 									}))
@@ -375,7 +367,7 @@ public class GUILaunch extends Application {
 		context.config.defaultZoom = createMode.defaultZoom();
 		TrueColorImageNode trueColorImageNode = TrueColorImageNode.create(context);
 		trueColorImageNode.initialNameSet(context, uniqueName("Image"));
-		trueColorImageNode.initialOpacitySet(context, opacityMax);
+		trueColorImageNode.initialOpacitySet(context, Global.opacityMax);
 		TrueColorImageFrame trueColorImageFrame = TrueColorImageFrame.create(context);
 		trueColorImageFrame.initialLengthSet(context, -1);
 		trueColorImageFrame.initialOffsetSet(context, new Vector(0, 0));

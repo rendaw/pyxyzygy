@@ -10,7 +10,7 @@ import javafx.collections.ObservableList;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.zarbosoft.pyxyzygy.app.GUILaunch.appDirs;
+import static com.zarbosoft.pyxyzygy.app.Global.appDirs;
 
 @Configuration
 public class GlobalConfig extends ConfigBase {
@@ -19,6 +19,9 @@ public class GlobalConfig extends ConfigBase {
 
 	@Configuration
 	public String lastDir = appDirs.user_dir().toString();
+
+	@Configuration(optional = true)
+	public String importDir = appDirs.user_dir().toString();
 
 	@Configuration
 	public int maxUndo = 1000;

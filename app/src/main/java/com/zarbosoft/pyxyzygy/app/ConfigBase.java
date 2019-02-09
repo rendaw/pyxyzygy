@@ -192,10 +192,8 @@ public class ConfigBase {
 	}
 
 	public void flushConfig() {
-		System.out.format("flushing config [%s]\n", name());
 		atomicWrite(path, stream -> {
 			Luxem.write(this).map(configTypeMap).pretty().toStream(stream);
 		});
-		System.out.format("flushing config DONE\n");
 	}
 }

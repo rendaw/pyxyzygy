@@ -25,7 +25,7 @@ import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.pad;
 public class GroupNodeEditHandle extends EditHandle {
 	private Tab groupTab;
 	public Tab toolTab;
-	List<Runnable> cleanup = new ArrayList<>();
+	protected List<Runnable> cleanup = new ArrayList<>();
 	Tool tool = null;
 
 	Group overlay;
@@ -41,10 +41,7 @@ public class GroupNodeEditHandle extends EditHandle {
 		wrapper.canvasHandle.overlay.getChildren().add(overlay);
 
 		// Group tab
-		groupTab = new Tab(
-				"Group",
-				pad(new WidgetFormBuilder().apply(b -> cleanup.add(nodeFormFields(context, b, wrapper))).build())
-		);
+		groupTab = buildNodeTab(context);
 
 		// Tool tab
 		toolTab = new Tab();
@@ -117,6 +114,13 @@ public class GroupNodeEditHandle extends EditHandle {
 			tabPane.getTabs().removeAll(groupTab, toolTab);
 		});
 		this.wrapper = wrapper;
+	}
+
+	public Tab buildNodeTab(ProjectContext context) {
+		return new Tab(
+				"Group",
+				pad(new WidgetFormBuilder().apply(b -> cleanup.add(nodeFormFields(context, b, wrapper))).build())
+		);
 	}
 
 	@Override

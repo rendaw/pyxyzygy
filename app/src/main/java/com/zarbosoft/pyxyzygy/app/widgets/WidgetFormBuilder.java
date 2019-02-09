@@ -53,6 +53,7 @@ public class WidgetFormBuilder {
 
 	public WidgetFormBuilder text(String name, Consumer<TextField> cb) {
 		TextField widget = new TextField();
+		GridPane.setFillWidth(widget,true);
 		cb.accept(widget);
 		gridPane.addRow(row++, fieldLabel(name), widget);
 		return this;
@@ -60,6 +61,7 @@ public class WidgetFormBuilder {
 
 	public WidgetFormBuilder intSpinner(String name, int min, int max, Consumer<Spinner<Integer>> cb) {
 		Spinner<Integer> widget = new Spinner<Integer>();
+		GridPane.setFillWidth(widget,true);
 		widget.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(min, max));
 		cb.accept(widget);
 		gridPane.addRow(row++, fieldLabel(name), widget);
@@ -70,6 +72,7 @@ public class WidgetFormBuilder {
 			String name, double min, double max, double step, Consumer<Spinner<Double>> cb
 	) {
 		Spinner<Double> widget = new Spinner<Double>();
+		GridPane.setFillWidth(widget,true);
 		widget.setValueFactory(new SpinnerValueFactory.DoubleSpinnerValueFactory(min, max, min, step));
 		cb.accept(widget);
 		gridPane.addRow(row++, fieldLabel(name), widget);
@@ -103,6 +106,7 @@ public class WidgetFormBuilder {
 
 	public WidgetFormBuilder slider(String name, double min, double max, Consumer<Slider> cb) {
 		Slider widget = new Slider();
+		GridPane.setFillWidth(widget,true);
 		widget.setMin(min);
 		widget.setMax(max);
 		cb.accept(widget);
@@ -124,6 +128,7 @@ public class WidgetFormBuilder {
 
 	public WidgetFormBuilder custom(String name, Supplier<Node> cb) {
 		Node widget = cb.get();
+		GridPane.setFillWidth(widget,true);
 		gridPane.addRow(row++, fieldLabel(name), widget);
 		return this;
 	}
@@ -150,5 +155,13 @@ public class WidgetFormBuilder {
 	public WidgetFormBuilder twoLine(String name, Supplier<Node> cb) {
 		gridPane.add(fieldLabel(name), 0, row++, 1, 1);
 		return span(cb);
+	}
+
+	public <T> WidgetFormBuilder dropDown(String name, Consumer<ComboBox<T>> cb) {
+		ComboBox<T> widget = new ComboBox<>();
+		GridPane.setFillWidth(widget,true);
+		cb.accept(widget);
+		gridPane.addRow(row++, fieldLabel(name), widget);
+		return this;
 	}
 }

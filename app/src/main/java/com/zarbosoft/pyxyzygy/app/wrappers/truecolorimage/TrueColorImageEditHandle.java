@@ -7,7 +7,7 @@ import com.zarbosoft.pyxyzygy.app.config.TrueColor;
 import com.zarbosoft.pyxyzygy.app.config.TrueColorBrush;
 import com.zarbosoft.pyxyzygy.app.config.TrueColorImageNodeConfig;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
-import com.zarbosoft.pyxyzygy.app.wrappers.group.Tool;
+import com.zarbosoft.pyxyzygy.app.Tool;
 import com.zarbosoft.rendaw.common.Assertion;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
@@ -299,7 +299,6 @@ public class TrueColorImageEditHandle extends EditHandle {
 
 	@Override
 	public void cursorMoved(ProjectContext context, DoubleVector vector) {
-		//System.out.format("  mouse z: %s\n",vector);
 		vector = Window.toLocal(wrapper.canvasHandle,vector);
 		mouseX.set(vector.x);
 		mouseY.set(vector.y);

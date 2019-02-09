@@ -45,7 +45,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.zarbosoft.pyxyzygy.app.GUILaunch.*;
 import static com.zarbosoft.rendaw.common.Common.sublist;
 
 public class Timeline {
@@ -388,7 +387,7 @@ public class Timeline {
 
 		// Prepare time translation
 		outerTimeHandle = createTimeHandle(root.getValue());
-		outerTimeHandle.updateTime(ImmutableList.of(new FrameMapEntry(NO_LENGTH, 0)));
+		outerTimeHandle.updateTime(ImmutableList.of(new FrameMapEntry(Global.NO_LENGTH, 0)));
 		if (window.timeMap == null)
 			throw new Assertion(); // DEBUG
 
@@ -420,11 +419,6 @@ public class Timeline {
 	private void updateButtons() {
 		CanvasHandle root = window.selectedForView.get();
 		TreeItem<RowAdapter> nowSelected = tree.getSelectionModel().getSelectedItems().stream().findFirst().orElse(null);
-		System.out.format("update buttos: %s==n %s==n %s==n %s\n", root ,
-				nowSelected ,
-				nowSelected == null ? "n" : nowSelected.getValue() ,
-				nowSelected == null || nowSelected.getValue() == null ? "n" : !nowSelected.getValue().hasFrames()
-				);
 		boolean noSelection = root == null ||
 				nowSelected == null ||
 				nowSelected.getValue() == null ||
@@ -507,7 +501,7 @@ public class Timeline {
 
 			// Draw times in region
 			for (int i = 0; i <
-					Math.max(1, (frame.length == NO_LENGTH ? extraFrames : (frame.length - 2)) / step + 1); ++i) {
+					Math.max(1, (frame.length == Global.NO_LENGTH ? extraFrames : (frame.length - 2)) / step + 1); ++i) {
 				Label label;
 				if (innerIndex >= scrubInnerNumbers.size()) {
 					scrubInnerNumbers.add(label = new Label());
@@ -541,67 +535,64 @@ public class Timeline {
 
 	public static List<FrameMapEntry> computeSubMap(List<FrameMapEntry> outerFrames, List<GroupTimeFrame> innerFrames) {
 		return outerFrames.stream().flatMap(outer -> {
-			if (outer.innerOffset == NO_INNER)
+			if (outer.innerOffset == Global.NO_INNER)
 				return Stream.of(outer);
 			List<FrameMapEntry> subMap = new ArrayList<>();
 			int at = 0;
 			int outerRemaining = outer.length;
 			for (GroupTimeFrame inner : innerFrames) {
-				if (inner.length() != NO_LENGTH && at + inner.length() <= outer.innerOffset) {
+				if (inner.length() != Global.NO_LENGTH && at + inner.length() <= outer.innerOffset) {
 					at += inner.length();
 					continue;
 				}
 
 				int innerOffset = inner.innerOffset();
-				if (innerOffset != NO_INNER && at < outer.innerOffset)
+				if (innerOffset != Global.NO_INNER && at < outer.innerOffset)
 					innerOffset += outer.innerOffset - at;
 
 				// Find out how much of the outer frame to fill up with this frame's overlap
 				int maxLength = outerRemaining;
-				if (inner.length() != NO_LENGTH) {
+				if (inner.length() != Global.NO_LENGTH) {
 					int effectiveFrameLength = inner.length();
 					if (at < outer.innerOffset)
 						effectiveFrameLength -= outer.innerOffset - at;
-					if (maxLength == NO_LENGTH || effectiveFrameLength < maxLength)
+					if (maxLength == Global.NO_LENGTH || effectiveFrameLength < maxLength)
 						maxLength = effectiveFrameLength;
 				}
 
 				// Find out how much a single frame can use of that space (or if multiple frames will be
 				// needed)
 				int useLength = maxLength;
-				if (inner.innerLoop() != NO_LOOP) {
+				if (inner.innerLoop() != Global.NO_LOOP) {
 					innerOffset = innerOffset % inner.innerLoop();
 					int effectiveLoop = inner.innerLoop();
 					if (at < outer.innerOffset) {
 						effectiveLoop -= outer.innerOffset - at;
 						effectiveLoop = Math.floorMod((effectiveLoop - 1), inner.innerLoop()) + 1;
 					}
-					if (useLength == NO_LENGTH || effectiveLoop < useLength) {
+					if (useLength == Global.NO_LENGTH || effectiveLoop < useLength) {
 						useLength = effectiveLoop;
 					}
 				}
 
 				// Create the inner frames to fill up the designated range
-				//System.out.format("(fr %s %s %s) use %s, max %s, in off %s; at %s\n", inner.length(), inner.innerOffset(), inner.innerLoop(), useLength, maxLength, innerOffset, at);
-				if (useLength == NO_LENGTH) {
-					subMap.add(new FrameMapEntry(NO_LENGTH, innerOffset));
+				if (useLength == Global.NO_LENGTH) {
+					subMap.add(new FrameMapEntry(Global.NO_LENGTH, innerOffset));
 					break;
 				} else {
 					// Find out how much of the outer frame to practically fill up - maxLength is actually the
 					// ideal fill
 					int endAt = Math.max(outer.innerOffset, at);
-					if (maxLength == NO_LENGTH) {
+					if (maxLength == Global.NO_LENGTH) {
 						endAt += useLength + inner.innerLoop() * 4;
 					} else {
 						endAt += maxLength;
 					}
-					//System.out.format("\tendAt %s\n",endAt);
 
 					// Make inner frames for each loop + a cap if unbounded
 					while (at < endAt) {
-						//System.out.format("\tloop %s %s\n", useLength, innerOffset);
 						subMap.add(new FrameMapEntry(useLength, innerOffset));
-						if (outerRemaining != NO_LENGTH)
+						if (outerRemaining != Global.NO_LENGTH)
 							outerRemaining -= useLength;
 						if (at < outer.innerOffset)
 							at = outer.innerOffset;
@@ -609,8 +600,8 @@ public class Timeline {
 						useLength = Math.min(inner.innerLoop(), endAt - at);
 						innerOffset = 0;
 					}
-					if (maxLength == NO_LENGTH)
-						subMap.add(new FrameMapEntry(NO_LENGTH, innerOffset));
+					if (maxLength == Global.NO_LENGTH)
+						subMap.add(new FrameMapEntry(Global.NO_LENGTH, innerOffset));
 				}
 
 				if (outerRemaining == 0)
@@ -774,7 +765,7 @@ public class Timeline {
 			@Override
 			public void remove() {
 				window.timeMap = new ArrayList<>();
-				window.timeMap.add(new FrameMapEntry(NO_LENGTH, 0));
+				window.timeMap.add(new FrameMapEntry(Global.NO_LENGTH, 0));
 			}
 		};
 	}

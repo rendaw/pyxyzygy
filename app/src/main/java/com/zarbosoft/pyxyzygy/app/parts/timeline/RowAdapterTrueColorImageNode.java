@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
-import static com.zarbosoft.pyxyzygy.app.GUILaunch.NO_INNER;
+import static com.zarbosoft.pyxyzygy.app.Global.NO_INNER;
 import static com.zarbosoft.rendaw.common.Common.last;
 
 class RowAdapterTrueColorImageNode extends RowAdapter {

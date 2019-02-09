@@ -53,7 +53,7 @@ public class Misc {
 							})
 					);
 				});
-				builder.slider("Opacity", 0, GUILaunch.opacityMax, slider -> {
+				builder.slider("Opacity", 0, Global.opacityMax, slider -> {
 					slider.setValue(node.opacity());
 					Misc.<DoubleProperty, Number>bind(slider.valueProperty(),
 							v -> context.history.change(c -> c.projectNode(node).opacitySet(v.intValue())),

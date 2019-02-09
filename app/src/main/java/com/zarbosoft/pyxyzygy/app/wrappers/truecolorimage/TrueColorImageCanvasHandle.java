@@ -14,7 +14,7 @@ import javafx.beans.property.SimpleIntegerProperty;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.zarbosoft.pyxyzygy.app.GUILaunch.opacityMax;
+import static com.zarbosoft.pyxyzygy.app.Global.opacityMax;
 
 public class TrueColorImageCanvasHandle extends CanvasHandle {
 	final CanvasHandle parent;
@@ -37,10 +37,8 @@ public class TrueColorImageCanvasHandle extends CanvasHandle {
 			inner.setOpacity((double) value / opacityMax);
 		});
 
-		this.framesAddListener =
-				wrapper.node.addFramesAddListeners((target, at, value) -> updateFrame(context));
-		this.framesRemoveListener =
-				wrapper.node.addFramesRemoveListeners((target, at, count) -> updateFrame(context));
+		this.framesAddListener = wrapper.node.addFramesAddListeners((target, at, value) -> updateFrame(context));
+		this.framesRemoveListener = wrapper.node.addFramesRemoveListeners((target, at, count) -> updateFrame(context));
 		this.framesMoveListener =
 				wrapper.node.addFramesMoveToListeners((target, source, count, dest) -> updateFrame(context));
 
@@ -69,7 +67,6 @@ public class TrueColorImageCanvasHandle extends CanvasHandle {
 
 	@Override
 	public void setViewport(ProjectContext context, DoubleRectangle newBounds1, int positiveZoom) {
-		//System.out.format("set viewport; b %s old z %s, z %s\n", newBounds1, this.zoom.get(),positiveZoom);
 		this.zoom.set(positiveZoom);
 		DoubleRectangle oldBounds1 = this.bounds.get();
 		this.bounds.set(newBounds1);
@@ -77,15 +74,15 @@ public class TrueColorImageCanvasHandle extends CanvasHandle {
 		Rectangle oldBounds = oldBounds1.scale(3).quantize(context.tileSize);
 		Rectangle newBounds = newBounds1.scale(3).quantize(context.tileSize);
 
-			// Remove tiles outside view bounds
-			for (int x = 0; x < oldBounds.width; ++x) {
-				for (int y = 0; y < oldBounds.height; ++y) {
-					if (newBounds.contains(x, y))
-						continue;
-					long key = oldBounds.corner().to1D();
-					inner.getChildren().remove(wrapTiles.get(key));
-				}
+		// Remove tiles outside view bounds
+		for (int x = 0; x < oldBounds.width; ++x) {
+			for (int y = 0; y < oldBounds.height; ++y) {
+				if (newBounds.contains(x, y))
+					continue;
+				long key = oldBounds.corner().to1D();
+				inner.getChildren().remove(wrapTiles.get(key));
 			}
+		}
 
 		// Add missing tiles in bounds
 		for (int x = 0; x < newBounds.width; ++x) {
@@ -99,11 +96,8 @@ public class TrueColorImageCanvasHandle extends CanvasHandle {
 				if (tile == null) {
 					continue;
 				}
-				WrapTile wrapTile = new WrapTile(context,
-						tile,
-						useIndexes.x * context.tileSize,
-						useIndexes.y * context.tileSize
-				);
+				WrapTile wrapTile =
+						new WrapTile(context, tile, useIndexes.x * context.tileSize, useIndexes.y * context.tileSize);
 				wrapTiles.put(key, wrapTile);
 				inner.getChildren().add(wrapTile.widget);
 			}
@@ -119,7 +113,6 @@ public class TrueColorImageCanvasHandle extends CanvasHandle {
 	public void updateFrame(ProjectContext context) {
 		TrueColorImageFrame oldFrame = frame;
 		frame = findFrame(frameNumber.get());
-		//System.out.format("set frame %s: %s vs %s\n", frameNumber, oldFrame, frame);
 		if (oldFrame != frame) {
 			detachTiles();
 			attachTiles(context);
@@ -134,7 +127,6 @@ public class TrueColorImageCanvasHandle extends CanvasHandle {
 					inner.getChildren().remove(old.widget);
 			}
 			Rectangle checkBounds = bounds.get().scale(3).quantize(context.tileSize);
-			//System.out.format("attach tiles: %s = q %s\n", wrapper.bounds, checkBounds);
 			for (Map.Entry<Long, TileBase> entry : put.entrySet()) {
 				long key = entry.getKey();
 				Vector indexes = Vector.from1D(key);
@@ -146,11 +138,8 @@ public class TrueColorImageCanvasHandle extends CanvasHandle {
 				if (old != null) {
 					old.update(context, value);
 				} else {
-					WrapTile wrap = new WrapTile(context,
-							value,
-							indexes.x * context.tileSize,
-							indexes.y * context.tileSize
-					);
+					WrapTile wrap =
+							new WrapTile(context, value, indexes.x * context.tileSize, indexes.y * context.tileSize);
 					wrapTiles.put(key, wrap);
 					inner.getChildren().add(wrap.widget);
 				}
@@ -167,7 +156,6 @@ public class TrueColorImageCanvasHandle extends CanvasHandle {
 
 	public Rectangle render(ProjectContext context, TrueColorImage gc, Rectangle crop) {
 		Rectangle tileBounds = crop.quantize(context.tileSize);
-		//System.out.format("render tb %s\n", tileBounds);
 		for (int x = 0; x < tileBounds.width; ++x) {
 			for (int y = 0; y < tileBounds.height; ++y) {
 				Tile tile = (Tile) frame.tilesGet(tileBounds.corner().plus(x, y).to1D());
@@ -175,7 +163,6 @@ public class TrueColorImageCanvasHandle extends CanvasHandle {
 					continue;
 				final int renderX = (x + tileBounds.x) * context.tileSize - crop.x;
 				final int renderY = (y + tileBounds.y) * context.tileSize - crop.y;
-				//System.out.format("composing at %s %s op %s\n", renderX, renderY, opacity);
 				System.out.flush();
 				TrueColorImage data = tile.getData(context);
 				gc.compose(data, renderX, renderY, (float) 1);
@@ -189,24 +176,23 @@ public class TrueColorImageCanvasHandle extends CanvasHandle {
 	}
 
 	public void drop(ProjectContext context, Rectangle unitBounds, TrueColorImage image) {
+		drop(context, frame, unitBounds, image);
+	}
+
+	public static void drop(
+			ProjectContext context,
+			TrueColorImageFrame dest,
+			Rectangle unitBounds,
+			TrueColorImage image
+	) {
 		for (int x = 0; x < unitBounds.width; ++x) {
 			for (int y = 0; y < unitBounds.height; ++y) {
 				final int x0 = x;
 				final int y0 = y;
-				/*
-				System.out.format("\tcopy %s %s: %s %s by %s %s\n",
-						x0,
-						y0,
-						x0 * context.tileSize,
-						y0 * context.tileSize,
-						context.tileSize,
-						context.tileSize
-				);
-				*/
 				TrueColorImage shot =
 						image.copy(x0 * context.tileSize, y0 * context.tileSize, context.tileSize, context.tileSize);
 				context.history.change(c -> c
-						.trueColorImageFrame(frame)
+						.trueColorImageFrame(dest)
 						.tilesPut(unitBounds.corner().plus(x0, y0).to1D(), Tile.create(context, shot)));
 			}
 		}

@@ -24,35 +24,35 @@ public class GroupNodeWrapper extends Wrapper {
 	private final Runnable layerListenCleanup;
 
 	GroupLayer specificLayer;
-	GroupNodeCanvasHandle canvasHandle;
+	public GroupNodeCanvasHandle canvasHandle;
 
 	public GroupNodeWrapper(ProjectContext context, Wrapper parent, int parentIndex, GroupNode node) {
 		this.parentIndex = parentIndex;
 		this.parent = parent;
 		this.node = node;
-		config = (GroupNodeConfig) context.config.nodes.computeIfAbsent(node.id(), id -> new GroupNodeConfig());
+		config = initConfig(context,node.id());
 
 		tree.set(new TreeItem<>(this));
 
 		layerListenCleanup = node.mirrorLayers(children, layer -> {
-			System.out.format("creating group node child 1.\n");
 			return Window.createNode(context, this, -1, layer);
 		}, child -> {
-			System.out.format("removing group node child 1.\n");
 			child.remove(context);
 		}, at -> {
 			for (int i = at; i < children.size(); ++i)
 				children.get(i).parentIndex = i;
 		});
 		Misc.mirror(children, tree.get().getChildren(), child -> {
-			System.out.format("creating group node child 2.\n");
 			child.tree.addListener((observable, oldValue, newValue) -> {
 				tree.get().getChildren().set(child.parentIndex, newValue);
 			});
 			return child.tree.get();
 		}, c -> {
-			System.out.format("removing group node child 2.\n");
 		}, Misc.noopConsumer());
+	}
+
+	protected GroupNodeConfig initConfig(ProjectContext context, long id) {
+		return (GroupNodeConfig) context.config.nodes.computeIfAbsent(id, id1 -> new GroupNodeConfig());
 	}
 
 	@Override
@@ -76,7 +76,9 @@ public class GroupNodeWrapper extends Wrapper {
 	}
 
 	@Override
-	public EditHandle buildEditControls(ProjectContext context, TabPane tabPane) {
+	public EditHandle buildEditControls(
+			ProjectContext context, Window window, TabPane tabPane
+	) {
 		return new GroupNodeEditHandle(this, context, tabPane);
 	}
 
