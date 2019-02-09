@@ -1,23 +1,21 @@
-package com.zarbosoft.pyxyzygy.app;
+package com.zarbosoft.pyxyzygy.app.model.v0;
 
-import com.google.common.collect.ImmutableList;
 import com.zarbosoft.interface1.TypeInfo;
 import com.zarbosoft.luxem.read.StackReader;
 import com.zarbosoft.luxem.write.RawWriter;
-import com.zarbosoft.pyxyzygy.app.model.Tile;
-import com.zarbosoft.pyxyzygy.core.model.*;
+import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.config.ProjectConfig;
 import com.zarbosoft.pyxyzygy.app.config.TrueColor;
+import com.zarbosoft.pyxyzygy.core.model.v0.*;
 import com.zarbosoft.pyxyzygy.seed.deserialize.ModelDeserializationContext;
 import com.zarbosoft.pyxyzygy.seed.model.Dirtyable;
-import com.zarbosoft.pyxyzygy.seed.model.ProjectContextBase;
-import com.zarbosoft.pyxyzygy.seed.model.ProjectObjectInterface;
+import com.zarbosoft.pyxyzygy.seed.model.v0.ProjectContextBase;
+import com.zarbosoft.pyxyzygy.seed.model.v0.ProjectObjectInterface;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.DeadCode;
 import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -33,6 +31,7 @@ import static com.zarbosoft.rendaw.common.Common.atomicWrite;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 
 public class ProjectContext extends ProjectContextBase implements Dirtyable {
+	public final static String version = "v0";
 	public static Map<String, Image> iconCache = new HashMap<>();
 	public static Map<String, Integer> names = new HashMap<>();
 	public Project project;
@@ -176,17 +175,7 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 		}, 5000);
 	}
 
-	public static ProjectContext create(Path path, int tileSize) {
-		ProjectContext out = new ProjectContext(path);
-		out.tileSize = tileSize;
-		out.project = Project.create(out);
-		out.history = new History(out, ImmutableList.of(), ImmutableList.of(), null);
-		out.hotkeys = new Hotkeys();
-		out.initConfig();
-		return out;
-	}
-
-	private void initConfig() {
+	public void initConfig() {
 		config = ConfigBase.deserialize(new TypeInfo(ProjectConfig.class), path, () -> {
 			ProjectConfig config = new ProjectConfig();
 			config.trueColor.set(TrueColor.fromJfx(Color.BLACK));
@@ -194,18 +183,15 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 		});
 	}
 
-	private static Path path(Path base) {
-		return base.resolve("project.luxem");
-	}
-
-	private Path path() {
-		return path(path);
+	private Path projectPath() {
+		return Global.projectPath(path);
 	}
 
 	@Override
 	public void dirtyFlush(ProjectContextBase context) {
-		atomicWrite(path(), dest -> {
+		atomicWrite(projectPath(), dest -> {
 			RawWriter writer = new RawWriter(dest, (byte) ' ', 4);
+			writer.type(version);
 			writer.recordBegin();
 			writer.key("tileSize").primitive(Integer.toString(tileSize));
 			writer.key("nextId").primitive(Long.toString(nextId));
@@ -219,43 +205,16 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 		});
 	}
 
-	public static ProjectContext deserialize(Path path) {
-		return uncheck(() -> {
-			ModelDeserializationContext context = new ModelDeserializationContext();
-			ProjectContext out;
-			try (InputStream source = Files.newInputStream(path(path))) {
-				out = (ProjectContext) new StackReader().read(source, new StackReader.ArrayState() {
-					@Override
-					public StackReader.State array() {
-						throw new IllegalStateException("Project data should be a record.");
-					}
-
-					@Override
-					public StackReader.State record() {
-						return new Deserializer(context, path);
-					}
-				}).get(0);
-			}
-			context.finishers.forEach(finisher -> finisher.finish(context));
-			context.objectMap
-					.values()
-					.stream()
-					.filter(o -> o instanceof Project)
-					.findFirst()
-					.ifPresent(p -> out.project = (Project) p);
-			out.history = new History(out, context.undoHistory, context.redoHistory, context.activeChange);
-			out.hotkeys = new Hotkeys();
-			out.initConfig();
-			out.debugCheckRefCounts();
-			return out;
-		});
+	@Override
+	public Object migrate() {
+		return this;
 	}
 
 	public static class Deserializer extends StackReader.RecordState {
 		private final ModelDeserializationContext context;
 		private final ProjectContext out;
 
-		Deserializer(ModelDeserializationContext context, Path path) {
+		public Deserializer(ModelDeserializationContext context, Path path) {
 			this.context = context;
 			out = new ProjectContext(path);
 		}

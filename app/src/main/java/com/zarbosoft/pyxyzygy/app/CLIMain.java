@@ -3,9 +3,10 @@ package com.zarbosoft.pyxyzygy.app;
 import com.zarbosoft.interface1.Configuration;
 import com.zarbosoft.luxem.write.RawWriter;
 import com.zarbosoft.pidgooncommand.Command;
+import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
-import com.zarbosoft.pyxyzygy.core.model.*;
-import com.zarbosoft.pyxyzygy.seed.model.Rectangle;
+import com.zarbosoft.pyxyzygy.core.model.v0.*;
+import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
 import com.zarbosoft.rendaw.common.Assertion;
 import io.github.classgraph.ClassGraph;
 
@@ -25,7 +26,7 @@ public class CLIMain {
 		public String path;
 
 		public void run() {
-			runImpl(ProjectContext.deserialize(Paths.get(path)));
+			runImpl(Global.deserialize(Paths.get(path)));
 		}
 
 		public abstract void runImpl(ProjectContext context);

@@ -1,12 +1,12 @@
 package com.zarbosoft.pyxyzygy.app.parts.timeline;
 
-import com.zarbosoft.pyxyzygy.app.ProjectContext;
+import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.WidgetHandle;
 import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupLayerWrapper;
-import com.zarbosoft.pyxyzygy.core.model.GroupLayer;
-import com.zarbosoft.pyxyzygy.core.model.GroupPositionFrame;
-import com.zarbosoft.pyxyzygy.seed.model.Vector;
+import com.zarbosoft.pyxyzygy.core.model.v0.GroupLayer;
+import com.zarbosoft.pyxyzygy.core.model.v0.GroupPositionFrame;
+import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import com.zarbosoft.rendaw.common.Assertion;
 import javafx.beans.value.ObservableObjectValue;
 import javafx.beans.value.ObservableValue;

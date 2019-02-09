@@ -23,7 +23,7 @@ public enum CreateMode {
 
 		@Override
 		public int defaultZoom() {
-			return 4;
+			return 8;
 		}
 	};
 

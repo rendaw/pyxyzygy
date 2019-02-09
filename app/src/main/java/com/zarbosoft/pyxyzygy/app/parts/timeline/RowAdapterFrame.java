@@ -1,6 +1,6 @@
 package com.zarbosoft.pyxyzygy.app.parts.timeline;
 
-import com.zarbosoft.pyxyzygy.app.ProjectContext;
+import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 
 public abstract class RowAdapterFrame {
 	public abstract int length();

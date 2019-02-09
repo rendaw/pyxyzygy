@@ -1,10 +1,11 @@
 package com.zarbosoft.pyxyzygy.app;
 
-import com.zarbosoft.pyxyzygy.app.model.Tile;
+import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
+import com.zarbosoft.pyxyzygy.app.model.v0.Tile;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
-import com.zarbosoft.pyxyzygy.core.model.*;
-import com.zarbosoft.pyxyzygy.seed.model.Rectangle;
-import com.zarbosoft.pyxyzygy.seed.model.Vector;
+import com.zarbosoft.pyxyzygy.core.model.v0.*;
+import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
+import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupLayerWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage.TrueColorImageNodeWrapper;
 import com.zarbosoft.rendaw.common.Assertion;

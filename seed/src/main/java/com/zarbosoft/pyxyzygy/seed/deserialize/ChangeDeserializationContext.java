@@ -1,6 +1,6 @@
 package com.zarbosoft.pyxyzygy.seed.deserialize;
 
-import com.zarbosoft.pyxyzygy.seed.model.ProjectObjectInterface;
+import com.zarbosoft.pyxyzygy.seed.model.v0.ProjectObjectInterface;
 
 import java.util.Map;
 

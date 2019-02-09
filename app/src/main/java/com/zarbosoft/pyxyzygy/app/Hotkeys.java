@@ -2,6 +2,7 @@ package com.zarbosoft.pyxyzygy.app;
 
 import com.google.common.collect.ImmutableList;
 import com.zarbosoft.interface1.Configuration;
+import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;

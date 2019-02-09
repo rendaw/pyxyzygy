@@ -1,8 +1,9 @@
 package com.zarbosoft.pyxyzygy.app;
 
 import com.zarbosoft.pyxyzygy.app.config.NodeConfig;
-import com.zarbosoft.pyxyzygy.core.model.ProjectNode;
-import com.zarbosoft.pyxyzygy.core.model.ProjectObject;
+import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
+import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
+import com.zarbosoft.pyxyzygy.core.model.v0.ProjectObject;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.control.TabPane;

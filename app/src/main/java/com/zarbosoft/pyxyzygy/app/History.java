@@ -2,13 +2,14 @@ package com.zarbosoft.pyxyzygy.app;
 
 import com.zarbosoft.luxem.read.StackReader;
 import com.zarbosoft.luxem.write.RawWriter;
+import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.WeakCache;
 import com.zarbosoft.pyxyzygy.seed.deserialize.ChangeDeserializationContext;
 import com.zarbosoft.pyxyzygy.seed.model.Change;
 import com.zarbosoft.pyxyzygy.seed.model.ChangeStep;
-import com.zarbosoft.pyxyzygy.core.model.ChangeStepBuilder;
-import com.zarbosoft.pyxyzygy.core.model.DeserializeHelper;
+import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
+import com.zarbosoft.pyxyzygy.core.model.v0.DeserializeHelper;
 
 import java.io.InputStream;
 import java.nio.file.Files;

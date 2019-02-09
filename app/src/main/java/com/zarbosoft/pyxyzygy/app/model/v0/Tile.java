@@ -1,12 +1,11 @@
-package com.zarbosoft.pyxyzygy.app.model;
+package com.zarbosoft.pyxyzygy.app.model.v0;
 
-import com.zarbosoft.pyxyzygy.core.model.TileBase;
+import com.zarbosoft.pyxyzygy.core.model.v0.TileBase;
 import com.zarbosoft.pyxyzygy.seed.model.Dirtyable;
-import com.zarbosoft.pyxyzygy.seed.model.ProjectContextBase;
-import com.zarbosoft.pyxyzygy.seed.model.Vector;
+import com.zarbosoft.pyxyzygy.seed.model.v0.ProjectContextBase;
+import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import com.zarbosoft.luxem.read.StackReader;
 import com.zarbosoft.luxem.write.RawWriter;
-import com.zarbosoft.pyxyzygy.app.ProjectContext;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.pyxyzygy.seed.deserialize.GeneralMapState;
 import com.zarbosoft.pyxyzygy.seed.deserialize.ModelDeserializationContext;

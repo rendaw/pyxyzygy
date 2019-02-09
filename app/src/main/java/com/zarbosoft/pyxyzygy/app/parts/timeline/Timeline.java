@@ -2,13 +2,13 @@ package com.zarbosoft.pyxyzygy.app.parts.timeline;
 
 import com.google.common.collect.ImmutableList;
 import com.zarbosoft.pyxyzygy.app.*;
+import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.app.wrappers.camera.CameraWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage.TrueColorImageNodeWrapper;
-import com.zarbosoft.pyxyzygy.core.model.*;
+import com.zarbosoft.pyxyzygy.core.model.v0.*;
 import com.zarbosoft.rendaw.common.Assertion;
-import com.zarbosoft.rendaw.common.DeadCode;
 import javafx.beans.Observable;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleIntegerProperty;

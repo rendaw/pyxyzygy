@@ -1,4 +1,4 @@
-package com.zarbosoft.pyxyzygy.generate;
+package com.zarbosoft.pyxyzygy.generate.model.v0;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -8,8 +8,13 @@ import com.zarbosoft.interface1.Configuration;
 import com.zarbosoft.interface1.TypeInfo;
 import com.zarbosoft.interface1.Walk;
 import com.zarbosoft.luxem.read.StackReader;
+import com.zarbosoft.pyxyzygy.generate.Helper;
+import com.zarbosoft.pyxyzygy.generate.TaskBase;
 import com.zarbosoft.pyxyzygy.seed.deserialize.*;
 import com.zarbosoft.pyxyzygy.seed.model.*;
+import com.zarbosoft.pyxyzygy.seed.model.v0.ModelRootType;
+import com.zarbosoft.pyxyzygy.seed.model.v0.ProjectContextBase;
+import com.zarbosoft.pyxyzygy.seed.model.v0.ProjectObjectInterface;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.Pair;
 import io.github.classgraph.ClassGraph;
@@ -36,7 +41,7 @@ import static javax.lang.model.element.Modifier.*;
  * <p>
  * Objects should be created either by their Deserializer or by their static create() method.
  */
-public class GenerateModel extends TaskBase {
+public class GenerateModelV0 extends TaskBase {
 	public static Object CHANGE_TOKEN_NAME = new Object();
 	public static ScanResult scanner = new ClassGraph().enableAllInfo().whitelistPackages("com.zarbosoft").scan();
 
@@ -75,7 +80,7 @@ public class GenerateModel extends TaskBase {
 	}
 
 	public ClassName name(String... parts) {
-		return ClassName.get("com.zarbosoft.pyxyzygy.core.model",
+		return ClassName.get("com.zarbosoft.pyxyzygy.core.model.v0",
 				Arrays.stream(parts).collect(Collectors.joining("_"))
 		);
 	}
@@ -190,7 +195,7 @@ public class GenerateModel extends TaskBase {
 		ModelRootType.class.getSimpleName();
 		for (Class klass : new ClassGraph()
 				.enableAllInfo()
-				.whitelistPackages("com.zarbosoft.pyxyzygy.generate.premodel")
+				.whitelistPackages("com.zarbosoft.pyxyzygy.generate.model.v0.premodel")
 				.scan()
 				.getSubclasses(ModelRootType.class.getName())
 				.loadClasses()) {

@@ -1,7 +1,7 @@
 package com.zarbosoft.pyxyzygy.app.parts.timeline;
 
 import com.zarbosoft.pyxyzygy.app.FrameMapEntry;
-import com.zarbosoft.pyxyzygy.app.ProjectContext;
+import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.Window;
 import javafx.beans.binding.Bindings;
 import javafx.scene.Group;

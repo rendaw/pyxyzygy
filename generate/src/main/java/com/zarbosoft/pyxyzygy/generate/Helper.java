@@ -2,17 +2,14 @@ package com.zarbosoft.pyxyzygy.generate;
 
 import com.squareup.javapoet.*;
 import com.zarbosoft.interface1.TypeInfo;
-import com.zarbosoft.pyxyzygy.generate.premodel.ProjectObject;
+import com.zarbosoft.pyxyzygy.generate.model.v0.premodel.ProjectObject;
 import com.zarbosoft.rendaw.common.Pair;
-import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 

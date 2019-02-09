@@ -1,11 +1,12 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage;
 
 import com.zarbosoft.pyxyzygy.app.*;
+import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
-import com.zarbosoft.pyxyzygy.seed.model.Rectangle;
-import com.zarbosoft.pyxyzygy.seed.model.Vector;
+import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
+import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.scene.Group;

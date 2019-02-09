@@ -4,8 +4,9 @@ import com.google.common.collect.ImmutableList;
 import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.config.GroupNodeConfig;
 import com.zarbosoft.pyxyzygy.app.config.NodeConfig;
-import com.zarbosoft.pyxyzygy.core.model.*;
-import com.zarbosoft.pyxyzygy.seed.model.Vector;
+import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
+import com.zarbosoft.pyxyzygy.core.model.v0.*;
+import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.TabPane;
@@ -14,7 +15,7 @@ import javafx.scene.control.TreeItem;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.zarbosoft.pyxyzygy.app.ProjectContext.uniqueName1;
+import static com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext.uniqueName1;
 
 public class GroupNodeWrapper extends Wrapper {
 	private final Wrapper parent;

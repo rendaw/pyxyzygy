@@ -2,15 +2,20 @@ package com.zarbosoft.pyxyzygy.app;
 
 import com.google.common.collect.ImmutableList;
 import com.zarbosoft.pyxyzygy.app.parts.timeline.Timeline;
-import com.zarbosoft.pyxyzygy.core.model.GroupTimeFrame;
-import com.zarbosoft.pyxyzygy.seed.model.ProjectContextBase;
+import com.zarbosoft.pyxyzygy.core.model.v0.GroupTimeFrame;
+import com.zarbosoft.pyxyzygy.seed.model.v0.ProjectContextBase;
 import org.junit.Test;
 
 import java.nio.file.Paths;
 import java.util.List;
 
 public class TestTimeMapCalc {
-	private static ProjectContextBase context = new ProjectContextBase(Paths.get("/"));
+	private static ProjectContextBase context = new ProjectContextBase(Paths.get("/")) {
+		@Override
+		public Object migrate() {
+			return this;
+		}
+	};
 
 	private static GroupTimeFrame inner(int length, int offset, int loop) {
 		GroupTimeFrame out = GroupTimeFrame.create(context);

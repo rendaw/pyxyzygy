@@ -1,8 +1,8 @@
 package com.zarbosoft.pyxyzygy.app.modelmirror;
 
-import com.zarbosoft.pyxyzygy.app.ProjectContext;
-import com.zarbosoft.pyxyzygy.core.model.Project;
-import com.zarbosoft.pyxyzygy.core.model.ProjectObject;
+import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
+import com.zarbosoft.pyxyzygy.core.model.v0.Project;
+import com.zarbosoft.pyxyzygy.core.model.v0.ProjectObject;
 import javafx.scene.control.TreeItem;
 
 public class MirrorProject extends ObjectMirror {

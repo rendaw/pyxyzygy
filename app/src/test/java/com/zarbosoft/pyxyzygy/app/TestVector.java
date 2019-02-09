@@ -3,7 +3,7 @@ package com.zarbosoft.pyxyzygy.app;
 import com.google.common.io.BaseEncoding;
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
-import com.zarbosoft.pyxyzygy.seed.model.Vector;
+import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;

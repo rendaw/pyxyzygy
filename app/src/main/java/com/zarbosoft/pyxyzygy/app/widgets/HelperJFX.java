@@ -1,10 +1,8 @@
 package com.zarbosoft.pyxyzygy.app.widgets;
 
-import com.sun.javafx.sg.prism.NGImageView;
-import com.sun.prism.Graphics;
 import com.zarbosoft.pyxyzygy.app.CustomBinding;
 import com.zarbosoft.pyxyzygy.app.GUILaunch;
-import com.zarbosoft.pyxyzygy.app.ProjectContext;
+import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.Pair;
@@ -18,11 +16,8 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import net.bytebuddy.ByteBuddy;
-import net.bytebuddy.implementation.MethodDelegation;
 
 import java.io.InputStream;
-import java.lang.reflect.Constructor;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
@@ -32,7 +27,6 @@ import java.util.function.Function;
 
 import static com.zarbosoft.rendaw.common.Common.getResource;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
-import static net.bytebuddy.matcher.ElementMatchers.named;
 
 public class HelperJFX {
 	public static Node pad(Node node) {

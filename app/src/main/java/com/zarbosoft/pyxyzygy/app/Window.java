@@ -1,7 +1,7 @@
 package com.zarbosoft.pyxyzygy.app;
 
 import com.zarbosoft.pyxyzygy.app.config.TrueColor;
-import com.zarbosoft.pyxyzygy.core.model.*;
+import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.parts.editor.Editor;
 import com.zarbosoft.pyxyzygy.app.parts.structure.Structure;
 import com.zarbosoft.pyxyzygy.app.parts.timeline.Timeline;
@@ -12,6 +12,7 @@ import com.zarbosoft.pyxyzygy.app.wrappers.camera.CameraWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupLayerWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage.TrueColorImageNodeWrapper;
+import com.zarbosoft.pyxyzygy.core.model.v0.*;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.Pair;
 import javafx.beans.property.SimpleObjectProperty;

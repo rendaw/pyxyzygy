@@ -1,14 +1,15 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage;
 
 import com.zarbosoft.pyxyzygy.app.*;
-import com.zarbosoft.pyxyzygy.app.model.Tile;
+import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
+import com.zarbosoft.pyxyzygy.app.model.v0.Tile;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
-import com.zarbosoft.pyxyzygy.core.model.ProjectNode;
-import com.zarbosoft.pyxyzygy.core.model.TileBase;
-import com.zarbosoft.pyxyzygy.core.model.TrueColorImageFrame;
-import com.zarbosoft.pyxyzygy.core.model.TrueColorImageNode;
-import com.zarbosoft.pyxyzygy.seed.model.Rectangle;
-import com.zarbosoft.pyxyzygy.seed.model.Vector;
+import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
+import com.zarbosoft.pyxyzygy.core.model.v0.TileBase;
+import com.zarbosoft.pyxyzygy.core.model.v0.TrueColorImageFrame;
+import com.zarbosoft.pyxyzygy.core.model.v0.TrueColorImageNode;
+import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
+import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import javafx.beans.property.SimpleIntegerProperty;
 
 import java.util.HashMap;

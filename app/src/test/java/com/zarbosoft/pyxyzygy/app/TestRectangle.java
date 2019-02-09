@@ -1,6 +1,6 @@
 package com.zarbosoft.pyxyzygy.app;
 
-import com.zarbosoft.pyxyzygy.seed.model.Rectangle;
+import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;

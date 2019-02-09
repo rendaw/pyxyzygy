@@ -1,8 +1,8 @@
 package com.zarbosoft.pyxyzygy.app.modelmirror;
 
-import com.zarbosoft.pyxyzygy.app.ProjectContext;
-import com.zarbosoft.pyxyzygy.core.model.GroupLayer;
-import com.zarbosoft.pyxyzygy.core.model.ProjectObject;
+import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
+import com.zarbosoft.pyxyzygy.core.model.v0.GroupLayer;
+import com.zarbosoft.pyxyzygy.core.model.v0.ProjectObject;
 
 public class MirrorGroupLayer extends ObjectMirror {
 	private final ObjectMirror parent;

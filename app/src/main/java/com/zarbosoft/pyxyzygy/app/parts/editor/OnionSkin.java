@@ -2,7 +2,7 @@ package com.zarbosoft.pyxyzygy.app.parts.editor;
 
 import com.zarbosoft.pyxyzygy.app.DoubleRectangle;
 import com.zarbosoft.pyxyzygy.app.EditHandle;
-import com.zarbosoft.pyxyzygy.app.ProjectContext;
+import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.Render;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;

@@ -1,4 +1,6 @@
-package com.zarbosoft.pyxyzygy.seed.model;
+package com.zarbosoft.pyxyzygy.seed.model.v0;
+
+import com.zarbosoft.pyxyzygy.seed.model.ProjectContext;
 
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -6,7 +8,7 @@ import java.util.Map;
 
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 
-public class ProjectContextBase {
+public abstract class ProjectContextBase extends ProjectContext {
 	public final Path path;
 	public final Path changesDir;
 	public final Path tileDir;

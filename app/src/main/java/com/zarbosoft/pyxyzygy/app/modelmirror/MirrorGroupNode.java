@@ -1,9 +1,9 @@
 package com.zarbosoft.pyxyzygy.app.modelmirror;
 
 import com.zarbosoft.pyxyzygy.app.Misc;
-import com.zarbosoft.pyxyzygy.app.ProjectContext;
-import com.zarbosoft.pyxyzygy.core.model.GroupNode;
-import com.zarbosoft.pyxyzygy.core.model.ProjectObject;
+import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
+import com.zarbosoft.pyxyzygy.core.model.v0.GroupNode;
+import com.zarbosoft.pyxyzygy.core.model.v0.ProjectObject;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.TreeItem;

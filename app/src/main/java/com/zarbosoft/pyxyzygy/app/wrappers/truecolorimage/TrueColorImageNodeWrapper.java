@@ -3,10 +3,11 @@ package com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage;
 import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.config.NodeConfig;
 import com.zarbosoft.pyxyzygy.app.config.TrueColorImageNodeConfig;
-import com.zarbosoft.pyxyzygy.core.model.ProjectNode;
-import com.zarbosoft.pyxyzygy.core.model.ProjectObject;
-import com.zarbosoft.pyxyzygy.core.model.TrueColorImageFrame;
-import com.zarbosoft.pyxyzygy.core.model.TrueColorImageNode;
+import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
+import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
+import com.zarbosoft.pyxyzygy.core.model.v0.ProjectObject;
+import com.zarbosoft.pyxyzygy.core.model.v0.TrueColorImageFrame;
+import com.zarbosoft.pyxyzygy.core.model.v0.TrueColorImageNode;
 import com.zarbosoft.rendaw.common.Assertion;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TreeItem;
@@ -14,7 +15,7 @@ import javafx.scene.control.TreeItem;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.zarbosoft.pyxyzygy.app.ProjectContext.uniqueName1;
+import static com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext.uniqueName1;
 
 public class TrueColorImageNodeWrapper extends Wrapper {
 	public final TrueColorImageNode node;

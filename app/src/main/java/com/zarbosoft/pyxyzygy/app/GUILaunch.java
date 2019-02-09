@@ -2,14 +2,16 @@ package com.zarbosoft.pyxyzygy.app;
 
 import com.google.common.collect.ImmutableList;
 import com.zarbosoft.interface1.TypeInfo;
+import com.zarbosoft.pyxyzygy.app.CustomBinding.Binder;
 import com.zarbosoft.pyxyzygy.app.config.CreateMode;
 import com.zarbosoft.pyxyzygy.app.config.GlobalConfig;
 import com.zarbosoft.pyxyzygy.app.config.TrueColor;
 import com.zarbosoft.pyxyzygy.app.config.TrueColorBrush;
+import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
-import com.zarbosoft.pyxyzygy.core.model.TrueColorImageFrame;
-import com.zarbosoft.pyxyzygy.core.model.TrueColorImageNode;
-import com.zarbosoft.pyxyzygy.seed.model.Vector;
+import com.zarbosoft.pyxyzygy.core.model.v0.TrueColorImageFrame;
+import com.zarbosoft.pyxyzygy.core.model.v0.TrueColorImageNode;
+import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.ChainComparator;
 import com.zarbosoft.rendaw.common.Common;
@@ -45,7 +47,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.zarbosoft.pyxyzygy.app.ProjectContext.uniqueName;
+import static com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext.uniqueName;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 
@@ -54,7 +56,7 @@ public class GUILaunch extends Application {
 
 	static {
 		try {
-			config = com.zarbosoft.pyxyzygy.app.ConfigBase.deserialize(new TypeInfo(GlobalConfig.class),
+			config = ConfigBase.deserialize(new TypeInfo(GlobalConfig.class),
 					Global.configDir,
 					() -> {
 						GlobalConfig config = new GlobalConfig();
@@ -298,11 +300,11 @@ public class GUILaunch extends Application {
 									}
 								});
 					}
-					com.zarbosoft.pyxyzygy.app.CustomBinding.<Path>bindBidirectionalMultiple(new com.zarbosoft.pyxyzygy.app.CustomBinding.Binder<>(
+					CustomBinding.<Path>bindBidirectionalMultiple(new Binder<>(
 							text.textProperty(),
 							() -> Optional.of(cwd.get().resolve(text.getText())),
 							v -> text.setText(v.getFileName().toString())
-					), new com.zarbosoft.pyxyzygy.app.CustomBinding.Binder<>(listProxy,
+					), new Binder<>(listProxy,
 							() -> Optional.ofNullable(listProxy.get()).map(v -> v.path),
 							v -> listProxy.set(entries.get(v))
 					));
@@ -363,7 +365,7 @@ public class GUILaunch extends Application {
 
 	public void newProject(Stage primaryStage, Path path, CreateMode createMode) {
 		config.lastDir = path.getParent().toString();
-		ProjectContext context = ProjectContext.create(path, createMode.tileSize());
+		ProjectContext context = Global.create(path, createMode.tileSize());
 		context.config.defaultZoom = createMode.defaultZoom();
 		TrueColorImageNode trueColorImageNode = TrueColorImageNode.create(context);
 		trueColorImageNode.initialNameSet(context, uniqueName("Image"));
@@ -379,7 +381,7 @@ public class GUILaunch extends Application {
 
 	public void openProject(Stage primaryStage, Path path) {
 		config.lastDir = path.getParent().toString();
-		ProjectContext context = ProjectContext.deserialize(path);
+		ProjectContext context = Global.deserialize(path);
 		new Window().start(context, primaryStage, true);
 	}
 }

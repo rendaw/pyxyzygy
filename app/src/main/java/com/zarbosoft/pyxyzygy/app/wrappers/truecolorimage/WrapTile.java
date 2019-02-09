@@ -1,7 +1,7 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage;
 
-import com.zarbosoft.pyxyzygy.app.ProjectContext;
-import com.zarbosoft.pyxyzygy.app.model.Tile;
+import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
+import com.zarbosoft.pyxyzygy.app.model.v0.Tile;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.pyxyzygy.nearestneighborimageview.NearestNeighborImageView;
 import javafx.scene.image.ImageView;

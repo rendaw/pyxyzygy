@@ -1,9 +1,10 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.group;
 
 import com.zarbosoft.pyxyzygy.app.*;
-import com.zarbosoft.pyxyzygy.core.model.GroupLayer;
-import com.zarbosoft.pyxyzygy.core.model.GroupPositionFrame;
-import com.zarbosoft.pyxyzygy.core.model.GroupTimeFrame;
+import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
+import com.zarbosoft.pyxyzygy.core.model.v0.GroupLayer;
+import com.zarbosoft.pyxyzygy.core.model.v0.GroupPositionFrame;
+import com.zarbosoft.pyxyzygy.core.model.v0.GroupTimeFrame;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 

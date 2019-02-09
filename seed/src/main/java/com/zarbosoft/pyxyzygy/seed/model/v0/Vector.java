@@ -1,4 +1,4 @@
-package com.zarbosoft.pyxyzygy.seed.model;
+package com.zarbosoft.pyxyzygy.seed.model.v0;
 
 import com.zarbosoft.luxem.read.StackReader;
 import com.zarbosoft.luxem.write.RawWriter;

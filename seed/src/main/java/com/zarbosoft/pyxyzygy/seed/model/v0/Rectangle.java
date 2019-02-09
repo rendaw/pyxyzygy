@@ -1,4 +1,4 @@
-package com.zarbosoft.pyxyzygy.seed.model;
+package com.zarbosoft.pyxyzygy.seed.model.v0;
 
 import static com.zarbosoft.rendaw.common.Common.ceilDiv;
 

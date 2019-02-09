@@ -1,7 +1,8 @@
 package com.zarbosoft.pyxyzygy.app;
 
+import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
-import com.zarbosoft.pyxyzygy.core.model.ProjectNode;
+import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
 import com.zarbosoft.rendaw.common.Assertion;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.Property;

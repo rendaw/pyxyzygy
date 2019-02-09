@@ -3,12 +3,13 @@ package com.zarbosoft.pyxyzygy.app.wrappers.camera;
 import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.config.CameraNodeConfig;
 import com.zarbosoft.pyxyzygy.app.config.GroupNodeConfig;
+import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeCanvasHandle;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeWrapper;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
-import com.zarbosoft.pyxyzygy.core.model.Camera;
-import com.zarbosoft.pyxyzygy.core.model.ProjectNode;
+import com.zarbosoft.pyxyzygy.core.model.v0.Camera;
+import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.geometry.Insets;
@@ -141,7 +142,7 @@ public class CameraWrapper extends GroupNodeWrapper {
 								node,
 								canvas,
 								i,
-								new com.zarbosoft.pyxyzygy.seed.model.Rectangle(-width.get() / 2,
+								new com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle(-width.get() / 2,
 										-height.get() / 2,
 										width.get(),
 										height.get()
