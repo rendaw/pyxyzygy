@@ -25,8 +25,11 @@ import static com.zarbosoft.rendaw.common.Common.uncheck;
 public class ConfigBase {
 	public Path path;
 	public final Timer configFlushTimer;
-	public final static ScanResult scan =
-			new ClassGraph().enableAllInfo().whitelistPackages("com.zarbosoft.pyxyzygy.app").scan();
+	public final static ScanResult scan = new ClassGraph()
+			.enableSystemJarsAndModules()
+			.enableAllInfo()
+			.whitelistPackages("com.zarbosoft.pyxyzygy.app")
+			.scan();
 
 	public ConfigBase() {
 		configFlushTimer = new Timer(name(), true);
