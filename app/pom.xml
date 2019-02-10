@@ -6,7 +6,7 @@
 
     <groupId>com.zarbosoft.pyxyzygy</groupId>
     <artifactId>app</artifactId>
-    <version>0.0.0</version>
+    <version>1.0.0</version>
 
     <dependencies>
         <dependency>
@@ -46,6 +46,11 @@
             <groupId>org.jcodec</groupId>
             <artifactId>jcodec</artifactId>
             <version>0.2.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.ant</groupId>
+            <artifactId>ant</artifactId>
+            <version>1.10.1</version>
         </dependency>
     </dependencies>
     <properties>
@@ -255,6 +260,28 @@
                                     </artifact>
                                     <moduleInfo>
                                         <name>jcodec</name>
+                                        <requires>*;</requires>
+                                    </moduleInfo>
+                                </module>
+                                <module>
+                                    <artifact>
+                                        <groupId>org.apache.ant</groupId>
+                                        <artifactId>ant</artifactId>
+                                        <version>1.10.1</version>
+                                    </artifact>
+                                    <moduleInfo>
+                                        <name>ant</name>
+                                        <requires>*;</requires>
+                                    </moduleInfo>
+                                </module>
+                                <module>
+                                    <artifact>
+                                        <groupId>org.apache.ant</groupId>
+                                        <artifactId>ant-launcher</artifactId>
+                                        <version>1.10.1</version>
+                                    </artifact>
+                                    <moduleInfo>
+                                        <name>ant.launcher</name>
                                         <requires>*;</requires>
                                     </moduleInfo>
                                 </module>

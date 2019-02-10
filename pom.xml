@@ -12,5 +12,6 @@
         <module>nearestneighborimageview</module>
         <module>nearestneighborimageviewagent</module>
         <module>app</module>
+        <module>post</module>
     </modules>
 </project>
