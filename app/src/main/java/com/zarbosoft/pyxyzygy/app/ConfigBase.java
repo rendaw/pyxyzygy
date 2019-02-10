@@ -4,6 +4,8 @@ import com.google.common.collect.Lists;
 import com.zarbosoft.interface1.TypeInfo;
 import com.zarbosoft.luxem.Luxem;
 import com.zarbosoft.luxem.read.ReadTypeGrammar;
+import io.github.classgraph.ClassGraph;
+import io.github.classgraph.ScanResult;
 import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.collections.ObservableList;
@@ -23,6 +25,8 @@ import static com.zarbosoft.rendaw.common.Common.uncheck;
 public class ConfigBase {
 	public Path path;
 	public final Timer configFlushTimer;
+	public final static ScanResult scan =
+			new ClassGraph().enableAllInfo().whitelistPackages("com.zarbosoft.pyxyzygy.app").scan();
 
 	public ConfigBase() {
 		configFlushTimer = new Timer(name(), true);
@@ -55,7 +59,7 @@ public class ConfigBase {
 		T out = uncheck(() -> {
 			Files.createDirectories(configDir);
 			try (InputStream source = Files.newInputStream(configPath)) {
-				return (T) Luxem.parse(null, configType).map(configTypeMap).from(source).findFirst().get();
+				return (T) Luxem.parse(scan, configType).map(configTypeMap).from(source).findFirst().get();
 			} catch (NoSuchFileException e) {
 				return create.get();
 			}
