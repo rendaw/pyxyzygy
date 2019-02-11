@@ -41,4 +41,7 @@ public class ProjectConfig extends ConfigBase {
 
 	@Configuration(optional = true)
 	public List<Integer> editPath = Arrays.asList(0);
+
+	@Configuration(optional = true)
+	public boolean maximize = true;
 }

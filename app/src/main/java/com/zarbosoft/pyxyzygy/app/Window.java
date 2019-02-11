@@ -197,6 +197,7 @@ public class Window {
 
 		primaryStage.setTitle(String.format("%s - %s", context.path.getFileName().toString(), nameHuman));
 		primaryStage.setScene(scene);
+		primaryStage.setMaximized(context.config.maximize);
 		primaryStage.show();
 	}
 
