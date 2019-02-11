@@ -546,8 +546,8 @@ void TrueColorImage::strokeHard(uint8_t cr, uint8_t cg, uint8_t cb, uint8_t ca, 
 		[&](unsigned int y, float start, float end) {
 			//printf("fill line %u: %f - %f\n", y, start, end);
 			y += offsetY;
-			start = std::floor(start + offsetX);
-			end = std::floor(end + offsetX);
+			start = std::round(start + offsetX);
+			end = std::round(end + offsetX);
 			for (unsigned int x = start; x < end; ++x) {
 				for (unsigned int i = 0; i < channels; ++i) {
 					pixels[(y * w + x) * channels + i] = colors[i];
