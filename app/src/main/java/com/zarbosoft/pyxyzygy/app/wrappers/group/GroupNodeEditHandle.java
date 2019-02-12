@@ -180,20 +180,4 @@ public class GroupNodeEditHandle extends EditHandle {
 		mouseX.set(vector.x);
 		mouseY.set(vector.y);
 	}
-
-	@Override
-	public Optional<Integer> previousFrame(int startFrame) {
-		if (wrapper.specificLayer == null)
-			return Optional.empty();
-		if (wrapper.specificLayer.positionFramesLength() == 1)
-			return Optional.empty();
-		int frameIndex = GroupLayerWrapper.findPosition(wrapper.specificLayer, startFrame).frameIndex - 1;
-		if (frameIndex == -1)
-			frameIndex = wrapper.specificLayer.positionFramesLength() - 1;
-		int outFrame = 0;
-		for (int i = 0; i < frameIndex; ++i) {
-			outFrame += wrapper.specificLayer.positionFramesGet(i).length();
-		}
-		return Optional.of(outFrame);
-	}
 }

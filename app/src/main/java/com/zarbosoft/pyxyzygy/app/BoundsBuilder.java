@@ -80,4 +80,20 @@ public class BoundsBuilder {
 		}
 		return this;
 	}
+
+	public BoundsBuilder point(DoubleVector v) {
+		if (first) {
+			xMin = v.x;
+			xMax = v.x;
+			yMin = v.y;
+			yMax = v.y;
+			first = false;
+		} else {
+			xMin = Math.min(xMin, v.x);
+			xMax = Math.max(xMax, v.x);
+			yMin = Math.min(yMin, v.y);
+			yMax = Math.max(yMax, v.y);
+		}
+		return this;
+	}
 }

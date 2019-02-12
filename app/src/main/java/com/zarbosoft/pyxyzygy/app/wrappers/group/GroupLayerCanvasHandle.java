@@ -51,6 +51,7 @@ public class GroupLayerCanvasHandle extends CanvasHandle {
 				}
 				if (newValue != null) {
 					childCanvas = newValue.buildCanvas(context, GroupLayerCanvasHandle.this);
+					childCanvas.setViewport(context,bounds.get(),zoom);
 					inner.getChildren().add(childCanvas.getWidget());
 					GroupLayerCanvasHandle.this.updateChildCanvasPosition(null);
 				}

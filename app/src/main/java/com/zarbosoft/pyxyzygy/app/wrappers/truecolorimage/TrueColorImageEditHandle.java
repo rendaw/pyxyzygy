@@ -340,18 +340,4 @@ public class TrueColorImageEditHandle extends EditHandle {
 		end = Window.toLocal(wrapper.canvasHandle, end);
 		tool.mark(context, window, start, end);
 	}
-
-	@Override
-	public Optional<Integer> previousFrame(int startFrame) {
-		if (wrapper.node.framesLength() == 1)
-			return Optional.empty();
-		int frameIndex = wrapper.findFrame(wrapper.node, startFrame).frameIndex - 1;
-		if (frameIndex == -1)
-			frameIndex = wrapper.node.framesLength() - 1;
-		int outFrame = 0;
-		for (int i = 0; i < frameIndex; ++i) {
-			outFrame += wrapper.node.framesGet(i).length();
-		}
-		return Optional.of(outFrame);
-	}
 }

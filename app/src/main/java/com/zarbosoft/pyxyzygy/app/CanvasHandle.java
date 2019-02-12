@@ -8,6 +8,7 @@ import javafx.scene.Node;
 
 public abstract class CanvasHandle {
 	public final SimpleIntegerProperty frameNumber = new SimpleIntegerProperty(0);
+	public final SimpleIntegerProperty previousFrame = new SimpleIntegerProperty(-1);
 	public final SimpleObjectProperty<DoubleRectangle> bounds =
 			new SimpleObjectProperty<>(new DoubleRectangle(0, 0, 0, 0));
 

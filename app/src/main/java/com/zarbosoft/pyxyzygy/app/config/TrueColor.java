@@ -24,7 +24,12 @@ public class TrueColor {
 	}
 
 	public Color toJfx() {
-		return Color.rgb(Byte.toUnsignedInt(r), Byte.toUnsignedInt(g), Byte.toUnsignedInt(b), Byte.toUnsignedInt(a) / 255.0);
+		return Color.rgb(
+				Byte.toUnsignedInt(r),
+				Byte.toUnsignedInt(g),
+				Byte.toUnsignedInt(b),
+				Byte.toUnsignedInt(a) / 255.0
+		);
 	}
 
 	public static TrueColor fromJfx(Color other) {
@@ -38,6 +43,18 @@ public class TrueColor {
 
 	@Override
 	public String toString() {
-		return String.format("c[%s %s %s %s]", r,g,b,a);
+		return String.format("c[%s %s %s %s]", r, g, b, a);
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (obj == null)
+			return false;
+		if (obj.getClass() != getClass())
+			return false;
+		return r == ((TrueColor) obj).r &&
+				g == ((TrueColor) obj).g &&
+				b == ((TrueColor) obj).b &&
+				a == ((TrueColor) obj).a;
 	}
 }

@@ -1,12 +1,17 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.group;
 
-import com.zarbosoft.pyxyzygy.app.*;
+import com.zarbosoft.pyxyzygy.app.CanvasHandle;
+import com.zarbosoft.pyxyzygy.app.DoubleRectangle;
+import com.zarbosoft.pyxyzygy.app.DoubleVector;
+import com.zarbosoft.pyxyzygy.app.Wrapper;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.ToolBar;
+
+import java.util.Optional;
 
 import static com.zarbosoft.pyxyzygy.app.Global.opacityMax;
 import static com.zarbosoft.pyxyzygy.app.Misc.mirror;
@@ -27,7 +32,9 @@ public class GroupNodeCanvasHandle extends CanvasHandle {
 	) {
 		this.parent = parent;
 		layerListenCleanup = mirror(wrapper.children, childHandles, c -> {
-			return c.buildCanvas(context, this);
+			final CanvasHandle canvasHandle = c.buildCanvas(context, this);
+			canvasHandle.setViewport(context,bounds.get(),positiveZoom.get());
+			return canvasHandle;
 		}, h -> h.remove(context), noopConsumer());
 		mirror(childHandles, inner.getChildren(), h -> {
 			return h.getWidget();
@@ -41,6 +48,7 @@ public class GroupNodeCanvasHandle extends CanvasHandle {
 	@Override
 	public void setViewport(ProjectContext context, DoubleRectangle newBounds, int positiveZoom) {
 		this.positiveZoom.set(positiveZoom);
+		this.bounds.set(newBounds);
 		childHandles.forEach(c -> c.setViewport(context, newBounds, positiveZoom));
 	}
 
@@ -48,6 +56,25 @@ public class GroupNodeCanvasHandle extends CanvasHandle {
 	public void setFrame(ProjectContext context, int frameNumber) {
 		this.frameNumber.set(frameNumber);
 		childHandles.forEach(c -> c.setFrame(context, frameNumber));
+
+		do {
+			if (wrapper.specificLayer == null) {
+				previousFrame.set(-1);
+				break;
+			}
+			if (wrapper.specificLayer.positionFramesLength() == 1) {
+				previousFrame.set(-1);
+				break;
+			}
+			int frameIndex = GroupLayerWrapper.findPosition(wrapper.specificLayer, frameNumber).frameIndex - 1;
+			if (frameIndex == -1)
+				frameIndex = wrapper.specificLayer.positionFramesLength() - 1;
+			int outFrame = 0;
+			for (int i = 0; i < frameIndex; ++i) {
+				outFrame += wrapper.specificLayer.positionFramesGet(i).length();
+			}
+			previousFrame.set(outFrame);
+		} while (false);
 	}
 
 	@Override

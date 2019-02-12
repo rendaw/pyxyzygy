@@ -18,6 +18,7 @@ import javafx.beans.property.SimpleIntegerProperty;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 import static com.zarbosoft.pyxyzygy.app.Global.opacityMax;
 
@@ -118,11 +119,27 @@ public class TrueColorImageCanvasHandle extends CanvasHandle {
 
 	public void updateFrame(ProjectContext context) {
 		TrueColorImageFrame oldFrame = frame;
-		frame = findFrame(frameNumber.get());
+		TrueColorImageNodeWrapper.FrameResult found =
+				TrueColorImageNodeWrapper.findFrame(wrapper.node, frameNumber.get());
+		frame = found.frame;
 		if (oldFrame != frame) {
 			detachTiles();
 			attachTiles(context);
 		}
+		do {
+			if (wrapper.node.framesLength() == 1) {
+				previousFrame.set(-1);
+				break;
+			}
+			int frameIndex = found.frameIndex - 1;
+			if (frameIndex == -1)
+				frameIndex = wrapper.node.framesLength() - 1;
+			int outFrame = 0;
+			for (int i = 0; i < frameIndex; ++i) {
+				outFrame += wrapper.node.framesGet(i).length();
+			}
+			previousFrame.set(outFrame);
+		} while (false);
 	}
 
 	public void attachTiles(ProjectContext context) {
@@ -174,10 +191,6 @@ public class TrueColorImageCanvasHandle extends CanvasHandle {
 			}
 		}
 		return tileBounds;
-	}
-
-	TrueColorImageFrame findFrame(int frameNumber) {
-		return wrapper.findFrame(wrapper.node, frameNumber).frame;
 	}
 
 	public void drop(ProjectContext context, Rectangle unitBounds, TrueColorImage image) {

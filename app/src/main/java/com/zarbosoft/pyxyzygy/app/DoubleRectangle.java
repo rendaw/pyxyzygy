@@ -60,4 +60,16 @@ public class DoubleRectangle {
 	public String toString() {
 		return String.format("dr[%s %s %s %s]", x, y, width, height);
 	}
+
+	public DoubleVector corner() {
+		return new DoubleVector(x, y);
+	}
+
+	public DoubleVector span() {
+		return new DoubleVector(width, height);
+	}
+
+	public boolean contains(DoubleVector vector) {
+		return vector.x >= x && vector.y >= y && vector.x < x + width && vector.y < y + height;
+	}
 }
