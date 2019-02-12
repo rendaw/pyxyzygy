@@ -60,18 +60,18 @@ public class Window {
 							context.history.undo();
 						}
 					},
-					new Hotkeys.Action(
-							Hotkeys.Scope.GLOBAL,
-							"redo",
-							"Redo",
-							Hotkeys.Hotkey.create(KeyCode.Y, true, false, false)
-					) {
+						new Hotkeys.Action(Hotkeys.Scope.GLOBAL,
+								"redo",
+								"Redo",
+								Hotkeys.Hotkey.create(KeyCode.Y, true, false, false)
+						) {
 
-						@Override
-						public void run(ProjectContext context, Window window) {
-							context.history.redo();
+							@Override
+							public void run(ProjectContext context, Window window) {
+								context.history.redo();
+							}
 						}
-					})
+				)
 				.forEach(context.hotkeys::register);
 
 		selectedForEdit.addListener((observable, oldValue, newValue) -> {
@@ -107,18 +107,24 @@ public class Window {
 							w.colorProxyProperty.addListener((observable, oldValue, newValue) -> context.config.backgroundColor.set(
 									TrueColor.fromJfx(newValue)));
 							return w;
+						}).twoLine("Onion skin color", () -> {
+							TrueColorPicker w = new TrueColorPicker();
+							w.colorProxyProperty.set(context.config.onionSkinColor.get().toJfx());
+							w.colorProxyProperty.addListener((observable, oldValue, newValue) -> context.config.onionSkinColor.set(
+									TrueColor.fromJfx(newValue)));
+							return w;
 						}).build()),
 						new TitledPane("Global", new WidgetFormBuilder().intSpinner("Max undo", 1, 100000, spinner -> {
 							spinner.getValueFactory().setValue(GUILaunch.config.maxUndo);
 							spinner
 									.getValueFactory()
 									.valueProperty()
-									.addListener((observable, oldValue, newValue) -> GUILaunch.config.maxUndo = newValue);
+									.addListener((observable, oldValue, newValue) -> GUILaunch.config.maxUndo =
+											newValue);
 						}).button(button -> {
 							button.setText("Clear undo/redo");
 							button.setOnAction(e -> {
-								Alert confirm = new Alert(
-										Alert.AlertType.CONFIRMATION,
+								Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
 										"Are you sure you wish to clear undo/redo?"
 								);
 								confirm.showAndWait().filter(b -> b == ButtonType.OK).ifPresent(x -> {
@@ -154,8 +160,9 @@ public class Window {
 
 		context.config.maxCanvas.addListener(new ChangeListener<Boolean>() {
 			{
-				changed(null,null,false);
+				changed(null, null, false);
 			}
+
 			@Override
 			public void changed(
 					ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue
@@ -188,7 +195,7 @@ public class Window {
 			if (context.hotkeys.event(context, this, Hotkeys.Scope.GLOBAL, e))
 				e.consume();
 		});
-		scene.addEventFilter(KeyEvent.KEY_RELEASED,e -> {
+		scene.addEventFilter(KeyEvent.KEY_RELEASED, e -> {
 			pressed.remove(e.getCode());
 		});
 		scene.getStylesheets().addAll(getClass().getResource("widgets/colorpicker/style.css").toExternalForm(),
@@ -234,6 +241,7 @@ public class Window {
 		}
 		return ancestors;
 	}
+
 	public static List<CanvasHandle> getAncestorsInward(CanvasHandle start, CanvasHandle target) {
 		List<CanvasHandle> ancestors = getAncestorsOutward(start, target);
 		Collections.reverse(ancestors);
@@ -249,12 +257,13 @@ public class Window {
 
 	/**
 	 * Not really global but canvas-space
+	 *
 	 * @param wrapper
 	 * @param v
 	 * @return
 	 */
 	public static DoubleVector toGlobal(CanvasHandle wrapper, DoubleVector v) {
-		DoubleVector zero = new DoubleVector(0,0);
+		DoubleVector zero = new DoubleVector(0, 0);
 		for (CanvasHandle parent : getAncestorsOutward(null, wrapper)) {
 			v = v.minus(parent.toInner(zero));
 		}

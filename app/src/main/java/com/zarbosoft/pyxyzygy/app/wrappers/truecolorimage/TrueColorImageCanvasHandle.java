@@ -1,6 +1,9 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage;
 
-import com.zarbosoft.pyxyzygy.app.*;
+import com.zarbosoft.pyxyzygy.app.CanvasHandle;
+import com.zarbosoft.pyxyzygy.app.DoubleRectangle;
+import com.zarbosoft.pyxyzygy.app.DoubleVector;
+import com.zarbosoft.pyxyzygy.app.Wrapper;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.model.v0.Tile;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
@@ -14,6 +17,7 @@ import javafx.beans.property.SimpleIntegerProperty;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import static com.zarbosoft.pyxyzygy.app.Global.opacityMax;
 
@@ -68,6 +72,7 @@ public class TrueColorImageCanvasHandle extends CanvasHandle {
 
 	@Override
 	public void setViewport(ProjectContext context, DoubleRectangle newBounds1, int positiveZoom) {
+		if (this.zoom.get() == positiveZoom && Objects.equals(this.bounds.get(), newBounds1)) return;
 		this.zoom.set(positiveZoom);
 		DoubleRectangle oldBounds1 = this.bounds.get();
 		this.bounds.set(newBounds1);

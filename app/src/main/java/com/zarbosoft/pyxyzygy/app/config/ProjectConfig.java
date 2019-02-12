@@ -18,6 +18,10 @@ public class ProjectConfig extends ConfigBase {
 	public final SimpleObjectProperty<TrueColor> backgroundColor =
 			new SimpleObjectProperty<>(TrueColor.fromJfx(Color.WHITE));
 
+	@Configuration(optional = true)
+	public final SimpleObjectProperty<TrueColor> onionSkinColor =
+			new SimpleObjectProperty<>(TrueColor.fromJfx(Color.BLUE));
+
 	@Configuration
 	public final SimpleObjectProperty<TrueColor> trueColor = new SimpleObjectProperty<>(TrueColor.fromJfx(Color.BLACK));
 

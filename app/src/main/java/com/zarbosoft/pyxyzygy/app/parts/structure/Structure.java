@@ -145,8 +145,10 @@ public class Structure {
 	}
 
 	public void treeItemAdded(TreeItem<Wrapper> item) {
-		if (tree.getSelectionModel().getSelectedItem() == null)
+		if (tree.getSelectionModel().getSelectedItem() == null) {
+			tree.getSelectionModel().clearSelection();
 			tree.getSelectionModel().select(item);
+		}
 	}
 
 	public void treeItemRemoved(TreeItem<Wrapper> item) {
@@ -459,6 +461,7 @@ public class Structure {
 
 		if (main) {
 			selectForView(findNode(rootTreeItem, viewPath));
+			tree.getSelectionModel().clearSelection();
 			tree.getSelectionModel().select(findNode(rootTreeItem, editPath).tree.get());
 		}
 	}

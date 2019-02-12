@@ -157,16 +157,38 @@ template <class T> inline ROBytes TrueColorImage::calculateData(T calculate) {
 }
 
 ROBytes TrueColorImage::data() {
-    return {(size_t)(w * h * channels), pixels};
+	return {(size_t)(w * h * channels), pixels};
+}
+
+static inline void premultiply(uint8_t *dest, uint8_t const * const source) {
+	int32_t const alpha = source[3];
+	for (int i = 0; i < channels - 1; ++i)
+		dest[i] = (source[i] * alpha) >> 8u;
+	dest[3] = source[3];
 }
 
 ROBytes TrueColorImage::dataPremultiplied() {
+	return calculateData(premultiply);
+}
+
+static inline void tint(uint8_t *dest, uint8_t const * const source, uint32_t const *colors) {
+	for (int i = 0; i < channels - 1; ++i)
+		dest[i] = ((source[i] + colors[i]) * 0x80u) >> 8u;
+	dest[3] = source[3];
+}
+
+ROBytes TrueColorImage::dataTint(uint8_t cr, uint8_t cg, uint8_t cb) {
+	uint32_t const colors[] {cb, cg, cr};
 	return calculateData([&](uint8_t *dest, uint8_t const * const source) {
-		int32_t const alpha = source[3];
-        for (int i = 0; i < channels - 1; ++i)
-            dest[i] = (source[i] * alpha) >> 8;
-        dest[3] = alpha & 0xFF;
-        dest += channels;
+		tint(dest, source, colors);
+	});
+}
+
+ROBytes TrueColorImage::dataPremultipliedTint(uint8_t cr, uint8_t cg, uint8_t cb) {
+	uint32_t const colors[] {cb, cg, cr};
+	return calculateData([&](uint8_t *dest, uint8_t const * const source) {
+		tint(dest, source, colors);
+		premultiply(dest, dest);
 	});
 }
 
@@ -402,7 +424,7 @@ template<class HandleMeasures, class SetPixelLine> static void strokeSolid(
 		));
 		Segment const seg2(createSegment(
 			subpixelCircle1.center.plus(perpSeg2Unit.mult(subpixelCircle1.radius)),
-		    subpixelCircle2.center.plus(perpSeg2Unit.mult(subpixelCircle2.radius))
+			subpixelCircle2.center.plus(perpSeg2Unit.mult(subpixelCircle2.radius))
 		));
 		struct _t1 { Segment const &t; Segment const &b; };
 		auto const &_t1a = seg1.pTop.y < seg2.pTop.y ?

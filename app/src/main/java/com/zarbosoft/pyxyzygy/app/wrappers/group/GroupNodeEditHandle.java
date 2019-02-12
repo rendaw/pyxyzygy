@@ -182,14 +182,18 @@ public class GroupNodeEditHandle extends EditHandle {
 	}
 
 	@Override
-	public Optional<Integer> previousFrame(int frame) {
+	public Optional<Integer> previousFrame(int startFrame) {
 		if (wrapper.specificLayer == null)
 			return Optional.empty();
 		if (wrapper.specificLayer.positionFramesLength() == 1)
 			return Optional.empty();
-		int p = GroupLayerWrapper.findPosition(wrapper.specificLayer, frame).at - 1;
-		if (p == 0)
-			p = wrapper.specificLayer.positionFramesLength() - 1;
-		return Optional.of(p);
+		int frameIndex = GroupLayerWrapper.findPosition(wrapper.specificLayer, startFrame).frameIndex - 1;
+		if (frameIndex == -1)
+			frameIndex = wrapper.specificLayer.positionFramesLength() - 1;
+		int outFrame = 0;
+		for (int i = 0; i < frameIndex; ++i) {
+			outFrame += wrapper.specificLayer.positionFramesGet(i).length();
+		}
+		return Optional.of(outFrame);
 	}
 }

@@ -2,25 +2,28 @@ package com.zarbosoft.pyxyzygy.app.parts.editor;
 
 import com.zarbosoft.pyxyzygy.app.DoubleRectangle;
 import com.zarbosoft.pyxyzygy.app.EditHandle;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.Render;
+import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.pyxyzygy.nearestneighborimageview.NearestNeighborImageView;
+import javafx.beans.binding.Bindings;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
 public class OnionSkin {
 	final ImageView widget = NearestNeighborImageView.create();
 	private final EditHandle editHandle;
-	private int frame = -1;
 
 	public OnionSkin(ProjectContext context, EditHandle editHandle) {
 		this.editHandle = editHandle;
-		editHandle.getCanvas().overlay.getChildren().add(widget);
-		widget.visibleProperty().bind(editHandle.getWrapper().getConfig().onionSkin);
-		widget.setOpacity(0.5);
+		final SimpleBooleanProperty onionSkin = editHandle.getWrapper().getConfig().onionSkin;
+		final SimpleIntegerProperty frameProp = new SimpleIntegerProperty();
 		editHandle.getCanvas().frameNumber.addListener(new ChangeListener<Number>() {
 			{
 				changed(null, null, editHandle.getCanvas().frameNumber.get());
@@ -28,32 +31,35 @@ public class OnionSkin {
 
 			@Override
 			public void changed(
-					ObservableValue<? extends Number> observable1, Number oldValue1, Number frame
+					ObservableValue<? extends Number> observable, Number oldValue, Number newValue
 			) {
-				editHandle.previousFrame(frame.intValue()).filter(f -> f != OnionSkin.this.frame).ifPresent(f -> {
-					OnionSkin.this.frame = f;
-					render(context);
-				});
+				int frame = editHandle.previousFrame(editHandle.getCanvas().frameNumber.get()).orElse(-1);
+				if (frameProp.get() == frame)
+					return;
+				frameProp.set(frame);
 			}
 		});
-		editHandle.getCanvas().bounds.addListener((observable, oldValue, newValue) -> render(context));
-		editHandle.getWrapper().getConfig().onionSkin.addListener((observable, oldValue, newValue) -> render(context));
+		SimpleObjectProperty<DoubleRectangle> bounds = editHandle.getCanvas().bounds;
+		widget.imageProperty().bind(Bindings.createObjectBinding(() -> {
+			int frame = frameProp.get();
+			if (frame < 0)
+				return null;
+			if (bounds.get() == null)
+				return null;
+			if (!onionSkin.get())
+				return null;
+			TrueColorImage buffer = TrueColorImage.create((int) bounds.get().width + 1, (int) bounds.get().height + 1);
+			Render.render(context, editHandle.getWrapper().getValue(), buffer, frame, bounds.get().quantize(1), 1);
+			Image image = HelperJFX.toImage(buffer, context.config.onionSkinColor.get());
+			return image;
+		}, onionSkin, frameProp, bounds));
+		widget.xProperty().bind(Bindings.createDoubleBinding(() -> bounds.get().x, bounds));
+		widget.yProperty().bind(Bindings.createDoubleBinding(() -> bounds.get().y, bounds));
+		widget.setOpacity(0.5);
+		editHandle.getCanvas().overlay.getChildren().add(widget);
 	}
 
 	public void remove() {
 		editHandle.getCanvas().overlay.getChildren().remove(widget);
-	}
-
-	public void render(ProjectContext context) {
-		if (!editHandle.getWrapper().getConfig().onionSkin.get())
-			return;
-		if (editHandle.getCanvas().bounds.get() == null)
-			return;
-		final DoubleRectangle bounds = editHandle.getCanvas().bounds.get();
-		TrueColorImage buffer = TrueColorImage.create((int) bounds.width + 1, (int) bounds.height + 1);
-		Render.render(context, editHandle.getWrapper().getValue(), buffer, frame, bounds.quantize(1), 1);
-		widget.setImage(HelperJFX.toImage(buffer));
-		widget.setX((int) bounds.x);
-		widget.setY((int) bounds.y);
 	}
 }

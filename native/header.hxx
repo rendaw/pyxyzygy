@@ -73,6 +73,8 @@ class TrueColorImage {
 		TrueColorImage * copy(int x, int y, int w, int h) const;
 		ROBytes data();
 		ROBytes dataPremultiplied();
+		ROBytes dataTint(uint8_t cr, uint8_t cg, uint8_t cb);
+		ROBytes dataPremultipliedTint(uint8_t cr, uint8_t cg, uint8_t cb);
 		int getWidth() const;
 		int getHeight() const;
 		void clear();

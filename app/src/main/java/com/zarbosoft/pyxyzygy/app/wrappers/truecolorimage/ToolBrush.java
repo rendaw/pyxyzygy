@@ -112,7 +112,7 @@ public class ToolBrush extends Tool {
 					});
 				})
 				.custom("Size", () -> {
-					Pair<Node, SimpleIntegerProperty> brushSize = HelperJFX.nonlinerSlider(10, 2000, 1, 10);
+					Pair<Node, SimpleIntegerProperty> brushSize = HelperJFX.nonlinearSlider(10, 2000, 1, 10);
 					brushSize.second.bindBidirectional(brush.size);
 					return brushSize.first;
 				})

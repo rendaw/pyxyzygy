@@ -18,11 +18,22 @@ public class DoubleRectangle {
 		this.height = height;
 	}
 
+	@Override
+	public boolean equals(Object obj) {
+		if (obj == null)
+			return false;
+		if (obj.getClass() != getClass())
+			return false;
+		return ((DoubleRectangle) obj).x == x &&
+				((DoubleRectangle) obj).y == y &&
+				((DoubleRectangle) obj).width == width &&
+				((DoubleRectangle) obj).height == height;
+	}
+
 	public Rectangle quantize(int scale) {
 		int outX = Math.floorDiv((int) x, scale);
 		int outY = Math.floorDiv((int) y, scale);
-		return new Rectangle(
-				outX,
+		return new Rectangle(outX,
 				outY,
 				ceilDiv((int) Math.ceil(x + width), scale) - outX,
 				ceilDiv((int) Math.ceil(y + height), scale) - outY

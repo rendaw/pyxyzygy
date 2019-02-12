@@ -8,7 +8,7 @@ import com.zarbosoft.pyxyzygy.app.config.TrueColorBrush;
 import com.zarbosoft.pyxyzygy.app.config.TrueColorImageNodeConfig;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
-import com.zarbosoft.pyxyzygy.app.Tool;
+import com.zarbosoft.pyxyzygy.core.model.v0.TrueColorImageFrame;
 import com.zarbosoft.rendaw.common.Assertion;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
@@ -65,15 +65,13 @@ public class TrueColorImageEditHandle extends EditHandle {
 
 		positiveZoom.bind(wrapper.canvasHandle.zoom);
 
-		actions = Streams.concat(Stream.of(
-				new Hotkeys.Action(Hotkeys.Scope.CANVAS, "paste", "Paste", pasteHotkey) {
-					@Override
-					public void run(ProjectContext context, Window window) {
-						wrapper.config.tool.set(TrueColorImageNodeConfig.Tool.SELECT);
-						((ToolSelect)tool).paste(context, window);
-					}
-				},
-				new Hotkeys.Action(Hotkeys.Scope.CANVAS,
+		actions = Streams.concat(Stream.of(new Hotkeys.Action(Hotkeys.Scope.CANVAS, "paste", "Paste", pasteHotkey) {
+			@Override
+			public void run(ProjectContext context, Window window) {
+				wrapper.config.tool.set(TrueColorImageNodeConfig.Tool.SELECT);
+				((ToolSelect) tool).paste(context, window);
+			}
+		}, new Hotkeys.Action(Hotkeys.Scope.CANVAS,
 				"last-brush",
 				"Last brush",
 				Hotkeys.Hotkey.create(KeyCode.SPACE, false, false, false)
@@ -161,13 +159,15 @@ public class TrueColorImageEditHandle extends EditHandle {
 			}
 		});
 		MenuItem menuDelete = new MenuItem("Delete");
-		BooleanBinding brushSelected = Bindings.createBooleanBinding(
-				() -> wrapper.config.tool.get() == TrueColorImageNodeConfig.Tool.BRUSH &&
-						Range.closedOpen(0, GUILaunch.config.trueColorBrushes.size()).contains(wrapper.config.brush.get()),
-				GUILaunch.config.trueColorBrushes,
-				wrapper.config.tool,
-				wrapper.config.brush
-		);
+		BooleanBinding brushSelected =
+				Bindings.createBooleanBinding(() -> wrapper.config.tool.get() == TrueColorImageNodeConfig.Tool.BRUSH &&
+								Range
+										.closedOpen(0, GUILaunch.config.trueColorBrushes.size())
+										.contains(wrapper.config.brush.get()),
+						GUILaunch.config.trueColorBrushes,
+						wrapper.config.tool,
+						wrapper.config.brush
+				);
 		menuDelete.disableProperty().bind(brushSelected);
 		menuDelete.setOnAction(e -> {
 			int index = GUILaunch.config.trueColorBrushes.indexOf(wrapper.config.brush.get());
@@ -309,7 +309,7 @@ public class TrueColorImageEditHandle extends EditHandle {
 
 	@Override
 	public void cursorMoved(ProjectContext context, DoubleVector vector) {
-		vector = Window.toLocal(wrapper.canvasHandle,vector);
+		vector = Window.toLocal(wrapper.canvasHandle, vector);
 		mouseX.set(vector.x);
 		mouseY.set(vector.y);
 	}
@@ -324,7 +324,7 @@ public class TrueColorImageEditHandle extends EditHandle {
 		if (tool == null)
 			return;
 		start = Window.toLocal(wrapper.canvasHandle, start);
-		tool.markStart(context, window,start);
+		tool.markStart(context, window, start);
 	}
 
 	@Override
@@ -338,14 +338,20 @@ public class TrueColorImageEditHandle extends EditHandle {
 			return;
 		start = Window.toLocal(wrapper.canvasHandle, start);
 		end = Window.toLocal(wrapper.canvasHandle, end);
-		tool.mark(context, window,start, end);
+		tool.mark(context, window, start, end);
 	}
 
 	@Override
-	public Optional<Integer> previousFrame(int frame) {
-		if (wrapper.node.framesLength() == 1) return Optional.empty();
-		int p = wrapper.findFrame(wrapper.node,frame).at - 1;
-		if (p == 0) p = wrapper.node.framesLength() - 1;
-		return Optional.of(p);
+	public Optional<Integer> previousFrame(int startFrame) {
+		if (wrapper.node.framesLength() == 1)
+			return Optional.empty();
+		int frameIndex = wrapper.findFrame(wrapper.node, startFrame).frameIndex - 1;
+		if (frameIndex == -1)
+			frameIndex = wrapper.node.framesLength() - 1;
+		int outFrame = 0;
+		for (int i = 0; i < frameIndex; ++i) {
+			outFrame += wrapper.node.framesGet(i).length();
+		}
+		return Optional.of(outFrame);
 	}
 }

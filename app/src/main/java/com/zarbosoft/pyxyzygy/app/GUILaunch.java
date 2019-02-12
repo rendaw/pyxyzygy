@@ -444,6 +444,10 @@ public class GUILaunch extends Application {
 
 		context.history.change(c -> c.project(context.project).topAdd(groupNode));
 		context.history.finishChange();
+
+		context.config.viewPath = ImmutableList.of(0);
+		context.config.editPath = ImmutableList.of(0,0);
+
 		new Window().start(context, primaryStage, true);
 	}
 

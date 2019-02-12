@@ -5,10 +5,12 @@ import com.zarbosoft.pyxyzygy.app.config.NodeConfig;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.IntegerBinding;
+import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.scene.Group;
@@ -23,6 +25,7 @@ public class Editor {
 	public final StackPane outerCanvas;
 	public final Pane canvas;
 	private final Group canvasInner;
+	private final ReadOnlyObjectProperty<Bounds> sizeProperty;
 	private Runnable editCleanup;
 	public final SimpleIntegerProperty positiveZoom = new SimpleIntegerProperty(1);
 	public final SimpleDoubleProperty zoomFactor = new SimpleDoubleProperty(1);
@@ -91,8 +94,8 @@ public class Editor {
 	 */
 	private DoubleVector getStandardVector(CanvasHandle view, double x, double y) {
 		DoubleVector scroll = window.selectedForView.get().getWrapper().getConfig().scroll.get();
-		DoubleVector coordCentered = new DoubleVector((x - this.canvas.getLayoutBounds().getWidth() / 2),
-				(y - this.canvas.getLayoutBounds().getHeight() / 2)
+		DoubleVector coordCentered = new DoubleVector((x - sizeProperty.get().getWidth() / 2),
+				(y - sizeProperty.get().getHeight() / 2)
 		);
 		DoubleVector viewTransform = computeViewTransform(view.getWrapper());
 		DoubleVector out = coordCentered.divide(viewTransform).minus(scroll);
@@ -121,8 +124,8 @@ public class Editor {
 		canvasInner.setLayoutY(scroll.y + outerCanvas.heightProperty().get() / 2);
 		DoubleRectangle newBounds =
 				new BoundsBuilder().circle(getStandardVector(viewHandle, 0, 0), 0).circle(getStandardVector(viewHandle,
-						outerCanvas.getLayoutBounds().getWidth(),
-						outerCanvas.getLayoutBounds().getHeight()
+						sizeProperty.get().getWidth(),
+						sizeProperty.get().getHeight()
 				), 0).build();
 		viewHandle.setViewport(context, newBounds, positiveZoom.get());
 	}
@@ -178,6 +181,7 @@ public class Editor {
 		outerCanvas.widthProperty().addListener(onResize);
 		outerCanvas.heightProperty().addListener(onResize);
 		outerCanvas.getChildren().addAll(canvas);
+		this.sizeProperty = outerCanvas.layoutBoundsProperty();
 
 		layout = new VBox();
 		layout.setFillWidth(true);
