@@ -19,6 +19,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.function.Supplier;
 
+import static com.zarbosoft.pyxyzygy.app.Global.logger;
 import static com.zarbosoft.rendaw.common.Common.atomicWrite;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 
@@ -47,10 +48,7 @@ public class ConfigBase {
 					try {
 						flushConfig();
 					} catch (Exception e) {
-						System.out.format("Error flushing config");
-						e.printStackTrace();
-						System.out.flush();
-						System.err.flush();
+						logger.writeException(e, "Error flushing config %s", name());
 					}
 				});
 			}

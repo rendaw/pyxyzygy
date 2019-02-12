@@ -113,7 +113,7 @@ class RowAdapterTrueColorImageNode extends RowAdapter {
 
 	@Override
 	public void updateFrameMarker(ProjectContext context, Window window) {
-		row.ifPresent(r -> r.updateFrameMarker(context, window));
+		row.ifPresent(r -> r.updateFrameMarker(window));
 	}
 
 	@Override
@@ -125,7 +125,7 @@ class RowAdapterTrueColorImageNode extends RowAdapter {
 
 			{
 				layout = new VBox();
-				row = Optional.of(new RowFramesWidget(timeline));
+				row = Optional.of(new RowFramesWidget(window, timeline));
 				layout.getChildren().add(row.get());
 
 				framesCleanup = node.mirrorFrames(frameCleanup, f -> {

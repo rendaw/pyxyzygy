@@ -164,7 +164,6 @@ public class TrueColorImageCanvasHandle extends CanvasHandle {
 					continue;
 				final int renderX = (x + tileBounds.x) * context.tileSize - crop.x;
 				final int renderY = (y + tileBounds.y) * context.tileSize - crop.y;
-				System.out.flush();
 				TrueColorImage data = tile.getData(context);
 				gc.compose(data, renderX, renderY, (float) 1);
 			}

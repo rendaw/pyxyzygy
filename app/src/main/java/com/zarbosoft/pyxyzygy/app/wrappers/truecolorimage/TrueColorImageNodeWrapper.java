@@ -60,7 +60,7 @@ public class TrueColorImageNodeWrapper extends Wrapper {
 	public EditHandle buildEditControls(
 			ProjectContext context, Window window, TabPane tabPane
 	) {
-		return new TrueColorImageEditHandle(context, this, tabPane);
+		return new TrueColorImageEditHandle(context, window,this, tabPane);
 	}
 
 	@Override

@@ -23,7 +23,7 @@ public class RowFramesWidget extends Pane {
 	List<FrameWidget> frames = new ArrayList<>();
 	FrameWidget selected;
 
-	public RowFramesWidget(Timeline timeline) {
+	public RowFramesWidget(Window window, Timeline timeline) {
 		this.timeline = timeline;
 		inner
 				.layoutXProperty()
@@ -43,6 +43,7 @@ public class RowFramesWidget extends Pane {
 		frameMarker.setBlendMode(BlendMode.MULTIPLY);
 		inner.getChildren().add(frameMarker);
 		getChildren().addAll(inner);
+		updateFrameMarker(window);
 	}
 
 	/**
@@ -116,7 +117,7 @@ public class RowFramesWidget extends Pane {
 		return outerAt;
 	}
 
-	public void updateFrameMarker(ProjectContext context, Window window) {
+	public void updateFrameMarker(Window window) {
 		if (window.selectedForView.get() == null)
 			return;
 		frameMarker.setLayoutX(window.selectedForView.get().getWrapper().getConfig().frame.getValue() * timeline.zoom);

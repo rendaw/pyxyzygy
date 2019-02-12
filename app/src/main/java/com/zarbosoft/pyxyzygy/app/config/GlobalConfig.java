@@ -34,4 +34,7 @@ public class GlobalConfig extends ConfigBase {
 
 	@Configuration(optional = true)
 	public final SimpleBooleanProperty showOrigin = new SimpleBooleanProperty(false);
+
+	@Configuration(optional = true)
+	public boolean maximize = true;
 }

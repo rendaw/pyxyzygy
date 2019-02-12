@@ -4,6 +4,9 @@ import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.config.NodeConfig;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import javafx.beans.binding.Bindings;
+import javafx.beans.binding.IntegerBinding;
+import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.Insets;
@@ -21,6 +24,9 @@ public class Editor {
 	public final Pane canvas;
 	private final Group canvasInner;
 	private Runnable editCleanup;
+	public final SimpleIntegerProperty positiveZoom = new SimpleIntegerProperty(1);
+	public final SimpleDoubleProperty zoomFactor = new SimpleDoubleProperty(1);
+
 	private Hotkeys.Action[] actions = new Hotkeys.Action[] {
 			new Hotkeys.Action(Hotkeys.Scope.CANVAS,
 					"flip-horizontal",
@@ -28,8 +34,8 @@ public class Editor {
 					Hotkeys.Hotkey.create(KeyCode.H, false, false, false)
 			) {
 				@Override
-				public void run(ProjectContext context) {
-					CanvasHandle view = window.selectedForView.get();
+				public void run(ProjectContext context, Window window) {
+					CanvasHandle view = Editor.this.window.selectedForView.get();
 					if (view == null)
 						return;
 					view.getWrapper().getConfig().flipHorizontal.set(!view
@@ -43,8 +49,8 @@ public class Editor {
 					Hotkeys.Hotkey.create(KeyCode.V, false, false, false)
 			) {
 				@Override
-				public void run(ProjectContext context) {
-					CanvasHandle view = window.selectedForView.get();
+				public void run(ProjectContext context, Window window) {
+					CanvasHandle view = Editor.this.window.selectedForView.get();
 					if (view == null)
 						return;
 					view.getWrapper().getConfig().flipVertical.set(!view.getWrapper().getConfig().flipVertical.get());
@@ -56,7 +62,7 @@ public class Editor {
 					Hotkeys.Hotkey.create(KeyCode.TAB, false, false, false)
 			) {
 				@Override
-				public void run(ProjectContext context) {
+				public void run(ProjectContext context, Window window) {
 					context.config.maxCanvas.set(!context.config.maxCanvas.get());
 				}
 			},
@@ -66,13 +72,13 @@ public class Editor {
 					Hotkeys.Hotkey.create(KeyCode.O, false, false, false)
 			) {
 				@Override
-				public void run(ProjectContext context) {
-					EditHandle e = window.selectedForEdit.get();
+				public void run(ProjectContext context, Window window) {
+					EditHandle e = Editor.this.window.selectedForEdit.get();
 					if (e == null)
 						return;
 					e.getWrapper().getConfig().onionSkin.set(!e.getWrapper().getConfig().onionSkin.get());
 				}
-			}
+			},
 	};
 	private OnionSkin onionSkin;
 
@@ -118,20 +124,13 @@ public class Editor {
 						outerCanvas.getLayoutBounds().getWidth(),
 						outerCanvas.getLayoutBounds().getHeight()
 				), 0).build();
-		viewHandle.setViewport(context, newBounds, calculatePositiveZoom(viewHandle.getWrapper()));
+		viewHandle.setViewport(context, newBounds, positiveZoom.get());
 	}
 
-	public int calculatePositiveZoom(Wrapper view) {
-		int zoom = view.getConfig().zoom.get();
-		return zoom < 0 ? 1 : (zoom + 1);
-	}
-
-	public static DoubleVector computeViewTransform(Wrapper view) {
+	public DoubleVector computeViewTransform(Wrapper view) {
 		final NodeConfig config = view.getConfig();
-		int zoom = config.zoom.get();
-		double scaling = config.zoom.get() < 0 ? (1.0 / (1 + -zoom)) : (1 + zoom);
-		return new DoubleVector(scaling * (config.flipHorizontal.get() ? -1.0 : 1.0),
-				scaling * (config.flipVertical.get() ? -1.0 : 1.0)
+		return new DoubleVector(zoomFactor.get() * (config.flipHorizontal.get() ? -1.0 : 1.0),
+				zoomFactor.get() * (config.flipVertical.get() ? -1.0 : 1.0)
 		);
 	}
 
@@ -141,7 +140,7 @@ public class Editor {
 		for (Hotkeys.Action action : actions)
 			context.hotkeys.register(action);
 
-		new Origin(window);
+		new Origin(window, this);
 
 		canvasInner = new Group();
 
@@ -290,7 +289,7 @@ public class Editor {
 			edit.cursorMoved(context, normalizeEventCoordinates(view, e));
 		});
 		outerCanvas.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
-			if (context.hotkeys.event(context, Hotkeys.Scope.CANVAS, e))
+			if (context.hotkeys.event(context, window, Hotkeys.Scope.CANVAS, e))
 				e.consume();
 		});
 
@@ -313,7 +312,13 @@ public class Editor {
 				}
 				if (newView != null) {
 					final ChangeListener<Number> zoomListener =
-							(observable1, oldValue1, newValue) -> updateBounds(context);
+							(observable1, oldValue1, zoom0) -> {
+						updateBounds(context);
+						int zoom = zoom0.intValue();
+						positiveZoom.set(
+								zoom < 0 ? 1 : (zoom + 1));
+								zoomFactor.set(zoom < 0 ? (1.0 / (1 + -zoom)) : (1 + zoom));
+							};
 					final NodeConfig config = newView.getWrapper().getConfig();
 					config.zoom.addListener(zoomListener);
 					canvas

@@ -6,6 +6,7 @@ import com.zarbosoft.luxem.read.StackReader;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.core.model.v0.Project;
 import com.zarbosoft.pyxyzygy.seed.deserialize.ModelDeserializationContext;
+import javafx.scene.input.KeyCode;
 
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -19,11 +20,16 @@ public class Global {
 	public final static int NO_LOOP = 0;
 	public final static int NO_LENGTH = -1;
 	public final static int NO_INNER = -1;
-	public static String nameSymbol = "pyxyzygy";
-	public static AppDirs appDirs = new AppDirs().set_appname(nameSymbol).set_appauthor("zarbosoft");
+	public static final Hotkeys.Hotkey cutHotkey = Hotkeys.Hotkey.create(KeyCode.X, true, false, false);
+	public static final Hotkeys.Hotkey pasteHotkey = Hotkeys.Hotkey.create(KeyCode.V, true, false, false);
+	public static final Hotkeys.Hotkey copyHotkey = Hotkeys.Hotkey.create(KeyCode.C, true, false, false);
+	public static final String nameSymbol = "pyxyzygy";
+	public static final AppDirs appDirs = new AppDirs().set_appname(nameSymbol).set_appauthor("zarbosoft");
 	public static final Path configDir = appDirs.user_config_dir();
 	public static final Path configPath = configDir.resolve("config.luxem");
-	public static String nameHuman = "pyxyzygy";
+	public static final String nameHuman = "pyxyzygy";
+
+	public static Logger logger;
 
 	public static ProjectContext create(Path path, int tileSize) {
 		ProjectContext out = new ProjectContext(path);

@@ -17,6 +17,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.zarbosoft.pyxyzygy.app.Global.appDirs;
 import static com.zarbosoft.rendaw.common.Common.sublist;
 
 public class CLIMain {
@@ -189,6 +190,7 @@ public class CLIMain {
 	}
 
 	public static void main(String[] args) {
+		Global.logger = new Logger.File(appDirs);
 		ScanResult scan = new ClassGraph()
 				.enableAllInfo()
 				.whitelistPackages("com.zarbosoft.pyxyzygy.cli")

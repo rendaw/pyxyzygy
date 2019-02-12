@@ -126,7 +126,7 @@ public class GroupNodeEditHandle extends EditHandle {
 
 	public Tab buildNodeTab(ProjectContext context) {
 		return new Tab(
-				"Group",
+				"Layer",
 				pad(new WidgetFormBuilder().apply(b -> cleanup.add(nodeFormFields(context, b, wrapper))).build())
 		);
 	}

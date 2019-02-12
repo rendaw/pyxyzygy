@@ -17,7 +17,7 @@ public class Origin extends Group {
 	private final Line originVert = new Line();
 	private final Line originHoriz = new Line();
 
-	public Origin(Window window) {
+	public Origin(Window window, Editor editor) {
 		originHoriz.setFill(Color.BLACK);
 		originVert.setFill(Color.BLACK);
 		originHoriz.setOpacity(0.5);
@@ -35,8 +35,9 @@ public class Origin extends Group {
 			public void changed(
 					ObservableValue<? extends CanvasHandle> observable, CanvasHandle oldValue, CanvasHandle newValue
 			) {
+				if (newValue == null) return;
 				DoubleBinding scale = Bindings.createDoubleBinding(
-						() -> 1.0 / Editor.computeViewTransform(newValue.getWrapper()).x,
+						() -> 1.0 / editor.computeViewTransform(newValue.getWrapper()).x,
 						newValue.getWrapper().getConfig().zoom
 				);
 				DoubleBinding originHalfSpan = scale.multiply(20.0);

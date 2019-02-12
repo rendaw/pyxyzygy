@@ -27,6 +27,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import static com.zarbosoft.pyxyzygy.app.Global.logger;
 import static com.zarbosoft.rendaw.common.Common.atomicWrite;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 
@@ -166,10 +167,7 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 				try {
 					flushAll();
 				} catch (Exception e) {
-					System.out.format("Error duing flush");
-					e.printStackTrace();
-					System.out.flush();
-					System.err.flush();
+					logger.writeException(e,"Error during project flush");
 				}
 			}
 		}, 5000);

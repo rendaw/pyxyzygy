@@ -47,7 +47,7 @@ public class CameraEditHandle extends GroupNodeEditHandle {
 	@Override
 	public Tab buildNodeTab(ProjectContext context) {
 		CameraWrapper wrapper = (CameraWrapper) super.wrapper;
-		return new Tab("Camera",
+		return new Tab("Layer",
 				pad(new WidgetFormBuilder()
 						.apply(b -> cleanup.add(nodeFormFields(context, b, wrapper)))
 						.intSpinner("Width", 1, 99999, s -> {

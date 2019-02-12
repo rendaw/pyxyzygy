@@ -56,7 +56,7 @@ public class Window {
 							Hotkeys.Hotkey.create(KeyCode.Z, true, false, false)
 					) {
 						@Override
-						public void run(ProjectContext context) {
+						public void run(ProjectContext context, Window window) {
 							context.history.undo();
 						}
 					},
@@ -68,7 +68,7 @@ public class Window {
 					) {
 
 						@Override
-						public void run(ProjectContext context) {
+						public void run(ProjectContext context, Window window) {
 							context.history.redo();
 						}
 					})
@@ -185,7 +185,7 @@ public class Window {
 
 		scene.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
 			pressed.add(e.getCode());
-			if (context.hotkeys.event(context, Hotkeys.Scope.GLOBAL, e))
+			if (context.hotkeys.event(context, this, Hotkeys.Scope.GLOBAL, e))
 				e.consume();
 		});
 		scene.addEventFilter(KeyEvent.KEY_RELEASED,e -> {
@@ -195,9 +195,15 @@ public class Window {
 				getClass().getResource("widgets/brushbutton/style.css").toExternalForm()
 		);
 
+		primaryStage.setMaximized(GUILaunch.config.maximize);
+		primaryStage.maximizedProperty().addListener((observable, oldValue, newValue) -> {
+			GUILaunch.config.maximize = newValue.booleanValue();
+		});
+
+		structure.populate();
+
 		primaryStage.setTitle(String.format("%s - %s", context.path.getFileName().toString(), nameHuman));
 		primaryStage.setScene(scene);
-		primaryStage.setMaximized(context.config.maximize);
 		primaryStage.show();
 	}
 

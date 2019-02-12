@@ -4,6 +4,8 @@
 #include "header.hxx"
 %}
 
+%include <std_except.i>
+
 %apply jbyte { uint8_t }
 
 %ignore ROBytes;
@@ -98,8 +100,6 @@ class TrueColorImage {
 %pragma(java) jniclasscode=%{
 	static {
 		System.load(com.zarbosoft.rendaw.common.Common.extractResource(mynative.class, "##OUTPUT##").toAbsolutePath().toString());
-		System.out.println("Loaded mynative");
-		System.out.flush();
 	}
 %}
 #endif

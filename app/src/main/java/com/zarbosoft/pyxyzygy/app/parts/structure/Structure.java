@@ -1,10 +1,7 @@
 package com.zarbosoft.pyxyzygy.app.parts.structure;
 
 import com.google.common.collect.ImmutableList;
-import com.zarbosoft.pyxyzygy.app.GUILaunch;
-import com.zarbosoft.pyxyzygy.app.Hotkeys;
-import com.zarbosoft.pyxyzygy.app.Window;
-import com.zarbosoft.pyxyzygy.app.Wrapper;
+import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage.TrueColorImageCanvasHandle;
@@ -55,31 +52,28 @@ public class Structure {
 	Hotkeys.Action[] actions = new Hotkeys.Action[] {
 			new Hotkeys.Action(Hotkeys.Scope.STRUCTURE,
 					"link",
-					"Select to link",
-					Hotkeys.Hotkey.create(KeyCode.C, true, false, false)
+					"Select to link", Global.copyHotkey
 			) {
 				@Override
-				public void run(ProjectContext context) {
+				public void run(ProjectContext context, Window window) {
 					link();
 				}
 			},
 			new Hotkeys.Action(Hotkeys.Scope.STRUCTURE,
 					"lift",
-					"Lift node",
-					Hotkeys.Hotkey.create(KeyCode.X, true, false, false)
+					"Lift node", Global.cutHotkey
 			) {
 				@Override
-				public void run(ProjectContext context) {
+				public void run(ProjectContext context, Window window) {
 					lift();
 				}
 			},
 			new Hotkeys.Action(Hotkeys.Scope.STRUCTURE,
 					"place-auto",
-					"Place node or link",
-					Hotkeys.Hotkey.create(KeyCode.V, true, false, false)
+					"Place node or link", Global.pasteHotkey
 			) {
 				@Override
-				public void run(ProjectContext context) {
+				public void run(ProjectContext context, Window window) {
 					placeAuto();
 				}
 			},
@@ -89,7 +83,7 @@ public class Structure {
 					Hotkeys.Hotkey.create(KeyCode.D, true, false, false)
 			) {
 				@Override
-				public void run(ProjectContext context) {
+				public void run(ProjectContext context, Window window) {
 					duplicate();
 				}
 			},
@@ -99,7 +93,7 @@ public class Structure {
 					Hotkeys.Hotkey.create(KeyCode.DELETE, false, false, false)
 			) {
 				@Override
-				public void run(ProjectContext context) {
+				public void run(ProjectContext context, Window window) {
 					duplicate();
 				}
 			}
@@ -188,20 +182,15 @@ public class Structure {
 		this.context = context;
 		this.window = window;
 
-		List<Integer> editPath = context.config.editPath;
-		List<Integer> viewPath = context.config.viewPath;
-
 		for (Hotkeys.Action action : actions)
 			context.hotkeys.register(action);
 
 		tree = new TreeView();
 		tree.setShowRoot(false);
-		TreeItem<Wrapper> rootTreeItem = new TreeItem<>();
-		prepareTreeItem(rootTreeItem);
-		tree.setRoot(rootTreeItem);
+		tree.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 		tree.setMinHeight(0);
 		tree.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
-			if (context.hotkeys.event(context, Hotkeys.Scope.STRUCTURE, e))
+			if (context.hotkeys.event(context, window, Hotkeys.Scope.STRUCTURE, e))
 				e.consume();
 		});
 		tree.getSelectionModel().getSelectedItems().addListener((ListChangeListener<TreeItem<Wrapper>>) c -> {
@@ -313,7 +302,7 @@ public class Structure {
 			group.initialNameSet(context, uniqueName("Group"));
 			addNew(group);
 		});
-		MenuItem addImage = new MenuItem("Add True Color");
+		MenuItem addImage = new MenuItem("Add True Color Layer");
 		addImage.setOnAction(e -> {
 			TrueColorImageNode image = TrueColorImageNode.create(context);
 			image.initialOpacitySet(context, opacityMax);
@@ -324,7 +313,7 @@ public class Structure {
 			image.initialFramesAdd(context, ImmutableList.of(frame));
 			addNew(image);
 		});
-		MenuItem importImage = new MenuItem("Import True Color");
+		MenuItem importImage = new MenuItem("Import True Color PNG");
 		importImage.setOnAction(e -> {
 			FileChooser fileChooser = new FileChooser();
 			fileChooser.setInitialDirectory(new File(GUILaunch.config.importDir));
@@ -344,7 +333,7 @@ public class Structure {
 			});
 		});
 		MenuButton addButton = HelperJFX.menuButton("plus.png");
-		addButton.getItems().addAll(addCamera, addGroup, addImage);
+		addButton.getItems().addAll(addImage, importImage, addGroup, addCamera);
 		Button removeButton = HelperJFX.button("minus.png", "Remove");
 		removeButton.disableProperty().bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedIndices()));
 		removeButton.setOnAction(e -> {
@@ -428,6 +417,15 @@ public class Structure {
 		toolbar = new ToolBar(addButton, duplicateButton, removeButton, moveUpButton, moveDownButton, linkButton);
 		layout.getChildren().addAll(toolbar, tree);
 		VBox.setVgrow(tree, Priority.ALWAYS);
+	}
+
+	public void populate() {
+		List<Integer> editPath = context.config.editPath;
+		List<Integer> viewPath = context.config.viewPath;
+
+		TreeItem<Wrapper> rootTreeItem = new TreeItem<>();
+		prepareTreeItem(rootTreeItem);
+		tree.setRoot(rootTreeItem);
 
 		context.project.addTopAddListeners((target, at, value) -> {
 			List<TreeItem<Wrapper>> newItems = new ArrayList<>();

@@ -77,7 +77,7 @@ public class Hotkeys {
 			this.key.set(defaultKey);
 		}
 
-		public abstract void run(ProjectContext context);
+		public abstract void run(ProjectContext context, Window window);
 
 		public String id() {
 			return String.format("%s:%s", scope, name);
@@ -97,7 +97,7 @@ public class Hotkeys {
 		actions.remove(action);
 	}
 
-	public boolean event(ProjectContext context, Scope scope, KeyEvent e) {
+	public boolean event(ProjectContext context, Window window, Scope scope, KeyEvent e) {
 		for (Action action : ImmutableList.copyOf(actions)) {
 			if (action.scope != scope)
 				continue;
@@ -109,7 +109,7 @@ public class Hotkeys {
 				continue;
 			if (action.key.get().shift != e.isShiftDown())
 				continue;
-			action.run(context);
+			action.run(context, window);
 			return true;
 		}
 		return false;

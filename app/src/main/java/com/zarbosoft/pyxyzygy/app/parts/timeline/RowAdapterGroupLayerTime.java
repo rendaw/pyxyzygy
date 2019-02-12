@@ -190,7 +190,7 @@ public class RowAdapterGroupLayerTime extends RowAdapter {
 
 	@Override
 	public void updateFrameMarker(ProjectContext context, Window window) {
-		row.ifPresent(r -> r.updateFrameMarker(context, window));
+		row.ifPresent(r -> r.updateFrameMarker(window));
 		rowInnerRange.ifPresent(r -> r.updateFrameMarker(window));
 	}
 
@@ -271,7 +271,7 @@ public class RowAdapterGroupLayerTime extends RowAdapter {
 				};
 				timeline.selectedFrame.addListener(selectedFrameListener);
 				selectedFrameListener.changed(null, null, timeline.selectedFrame.getValue());
-				row = Optional.of(new RowFramesWidget(timeline));
+				row = Optional.of(new RowFramesWidget(window, timeline));
 				layout.getChildren().addAll(row.get());
 			}
 

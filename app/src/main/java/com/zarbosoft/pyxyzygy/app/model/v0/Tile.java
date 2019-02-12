@@ -27,7 +27,6 @@ public class Tile extends TileBase implements Dirtyable {
 	public static Tile create(ProjectContext context, TrueColorImage data) {
 		Tile out = new Tile();
 		out.id = context.nextId++;
-		//System.out.format("hello I am tile %s\n", out.id);
 		out.data = new WeakReference<>(data);
 		out.dirtyData = data;
 		context.setDirty(out);

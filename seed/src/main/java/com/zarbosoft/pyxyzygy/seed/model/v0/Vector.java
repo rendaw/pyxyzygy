@@ -4,6 +4,8 @@ import com.zarbosoft.luxem.read.StackReader;
 import com.zarbosoft.luxem.write.RawWriter;
 
 public class Vector {
+	public final static Vector ZERO = new Vector(0,0);
+	public final static Vector UNIT = new Vector(0,0);
 	public final int x;
 
 	public final int y;

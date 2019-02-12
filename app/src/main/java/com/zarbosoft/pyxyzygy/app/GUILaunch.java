@@ -9,8 +9,7 @@ import com.zarbosoft.pyxyzygy.app.config.TrueColor;
 import com.zarbosoft.pyxyzygy.app.config.TrueColorBrush;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
-import com.zarbosoft.pyxyzygy.core.model.v0.TrueColorImageFrame;
-import com.zarbosoft.pyxyzygy.core.model.v0.TrueColorImageNode;
+import com.zarbosoft.pyxyzygy.core.model.v0.*;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.ChainComparator;
@@ -49,6 +48,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.zarbosoft.pyxyzygy.app.Global.*;
 import static com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext.uniqueName;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
@@ -350,6 +350,7 @@ public class GUILaunch extends Application {
 
 	@Override
 	public void start(Stage primaryStage) throws Exception {
+		logger = new Logger.TerminalPlusFile(appDirs);
 		new com.zarbosoft.pyxyzygy.core.mynativeJNI();
 		if (getParameters().getUnnamed().isEmpty()) {
 			while (true) {
@@ -365,9 +366,9 @@ public class GUILaunch extends Application {
 						try {
 							newProject(primaryStage, dialog.resultPath, dialog.resultCreateMode);
 						} catch (Exception e) {
-							e.printStackTrace();
+							logger.writeException(e, "Error creating new project");
 							Alert alert = new Alert(Alert.AlertType.ERROR);
-							alert.setTitle("Error Creating Project");
+							alert.setTitle("Error creating project");
 							alert.setHeaderText(alert.getTitle());
 							alert.setContentText(e.getMessage());
 							alert.showAndWait();
@@ -379,9 +380,9 @@ public class GUILaunch extends Application {
 						try {
 							openProject(primaryStage, dialog.resultPath);
 						} catch (Exception e) {
-							e.printStackTrace();
+							logger.writeException(e, "Error opening project");
 							Alert alert = new Alert(Alert.AlertType.ERROR);
-							alert.setTitle("Error Opening Project");
+							alert.setTitle("Error opening project");
 							alert.setHeaderText(alert.getTitle());
 							alert.setContentText(e.getMessage());
 							alert.showAndWait();
@@ -413,14 +414,35 @@ public class GUILaunch extends Application {
 		config.lastDir = path.getParent().toString();
 		ProjectContext context = Global.create(path, createMode.tileSize());
 		context.config.defaultZoom = createMode.defaultZoom();
+
+		GroupLayer groupLayer = GroupLayer.create(context);
+
+		GroupPositionFrame groupPositionFrame = GroupPositionFrame.create(context);
+		groupPositionFrame.initialLengthSet(context, NO_LENGTH);
+		groupPositionFrame.initialOffsetSet(context, Vector.ZERO);
+		groupLayer.initialPositionFramesAdd(context, ImmutableList.of(groupPositionFrame));
+
+		GroupTimeFrame groupTimeFrame = GroupTimeFrame.create(context);
+		groupTimeFrame.initialLengthSet(context, NO_LENGTH);
+		groupTimeFrame.initialInnerOffsetSet(context, 0);
+		groupTimeFrame.initialInnerLoopSet(context, NO_LOOP);
+		groupLayer.initialTimeFramesAdd(context, ImmutableList.of(groupTimeFrame));
+
 		TrueColorImageNode trueColorImageNode = TrueColorImageNode.create(context);
-		trueColorImageNode.initialNameSet(context, uniqueName("Image"));
+		trueColorImageNode.initialNameSet(context, uniqueName("New Layer"));
 		trueColorImageNode.initialOpacitySet(context, Global.opacityMax);
 		TrueColorImageFrame trueColorImageFrame = TrueColorImageFrame.create(context);
 		trueColorImageFrame.initialLengthSet(context, -1);
 		trueColorImageFrame.initialOffsetSet(context, new Vector(0, 0));
 		trueColorImageNode.initialFramesAdd(context, ImmutableList.of(trueColorImageFrame));
-		context.history.change(c -> c.project(context.project).topAdd(trueColorImageNode));
+		groupLayer.initialInnerSet(context, trueColorImageNode);
+
+		GroupNode groupNode = GroupNode.create(context);
+		groupNode.initialNameSet(context, "Main");
+		groupNode.initialOpacitySet(context, opacityMax);
+		groupNode.initialLayersAdd(context, ImmutableList.of(groupLayer));
+
+		context.history.change(c -> c.project(context.project).topAdd(groupNode));
 		context.history.finishChange();
 		new Window().start(context, primaryStage, true);
 	}

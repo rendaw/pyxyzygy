@@ -32,6 +32,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import static com.zarbosoft.pyxyzygy.app.Global.pasteHotkey;
 import static com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext.uniqueName;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.pad;
@@ -58,19 +59,27 @@ public class TrueColorImageEditHandle extends EditHandle {
 	}
 
 	public TrueColorImageEditHandle(
-			ProjectContext context, final TrueColorImageNodeWrapper wrapper, TabPane tabPane
+			ProjectContext context, Window window, final TrueColorImageNodeWrapper wrapper, TabPane tabPane
 	) {
 		this.wrapper = wrapper;
 
 		positiveZoom.bind(wrapper.canvasHandle.zoom);
 
-		actions = Streams.concat(Stream.of(new Hotkeys.Action(Hotkeys.Scope.CANVAS,
+		actions = Streams.concat(Stream.of(
+				new Hotkeys.Action(Hotkeys.Scope.CANVAS, "paste", "Paste", pasteHotkey) {
+					@Override
+					public void run(ProjectContext context, Window window) {
+						wrapper.config.tool.set(TrueColorImageNodeConfig.Tool.SELECT);
+						((ToolSelect)tool).paste(context, window);
+					}
+				},
+				new Hotkeys.Action(Hotkeys.Scope.CANVAS,
 				"last-brush",
 				"Last brush",
 				Hotkeys.Hotkey.create(KeyCode.SPACE, false, false, false)
 		) {
 			@Override
-			public void run(ProjectContext context) {
+			public void run(ProjectContext context, Window window) {
 				if (wrapper.config.tool.get() == TrueColorImageNodeConfig.Tool.BRUSH) {
 					if (wrapper.config.lastBrush < 0 ||
 							wrapper.config.lastBrush >= GUILaunch.config.trueColorBrushes.size())
@@ -86,7 +95,7 @@ public class TrueColorImageEditHandle extends EditHandle {
 				Hotkeys.Hotkey.create(KeyCode.S, false, false, false)
 		) {
 			@Override
-			public void run(ProjectContext context) {
+			public void run(ProjectContext context, Window window) {
 				wrapper.config.tool.set(TrueColorImageNodeConfig.Tool.SELECT);
 			}
 		}), enumerate(Stream.of(KeyCode.DIGIT1,
@@ -105,7 +114,7 @@ public class TrueColorImageEditHandle extends EditHandle {
 				Hotkeys.Hotkey.create(p.second, false, false, false)
 		) {
 			@Override
-			public void run(ProjectContext context) {
+			public void run(ProjectContext context, Window window) {
 				if (p.first >= GUILaunch.config.trueColorBrushes.size())
 					return;
 				setBrush(p.first);
@@ -213,12 +222,12 @@ public class TrueColorImageEditHandle extends EditHandle {
 		);
 
 		// Tab
-		Tab generalTab = new Tab("Image");
+		Tab generalTab = new Tab("Layer");
 		generalTab.setContent(pad(new WidgetFormBuilder()
 				.apply(b -> cleanup.add(Misc.nodeFormFields(context, b, wrapper)))
 				.build()));
 
-		paintTab = new Tab("Paint");
+		paintTab = new Tab("Brush");
 		wrapper.config.tool.addListener(new ChangeListener<TrueColorImageNodeConfig.Tool>() {
 
 			private ChangeListener<Number> brushListener;
@@ -243,7 +252,7 @@ public class TrueColorImageEditHandle extends EditHandle {
 					brushesListener = null;
 				}
 				if (newValue == TrueColorImageNodeConfig.Tool.SELECT) {
-					setTool(context, () -> new ToolSelect(context, TrueColorImageEditHandle.this));
+					setTool(context, () -> new ToolSelect(context, window, TrueColorImageEditHandle.this));
 				} else if (newValue == TrueColorImageNodeConfig.Tool.BRUSH) {
 					Runnable update = new Runnable() {
 						TrueColorBrush lastBrush;
@@ -295,7 +304,7 @@ public class TrueColorImageEditHandle extends EditHandle {
 		brushesCleanup.run();
 		cleanup.forEach(Runnable::run);
 		for (Hotkeys.Action action : actions)
-			context.hotkeys.register(action);
+			context.hotkeys.unregister(action);
 	}
 
 	@Override

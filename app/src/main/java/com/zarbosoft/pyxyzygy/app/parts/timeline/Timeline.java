@@ -95,35 +95,30 @@ public class Timeline {
 		this.context = context;
 		this.window = window;
 
-		Stream.of(
-				new Hotkeys.Action(
-					Hotkeys.Scope.TIMELINE,
-					"previous-frame",
-					"Previous frame",
-					Hotkeys.Hotkey.create(KeyCode.LEFT, false, false, false)
-			) {
-				@Override
-				public void run(ProjectContext context) {
-					window.selectedForView.get().getWrapper().getConfig().frame.set(Math.max(0,
-							window.selectedForView.get().getWrapper().getConfig().frame.get() - 1
-					));
-				}
-			},
-			new Hotkeys.Action(
-					Hotkeys.Scope.TIMELINE,
-					"next-frame",
-					"Next frame",
-					Hotkeys.Hotkey.create(KeyCode.RIGHT, false, false, false)
-			) {
-				@Override
-				public void run(ProjectContext context) {
-					window.selectedForView.get().getWrapper().getConfig().frame.set(window.selectedForView
-							.get()
-							.getWrapper()
-							.getConfig().frame.get() + 1);
-				}
+		Stream.of(new Hotkeys.Action(Hotkeys.Scope.TIMELINE,
+				"previous-frame",
+				"Previous frame",
+				Hotkeys.Hotkey.create(KeyCode.LEFT, false, false, false)
+		) {
+			@Override
+			public void run(ProjectContext context, Window window) {
+				window.selectedForView.get().getWrapper().getConfig().frame.set(Math.max(0,
+						window.selectedForView.get().getWrapper().getConfig().frame.get() - 1
+				));
 			}
-		).forEach(context.hotkeys::register);
+		}, new Hotkeys.Action(Hotkeys.Scope.TIMELINE,
+				"next-frame",
+				"Next frame",
+				Hotkeys.Hotkey.create(KeyCode.RIGHT, false, false, false)
+		) {
+			@Override
+			public void run(ProjectContext context, Window window) {
+				window.selectedForView.get().getWrapper().getConfig().frame.set(window.selectedForView
+						.get()
+						.getWrapper()
+						.getConfig().frame.get() + 1);
+			}
+		}).forEach(context.hotkeys::register);
 
 		window.selectedForView.addListener(new ChangeListener<CanvasHandle>() {
 			{
@@ -132,9 +127,7 @@ public class Timeline {
 
 			@Override
 			public void changed(
-					ObservableValue<? extends CanvasHandle> observable,
-					CanvasHandle oldValue,
-					CanvasHandle newValue
+					ObservableValue<? extends CanvasHandle> observable, CanvasHandle oldValue, CanvasHandle newValue
 			) {
 				Observable[] deps;
 				if (newValue == null)
@@ -156,11 +149,19 @@ public class Timeline {
 			}
 		});
 		timeScroll.maxProperty().bind(useMaxFrame.multiply(zoom));
+		tree.addEventFilter(MouseEvent.MOUSE_ENTERED,e -> {
+			tree.requestFocus();
+			e.consume();
+		});
 		tree.setRoot(new TreeItem<>());
 		tree.setShowRoot(false);
 		tree.getRoot().getChildren().addListener((ListChangeListener<TreeItem<RowAdapter>>) c -> {
 			if (tree.getSelectionModel().getSelectedItem() == null && !tree.getRoot().getChildren().isEmpty())
 				tree.getSelectionModel().select(tree.getRoot().getChildren().get(0));
+		});
+		scrub.addEventFilter(MouseEvent.MOUSE_ENTERED, e -> {
+			tree.requestFocus();
+			e.consume();
 		});
 		scrub.setBackground(Background.EMPTY);
 		scrub.setMinHeight(30);
@@ -292,7 +293,7 @@ public class Timeline {
 						if (item.hasFrames()) {
 							rowControlsHandle = item.createRowWidget(context, window);
 							setGraphic(rowControlsHandle.getWidget());
-							updateTime();
+							updateTimeMap();
 						}
 						super.updateItem(item, empty);
 					}
@@ -304,6 +305,7 @@ public class Timeline {
 			{
 				onChanged(null);
 			}
+
 			@Override
 			public void onChanged(Change<? extends TreeItem<RowAdapter>> c) {
 				while (c != null && c.next()) {
@@ -334,7 +336,7 @@ public class Timeline {
 		foreground.getChildren().addAll(toolBar, tree, scrub, timeScroll);
 
 		foreground.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
-			if (context.hotkeys.event(context, Hotkeys.Scope.TIMELINE, e))
+			if (context.hotkeys.event(context, window, Hotkeys.Scope.TIMELINE, e))
 				e.consume();
 		});
 
@@ -415,7 +417,7 @@ public class Timeline {
 
 				@Override
 				public void deselected() {
-((CameraWrapper) edit).adjustViewport = false;
+					((CameraWrapper) edit).adjustViewport = false;
 				}
 
 				@Override
@@ -460,7 +462,7 @@ public class Timeline {
 			}));
 		}
 		if (edit instanceof GroupNodeWrapper) {
-			editCleanup.add( ((GroupNode) edit.getValue()).mirrorLayers(tree.getRoot().getChildren(), layer -> {
+			editCleanup.add(((GroupNode) edit.getValue()).mirrorLayers(tree.getRoot().getChildren(), layer -> {
 				RowAdapterGroupLayer layerRowAdapter = new RowAdapterGroupLayer((GroupNodeWrapper) edit, layer);
 				TreeItem<RowAdapter> layerItem = new TreeItem(layerRowAdapter);
 				layerItem.setExpanded(true);
@@ -477,12 +479,24 @@ public class Timeline {
 					.add(new TreeItem(new RowAdapterTrueColorImageNode(this, (TrueColorImageNode) edit.getValue())));
 		}
 
-		updateTime();
+		final ChangeListener<Number> frameListener = new ChangeListener<>() {
+			{
+				changed(null, null, root.getConfig().frame.get());
+			}
+
+			@Override
+			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+				Timeline.this.updateFrameMarker();
+			}
+		};
+		root.getConfig().frame.addListener(frameListener);
+		editCleanup.add(() -> root.getConfig().frame.removeListener(frameListener));
 	}
 
 	private void updateButtons() {
 		CanvasHandle root = window.selectedForView.get();
-		TreeItem<RowAdapter> nowSelected = tree.getSelectionModel().getSelectedItems().stream().findFirst().orElse(null);
+		TreeItem<RowAdapter> nowSelected =
+				tree.getSelectionModel().getSelectedItems().stream().findFirst().orElse(null);
 		boolean noSelection = root == null ||
 				nowSelected == null ||
 				nowSelected.getValue() == null ||
@@ -511,7 +525,7 @@ public class Timeline {
 		}.accept(tree.getRoot());
 	}
 
-	public void updateTime() {
+	public void updateTimeMap() {
 		// Update rows
 		this.calculatedMaxFrame.set(new Function<TreeItem<RowAdapter>, Integer>() {
 			@Override
@@ -565,7 +579,10 @@ public class Timeline {
 
 			// Draw times in region
 			for (int i = 0; i <
-					Math.max(1, (frame.length == Global.NO_LENGTH ? extraFrames : (frame.length - 2)) / step + 1); ++i) {
+					Math.max(
+							1,
+							(frame.length == Global.NO_LENGTH ? extraFrames : (frame.length - 2)) / step + 1
+					); ++i) {
 				Label label;
 				if (innerIndex >= scrubInnerNumbers.size()) {
 					scrubInnerNumbers.add(label = new Label());
