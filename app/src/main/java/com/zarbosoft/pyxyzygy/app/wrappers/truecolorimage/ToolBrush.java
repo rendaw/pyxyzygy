@@ -47,12 +47,11 @@ public class ToolBrush extends Tool {
 		this.editHandle = trueColorImageEditHandle;
 		this.brush = brush;
 
+		brush.size.addListener((observable, oldValue, newValue) -> updateCursor(window));
+		window.editor.zoomFactor.addListener((observable, oldValue, newValue) -> updateCursor(window));
+		updateCursor(window);
+
 		DoubleBinding sizeBinding = Bindings.createDoubleBinding(() -> brush.sizeInPixels(), brush.size);
-		/*
-		sizeBinding.addListener((observable, oldValue, newValue) -> {
-			window.editor.outerCanvas.setCursor(cursor = CircleCursor.create(newValue.doubleValue()));
-		});
-		*/
 		alignedCursor.widthProperty().bind(sizeBinding);
 		alignedCursor.heightProperty().bind(sizeBinding);
 		alignedCursor.setStroke(Color.BLACK);
@@ -241,12 +240,15 @@ public class ToolBrush extends Tool {
 			stroke(context, start, end);
 	}
 
+	public void updateCursor(Window window) {
+		double zoom = window.editor.zoomFactor.get();
+		window.editor.outerCanvas.setCursor(cursor = CircleCursor.create(brush.sizeInPixels() * zoom));
+	}
+
 	@Override
 	public void remove(ProjectContext context, Window window) {
 		editHandle.overlay.getChildren().removeAll(alignedCursor);
-		/*
 		if (window.editor.outerCanvas.getCursor() == cursor)
 			window.editor.outerCanvas.setCursor(null);
-			*/
 	}
 }
