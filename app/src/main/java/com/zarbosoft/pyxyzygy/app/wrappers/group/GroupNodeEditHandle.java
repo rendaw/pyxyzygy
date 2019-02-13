@@ -18,7 +18,6 @@ import javafx.scene.control.ToolBar;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import static com.zarbosoft.pyxyzygy.app.Misc.nodeFormFields;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.pad;
@@ -37,7 +36,7 @@ public class GroupNodeEditHandle extends EditHandle {
 	public final SimpleDoubleProperty mouseY = new SimpleDoubleProperty(0);
 
 	public GroupNodeEditHandle(
-			ProjectContext context, final GroupNodeWrapper wrapper, TabPane tabPane
+			ProjectContext context, Window window,final GroupNodeWrapper wrapper, TabPane tabPane
 	) {
 		this.wrapper = wrapper;
 
@@ -99,7 +98,7 @@ public class GroupNodeEditHandle extends EditHandle {
 			) {
 				if (tool != null) {
 					toolTab.setContent(null);
-					tool.remove(context);
+					tool.remove(context, window);
 				}
 				switch (newValue) {
 					case MOVE:
@@ -137,9 +136,9 @@ public class GroupNodeEditHandle extends EditHandle {
 	}
 
 	@Override
-	public void remove(ProjectContext context) {
+	public void remove(ProjectContext context, Window window) {
 		if (tool != null) {
-			tool.remove(context);
+			tool.remove(context, window);
 			tool = null;
 		}
 		if (wrapper.canvasHandle != null)

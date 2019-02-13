@@ -10,5 +10,5 @@ public abstract class Tool {
 			ProjectContext context, Window window, DoubleVector start, DoubleVector end
 	);
 
-	public abstract void remove(ProjectContext context);
+	public abstract void remove(ProjectContext context, Window window);
 }

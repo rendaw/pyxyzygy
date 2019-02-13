@@ -38,9 +38,9 @@ public class CameraEditHandle extends GroupNodeEditHandle {
 	private final Window window;
 
 	public CameraEditHandle(
-			ProjectContext context, CameraWrapper wrapper, TabPane tabPane, Window window
+			ProjectContext context, Window window, CameraWrapper wrapper, TabPane tabPane
 	) {
-		super(context, wrapper, tabPane);
+		super(context, window,wrapper, tabPane);
 		this.window = window;
 	}
 

@@ -600,7 +600,7 @@ public class ToolSelect extends Tool {
 	}
 
 	@Override
-	public void remove(ProjectContext context) {
+	public void remove(ProjectContext context, Window window) {
 		state.remove(context);
 	}
 

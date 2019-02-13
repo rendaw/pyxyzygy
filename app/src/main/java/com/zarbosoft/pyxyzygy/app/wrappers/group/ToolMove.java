@@ -42,6 +42,6 @@ public class ToolMove extends Tool {
 	}
 
 	@Override
-	public void remove(ProjectContext context) {
+	public void remove(ProjectContext context, Window window) {
 	}
 }

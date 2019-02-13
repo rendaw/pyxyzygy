@@ -12,6 +12,8 @@ import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.image.ImageView;
 
+import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
+
 public class OnionSkin {
 	final ImageView widget = NearestNeighborImageView.create();
 	private final EditHandle editHandle;

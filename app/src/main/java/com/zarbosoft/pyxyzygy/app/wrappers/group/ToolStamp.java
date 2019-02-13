@@ -157,7 +157,7 @@ public class ToolStamp extends Tool {
 	}
 
 	@Override
-	public void remove(ProjectContext context) {
+	public void remove(ProjectContext context, Window window) {
 		editHandle.overlay.getChildren().remove(overlayGroup);
 		mirror.remove(context);
 	}

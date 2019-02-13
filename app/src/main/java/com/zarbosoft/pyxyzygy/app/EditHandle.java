@@ -13,7 +13,7 @@ public abstract class EditHandle {
 
 	public abstract Node getProperties();
 
-	public abstract void remove(ProjectContext context);
+	public abstract void remove(ProjectContext context, Window window);
 
 	public abstract void mark(
 			ProjectContext context, Window window, DoubleVector start, DoubleVector end

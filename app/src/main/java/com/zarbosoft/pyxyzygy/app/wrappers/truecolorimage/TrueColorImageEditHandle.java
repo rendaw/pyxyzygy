@@ -8,7 +8,6 @@ import com.zarbosoft.pyxyzygy.app.config.TrueColorBrush;
 import com.zarbosoft.pyxyzygy.app.config.TrueColorImageNodeConfig;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
-import com.zarbosoft.pyxyzygy.core.model.v0.TrueColorImageFrame;
 import com.zarbosoft.rendaw.common.Assertion;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
@@ -28,7 +27,6 @@ import javafx.scene.layout.Region;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -252,7 +250,7 @@ public class TrueColorImageEditHandle extends EditHandle {
 					brushesListener = null;
 				}
 				if (newValue == TrueColorImageNodeConfig.Tool.SELECT) {
-					setTool(context, () -> new ToolSelect(context, window, TrueColorImageEditHandle.this));
+					setTool(context, window, () -> new ToolSelect(context, window, TrueColorImageEditHandle.this));
 				} else if (newValue == TrueColorImageNodeConfig.Tool.BRUSH) {
 					Runnable update = new Runnable() {
 						TrueColorBrush lastBrush;
@@ -263,7 +261,7 @@ public class TrueColorImageEditHandle extends EditHandle {
 							if (!Range.closedOpen(0, GUILaunch.config.trueColorBrushes.size()).contains(i))
 								return;
 							TrueColorBrush brush = GUILaunch.config.trueColorBrushes.get(i);
-							setTool(context, () -> new ToolBrush(context, TrueColorImageEditHandle.this, brush));
+							setTool(context, window,() -> new ToolBrush(context, window,TrueColorImageEditHandle.this, brush));
 						}
 					};
 					wrapper.config.brush.addListener((observable1, oldValue1, newValue1) -> update.run());
@@ -279,9 +277,9 @@ public class TrueColorImageEditHandle extends EditHandle {
 		cleanup.add(() -> tabPane.getTabs().removeAll(generalTab, paintTab));
 	}
 
-	private void setTool(ProjectContext context, Supplier<Tool> newTool) {
+	private void setTool(ProjectContext context, Window window, Supplier<Tool> newTool) {
 		if (tool != null) {
-			tool.remove(context);
+			tool.remove(context, window);
 			paintTab.setContent(null);
 			tool = null;
 		}
@@ -294,9 +292,9 @@ public class TrueColorImageEditHandle extends EditHandle {
 	}
 
 	@Override
-	public void remove(ProjectContext context) {
+	public void remove(ProjectContext context, Window window) {
 		if (tool != null) {
-			tool.remove(context);
+			tool.remove(context, window);
 			tool = null;
 		}
 		if (wrapper.canvasHandle != null)

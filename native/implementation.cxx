@@ -19,6 +19,7 @@ template <class T> static inline T msq(T const &a) {
 	return a * a;
 }
 
+static unsigned int scratchSize = 0;
 static unsigned int scratchBitWidth = 0;
 static unsigned int scratchHeight = 0;
 static unsigned int scratchByteWidth;
@@ -28,26 +29,28 @@ static void clearScratch() {
 	memset(scratch, 0, scratchHeight * scratchByteWidth);
 }
 
-static void prepareBitScratch(int const width, int const height) {
-	if (scratch == nullptr || scratchHeight < height || scratchBitWidth < width) {
-		scratchBitWidth = width;
-		scratchByteWidth = posCeilDiv(width, 8);
-		scratchHeight = height;
+static void prepareScratchInternal() {
+	unsigned int const needSize = posCeilDiv(scratchHeight * scratchByteWidth, 4);
+	if (scratch == nullptr || scratchSize < needSize) {
+		scratchSize = needSize;
 		delete [] scratch;
-		scratch = (uint8_t *)new uint32_t[posCeilDiv(scratchHeight * scratchByteWidth, 4)];
+		scratch = (uint8_t *)new uint32_t[scratchSize];
 	}
 	clearScratch();
 }
 
+static void prepareBitScratch(int const width, int const height) {
+	scratchBitWidth = width;
+	scratchByteWidth = posCeilDiv(width, 8);
+	scratchHeight = height;
+	prepareScratchInternal();
+}
+
 static void prepareByteScratch(int const width, int const height) {
-	if (scratch == nullptr || scratchHeight < height || scratchByteWidth < width) {
-		scratchByteWidth = width;
-		scratchBitWidth = width * 8;
-		scratchHeight = height;
-		delete [] scratch;
-		scratch = (uint8_t *)new uint32_t[posCeilDiv(scratchHeight * scratchByteWidth, 4)];
-	}
-	clearScratch();
+	scratchByteWidth = width;
+	scratchBitWidth = width * 8;
+	scratchHeight = height;
+	prepareScratchInternal();
 }
 
 static uint8_t getBitScratch(unsigned int x, unsigned int y) {

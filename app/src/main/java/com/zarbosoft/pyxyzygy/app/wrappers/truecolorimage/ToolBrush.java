@@ -4,6 +4,7 @@ import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.config.TrueColor;
 import com.zarbosoft.pyxyzygy.app.config.TrueColorBrush;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
+import com.zarbosoft.pyxyzygy.app.widgets.CircleCursor;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.app.widgets.TrueColorPicker;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
@@ -19,6 +20,7 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.HPos;
+import javafx.scene.ImageCursor;
 import javafx.scene.Node;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.GridPane;
@@ -32,23 +34,32 @@ import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.pad;
 public class ToolBrush extends Tool {
 	final TrueColorBrush brush;
 	private final TrueColorImageEditHandle editHandle;
-	private final javafx.scene.shape.Rectangle cursor = new javafx.scene.shape.Rectangle();
+	private final javafx.scene.shape.Rectangle alignedCursor = new javafx.scene.shape.Rectangle();
 	private DoubleVector lastEnd;
+	private ImageCursor cursor = null;
 
 	public ToolBrush(
-			ProjectContext context, TrueColorImageEditHandle trueColorImageEditHandle, TrueColorBrush brush
+			ProjectContext context,
+			Window window,
+			TrueColorImageEditHandle trueColorImageEditHandle,
+			TrueColorBrush brush
 	) {
 		this.editHandle = trueColorImageEditHandle;
 		this.brush = brush;
 
 		DoubleBinding sizeBinding = Bindings.createDoubleBinding(() -> brush.sizeInPixels(), brush.size);
-		cursor.widthProperty().bind(sizeBinding);
-		cursor.heightProperty().bind(sizeBinding);
-		cursor.setStroke(Color.BLACK);
-		cursor.strokeWidthProperty().bind(Bindings.divide(1.0, editHandle.positiveZoom));
-		cursor.setStrokeType(StrokeType.OUTSIDE);
-		cursor.setFill(Color.TRANSPARENT);
-		cursor
+		/*
+		sizeBinding.addListener((observable, oldValue, newValue) -> {
+			window.editor.outerCanvas.setCursor(cursor = CircleCursor.create(newValue.doubleValue()));
+		});
+		*/
+		alignedCursor.widthProperty().bind(sizeBinding);
+		alignedCursor.heightProperty().bind(sizeBinding);
+		alignedCursor.setStroke(Color.BLACK);
+		alignedCursor.strokeWidthProperty().bind(Bindings.divide(1.0, editHandle.positiveZoom));
+		alignedCursor.setStrokeType(StrokeType.OUTSIDE);
+		alignedCursor.setFill(Color.TRANSPARENT);
+		alignedCursor
 				.visibleProperty()
 				.bind(Bindings.createBooleanBinding(() -> brush.aligned.get() &&
 								brush.hard.get() &&
@@ -57,14 +68,14 @@ public class ToolBrush extends Tool {
 						brush.hard,
 						brush.aligned
 				));
-		cursor.setOpacity(0.5);
-		cursor.layoutXProperty().bind(Bindings.createDoubleBinding(() -> {
+		alignedCursor.setOpacity(0.5);
+		alignedCursor.layoutXProperty().bind(Bindings.createDoubleBinding(() -> {
 			return Math.floor(editHandle.mouseX.get()) - brush.sizeInPixels() / 2.0 + 0.5;
 		}, editHandle.mouseX, brush.size, brush.aligned));
-		cursor.layoutYProperty().bind(Bindings.createDoubleBinding(() -> {
+		alignedCursor.layoutYProperty().bind(Bindings.createDoubleBinding(() -> {
 			return Math.floor(editHandle.mouseY.get()) - brush.sizeInPixels() / 2.0 + 0.5;
 		}, editHandle.mouseY, brush.size, brush.aligned));
-		this.editHandle.overlay.getChildren().add(cursor);
+		this.editHandle.overlay.getChildren().add(alignedCursor);
 
 		TrueColorPicker colorPicker = new TrueColorPicker();
 		GridPane.setHalignment(colorPicker, HPos.CENTER);
@@ -231,7 +242,11 @@ public class ToolBrush extends Tool {
 	}
 
 	@Override
-	public void remove(ProjectContext context) {
-		editHandle.overlay.getChildren().removeAll(cursor);
+	public void remove(ProjectContext context, Window window) {
+		editHandle.overlay.getChildren().removeAll(alignedCursor);
+		/*
+		if (window.editor.outerCanvas.getCursor() == cursor)
+			window.editor.outerCanvas.setCursor(null);
+			*/
 	}
 }

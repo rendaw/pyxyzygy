@@ -108,7 +108,7 @@ public class CameraWrapper extends GroupNodeWrapper {
 	public EditHandle buildEditControls(
 			ProjectContext context, Window window, TabPane tabPane
 	) {
-		return new CameraEditHandle(context, this, tabPane, window);
+		return new CameraEditHandle(context, window, this, tabPane);
 	}
 
 	public void render(
