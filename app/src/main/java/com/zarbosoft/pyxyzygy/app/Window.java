@@ -76,7 +76,7 @@ public class Window {
 
 		selectedForEdit.addListener((observable, oldValue, newValue) -> {
 			if (oldValue != null) {
-				oldValue.remove(context,this);
+				oldValue.remove(context, this);
 			}
 		});
 

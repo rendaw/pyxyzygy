@@ -46,7 +46,7 @@ public class FrameWidget extends Pane {
 		addEventHandler(MouseEvent.MOUSE_DRAGGED, e -> {
 			if (index == 0)
 				return;
-			double x = (e.getSceneX() - row.getLocalToSceneTransform().transform(0, 0).getX());
+			double x = row.timeline.getTimelineX(e);
 			int frame = (int) (x / zoom);
 			if (absEnd != -1)
 				frame = Math.min(frame, absEnd - 1);

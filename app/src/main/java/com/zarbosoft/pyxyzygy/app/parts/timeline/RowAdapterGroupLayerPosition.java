@@ -63,8 +63,6 @@ public class RowAdapterGroupLayerPosition extends RowAdapter {
 
 					@Override
 					public void remove(ProjectContext context) {
-						if (i == 0)
-							return;
 						context.history.change(c -> c.groupLayer(layer).positionFramesRemove(i, 1));
 						if (i == layer.positionFramesLength())
 							context.history.change(c -> c

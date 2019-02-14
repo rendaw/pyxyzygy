@@ -61,7 +61,7 @@ public class History {
 		}
 		context.setDirty(change.changeStep);
 		context.setDirty(context);
-		//context.debugCheckRefCounts();
+		context.debugCheckRefCounts();
 		inChange = false;
 	}
 

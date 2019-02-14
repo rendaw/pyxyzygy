@@ -66,8 +66,6 @@ class RowAdapterTrueColorImageNode extends RowAdapter {
 
 					@Override
 					public void remove(ProjectContext context) {
-						if (i == 0)
-							return;
 						context.history.change(c -> c.trueColorImageNode(node).framesRemove(i, 1));
 						if (i == node.framesLength())
 							context.history.change(c -> c.trueColorImageFrame(last(node.frames())).lengthSet(-1));
@@ -90,6 +88,7 @@ class RowAdapterTrueColorImageNode extends RowAdapter {
 							context.history.change(c -> c.trueColorImageFrame(f).lengthSet(lengthBefore));
 							context.history.change(c -> c.trueColorImageFrame(frameBefore).lengthSet(lengthThis));
 						}
+						timeline.select(row.get().frames.get(i - 1));
 					}
 
 					@Override
@@ -104,6 +103,7 @@ class RowAdapterTrueColorImageNode extends RowAdapter {
 							context.history.change(c -> c.trueColorImageFrame(f).lengthSet(lengthAfter));
 							context.history.change(c -> c.trueColorImageFrame(frameAfter).lengthSet(lengthThis));
 						}
+						timeline.select(row.get().frames.get(i + 1));
 					}
 				});
 			}

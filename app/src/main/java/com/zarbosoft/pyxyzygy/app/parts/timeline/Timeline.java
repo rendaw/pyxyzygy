@@ -91,6 +91,11 @@ public class Timeline {
 	ScrollBar timeScroll = new ScrollBar();
 	private TimeAdapterNode outerTimeHandle;
 
+	public double getTimelineX(MouseEvent e) {
+		Point2D corner = scrubElements.getLocalToSceneTransform().transform(0, 0);
+		return e.getSceneX() - corner.getX();
+	}
+
 	public Timeline(ProjectContext context, Window window) {
 		this.context = context;
 		this.window = window;
@@ -149,7 +154,7 @@ public class Timeline {
 			}
 		});
 		timeScroll.maxProperty().bind(useMaxFrame.multiply(zoom));
-		tree.addEventFilter(MouseEvent.MOUSE_ENTERED,e -> {
+		tree.addEventFilter(MouseEvent.MOUSE_ENTERED, e -> {
 			tree.requestFocus();
 			e.consume();
 		});
@@ -169,15 +174,22 @@ public class Timeline {
 		EventHandler<MouseEvent> mouseEventEventHandler = e -> {
 			if (window.selectedForView.get() == null)
 				return;
-			Point2D corner = scrubElements.getLocalToSceneTransform().transform(0, 0);
 			window.selectedForView.get().getWrapper().getConfig().frame.set(Math.max(0,
-					(int) ((e.getSceneX() - corner.getX()) / zoom)
+					(int) (getTimelineX(e) / zoom)
 			));
 			updateFrameMarker();
 		};
 		scrub.addEventFilter(MouseEvent.MOUSE_CLICKED, mouseEventEventHandler);
 		scrub.addEventFilter(MouseEvent.MOUSE_DRAGGED, mouseEventEventHandler);
 		add = HelperJFX.button("plus.png", "Add");
+		add.disableProperty().bind(Bindings.createBooleanBinding(() -> {
+			TreeItem<RowAdapter> selected = tree.getSelectionModel().getSelectedItem();
+			if (selected == null)
+				return true;
+			if (selected.getValue() == null)
+				return true;
+			return !selected.getValue().hasFrames();
+		}, tree.getSelectionModel().selectedItemProperty()));
 		add.setOnAction(e -> {
 			if (window.selectedForView.get() == null)
 				return;
@@ -197,6 +209,7 @@ public class Timeline {
 					.findFirst();
 		});
 		duplicate = HelperJFX.button("content-copy.png", "Duplicate");
+		duplicate.disableProperty().bind(selectedFrame.isNull());
 		duplicate.setOnAction(e -> {
 			if (window.selectedForView.get() == null)
 				return;
@@ -216,31 +229,37 @@ public class Timeline {
 					.findFirst();
 		});
 		remove = HelperJFX.button("minus.png", "Remove");
+		remove
+				.disableProperty()
+				.bind(Bindings.createBooleanBinding(() -> selectedFrame.get() == null ||
+						selectedFrame.get().row.frames.size() == 1, selectedFrame));
 		remove.setOnAction(e -> {
-			if (selectedFrame.get() == null)
-				return;
 			selectedFrame.get().frame.remove(context);
-			selectedFrame.set(null);
 		});
 		clear = HelperJFX.button("eraser-variant.png", "Clear");
+		clear.disableProperty().bind(selectedFrame.isNull());
 		clear.setOnAction(e -> {
 			if (selectedFrame.get() == null)
 				return;
 			selectedFrame.get().frame.clear(context);
 		});
 		left = HelperJFX.button("arrow-left.png", "Left");
+		left
+				.disableProperty()
+				.bind(Bindings.createBooleanBinding(() -> selectedFrame.get() == null || selectedFrame.get().at == 0,
+						selectedFrame
+				));
 		left.setOnAction(e -> {
-			if (selectedFrame.get() == null)
-				return;
 			selectedFrame.get().frame.moveLeft(context);
 		});
 		right = HelperJFX.button("arrow-right.png", "Right");
+		right
+				.disableProperty()
+				.bind(Bindings.createBooleanBinding(() -> selectedFrame.get() == null ||
+						selectedFrame.get().index == selectedFrame.get().row.frames.size() - 1, selectedFrame));
 		right.setOnAction(e -> {
-			if (selectedFrame.get() == null)
-				return;
 			selectedFrame.get().frame.moveRight(context);
 		});
-		updateButtons();
 		toolBar.getItems().addAll(add, duplicate, left, right, remove, clear);
 		nameColumn.setCellValueFactory(p -> new SimpleObjectProperty<>(p.getValue().getValue()));
 		nameColumn.setCellFactory(param -> new TreeTableCell<RowAdapter, RowAdapter>() {
@@ -324,7 +343,6 @@ public class Timeline {
 						added.getValue().selected();
 					}
 				}
-				Timeline.this.updateButtons();
 			}
 		});
 		framesColumn
@@ -357,8 +375,7 @@ public class Timeline {
 		window.selectedForEdit.addListener((observable, oldValue, newValue) -> setNodes(window.selectedForView.get(),
 				newValue
 		));
-		if (window.selectedForEdit.get() != null && window.selectedForView.get() != null)
-			setNodes(window.selectedForView.get(), window.selectedForEdit.get());
+		setNodes(window.selectedForView.get(), window.selectedForEdit.get());
 	}
 
 	public void cleanItemSubtree(TreeItem<RowAdapter> item) {
@@ -371,6 +388,7 @@ public class Timeline {
 		updateFrameMarker();
 
 		// Clean up everything
+		select(null);
 		cleanItemSubtree(tree.getRoot());
 		editCleanup.forEach(Runnable::run);
 		editCleanup.clear();
@@ -493,22 +511,6 @@ public class Timeline {
 		editCleanup.add(() -> root.getConfig().frame.removeListener(frameListener));
 	}
 
-	private void updateButtons() {
-		CanvasHandle root = window.selectedForView.get();
-		TreeItem<RowAdapter> nowSelected =
-				tree.getSelectionModel().getSelectedItems().stream().findFirst().orElse(null);
-		boolean noSelection = root == null ||
-				nowSelected == null ||
-				nowSelected.getValue() == null ||
-				!nowSelected.getValue().hasFrames();
-		add.setDisable(noSelection);
-		duplicate.setDisable(noSelection);
-		left.setDisable(noSelection);
-		right.setDisable(noSelection);
-		clear.setDisable(noSelection);
-		remove.setDisable(noSelection);
-	}
-
 	private void updateFrameMarker() {
 		CanvasHandle root = window.selectedForView.get();
 		if (root == null)
@@ -579,8 +581,7 @@ public class Timeline {
 
 			// Draw times in region
 			for (int i = 0; i <
-					Math.max(
-							1,
+					Math.max(1,
 							(frame.length == Global.NO_LENGTH ? extraFrames : (frame.length - 2)) / step + 1
 					); ++i) {
 				Label label;
@@ -852,12 +853,13 @@ public class Timeline {
 	}
 
 	public void select(FrameWidget frame) {
-		if (selectedFrame.get() != null && selectedFrame.get().frame != frame.frame) {
+		if (selectedFrame.get() != null && (frame == null || selectedFrame.get() != frame)) {
 			selectedFrame.get().deselect();
 		}
 		selectedFrame.set(frame);
 		if (frame != null) {
 			frame.select();
+			window.selectedForView.get().getWrapper().getConfig().frame.set(frame.at);
 		}
 	}
 }

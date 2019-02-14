@@ -927,10 +927,6 @@ public class GenerateModelV0 extends TaskBase {
 										listType,
 										fieldName
 								)
-								.addCode("for ($T e : sublist) (($T) e).incRef(project);\n",
-										toPoet(fieldInfo.parameters[0]),
-										ProjectObjectInterface.class
-								)
 								.addCode("$T readd = new $T(sublist);\n", listType, ArrayList.class)
 								.addCode("sublist.clear();\n")
 								.addCode("target.$L.addAll(dest, readd);\n", fieldName);

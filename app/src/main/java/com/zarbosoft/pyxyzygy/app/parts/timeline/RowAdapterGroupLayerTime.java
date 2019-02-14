@@ -135,8 +135,6 @@ public class RowAdapterGroupLayerTime extends RowAdapter {
 
 		@Override
 		public void remove(ProjectContext context) {
-			if (i == 0)
-				return;
 			context.history.change(c -> c.groupLayer(layer).timeFramesRemove(i, 1));
 			if (i == layer.timeFramesLength())
 				context.history.change(c -> c.groupTimeFrame(last(layer.timeFrames())).lengthSet(-1));
