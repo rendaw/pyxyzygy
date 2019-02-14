@@ -272,6 +272,8 @@ public class GUILaunch extends Application {
 				if (e.getCode() == KeyCode.ENTER) {
 					if (!create.isDisable())
 						create.fire();
+					if (!open.isDisable())
+						open.fire();
 					return;
 				}
 				if (e.getCode() == KeyCode.ESCAPE) {
@@ -446,7 +448,7 @@ public class GUILaunch extends Application {
 		context.history.finishChange();
 
 		context.config.viewPath = ImmutableList.of(0);
-		context.config.editPath = ImmutableList.of(0,0);
+		context.config.editPath = ImmutableList.of(0, 0);
 
 		new Window().start(context, primaryStage, true);
 	}

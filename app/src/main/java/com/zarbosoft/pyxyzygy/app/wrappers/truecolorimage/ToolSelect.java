@@ -295,7 +295,7 @@ public class ToolSelect extends Tool {
 				) {
 					@Override
 					public void run(ProjectContext context, Window window) {
-						cancel(context, window);
+						lift(context, window);
 					}
 				},
 				new Hotkeys.Action(Hotkeys.Scope.CANVAS, "cut", "Cut", cutHotkey) {
