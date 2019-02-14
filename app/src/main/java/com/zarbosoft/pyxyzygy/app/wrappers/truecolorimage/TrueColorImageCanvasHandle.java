@@ -27,6 +27,7 @@ public class TrueColorImageCanvasHandle extends CanvasHandle {
 	private final ProjectNode.OpacitySetListener opacityListener;
 	private TrueColorImageNodeWrapper wrapper;
 	private TrueColorImageFrame.TilesPutAllListener tilesPutListener;
+	private TrueColorImageFrame.TilesClearListener tilesClearListener;
 	Map<Long, WrapTile> wrapTiles = new HashMap<>();
 	TrueColorImageFrame frame;
 	private final TrueColorImageNode.FramesAddListener framesAddListener;
@@ -168,10 +169,15 @@ public class TrueColorImageCanvasHandle extends CanvasHandle {
 				}
 			}
 		});
+		frame.addTilesClearListeners(tilesClearListener = (target) -> {
+			inner.getChildren().clear();
+			wrapTiles.clear();
+		});
 	}
 
 	public void detachTiles() {
 		frame.removeTilesPutAllListeners(tilesPutListener);
+		frame.removeTilesClearListeners(tilesClearListener);
 		tilesPutListener = null;
 		inner.getChildren().clear();
 		wrapTiles.clear();

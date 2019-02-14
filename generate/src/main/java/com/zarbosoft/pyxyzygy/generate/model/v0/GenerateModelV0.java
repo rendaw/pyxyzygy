@@ -1251,7 +1251,10 @@ public class GenerateModelV0 extends TaskBase {
 								HashMap.class,
 								fieldName,
 								ArrayList.class
-						).addCode("target.$L.clear();\n", fieldName).mergeAdd(
+						);
+						if (Helper.flattenPoint(fieldInfo.parameters[1]))
+							clearBuilder.addCode("target.$L.forEach((k, e) -> e.decRef(project));\n", fieldName);
+						clearBuilder.addCode("target.$L.clear();\n", fieldName).mergeAdd(
 								"return other.getClass() == $T.class && (($T)other).target == target;\n",
 								clearBuilder.changeName,
 								clearBuilder.changeName
