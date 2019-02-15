@@ -37,6 +37,15 @@ class RowAdapterTrueColorImageNode extends RowAdapter {
 	}
 
 	@Override
+	public boolean frameAt(Window window, int outer) {
+		final int inner = window.timeToInner(outer);
+		if (inner == NO_INNER)
+			return false;
+		TrueColorImageNodeWrapper.FrameResult previous = TrueColorImageNodeWrapper.findFrame(node, inner);
+		return previous.at == inner;
+	}
+
+	@Override
 	public ObservableValue<String> getName() {
 		return new SimpleStringProperty("Frames");
 	}
@@ -189,14 +198,14 @@ class RowAdapterTrueColorImageNode extends RowAdapter {
 		TrueColorImageNodeWrapper.FrameResult previous = TrueColorImageNodeWrapper.findFrame(node, inner);
 		TrueColorImageFrame newFrame = cb.apply(previous.frame);
 		int offset = inner - previous.at;
+		if (offset == 0) throw new AssertionError();
 		if (previous.frame.length() == -1) {
-			context.history.change(c -> c.trueColorImageFrame(previous.frame).lengthSet(offset));
 			newFrame.initialLengthSet(context, -1);
 		} else {
 			newFrame.initialLengthSet(context, previous.frame.length() - offset);
-			context.history.change(c -> c.trueColorImageFrame(previous.frame).lengthSet(offset));
 		}
 		context.history.change(c -> c.trueColorImageNode(node).framesAdd(previous.frameIndex + 1, newFrame));
+		context.history.change(c -> c.trueColorImageFrame(previous.frame).lengthSet(offset));
 		return true;
 	}
 

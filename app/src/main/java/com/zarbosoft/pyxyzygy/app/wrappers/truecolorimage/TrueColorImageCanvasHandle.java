@@ -15,10 +15,7 @@ import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import javafx.beans.property.SimpleIntegerProperty;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 import static com.zarbosoft.pyxyzygy.app.Global.opacityMax;
 
@@ -33,6 +30,7 @@ public class TrueColorImageCanvasHandle extends CanvasHandle {
 	private final TrueColorImageNode.FramesAddListener framesAddListener;
 	private final TrueColorImageNode.FramesRemoveListener framesRemoveListener;
 	private final TrueColorImageNode.FramesMoveToListener framesMoveListener;
+	private final List<Runnable> frameCleanup = new ArrayList<>();
 	SimpleIntegerProperty zoom = new SimpleIntegerProperty(1);
 
 	public TrueColorImageCanvasHandle(
@@ -44,6 +42,18 @@ public class TrueColorImageCanvasHandle extends CanvasHandle {
 			inner.setOpacity((double) value / opacityMax);
 		});
 
+		wrapper.node.mirrorFrames(frameCleanup,frame -> {
+			TrueColorImageFrame.OffsetSetListener offsetListener =
+					frame.addOffsetSetListeners((target, value) -> updateFrame(context));
+			TrueColorImageFrame.LengthSetListener lengthListener =
+					frame.addLengthSetListeners((target, value) -> updateFrame(context));
+			return () ->{
+				frame.removeOffsetSetListeners(offsetListener);
+				frame.removeLengthSetListeners(lengthListener);
+			};
+		},cleanup -> cleanup.run(), at -> {
+			updateFrame(context);
+		});
 		this.framesAddListener = wrapper.node.addFramesAddListeners((target, at, value) -> updateFrame(context));
 		this.framesRemoveListener = wrapper.node.addFramesRemoveListeners((target, at, count) -> updateFrame(context));
 		this.framesMoveListener =

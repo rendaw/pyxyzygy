@@ -55,6 +55,11 @@ public class RowAdapterGroupLayer extends RowAdapter {
 	}
 
 	@Override
+	public boolean frameAt(Window window, int outer) {
+		throw new Assertion();
+	}
+
+	@Override
 	public boolean hasFrames() {
 		return false;
 	}

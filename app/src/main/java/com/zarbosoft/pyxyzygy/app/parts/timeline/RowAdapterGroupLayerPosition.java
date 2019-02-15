@@ -1,8 +1,8 @@
 package com.zarbosoft.pyxyzygy.app.parts.timeline;
 
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.WidgetHandle;
 import com.zarbosoft.pyxyzygy.app.Window;
+import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupLayerWrapper;
 import com.zarbosoft.pyxyzygy.core.model.v0.GroupLayer;
 import com.zarbosoft.pyxyzygy.core.model.v0.GroupPositionFrame;
@@ -168,12 +168,12 @@ public class RowAdapterGroupLayerPosition extends RowAdapter {
 
 	@Override
 	public boolean createFrame(ProjectContext context, Window window, int outer) {
-		return createFrame(context, window,outer, previous -> GroupPositionFrame.create(context));
+		return createFrame(context, window, outer, previous -> GroupPositionFrame.create(context));
 	}
 
 	@Override
 	public boolean duplicateFrame(ProjectContext context, Window window, int outer) {
-		return createFrame(context, window,outer, previous -> {
+		return createFrame(context, window, outer, previous -> {
 			GroupPositionFrame created = GroupPositionFrame.create(context);
 			created.initialOffsetSet(context, previous.offset());
 			return created;
@@ -181,10 +181,11 @@ public class RowAdapterGroupLayerPosition extends RowAdapter {
 	}
 
 	public boolean createFrame(
-			ProjectContext context, Window window,int outer, Function<GroupPositionFrame, GroupPositionFrame> cb
+			ProjectContext context, Window window, int outer, Function<GroupPositionFrame, GroupPositionFrame> cb
 	) {
 		int inner = window.timeToInner(outer);
-		if (inner == NO_INNER) return false;
+		if (inner == NO_INNER)
+			return false;
 		GroupLayerWrapper.PositionResult previous = GroupLayerWrapper.findPosition(layer, inner);
 		GroupPositionFrame newFrame = cb.apply(previous.frame);
 		int offset = inner - previous.at;
@@ -218,5 +219,14 @@ public class RowAdapterGroupLayerPosition extends RowAdapter {
 
 	@Override
 	public void remove(ProjectContext context) {
+	}
+
+	@Override
+	public boolean frameAt(Window window, int outer) {
+		final int inner = window.timeToInner(outer);
+		if (inner == NO_INNER)
+			return false;
+		GroupLayerWrapper.PositionResult previous = GroupLayerWrapper.findPosition(layer, inner);
+		return previous.at == inner;
 	}
 }

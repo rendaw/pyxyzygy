@@ -353,6 +353,14 @@ public class GUILaunch extends Application {
 	@Override
 	public void start(Stage primaryStage) throws Exception {
 		logger = new Logger.TerminalPlusFile(appDirs);
+		Thread.currentThread().setUncaughtExceptionHandler((thread, e) -> {
+			logger.writeException(e, "Uncaught error");
+			Alert alert = new Alert(Alert.AlertType.ERROR);
+			alert.setTitle("Error creating project");
+			alert.setHeaderText(alert.getTitle());
+			alert.setContentText(e.getMessage());
+			alert.showAndWait();
+		});
 		new com.zarbosoft.pyxyzygy.core.mynativeJNI();
 		if (getParameters().getUnnamed().isEmpty()) {
 			while (true) {

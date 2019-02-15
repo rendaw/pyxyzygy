@@ -1,9 +1,10 @@
 package com.zarbosoft.pyxyzygy.app.parts.timeline;
 
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.WidgetHandle;
 import com.zarbosoft.pyxyzygy.app.Window;
+import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupLayerWrapper;
+import com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage.TrueColorImageNodeWrapper;
 import com.zarbosoft.pyxyzygy.core.model.v0.GroupLayer;
 import com.zarbosoft.pyxyzygy.core.model.v0.GroupTimeFrame;
 import javafx.beans.value.ChangeListener;
@@ -291,5 +292,14 @@ public class RowAdapterGroupLayerTime extends RowAdapter {
 
 	@Override
 	public void remove(ProjectContext context) {
+	}
+
+	@Override
+	public boolean frameAt(Window window, int outer) {
+		final int inner = window.timeToInner(outer);
+		if (inner == NO_INNER)
+			return false;
+		GroupLayerWrapper.TimeResult previous = GroupLayerWrapper.findTime(layer, inner);
+		return previous.at == inner;
 	}
 }

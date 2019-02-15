@@ -34,4 +34,6 @@ public abstract class RowAdapter {
 	public abstract void updateFrameMarker(ProjectContext context, Window window);
 
 	public abstract void remove(ProjectContext context);
+
+	public abstract boolean frameAt(Window window, int outer);
 }
