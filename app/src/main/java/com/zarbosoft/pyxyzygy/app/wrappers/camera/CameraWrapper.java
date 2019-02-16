@@ -14,7 +14,8 @@ import javafx.application.Platform;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.ProgressBar;
+import javafx.scene.control.TabPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.StrokeType;
@@ -23,8 +24,6 @@ import javafx.stage.Stage;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
-
-import static com.zarbosoft.rendaw.common.Common.uncheck;
 
 public class CameraWrapper extends GroupNodeWrapper {
 	public final Camera node;
@@ -56,7 +55,8 @@ public class CameraWrapper extends GroupNodeWrapper {
 
 	@Override
 	protected GroupNodeConfig initConfig(ProjectContext context, long id) {
-		return this.config = (CameraNodeConfig) context.config.nodes.computeIfAbsent(id, id1 -> new CameraNodeConfig());
+		return this.config =
+				(CameraNodeConfig) context.config.nodes.computeIfAbsent(id, id1 -> new CameraNodeConfig(context));
 	}
 
 	@Override

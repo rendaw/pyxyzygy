@@ -3,10 +3,7 @@ package com.zarbosoft.pyxyzygy.app;
 import com.google.common.collect.ImmutableList;
 import com.zarbosoft.interface1.TypeInfo;
 import com.zarbosoft.pyxyzygy.app.CustomBinding.Binder;
-import com.zarbosoft.pyxyzygy.app.config.CreateMode;
-import com.zarbosoft.pyxyzygy.app.config.GlobalConfig;
-import com.zarbosoft.pyxyzygy.app.config.TrueColor;
-import com.zarbosoft.pyxyzygy.app.config.TrueColorBrush;
+import com.zarbosoft.pyxyzygy.app.config.*;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.core.model.v0.*;
@@ -20,6 +17,7 @@ import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -54,33 +52,12 @@ import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 
 public class GUILaunch extends Application {
-	public static final GlobalConfig config;
+	public static RootProfileConfig profileConfig;
+	public static RootGlobalConfig config;
 	private static List<Image> appIcons =
 			Stream.of("appicon16.png", "appicon32.png", "appicon64.png").map(s -> icon(s)).collect(Collectors.toList());
 
 	static {
-		try {
-			config = ConfigBase.deserialize(new TypeInfo(GlobalConfig.class), Global.configDir, () -> {
-				GlobalConfig config = new GlobalConfig();
-				TrueColorBrush transparentBrush = new TrueColorBrush();
-				transparentBrush.name.set("Transparent");
-				transparentBrush.size.set(50);
-				transparentBrush.blend.set(Global.blendMax);
-				transparentBrush.color.set(TrueColor.fromJfx(Color.TRANSPARENT));
-				transparentBrush.useColor.set(true);
-				TrueColorBrush defaultBrush = new TrueColorBrush();
-				defaultBrush.name.set("Default");
-				defaultBrush.size.set(10);
-				defaultBrush.blend.set(Global.blendMax);
-				defaultBrush.color.set(TrueColor.fromJfx(Color.BLACK));
-				defaultBrush.useColor.set(true);
-				config.trueColorBrushes.addAll(transparentBrush, defaultBrush);
-				return config;
-			});
-		} catch (Exception e) {
-			Platform.exit();
-			throw e;
-		}
 	}
 
 	public static void main(String[] args) {
@@ -88,7 +65,124 @@ public class GUILaunch extends Application {
 	}
 
 	public static void shutdown() {
+		profileConfig.shutdown();
 		config.shutdown();
+	}
+
+	public static class ProfileDialog extends Stage {
+		Long profile;
+		private final ListView<RootProfileConfig.Profile> list;
+
+		ProfileDialog() {
+			setTitle(String.format("%s - Choose profile", Global.nameHuman));
+			getIcons().addAll(appIcons);
+
+			list = new ListView<>();
+			HBox.setHgrow(list, Priority.ALWAYS);
+			list.setItems(FXCollections.observableList(profileConfig.profiles));
+			list.setCellFactory(new Callback<ListView<RootProfileConfig.Profile>, ListCell<RootProfileConfig.Profile>>() {
+				@Override
+				public ListCell<RootProfileConfig.Profile> call(ListView<RootProfileConfig.Profile> param) {
+					return new ListCell<>() {
+						{
+							setFocusTraversable(false);
+						}
+
+						@Override
+						protected void updateItem(RootProfileConfig.Profile item, boolean empty) {
+							rebind(item);
+							super.updateItem(item, empty);
+						}
+
+						private void rebind(RootProfileConfig.Profile profile1) {
+							if (profile1 == null) {
+								textProperty().unbind();
+								setText(null);
+								setGraphic(null);
+							} else {
+								textProperty().bind(profile1.name);
+								setGraphic(null);
+							}
+						}
+					};
+				}
+			});
+			list.getSelectionModel().select(0);
+			list.setFocusTraversable(false);
+
+			Button newProfile = HelperJFX.button("plus.png", "New profile");
+			newProfile.setFocusTraversable(false);
+			newProfile.setOnAction(e -> {
+				RootProfileConfig.Profile profile1 = new RootProfileConfig.Profile();
+				profile1.name.set(uniqueName("New Profile"));
+				profile1.id = profileConfig.nextId++;
+				if (list.getSelectionModel().getSelectedItem() != null)
+					list.getItems().add(list.getSelectionModel().getSelectedIndex() + 1, profile1);
+				else
+					list.getItems().add(profile1);
+			});
+			Button deleteProfile = HelperJFX.button("minus.png", "Delete profile");
+			deleteProfile.setFocusTraversable(false);
+			deleteProfile.disableProperty().bind(list.getSelectionModel().selectedItemProperty().isNull());
+			deleteProfile.setOnAction(e -> {
+				RootProfileConfig.Profile profile1 = list.getSelectionModel().getSelectedItem();
+				Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+				confirm.setTitle("Delete " + profile1.name);
+				confirm.setHeaderText("Are you sure you want to delete profile " + profile1.name + "?");
+				confirm.setContentText("Deleting the profile will also delete all its brushes.");
+				Optional<ButtonType> result = confirm.showAndWait();
+				if (!result.isPresent() || result.get() != ButtonType.OK) {
+					return;
+				}
+				list.getItems().remove(profile1);
+			});
+			Button renameProfile = HelperJFX.button("textbox.png", "Rename profile");
+			renameProfile.setFocusTraversable(false);
+			renameProfile.disableProperty().bind(list.getSelectionModel().selectedItemProperty().isNull());
+			renameProfile.setOnAction(e -> {
+				RootProfileConfig.Profile profile1 = list.getSelectionModel().getSelectedItem();
+				TextInputDialog dialog = new TextInputDialog(profile1.name.get());
+				dialog.setTitle("Rename profile");
+				dialog.setHeaderText(String.format("Rename profile %s", profile1.name));
+				dialog.setContentText("Profile name:");
+				dialog.showAndWait().ifPresent(name -> profile1.name.setValue(name));
+			});
+			VBox listButtons = new VBox();
+			listButtons.setSpacing(3);
+			listButtons.getChildren().addAll(newProfile, deleteProfile, renameProfile);
+
+			HBox listLayout = new HBox();
+			listLayout.setSpacing(3);
+			listLayout.getChildren().addAll(list, listButtons);
+
+			Button open = new Button("Select", new ImageView(icon("folder-outline.png")));
+			open.disableProperty().bind(list.getSelectionModel().selectedItemProperty().isNull());
+			open.setOnAction(e -> {
+				select();
+			});
+			open.setDefaultButton(true);
+			Button cancel = new Button("Cancel");
+			cancel.setOnAction(e -> {
+				hide();
+			});
+			HBox buttonLayout = new HBox();
+			buttonLayout.setSpacing(6);
+			buttonLayout.setPadding(new Insets(6));
+			buttonLayout.setAlignment(Pos.CENTER_RIGHT);
+			buttonLayout.getChildren().addAll(open, cancel);
+
+			VBox topLayout = new VBox();
+			topLayout.setSpacing(3);
+			topLayout.setPadding(new Insets(3));
+			topLayout.getChildren().addAll(listLayout, buttonLayout);
+
+			setScene(new Scene(topLayout));
+		}
+
+		private void select() {
+			profile = list.getSelectionModel().getSelectedItem().id;
+			hide();
+		}
 	}
 
 	public static class ProjectDialog extends Stage {
@@ -162,6 +256,10 @@ public class GUILaunch extends Application {
 					return;
 				cwd.set(parent);
 			});
+			Button refresh = HelperJFX.button("refresh.png", "Refresh");
+			refresh.setOnAction(e -> {
+				refresh();
+			});
 			Region space = new Region();
 			space.setMaxWidth(Double.MAX_VALUE);
 			HBox.setHgrow(space, Priority.ALWAYS);
@@ -176,7 +274,7 @@ public class GUILaunch extends Application {
 				}));
 			});
 			ToolBar toolbar = new ToolBar();
-			toolbar.getItems().addAll(up, space, createDirectory);
+			toolbar.getItems().addAll(up, refresh, space, createDirectory);
 			list = new ListView<>();
 			list.setCellFactory(new Callback<ListView<ChooserEntry>, ListCell<ChooserEntry>>() {
 				@Override
@@ -328,6 +426,8 @@ public class GUILaunch extends Application {
 				Path check = resolvedPath.get().resolve("project.luxem");
 				return !Files.exists(check);
 			}, resolvedPath));
+			list.getSelectionModel().clearSelection();
+			list.getSelectionModel().select(0);
 
 			setScene(new Scene(top));
 		}
@@ -362,6 +462,50 @@ public class GUILaunch extends Application {
 			alert.showAndWait();
 		});
 		new com.zarbosoft.pyxyzygy.core.mynativeJNI();
+
+		profileConfig = ConfigBase.deserialize(new TypeInfo(RootProfileConfig.class),
+				configDir.resolve("profiles.luxem"),
+				() -> {
+					RootProfileConfig config = new RootProfileConfig();
+					RootProfileConfig.Profile profile = new RootProfileConfig.Profile();
+					profile.id = config.lastId++;
+					profile.name.set("Default");
+					config.profiles.add(profile);
+					return config;
+				}
+		);
+		Long profileId = Optional
+				.ofNullable(getParameters().getNamed().get("profile-id"))
+				.map(s -> Long.parseLong(s))
+				.orElseGet(() -> {
+					ProfileDialog dialog = new ProfileDialog();
+					dialog.showAndWait();
+					return dialog.profile;
+				});
+		if (profileId == null)
+			return;
+
+		config = ConfigBase.deserialize(new TypeInfo(RootGlobalConfig.class),
+				Global.configDir.resolve(Long.toString(profileId)),
+				() -> {
+					RootGlobalConfig config = new RootGlobalConfig();
+					TrueColorBrush transparentBrush = new TrueColorBrush();
+					transparentBrush.name.set("Transparent");
+					transparentBrush.size.set(50);
+					transparentBrush.blend.set(Global.blendMax);
+					transparentBrush.color.set(TrueColor.fromJfx(Color.TRANSPARENT));
+					transparentBrush.useColor.set(true);
+					TrueColorBrush defaultBrush = new TrueColorBrush();
+					defaultBrush.name.set("Default");
+					defaultBrush.size.set(10);
+					defaultBrush.blend.set(Global.blendMax);
+					defaultBrush.color.set(TrueColor.fromJfx(Color.BLACK));
+					defaultBrush.useColor.set(true);
+					config.trueColorBrushes.addAll(transparentBrush, defaultBrush);
+					return config;
+				}
+		);
+
 		if (getParameters().getUnnamed().isEmpty()) {
 			while (true) {
 				ProjectDialog dialog = new ProjectDialog();
@@ -376,12 +520,7 @@ public class GUILaunch extends Application {
 						try {
 							newProject(primaryStage, dialog.resultPath, dialog.resultCreateMode);
 						} catch (Exception e) {
-							logger.writeException(e, "Error creating new project");
-							Alert alert = new Alert(Alert.AlertType.ERROR);
-							alert.setTitle("Error creating project");
-							alert.setHeaderText(alert.getTitle());
-							alert.setContentText(e.getMessage());
-							alert.showAndWait();
+							HelperJFX.exceptionPopup(e, "Error creating new project");
 							continue;
 						}
 						break;
@@ -390,12 +529,7 @@ public class GUILaunch extends Application {
 						try {
 							openProject(primaryStage, dialog.resultPath);
 						} catch (Exception e) {
-							logger.writeException(e, "Error opening project");
-							Alert alert = new Alert(Alert.AlertType.ERROR);
-							alert.setTitle("Error opening project");
-							alert.setHeaderText(alert.getTitle());
-							alert.setContentText(e.getMessage());
-							alert.showAndWait();
+							HelperJFX.exceptionPopup(e, "Error opening project");
 							continue;
 						}
 						break;
@@ -469,10 +603,9 @@ public class GUILaunch extends Application {
 			Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
 			confirm.setTitle("Clear Project History");
 			confirm.setHeaderText("Opening this project will clear it's history (undo/redo) data.");
-			confirm.setContentText(
-					"The project file format has been updated in this version of pyxyzygy and old project history is not compatible. Back up your project before proceeding.");
+			confirm.setContentText("Back up your project before proceeding.");
 			Optional<ButtonType> result = confirm.showAndWait();
-			if (result.isPresent() || result.get() != ButtonType.OK) {
+			if (!result.isPresent() || result.get() != ButtonType.OK) {
 				shutdown();
 				Platform.exit();
 				return;

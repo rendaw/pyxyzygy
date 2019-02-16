@@ -53,7 +53,7 @@ public class GroupNodeWrapper extends Wrapper {
 	}
 
 	protected GroupNodeConfig initConfig(ProjectContext context, long id) {
-		return (GroupNodeConfig) context.config.nodes.computeIfAbsent(id, id1 -> new GroupNodeConfig());
+		return (GroupNodeConfig) context.config.nodes.computeIfAbsent(id, id1 -> new GroupNodeConfig(context));
 	}
 
 	@Override

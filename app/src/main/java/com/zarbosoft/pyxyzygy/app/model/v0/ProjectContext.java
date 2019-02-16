@@ -4,7 +4,7 @@ import com.zarbosoft.interface1.TypeInfo;
 import com.zarbosoft.luxem.read.StackReader;
 import com.zarbosoft.luxem.write.RawWriter;
 import com.zarbosoft.pyxyzygy.app.*;
-import com.zarbosoft.pyxyzygy.app.config.ProjectConfig;
+import com.zarbosoft.pyxyzygy.app.config.RootProjectConfig;
 import com.zarbosoft.pyxyzygy.app.config.TrueColor;
 import com.zarbosoft.pyxyzygy.core.model.v0.*;
 import com.zarbosoft.pyxyzygy.seed.deserialize.ModelDeserializationContext;
@@ -36,7 +36,7 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 	public static Map<String, Image> iconCache = new HashMap<>();
 	public static Map<String, Integer> names = new HashMap<>();
 	public Project project;
-	public ProjectConfig config;
+	public RootProjectConfig config;
 	public int tileSize;
 
 	public History history;
@@ -174,8 +174,8 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 	}
 
 	public void initConfig() {
-		config = ConfigBase.deserialize(new TypeInfo(ProjectConfig.class), path, () -> {
-			ProjectConfig config = new ProjectConfig();
+		config = ConfigBase.deserialize(new TypeInfo(RootProjectConfig.class), path, () -> {
+			RootProjectConfig config = new RootProjectConfig();
 			config.trueColor.set(TrueColor.fromJfx(Color.BLACK));
 			return config;
 		});

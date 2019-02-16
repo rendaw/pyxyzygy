@@ -2,35 +2,40 @@ package com.zarbosoft.pyxyzygy.app.config;
 
 import com.zarbosoft.interface1.Configuration;
 import com.zarbosoft.pyxyzygy.app.Global;
+import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 
 @Configuration(name = "camera")
-public class CameraNodeConfig extends GroupNodeConfig{
+public class CameraNodeConfig extends GroupNodeConfig {
+
+	public CameraNodeConfig() {
+		super();
+	}
+
+	public CameraNodeConfig(ProjectContext context) {
+		super(context);
+	}
 
 	@Configuration
 	public static enum RenderMode {
-		@Configuration(name = "png")
-		PNG{
+		@Configuration(name = "png") PNG {
 			@Override
 			public String human() {
 				return "Single PNG";
 			}
 		},
-		@Configuration(name = "webm")
-		WEBM{
+		@Configuration(name = "webm") WEBM {
 			@Override
 			public String human() {
 				return "WebM";
 			}
 		},
-		@Configuration(name = "gif")
-		GIF{
+		@Configuration(name = "gif") GIF {
 			@Override
 			public String human() {
 				return "Gif";
 			}
 		},
-		@Configuration(name = "png-sequence")
-		PNG_SEQUENCE{
+		@Configuration(name = "png-sequence") PNG_SEQUENCE {
 			@Override
 			public String human() {
 				return "PNG Sequence";

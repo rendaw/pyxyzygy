@@ -13,7 +13,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @Configuration
-public class ProjectConfig extends ConfigBase {
+public class RootProjectConfig extends ConfigBase {
 	@Configuration
 	public final SimpleObjectProperty<TrueColor> backgroundColor =
 			new SimpleObjectProperty<>(TrueColor.fromJfx(Color.WHITE));

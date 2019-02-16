@@ -1,7 +1,9 @@
 package com.zarbosoft.pyxyzygy.app.widgets;
 
+import com.google.common.base.Throwables;
 import com.zarbosoft.pyxyzygy.app.CustomBinding;
 import com.zarbosoft.pyxyzygy.app.GUILaunch;
+import com.zarbosoft.pyxyzygy.app.Global;
 import com.zarbosoft.pyxyzygy.app.config.TrueColor;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
@@ -13,12 +15,16 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.image.*;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 
+import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
@@ -301,5 +307,19 @@ public class HelperJFX {
 				throw new Assertion();
 			}
 		}, width, height);
+	}
+
+	public static void exceptionPopup(Throwable e, String message) {
+		Alert alert = new Alert(Alert.AlertType.ERROR);
+		alert.setTitle(String.format("%s - error", Global.nameHuman));
+		alert.setHeaderText(message);
+		alert.setContentText(e.getMessage());
+		TextArea textArea = new TextArea(Throwables.getStackTraceAsString(e));
+		textArea.setEditable(false);
+		textArea.setWrapText(true);
+		textArea.setMaxWidth(Double.MAX_VALUE);
+		textArea.setMaxHeight(Double.MAX_VALUE);
+		alert.getDialogPane().setExpandableContent(textArea);
+		alert.showAndWait();
 	}
 }

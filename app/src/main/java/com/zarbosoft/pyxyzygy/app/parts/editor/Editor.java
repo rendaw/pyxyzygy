@@ -4,7 +4,6 @@ import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.config.NodeConfig;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import javafx.beans.binding.Bindings;
-import javafx.beans.binding.IntegerBinding;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
@@ -94,9 +93,8 @@ public class Editor {
 	 */
 	private DoubleVector getStandardVector(CanvasHandle view, double x, double y) {
 		DoubleVector scroll = window.selectedForView.get().getWrapper().getConfig().scroll.get();
-		DoubleVector coordCentered = new DoubleVector((x - sizeProperty.get().getWidth() / 2),
-				(y - sizeProperty.get().getHeight() / 2)
-		);
+		DoubleVector coordCentered =
+				new DoubleVector((x - sizeProperty.get().getWidth() / 2), (y - sizeProperty.get().getHeight() / 2));
 		DoubleVector viewTransform = computeViewTransform(view.getWrapper());
 		DoubleVector out = coordCentered.divide(viewTransform).minus(scroll);
 		return out;
@@ -122,11 +120,10 @@ public class Editor {
 		DoubleVector scroll = viewHandle.getWrapper().getConfig().scroll.get();
 		canvasInner.setLayoutX(scroll.x + outerCanvas.widthProperty().get() / 2);
 		canvasInner.setLayoutY(scroll.y + outerCanvas.heightProperty().get() / 2);
-		DoubleRectangle newBounds =
-				new BoundsBuilder().circle(getStandardVector(viewHandle, 0, 0), 0).circle(getStandardVector(viewHandle,
-						sizeProperty.get().getWidth(),
-						sizeProperty.get().getHeight()
-				), 0).build();
+		DoubleRectangle newBounds = new BoundsBuilder()
+				.circle(getStandardVector(viewHandle, 0, 0), 0)
+				.circle(getStandardVector(viewHandle, sizeProperty.get().getWidth(), sizeProperty.get().getHeight()), 0)
+				.build();
 		viewHandle.setViewport(context, newBounds, positiveZoom.get());
 	}
 
@@ -152,13 +149,13 @@ public class Editor {
 
 		outerCanvas = new StackPane();
 		VBox.setVgrow(outerCanvas, Priority.ALWAYS);
-		outerCanvas.backgroundProperty().bind(Bindings.createObjectBinding(
-				() -> new Background(new BackgroundFill(context.config.backgroundColor.get().toJfx(),
-						CornerRadii.EMPTY,
-						Insets.EMPTY
-				)),
-				context.config.backgroundColor
-		));
+		outerCanvas
+				.backgroundProperty()
+				.bind(Bindings.createObjectBinding(() -> new Background(new BackgroundFill(context.config.backgroundColor
+								.get()
+								.toJfx(), CornerRadii.EMPTY, Insets.EMPTY)),
+						context.config.backgroundColor
+				));
 		outerCanvas.setMouseTransparent(false);
 		outerCanvas.setFocusTraversable(true);
 		Rectangle clip = new Rectangle();
@@ -306,25 +303,22 @@ public class Editor {
 
 			@Override
 			public void changed(
-					ObservableValue<? extends CanvasHandle> observable,
-					CanvasHandle oldValue,
-					CanvasHandle newView
+					ObservableValue<? extends CanvasHandle> observable, CanvasHandle oldValue, CanvasHandle newView
 			) {
 				if (cleanup != null) {
 					cleanup.run();
 					cleanup = null;
 				}
 				if (newView != null) {
-					final ChangeListener<Number> zoomListener =
-							(observable1, oldValue1, zoom0) -> {
+					final ChangeListener<Number> zoomListener = (observable1, oldValue1, zoom0) -> {
 						updateBounds(context);
 						int zoom = zoom0.intValue();
-						positiveZoom.set(
-								zoom < 0 ? 1 : (zoom + 1));
-								zoomFactor.set(zoom < 0 ? (1.0 / (1 + -zoom)) : (1 + zoom));
-							};
+						positiveZoom.set(zoom < 0 ? 1 : (zoom + 1));
+						zoomFactor.set(zoom < 0 ? (1.0 / (1 + -zoom)) : (1 + zoom));
+					};
 					final NodeConfig config = newView.getWrapper().getConfig();
 					config.zoom.addListener(zoomListener);
+					zoomListener.changed(null, null, config.zoom.get());
 					canvas
 							.scaleXProperty()
 							.bind(Bindings.createDoubleBinding(() -> computeViewTransform(newView.getWrapper()).x,
@@ -357,9 +351,7 @@ public class Editor {
 
 			@Override
 			public void changed(
-					ObservableValue<? extends EditHandle> observable,
-					EditHandle oldValue,
-					EditHandle newValue
+					ObservableValue<? extends EditHandle> observable, EditHandle oldValue, EditHandle newValue
 			) {
 				if (editCleanup != null) {
 					editCleanup.run();

@@ -18,8 +18,10 @@ public class Origin extends Group {
 	private final Line originHoriz = new Line();
 
 	public Origin(Window window, Editor editor) {
-		originHoriz.setFill(Color.BLACK);
-		originVert.setFill(Color.BLACK);
+		originHoriz.setFill(Color.WHITE);
+		originHoriz.setBlendMode(BlendMode.DIFFERENCE);
+		originVert.setFill(Color.GRAY);
+		originVert.setBlendMode(BlendMode.DIFFERENCE);
 		originHoriz.setOpacity(0.5);
 		originVert.setOpacity(0.5);
 		originHoriz.visibleProperty().bind(GUILaunch.config.showOrigin);

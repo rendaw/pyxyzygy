@@ -13,7 +13,7 @@ import java.util.Map;
 import static com.zarbosoft.pyxyzygy.app.Global.appDirs;
 
 @Configuration
-public class GlobalConfig extends ConfigBase {
+public class RootGlobalConfig extends ConfigBase {
 	@Configuration
 	public final ObservableList<TrueColorBrush> trueColorBrushes = FXCollections.observableArrayList();
 

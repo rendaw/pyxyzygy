@@ -5,6 +5,7 @@ import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
+import com.zarbosoft.pyxyzygy.nearestneighborimageview.NearestNeighborImageView;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import javafx.beans.binding.Bindings;
@@ -63,24 +64,30 @@ public class ToolSelect extends Tool {
 		}
 
 		SelectRect(ObservableNumberValue zoom) {
-			strokeWidthProperty().bind(Bindings.divide(1.0, zoom));
+			zoom.addListener((observable, oldValue, newValue) -> onZoom(newValue.doubleValue()));
+			onZoom(zoom.getValue().doubleValue());
+		}
+
+		public void onZoom(double zoom) {
+			setStrokeWidth(1.0 / zoom);
 		}
 	}
 
 	class SelectInside extends SelectRect {
-		{
-			getStrokeDashArray().setAll(5.0, 5.0);
-		}
-
 		SelectInside(ObservableNumberValue zoom) {
 			super(zoom);
+		}
+
+		@Override
+		public void onZoom(double zoom) {
+			super.onZoom(zoom);
+			double v = 5.0 / zoom;
+			SelectInside.this.getStrokeDashArray().setAll(v, v);
 		}
 	}
 
 	class SelectHandle extends SelectRect {
 		{
-			setArcHeight(3);
-			setArcWidth(3);
 			setStroke(Color.LIGHTGRAY);
 			setOpacity(0.5);
 		}
@@ -88,19 +95,37 @@ public class ToolSelect extends Tool {
 		SelectHandle(ObservableNumberValue zoom) {
 			super(zoom);
 		}
+
+		@Override
+		public void onZoom(double zoom) {
+			super.onZoom(zoom);
+			double v = 3.0 / zoom;
+			setArcHeight(v);
+			setArcWidth(v);
+		}
 	}
 
 	class SelectVHandle extends SelectHandle {
 		SelectVHandle(ObservableNumberValue zoom) {
 			super(zoom);
-			heightProperty().bind(Bindings.divide(handleSize, zoom));
+		}
+
+		@Override
+		public void onZoom(double zoom) {
+			super.onZoom(zoom);
+			setHeight(handleSize / zoom);
 		}
 	}
 
 	class SelectHHandle extends SelectHandle {
 		SelectHHandle(ObservableNumberValue zoom) {
 			super(zoom);
-			widthProperty().bind(Bindings.divide(handleSize, zoom));
+		}
+
+		@Override
+		public void onZoom(double zoom) {
+			super.onZoom(zoom);
+			setWidth(handleSize / zoom);
 		}
 	}
 
@@ -172,7 +197,7 @@ public class ToolSelect extends Tool {
 			rectangle.setHeight(bounds.height);
 			this.buffer = buffer;
 
-			ImageView image = new ImageView();
+			ImageView image = NearestNeighborImageView.create();
 			image.imageProperty().bind(Bindings.createObjectBinding(() -> HelperJFX.toImage(buffer), zoom));
 			imageGroup.getChildren().add(image);
 			editHandle.overlay.getChildren().addAll(originalRectangle, rectangle, imageGroup);
