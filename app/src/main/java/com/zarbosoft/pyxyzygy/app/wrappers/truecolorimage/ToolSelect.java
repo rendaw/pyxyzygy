@@ -134,6 +134,7 @@ public class ToolSelect extends Tool {
 		final SelectInside rectangle;
 		final Group imageGroup = new Group();
 		final TrueColorImage buffer;
+		private final Rectangle originalBounds;
 		private Rectangle bounds;
 		private DoubleVector start;
 		private Vector startCorner;
@@ -176,6 +177,7 @@ public class ToolSelect extends Tool {
 		StateMove(
 				ProjectContext context, Window window, Rectangle originalBounds, TrueColorImage buffer
 		) {
+			this.originalBounds = originalBounds;
 			this.bounds = originalBounds;
 
 			for (Hotkeys.Action action : actions)
@@ -244,12 +246,12 @@ public class ToolSelect extends Tool {
 
 		private void cut(ProjectContext context, Window window) {
 			copy();
-			canvasHandle.clear(context, bounds);
+			canvasHandle.clear(context, originalBounds);
 			setState(context, new StateCreate(context, window));
 		}
 
 		private void place(ProjectContext context, Window window) {
-			canvasHandle.clear(context, bounds);
+			canvasHandle.clear(context, originalBounds);
 			Rectangle destQuantizedBounds = bounds.quantize(context.tileSize);
 			Rectangle dropBounds = destQuantizedBounds.multiply(context.tileSize);
 			TrueColorImage composeCanvas = TrueColorImage.create(dropBounds.width, dropBounds.height);
