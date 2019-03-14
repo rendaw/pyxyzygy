@@ -4,6 +4,7 @@ import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.config.NodeConfig;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.core.model.v0.*;
+import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.rendaw.common.Assertion;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.control.TabPane;
@@ -13,15 +14,15 @@ import java.util.List;
 public class GroupLayerWrapper extends Wrapper {
 	private final Wrapper parent;
 	public final GroupLayer node;
-	private final GroupLayer.InnerSetListener innerSetListener;
 	public final SimpleObjectProperty<Wrapper> child = new SimpleObjectProperty<>();
+	private final Listener.ScalarSet<GroupLayer, ProjectNode> innerSetListener;
 
 	public GroupLayerWrapper(ProjectContext context, Wrapper parent, int parentIndex, GroupLayer node) {
 		this.parent = parent;
 		this.parentIndex = parentIndex;
 		this.node = node;
 
-		this.innerSetListener = node.addInnerSetListeners((target, value) -> {
+		innerSetListener = node.addInnerSetListeners((target, value) -> {
 			if (child.get() != null) {
 				tree.unbind();
 				child.get().remove(context);

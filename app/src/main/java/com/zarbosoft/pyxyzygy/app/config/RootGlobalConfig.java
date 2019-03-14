@@ -18,6 +18,9 @@ public class RootGlobalConfig extends ConfigBase {
 	public final ObservableList<TrueColorBrush> trueColorBrushes = FXCollections.observableArrayList();
 
 	@Configuration
+	public final ObservableList<PaletteBrush> paletteBrushes = FXCollections.observableArrayList();
+
+	@Configuration
 	public String lastDir = appDirs.user_dir().toString();
 
 	@Configuration(optional = true)

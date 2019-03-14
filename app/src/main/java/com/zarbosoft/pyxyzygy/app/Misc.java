@@ -2,13 +2,18 @@ package com.zarbosoft.pyxyzygy.app;
 
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
+import com.zarbosoft.pyxyzygy.core.model.v0.PaletteColor;
 import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
+import com.zarbosoft.pyxyzygy.core.model.v0.ProjectObject;
+import com.zarbosoft.pyxyzygy.seed.model.Listener;
+import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
 import com.zarbosoft.rendaw.common.Assertion;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.Property;
-import javafx.beans.property.StringProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
+import javafx.scene.paint.Color;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,18 +46,17 @@ public class Misc {
 	) {
 		ProjectNode node = (ProjectNode) wrapper.getValue();
 		return new Runnable() {
-			private ProjectNode.NameSetListener nameSetListener;
-			private ProjectNode.OpacitySetListener opacitySetListener;
+
+			private Runnable nameCleanup;
+			private Listener.ScalarSet<ProjectNode, Integer> opacitySetListener;
 
 			{
 				builder.text("Name", t -> {
-					t.setText(node.name());
-					Misc.<StringProperty, String>bind(t.textProperty(),
-							v -> context.history.change(c -> c.projectNode(node).nameSet(v)),
-							setter -> nameSetListener = node.addNameSetListeners((target, value) -> {
-								setter.accept(value);
-							})
-					);
+					this.nameCleanup =
+							CustomBinding.bindBidirectionalMultiple(new CustomBinding.ScalarBinder<>(node::addNameSetListeners,
+									node::removeNameSetListeners,
+									v -> context.history.change(c -> c.projectNode(node).nameSet(v))
+							), new CustomBinding.PropertyBinder<>(t.textProperty()));
 				});
 				builder.slider("Opacity", 0, Global.opacityMax, slider -> {
 					slider.setValue(node.opacity());
@@ -70,7 +74,7 @@ public class Misc {
 
 			@Override
 			public void run() {
-				node.removeNameSetListeners(nameSetListener);
+				nameCleanup.run();
 				node.removeOpacitySetListeners(opacitySetListener);
 			}
 		};
@@ -150,5 +154,16 @@ public class Misc {
 	public static <T> Consumer<T> noopConsumer() {
 		return t -> {
 		};
+	}
+
+	public static CustomBinding.ScalarBinder<Color> colorBinder(ProjectContext context, ProjectObject o) {
+		if (o instanceof PaletteColor) {
+			return new CustomBinding.ScalarBinder<Color>(
+					((PaletteColor) o)::addColorSetListeners,
+					((PaletteColor) o)::removeColorSetListeners,
+					v -> context.history.change(c -> c.paletteColor((PaletteColor) o).colorSet(TrueColor.fromJfx(v)))
+			);
+		} else
+			throw new Assertion();
 	}
 }

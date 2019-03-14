@@ -11,7 +11,9 @@ import com.zarbosoft.luxem.read.StackReader;
 import com.zarbosoft.pyxyzygy.generate.Helper;
 import com.zarbosoft.pyxyzygy.generate.TaskBase;
 import com.zarbosoft.pyxyzygy.seed.deserialize.*;
-import com.zarbosoft.pyxyzygy.seed.model.*;
+import com.zarbosoft.pyxyzygy.seed.model.Change;
+import com.zarbosoft.pyxyzygy.seed.model.ChangeStep;
+import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.pyxyzygy.seed.model.v0.ModelRootType;
 import com.zarbosoft.pyxyzygy.seed.model.v0.ProjectContextBase;
 import com.zarbosoft.pyxyzygy.seed.model.v0.ProjectObjectInterface;
@@ -74,6 +76,10 @@ public class GenerateModelV0 extends TaskBase {
 			.returns(StackReader.State.class)
 			.addParameter(ChangeDeserializationContext.class, "context")
 			.addParameter(String.class, "type");
+
+	public TypeName toPoetBoxed(TypeInfo type) {
+		return Helper.toPoetBoxed(type, typeMap);
+	}
 
 	public TypeName toPoet(TypeInfo type) {
 		return Helper.toPoet(type, typeMap);
@@ -287,30 +293,17 @@ public class GenerateModelV0 extends TaskBase {
 					private final CodeBlock.Builder changeDebugCounts;
 					private final String listenersFieldName;
 					private final CodeBlock.Builder listenersAdd;
-					private final ClassName listenerName;
-					private final TypeSpec.Builder listener;
-					private final MethodSpec.Builder listenerAccept;
 					private final CodeBlock.Builder merge;
 					private final ClassName deserializerName;
 					private final CodeBlock.Builder deserializerValue;
 					private final CodeBlock.Builder deserializerRecord;
 					private final CodeBlock.Builder deserializerArray;
+					private final ParameterizedTypeName listenerName;
 
 					public ChangeBuilder(
-							String fieldName, String action
+							String fieldName, String action, ParameterizedTypeName listenerName
 					) {
-						listenerName = cloneName.nestedClass(String.format("%s%sListener",
-								Helper.capFirst(fieldName),
-								Helper.capFirst(action)
-						));
-						listener = TypeSpec
-								.interfaceBuilder(listenerName)
-								.addModifiers(PUBLIC)
-								.addAnnotation(FunctionalInterface.class);
-						listenerAccept = MethodSpec
-								.methodBuilder("accept")
-								.addModifiers(PUBLIC, ABSTRACT)
-								.addParameter(cloneName, "target");
+						this.listenerName = listenerName;
 						listenersFieldName = String.format("%s%sListeners", fieldName, Helper.capFirst(action));
 						clone.addField(FieldSpec
 								.builder(ParameterizedTypeName.get(ClassName.get(List.class), listenerName),
@@ -388,15 +381,10 @@ public class GenerateModelV0 extends TaskBase {
 						return changeName;
 					}
 
-					public ClassName getListenerName() {
-						return listenerName;
-					}
-
 					public ChangeBuilder addMapParameter(TypeInfo key, TypeInfo value, String name, boolean inc) {
 						TypeName keyName = toPoet(key);
 						TypeName valueName = toPoet(value);
 						TypeName map = ParameterizedTypeName.get(ClassName.get(Map.class), keyName, valueName);
-						listenerAccept.addParameter(map, name);
 						change.addField(FieldSpec.builder(map, name).addModifiers(PUBLIC).build());
 						changeConstructor.addParameter(map, name).addCode(String.format("this.%s = %s;\n", name, name));
 						if (Helper.flattenPoint(value)) {
@@ -469,7 +457,6 @@ public class GenerateModelV0 extends TaskBase {
 					public ChangeBuilder addListParameter(TypeInfo type, String name, boolean inc) {
 						TypeName element = toPoet(type);
 						TypeName list = ParameterizedTypeName.get(ClassName.get(List.class), element);
-						listenerAccept.addParameter(list, name);
 						change.addField(FieldSpec.builder(list, name).addModifiers(PUBLIC).build());
 						changeConstructor
 								.addParameter(list, name)
@@ -533,7 +520,6 @@ public class GenerateModelV0 extends TaskBase {
 					}
 
 					public ChangeBuilder addParameter(TypeInfo type, String name, boolean inc) {
-						listenerAccept.addParameter(toPoet(type), name);
 						change.addField(FieldSpec.builder(toPoet(type), name).addModifiers(PUBLIC).build());
 						changeConstructor
 								.addParameter(toPoet(type), name)
@@ -614,8 +600,6 @@ public class GenerateModelV0 extends TaskBase {
 					}
 
 					public void finish() {
-						listener.addMethod(listenerAccept.build());
-						clone.addType(listener.build());
 						clone.addMethod(MethodSpec
 								.methodBuilder(String.format("add%s", Helper.capFirst(listenersFieldName)))
 								.returns(listenerName)
@@ -720,7 +704,13 @@ public class GenerateModelV0 extends TaskBase {
 
 						// Mutation
 						if (!Stream.of("id", "refCount").anyMatch(fieldName::equals)) {
-							ChangeBuilder setBuilder = new ChangeBuilder(fieldName, "set");
+							ChangeBuilder setBuilder = new ChangeBuilder(fieldName,
+									"set",
+									ParameterizedTypeName.get(ClassName.get(Listener.ScalarSet.class),
+											cloneName,
+											toPoetBoxed(field)
+									)
+							);
 							CodeBlock.Builder changeMerge = CodeBlock.builder().add(
 									"if (other.getClass() != getClass() || (($T)other).target == target) return false;\n",
 									setBuilder.changeName
@@ -787,10 +777,15 @@ public class GenerateModelV0 extends TaskBase {
 				cloneSerialize.add("writer.key(\"$L\");\n", fieldName);
 
 				// Create initializer, getters + mutators, changes
+				System.out.format(
+						"field %s declaring class %s ; at %s\n",
+						pair.second.field,
+						pair.second.field.getDeclaringClass(),
+						klass
+				);
 				if (pair.second.field.getDeclaringClass() == klass) {
-					if (fieldInfo.type == String.class) {
-						generateScalar.applyFieldOrigin(fieldInfo);
-					} else if (fieldInfo.type == Integer.class ||
+					if (fieldInfo.type == String.class ||
+							fieldInfo.type == Integer.class ||
 							fieldInfo.type == int.class ||
 							fieldInfo.type == SimpleIntegerProperty.class ||
 							fieldInfo.type == Long.class ||
@@ -850,8 +845,15 @@ public class GenerateModelV0 extends TaskBase {
 								.addCode(initialAddCode.build())
 								.build());
 
-						ChangeBuilder addBuilder = new ChangeBuilder(fieldName, "add");
-						ChangeBuilder removeBuilder = new ChangeBuilder(fieldName, "remove");
+						final ParameterizedTypeName addListener =
+								ParameterizedTypeName.get(ClassName.get(Listener.ListAdd.class),
+										cloneName,
+										toPoetBoxed(elementType)
+								);
+						ChangeBuilder addBuilder = new ChangeBuilder(fieldName, "add", addListener);
+						final ParameterizedTypeName removeListener =
+								ParameterizedTypeName.get(ClassName.get(Listener.ListRemove.class), cloneName);
+						ChangeBuilder removeBuilder = new ChangeBuilder(fieldName, "remove", removeListener);
 						addBuilder
 								.addParameter(new TypeInfo(int.class), "at", false)
 								.addListParameter(elementType, "value", true)
@@ -875,7 +877,9 @@ public class GenerateModelV0 extends TaskBase {
 						if (Helper.flattenPoint(elementType))
 							removeBuilder.addCode("sublist.forEach(e -> e.decRef(project));\n");
 						removeBuilder.addCode("sublist.clear();\n").finish();
-						ChangeBuilder clearBuilder = new ChangeBuilder(fieldName, "clear").addCode(
+						final ParameterizedTypeName clearListener =
+								ParameterizedTypeName.get(ClassName.get(Listener.Clear.class), cloneName);
+						ChangeBuilder clearBuilder = new ChangeBuilder(fieldName, "clear", clearListener).addCode(
 								"changeStep.add(project, new $T(project, target, 0, new $T(target.$L)));\n",
 								addBuilder.getName(),
 								ArrayList.class,
@@ -908,7 +912,9 @@ public class GenerateModelV0 extends TaskBase {
 								.addParameter(toPoet(elementType), "value")
 								.addCode("return $LAdd(target.$LLength(), value);\n", fieldName, fieldName)
 								.build());
-						ChangeBuilder moveToBuilder = new ChangeBuilder(fieldName, "moveTo")
+						final ParameterizedTypeName moveToListener =
+								ParameterizedTypeName.get(ClassName.get(Listener.ListMoveTo.class), cloneName);
+						ChangeBuilder moveToBuilder = new ChangeBuilder(fieldName, "moveTo", moveToListener)
 								.addParameter(new TypeInfo(int.class), "source", false)
 								.addParameter(new TypeInfo(int.class), "count", false)
 								.addParameter(new TypeInfo(int.class), "dest", false)
@@ -956,13 +962,10 @@ public class GenerateModelV0 extends TaskBase {
 								.addParameter(ParameterizedTypeName.get(ClassName.get(List.class),
 										TypeVariableName.get("T")
 								), "list")
-								.addParameter(
-										ParameterizedTypeName.get(ClassName.get(Function.class),
-												toPoet(elementType),
-												TypeVariableName.get("T")
-										),
-										"create"
-								)
+								.addParameter(ParameterizedTypeName.get(ClassName.get(Function.class),
+										toPoetBoxed(elementType),
+										TypeVariableName.get("T")
+								), "create")
 								.addParameter(ParameterizedTypeName.get(ClassName.get(Consumer.class),
 										TypeVariableName.get("T")
 								), "remove")
@@ -977,7 +980,7 @@ public class GenerateModelV0 extends TaskBase {
 										.add("\n")
 										.add(
 												"$T addListener = add$LAddListeners((target, at, values) -> {\n",
-												addBuilder.getListenerName(),
+												addListener,
 												Helper.capFirst(fieldName)
 										)
 										.indent()
@@ -991,7 +994,7 @@ public class GenerateModelV0 extends TaskBase {
 										.add("});\n")
 										.add(
 												"$T removeListener = add$LRemoveListeners((target, at, count) -> {\n",
-												removeBuilder.getListenerName(),
+												removeListener,
 												Helper.capFirst(fieldName)
 										)
 										.indent()
@@ -1005,7 +1008,7 @@ public class GenerateModelV0 extends TaskBase {
 										.unindent()
 										.add("});\n")
 										.add("$T clearListener = add$LClearListeners((target) -> {\n",
-												clearBuilder.getListenerName(),
+												clearListener,
 												Helper.capFirst(fieldName)
 										)
 										.indent()
@@ -1016,7 +1019,7 @@ public class GenerateModelV0 extends TaskBase {
 										.add("});\n")
 										.add(
 												"$T moveToListener = add$LMoveToListeners((target, source, count, dest) -> {\n",
-												moveToBuilder.getListenerName(),
+												moveToListener,
 												Helper.capFirst(fieldName)
 										)
 										.indent()
@@ -1075,9 +1078,21 @@ public class GenerateModelV0 extends TaskBase {
 								.build());
 
 						// Mutation
-						ChangeBuilder addBuilder = new ChangeBuilder(fieldName, "add");
-						ChangeBuilder removeBuilder = new ChangeBuilder(fieldName, "remove");
 						TypeInfo elementType = fieldInfo.parameters[0];
+						ChangeBuilder addBuilder = new ChangeBuilder(fieldName,
+								"add",
+								ParameterizedTypeName.get(ClassName.get(Listener.SetAdd.class),
+										cloneName,
+										toPoetBoxed(elementType)
+								)
+						);
+						ChangeBuilder removeBuilder = new ChangeBuilder(fieldName,
+								"remove",
+								ParameterizedTypeName.get(ClassName.get(Listener.SetRemove.class),
+										cloneName,
+										toPoetBoxed(elementType)
+								)
+						);
 						addBuilder
 								.addCode("if (target.$L.contains(value)) return;\n")
 								.addListParameter(elementType, "value", true)
@@ -1108,8 +1123,10 @@ public class GenerateModelV0 extends TaskBase {
 										addBuilder.getName()
 								)
 								.finish();
-						ChangeBuilder clearBuilder = new ChangeBuilder(fieldName, "clear").addCode(
-								"changeStep.add(project, new $T(project, target, 0, new $T($L)));\n",
+						ChangeBuilder clearBuilder = new ChangeBuilder(fieldName,
+								"clear",
+								ParameterizedTypeName.get(ClassName.get(Listener.Clear.class), cloneName)
+						).addCode("changeStep.add(project, new $T(project, target, 0, new $T($L)));\n",
 								addBuilder.getName(),
 								ArrayList.class
 						);
@@ -1176,7 +1193,12 @@ public class GenerateModelV0 extends TaskBase {
 								.addCode(initialPutAllCode.build())
 								.build());
 
-						ChangeBuilder putBuilder = new ChangeBuilder(fieldName, "putAll");
+						ChangeBuilder putBuilder = new ChangeBuilder(fieldName, "putAll", ParameterizedTypeName.get(
+								ClassName.get(Listener.MapPutAll.class),
+								cloneName,
+								toPoetBoxed(fieldInfo.parameters[0]),
+								toPoetBoxed(fieldInfo.parameters[1])
+						));
 						CodeBlock.Builder putCode = CodeBlock
 								.builder()
 								.add("if (remove.stream().anyMatch(put::containsKey)) throw new $T();\n",
@@ -1244,7 +1266,10 @@ public class GenerateModelV0 extends TaskBase {
 										ImmutableList.class
 								)
 								.build());
-						ChangeBuilder clearBuilder = new ChangeBuilder(fieldName, "clear");
+						ChangeBuilder clearBuilder = new ChangeBuilder(fieldName,
+								"clear",
+								ParameterizedTypeName.get(ClassName.get(Listener.Clear.class), cloneName)
+						);
 						clearBuilder.addCode(
 								"changeStep.add(project, new $T(project, target, new $T(target.$L), new $T()));\n",
 								putBuilder.getName(),
@@ -1550,14 +1575,13 @@ public class GenerateModelV0 extends TaskBase {
 		write(changeStepBuilderName, changeStepBuilder.build());
 		write(deserializeHelperName, deserializeHelper
 				.addMethod(globalModelDeserialize
-						.addCode("throw new $T(String.format(\"Unknown type %s\", type));\n",
+						.addCode("throw new $T(String.format(\"Unknown type %s\", type));\n", RuntimeException.class)
+						.build())
+				.addMethod(globalChangeDeserialize
+						.addCode("throw new $T(String.format(\"Unknown change type %s\", type));\n",
 								RuntimeException.class
 						)
 						.build())
-				.addMethod(globalChangeDeserialize.addCode(
-						"throw new $T(String.format(\"Unknown change type %s\", type));\n",
-						RuntimeException.class
-				).build())
 				.build());
 	}
 

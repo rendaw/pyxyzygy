@@ -3,15 +3,17 @@
 #include <algorithm>
 #include <cmath>
 #include <cstring>
-#include <math.h>
 #include <string>
 #include <cassert>
+#include <cerrno>
 
 #include <png.h>
+#include <zlib.h>
 
 static int const channels = 4;
+static int16_t const paletteVersion = 4;
 
-static inline int posCeilDiv(int const x, int const y) {
+static inline int32_t posCeilDiv(int32_t const x, int32_t const y) {
 	return (x + y - 1) / y;
 }
 
@@ -19,10 +21,10 @@ template <class T> static inline T msq(T const &a) {
 	return a * a;
 }
 
-static unsigned int scratchSize = 0;
-static unsigned int scratchBitWidth = 0;
-static unsigned int scratchHeight = 0;
-static unsigned int scratchByteWidth;
+static l_t scratchSize = 0;
+static l_t scratchBitWidth = 0;
+static l_t scratchHeight = 0;
+static l_t scratchByteWidth;
 static uint8_t *scratch = nullptr;
 
 static void clearScratch() {
@@ -30,137 +32,72 @@ static void clearScratch() {
 }
 
 static void prepareScratchInternal() {
-	unsigned int const needSize = posCeilDiv(scratchHeight * scratchByteWidth, 4);
+	c_t const needSize = posCeilDiv(scratchHeight * scratchByteWidth, 4);
 	if (scratch == nullptr || scratchSize < needSize) {
 		scratchSize = needSize;
 		delete [] scratch;
-		scratch = (uint8_t *)new uint32_t[scratchSize];
+		scratch = (uint8_t *)new c_t[scratchSize];
 	}
 	clearScratch();
 }
 
-static void prepareBitScratch(int const width, int const height) {
+static void prepareBitScratch(l_t const width, l_t const height) {
 	scratchBitWidth = width;
 	scratchByteWidth = posCeilDiv(width, 8);
 	scratchHeight = height;
 	prepareScratchInternal();
 }
 
-static void prepareByteScratch(int const width, int const height) {
+static void prepareByteScratch(l_t const width, l_t const height) {
 	scratchByteWidth = width;
 	scratchBitWidth = width * 8;
 	scratchHeight = height;
 	prepareScratchInternal();
 }
 
-static uint8_t getBitScratch(unsigned int x, unsigned int y) {
+static uint8_t getBitScratch(l_t x, l_t y) {
 	if (y >= scratchHeight) {
 		return 0;
 	}
 	if (x >= scratchBitWidth) {
 		return 0;
 	}
-	unsigned int bit = x % 8;
+	l_t bit = x % 8;
 	x = x / 8;
 	return (scratch[y * scratchByteWidth + x] >> bit) & 1u;
 }
 
-static void setBitScratch(unsigned int x, unsigned int y) {
-	fflush(stdout);
+static void setBitScratch(l_t x, l_t y) {
 	assert(x < scratchBitWidth);
 	assert(y < scratchHeight);
 	//printf("\tp %u %u\n", x, y);
-	unsigned int bit = x % 8;
+	l_t bit = x % 8;
 	x = x / 8;
 	scratch[y * scratchByteWidth + x] |= 1u << bit;
 	//debugScratch();
 	//debugRawScratch();
 }
 
-static void setBitScratchLine(unsigned int y, unsigned int start, unsigned int end) {
+static void setBitScratchLine(l_t y, l_t start, l_t end) {
 	//printf("fl y %u, %u - %u\n", y, start, end);
-	fflush(stdout);
 	assert(end <= scratchBitWidth);
 	assert(y < scratchHeight);
-	unsigned int alignedStart = posCeilDiv(start, 8);
-	unsigned int alignedEnd = std::min(scratchByteWidth, end / 8);
+	l_t alignedStart = posCeilDiv(start, 8);
+	l_t alignedEnd = std::min(scratchByteWidth, end / 8);
 	//printf("\talign start %u end %u\n", alignedStart, alignedEnd);
 	if (alignedEnd < alignedStart) {
-		for (unsigned int x = start; x < end; ++x) {
+		for (l_t x = start; x < end; ++x) {
 			setBitScratch(x, y);
 		}
 	} else {
-		for (unsigned int x = start; x < alignedStart * 8; ++x) {
+		for (l_t x = start; x < alignedStart * 8; ++x) {
 			setBitScratch(x, y);
 		}
 		memset(&scratch[y * scratchByteWidth + alignedStart], 0xff, alignedEnd - alignedStart);
-		for (unsigned int x = alignedEnd * 8; x < end; ++x) {
+		for (l_t x = alignedEnd * 8; x < end; ++x) {
 			setBitScratch(x, y);
 		}
 	}
-}
-
-ROBytes::ROBytes(size_t const size, uint8_t const * const data) : size(size), data(data) {
-}
-
-TrueColorImage::TrueColorImage(int w, int h, uint8_t * const pixels) :
-   	w(w), h(h), pixels(pixels) {
-}
-
-TrueColorImage::~TrueColorImage() {
-	fflush(stdout);
-	delete [] pixels;
-}
-
-TrueColorImage * TrueColorImage::create(int w, int h) {
-	auto out = new TrueColorImage(w, h, (uint8_t *)new uint32_t[w * h]);
-	out->clear();
-	return out;
-}
-
-TrueColorImage * TrueColorImage::deserialize(char const * const path) throw(std::runtime_error) {
-	png_image img;
-	memset(&img, 0, sizeof(img));
-	img.version = PNG_IMAGE_VERSION;
-	if (!png_image_begin_read_from_file(&img, path)) {
-		throw std::runtime_error(std::string(img.message));
-	}
-	img.format = PNG_FORMAT_BGRA;
-	auto pixels = (uint8_t *)new uint32_t[PNG_IMAGE_SIZE(img) / 4];
-	if (!png_image_finish_read(&img, nullptr, pixels, 0, nullptr)) {
-		throw std::runtime_error(std::string(img.message));
-	}
-	return new TrueColorImage(img.width, img.height, pixels);
-}
-
-TrueColorImage * TrueColorImage::copy(int x0, int y0, int w0, int h0) const {
-	assert(x0 + w0 <= w);
-	assert(y0 + h0 <= h);
-	TrueColorImage * out = TrueColorImage::create(w0, h0);
-	for (int y1 = 0; y1 < h0; ++y1) {
-		memcpy(
-			&out->pixels[y1 * out->w * channels],
-			&pixels[((y0 + y1) * w + x0) * channels],
-			out->w * channels
-		);
-	}
-	return out;
-}
-
-template <class T> inline ROBytes TrueColorImage::calculateData(T calculate) {
-	prepareByteScratch(w * channels, h);
-	for (int y = 0; y < h; ++y) {
-		for (int x = 0; x < w; ++x) {
-			uint8_t const * const source = &pixels[(y * w + x) * channels];
-			uint8_t *dest = &scratch[(y * w + x) * channels];
-			calculate(dest, source);
-		}
-	}
-	return {scratchByteWidth * scratchHeight, scratch};
-}
-
-ROBytes TrueColorImage::data() {
-	return {(size_t)(w * h * channels), pixels};
 }
 
 static inline void premultiply(uint8_t *dest, uint8_t const * const source) {
@@ -170,74 +107,87 @@ static inline void premultiply(uint8_t *dest, uint8_t const * const source) {
 	dest[3] = source[3];
 }
 
-ROBytes TrueColorImage::dataPremultiplied() {
-	return calculateData(premultiply);
-}
-
-static inline void tint(uint8_t *dest, uint8_t const * const source, uint32_t const *colors) {
+static inline void tint(uint8_t *dest, uint8_t const * const source, c_t const *colors) {
 	for (int i = 0; i < channels - 1; ++i)
 		dest[i] = ((source[i] + colors[i]) * 0x80u) >> 8u;
 	dest[3] = source[3];
 }
 
-ROBytes TrueColorImage::dataTint(uint8_t cr, uint8_t cg, uint8_t cb) {
-	uint32_t const colors[] {cb, cg, cr};
-	return calculateData([&](uint8_t *dest, uint8_t const * const source) {
-		tint(dest, source, colors);
-	});
+ROBytes::ROBytes(size_t const size, uint8_t const * const data) : size(size), data(data) {
 }
 
-ROBytes TrueColorImage::dataPremultipliedTint(uint8_t cr, uint8_t cg, uint8_t cb) {
-	uint32_t const colors[] {cb, cg, cr};
-	return calculateData([&](uint8_t *dest, uint8_t const * const source) {
-		tint(dest, source, colors);
-		premultiply(dest, dest);
-	});
-}
+static const size_t palsize = sizeof(p_t);
 
-int TrueColorImage::getWidth() const {
-	return w;
-}
-
-int TrueColorImage::getHeight() const {
-	return h;
-}
-
-void TrueColorImage::clear() {
-	memset(pixels, 0, w * h * channels);
-}
-
-void TrueColorImage::clear(int x, int y, int w0, int h0) {
-	assert(x >= 0);
-	assert(y >= 0);
-	assert(x + w0 <= w);
-	assert(y + h0 <= h);
-	for (int y1 = y; y1 < y + h0; ++y1) {
-		memset(
-			&pixels[(y1 * w + x) * channels],
-			0,
-			w0 * channels
-		);
+void PaletteColors::set(p_t index, c_t color) {
+	for (int index = 0; index < colors.size(); ++index) {
+		auto &p = colors[index];
+		if (p.first != index) continue;
+		if (color == 0) {
+			colors.remove(index);
+			return;
+		} else {
+			p.second = color;
+			return;
+		}
 	}
+	if (color == 0) return;
+	colors.add({index, color});
 }
 
-void TrueColorImage::serialize(const char *path) const throw(std::runtime_error) {
-	png_image img;
-	memset(&img, 0, sizeof(img));
-	img.version = PNG_IMAGE_VERSION;
-	img.width = w;
-	img.height = h;
-	img.format = PNG_FORMAT_BGRA;
-	img.flags = 0;
-	img.colormap_entries = 0;
-	png_image_write_to_file(&img, path, false, pixels, w * channels, nullptr);
-	if (PNG_IMAGE_FAILED(img)) {
-		throw std::runtime_error(std::string(img.message));
+c_t PaletteColors::get(p_t index) const {
+	for (auto const &p : colors) {
+		if (p.first == index) return p.second;
 	}
-	if (img.warning_or_error != 0) {
-		printf("libpng warning: %s\n", img.message);
-	}
+	return (c_t)0;
 }
+
+PaletteImage::PaletteImage(l_t w, l_t h, p_t * const pixels) :
+   	w(w), h(h), pixels(pixels) {
+}
+
+PaletteImage::~PaletteImage() {
+	delete [] pixels;
+}
+
+PaletteImage * PaletteImage::create(l_t w, l_t h) {
+	auto out = new PaletteImage(w, h, new p_t[w * h]);
+	out->clear();
+	return out;
+}
+
+struct GZ {
+	gzFile file;
+
+	GZ(char const * const path, char const * const mode) : file(gzopen(path, mode)) {
+		if (!file) throw std::runtime_error(std::string(strerror(errno)));
+	}
+
+	~GZ() {
+		gzclose(file);
+	}
+
+	void read(uint8_t *dest, size_t bytes) {
+		while (bytes > 0) {
+			int result = gzread(file, dest, bytes);
+			if (result == -1) {
+				throw std::runtime_error(std::string(gzerror(file, &result)));
+			}
+			dest += result;
+			bytes -= result;
+		}
+	}
+
+	void write(uint8_t *source, size_t bytes) {
+		while (bytes > 0) {
+			int result = gzwrite(file, source, bytes);
+			if (result <= 0) {
+				throw std::runtime_error(std::string(gzerror(file, &result)));
+			}
+			source += result;
+			bytes -= result;
+		}
+	}
+};
 
 template<class HandleMeasures, class SetPixelLine> static void strokeSolid(
 	double const x1_0, double const y1_0, double const r1_0,
@@ -465,6 +415,301 @@ template<class HandleMeasures, class SetPixelLine> static void strokeSolid(
 	}
 }
 
+template <class HandleLine> static inline void merge(
+	uint8_t *dest, c_t const d_w, c_t const d_h, uint8_t const * const source, c_t const s_w, c_t const s_h, int32_t x0, int32_t y0, HandleLine const &handleLine
+) {
+	struct V {
+		l_t const source;
+		l_t const dest;
+		l_t const span;
+	};
+	auto calcV = [&](auto at, auto sourceSpan, auto destSpan) {
+		if (at < 0) {
+			return V{(l_t) -at, 0, std::min(destSpan, sourceSpan + at)};
+		} else {
+			return V{0, (l_t) at, std::min(destSpan - at, sourceSpan)};
+		}
+	};
+	V const x = calcV(x0, s_w, d_w);
+	V const y = calcV(y0, s_h, d_h);
+	for (l_t y1 = 0; y1 < y.span; ++y1) {
+		handleLine(
+			&dest[((y.dest + y1) * d_w + x.dest) * channels],
+			&source[((y.source + y1) * s_w + x.source) * channels],
+			x.span
+		);
+	}
+}
+
+static inline void replace(uint8_t *dest, c_t const d_w, c_t const d_h, uint8_t const * const source, c_t const s_w, c_t const s_h, int32_t x0, int32_t y0) {
+	merge(
+		dest, d_w, d_h, source, s_w, s_h, x0, y0,
+		[](uint8_t *dest, uint8_t const * const source, int span) {
+			memcpy(dest, source, span * channels);
+		}
+	);
+}
+
+PaletteImage * PaletteImage::deserialize(char const * const path) throw(std::runtime_error) {
+	GZ source(path, "rb");
+	uint16_t version;
+	source.read((uint8_t *)&version, sizeof(version));
+	l_t dimensions[2];
+	source.read((uint8_t *)dimensions, sizeof(dimensions) * sizeof(c_t));
+	size_t size = dimensions[0] * dimensions[1];
+	p_t *data = new p_t[size];
+	source.read(data, size * palsize);
+	// TODO swap data if system is big endian...
+	return new PaletteImage(dimensions[0], dimensions[1], data);
+}
+
+PaletteImage * PaletteImage::copy(l_t x0, l_t y0, l_t w0, l_t h0) const {
+	assert(x0 + w0 <= w);
+	assert(y0 + h0 <= h);
+	PaletteImage * out = PaletteImage::create(w0, h0);
+	for (l_t y1 = 0; y1 < h0; ++y1) {
+		memcpy(
+			&out->pixels[y1 * out->w],
+			&pixels[((y0 + y1) * w + x0)],
+			out->w * palsize
+		);
+	}
+	return out;
+}
+
+template <class T> inline ROBytes PaletteImage::calculateData(T calculate) const {
+	prepareByteScratch(w * channels, h);
+	for (l_t y = 0; y < h; ++y) {
+		for (l_t x = 0; x < w; ++x) {
+			p_t const source = pixels[y * w + x];
+			uint8_t *dest = &scratch[(y * w + x) * channels];
+			calculate(dest, source);
+		}
+	}
+	return {scratchByteWidth * scratchHeight, scratch};
+}
+
+ROBytes PaletteImage::data(PaletteColors const &palette) const {
+	return calculateData([&](uint8_t *dest, p_t const source) {
+		*((uint32_t *) dest) = palette.get(source);
+	});
+}
+
+ROBytes PaletteImage::dataPremultiplied(PaletteColors const &palette) const {
+	return calculateData([&](uint8_t *dest, p_t const source) {
+		*((uint32_t *) dest) = palette.get(source);
+		premultiply(dest, dest);
+	});
+}
+
+ROBytes PaletteImage::dataTint(PaletteColors const &palette, uint8_t cr, uint8_t cg, uint8_t cb) const {
+	c_t const colors[] {cb, cg, cr};
+	return calculateData([&](uint8_t *dest, p_t const source) {
+		*((uint32_t *) dest) = palette.get(source);
+		tint(dest, dest, colors);
+	});
+}
+
+ROBytes PaletteImage::dataPremultipliedTint(PaletteColors const &palette, uint8_t cr, uint8_t cg, uint8_t cb) const {
+	c_t const colors[] {cb, cg, cr};
+	return calculateData([&](uint8_t *dest, p_t const source) {
+		*((uint32_t *) dest) = palette.get(source);
+		tint(dest, dest, colors);
+		premultiply(dest, dest);
+	});
+}
+
+l_t PaletteImage::getWidth() const {
+	return w;
+}
+
+l_t PaletteImage::getHeight() const {
+	return h;
+}
+
+void PaletteImage::clear() {
+	memset(pixels, 0, w * h * palsize);
+}
+
+void PaletteImage::clear(l_t x, l_t y, l_t w0, l_t h0) {
+	assert(x >= 0);
+	assert(y >= 0);
+	assert(x + w0 <= w);
+	assert(y + h0 <= h);
+	for (l_t y1 = y; y1 < y + h0; ++y1) {
+		memset(
+			&pixels[y1 * w + x],
+			0,
+			w0 * palsize
+		);
+	}
+}
+
+void PaletteImage::serialize(const char *path) const throw(std::runtime_error) {
+	GZ dest(path, "wb");
+	dest.write((uint8_t *)&paletteVersion, sizeof(paletteVersion));
+	l_t dimensions[2] = {w, h};
+	dest.write((uint8_t *)&dimensions[0], sizeof(dimensions) * sizeof(c_t));
+	dest.write(pixels, w * h * palsize);
+}
+
+void PaletteImage::setPixel(p_t index, l_t x, l_t y) {
+	pixels[y * w + x] = index;
+}
+
+void PaletteImage::stroke(p_t index, double x1_0, double y1_0, double r1_0, double x2_0, double y2_0, double r2_0) {
+	int offsetX;
+	int offsetY;
+	strokeSolid(
+		x1_0, y1_0, r1_0, x2_0, y2_0, r2_0, 1,
+		[&](int const offsetX_0, int const offsetY_0, int const top, int const bottom, int const left, int const right) {
+			offsetX = offsetX_0;
+			offsetY = offsetY_0;
+		},
+		[&](l_t y, float start0, float end0) {
+			y += offsetY;
+			c_t start = std::round(start0 + offsetX);
+			c_t end = std::round(end0 + offsetX);
+			memset(&pixels[y * w + start], index, end - start);
+		}
+	);
+}
+
+void PaletteImage::removeColor(p_t index) {
+	for (l_t y = 0; y < h; ++y) {
+		for (l_t x = 0; x < w; ++x) {
+			p_t &source = pixels[y * w + x];
+			if (source == index) source = 0;
+		}
+	}
+}
+
+void PaletteImage::replace(PaletteImage const & source, int32_t x, int32_t y) {
+	::replace(pixels, w, h, source.pixels, source.w, source.h, x, y);
+}
+
+TrueColorImage::TrueColorImage(l_t w, l_t h, uint8_t * const pixels) :
+   	w(w), h(h), pixels(pixels) {
+}
+
+TrueColorImage::~TrueColorImage() {
+	delete [] pixels;
+}
+
+TrueColorImage * TrueColorImage::create(l_t w, l_t h) {
+	auto out = new TrueColorImage(w, h, (uint8_t *)new c_t[w * h]);
+	out->clear();
+	return out;
+}
+
+TrueColorImage * TrueColorImage::deserialize(char const * const path) throw(std::runtime_error) {
+	png_image img;
+	memset(&img, 0, sizeof(img));
+	img.version = PNG_IMAGE_VERSION;
+	if (!png_image_begin_read_from_file(&img, path)) {
+		throw std::runtime_error(std::string(img.message));
+	}
+	img.format = PNG_FORMAT_BGRA;
+	auto pixels = (uint8_t *)new c_t[PNG_IMAGE_SIZE(img) / 4];
+	if (!png_image_finish_read(&img, nullptr, pixels, 0, nullptr)) {
+		throw std::runtime_error(std::string(img.message));
+	}
+	return new TrueColorImage(img.width, img.height, pixels);
+}
+
+TrueColorImage * TrueColorImage::copy(l_t x0, l_t y0, l_t w0, l_t h0) const {
+	assert(x0 + w0 <= w);
+	assert(y0 + h0 <= h);
+	TrueColorImage * out = TrueColorImage::create(w0, h0);
+	for (l_t y1 = 0; y1 < h0; ++y1) {
+		memcpy(
+			&out->pixels[y1 * out->w * channels],
+			&pixels[((y0 + y1) * w + x0) * channels],
+			out->w * channels
+		);
+	}
+	return out;
+}
+
+template <class T> inline ROBytes TrueColorImage::calculateData(T calculate) const {
+	prepareByteScratch(w * channels, h);
+	for (l_t y = 0; y < h; ++y) {
+		for (l_t x = 0; x < w; ++x) {
+			uint8_t const * const source = &pixels[(y * w + x) * channels];
+			uint8_t *dest = &scratch[(y * w + x) * channels];
+			calculate(dest, source);
+		}
+	}
+	return {scratchByteWidth * scratchHeight, scratch};
+}
+
+ROBytes TrueColorImage::data() const {
+	return {(size_t)(w * h * channels), pixels};
+}
+
+ROBytes TrueColorImage::dataPremultiplied() const {
+	return calculateData(premultiply);
+}
+
+ROBytes TrueColorImage::dataTint(uint8_t cr, uint8_t cg, uint8_t cb) const {
+	c_t const colors[] {cb, cg, cr};
+	return calculateData([&](uint8_t *dest, uint8_t const * const source) {
+		tint(dest, source, colors);
+	});
+}
+
+ROBytes TrueColorImage::dataPremultipliedTint(uint8_t cr, uint8_t cg, uint8_t cb) const {
+	c_t const colors[] {cb, cg, cr};
+	return calculateData([&](uint8_t *dest, uint8_t const * const source) {
+		tint(dest, source, colors);
+		premultiply(dest, dest);
+	});
+}
+
+l_t TrueColorImage::getWidth() const {
+	return w;
+}
+
+l_t TrueColorImage::getHeight() const {
+	return h;
+}
+
+void TrueColorImage::clear() {
+	memset(pixels, 0, w * h * channels);
+}
+
+void TrueColorImage::clear(l_t x, l_t y, l_t w0, l_t h0) {
+	assert(x >= 0);
+	assert(y >= 0);
+	assert(x + w0 <= w);
+	assert(y + h0 <= h);
+	for (l_t y1 = y; y1 < y + h0; ++y1) {
+		memset(
+			&pixels[(y1 * w + x) * channels],
+			0,
+			w0 * channels
+		);
+	}
+}
+
+void TrueColorImage::serialize(const char *path) const throw(std::runtime_error) {
+	png_image img;
+	memset(&img, 0, sizeof(img));
+	img.version = PNG_IMAGE_VERSION;
+	img.width = w;
+	img.height = h;
+	img.format = PNG_FORMAT_BGRA;
+	img.flags = 0;
+	img.colormap_entries = 0;
+	png_image_write_to_file(&img, path, false, pixels, w * channels, nullptr);
+	if (PNG_IMAGE_FAILED(img)) {
+		throw std::runtime_error(std::string(img.message));
+	}
+	if (img.warning_or_error != 0) {
+		printf("libpng warning: %s\n", img.message);
+	}
+}
+
 void TrueColorImage::setPixel(uint8_t cr, uint8_t cg, uint8_t cb, uint8_t ca, int x, int y) {
 	auto *pixel = &pixels[(y * w + x) * channels];
 	pixel[0] = cb;
@@ -478,8 +723,8 @@ void TrueColorImage::strokeSoft(uint8_t cr, uint8_t cg, uint8_t cb, uint8_t ca, 
 
 	int const subpixels = 2;
 	int const subpixelSum = msq(subpixels);
-	int offsetX;
-	int offsetY;
+	int32_t offsetX;
+	int32_t offsetY;
 	int subpixelTop;
 	int subpixelBottom;
 	int subpixelLeft;
@@ -496,17 +741,17 @@ void TrueColorImage::strokeSoft(uint8_t cr, uint8_t cg, uint8_t cb, uint8_t ca, 
 			//printf("got extents: o %d %d, t %d b %d l %d r %d\n", offsetX, offsetY, subpixelTop, subpixelBottom, subpixelLeft, subpixelRight);
 			prepareBitScratch(subpixelRight, subpixelBottom);
 		},
-		[](unsigned int const y, float const start, float const end) { setBitScratchLine(y, std::floor(start), std::ceil(end)); }
+		[](c_t const y, float const start, float const end) { setBitScratchLine(y, std::floor(start), std::ceil(end)); }
 	);
 
 	// merge + scale down (w/h / 2)
 	for (
-		int y = std::max(-offsetY, subpixelTop / subpixels);
+		l_t y = std::max(-offsetY, subpixelTop / subpixels);
 		y < std::min(h - offsetY, posCeilDiv(subpixelBottom, subpixels));
 		++y
 	) {
 		for (
-			int x = std::max(-offsetX, subpixelLeft / subpixels);
+			l_t x = std::max(-offsetX, subpixelLeft / subpixels);
 			x < std::min(w - offsetX, posCeilDiv(subpixelRight, subpixels));
 			++x
 		) {
@@ -568,13 +813,13 @@ void TrueColorImage::strokeHard(uint8_t cr, uint8_t cg, uint8_t cb, uint8_t ca, 
 			offsetX = offsetX_0;
 			offsetY = offsetY_0;
 		},
-		[&](unsigned int y, float start, float end) {
+		[&](l_t y, float start, float end) {
 			//printf("fill line %u: %f - %f\n", y, start, end);
 			y += offsetY;
 			start = std::round(start + offsetX);
 			end = std::round(end + offsetX);
-			for (unsigned int x = start; x < end; ++x) {
-				for (unsigned int i = 0; i < channels; ++i) {
+			for (l_t x = start; x < end; ++x) {
+				for (int i = 0; i < channels; ++i) {
 					pixels[(y * w + x) * channels + i] = colors[i];
 				}
 			}
@@ -582,60 +827,59 @@ void TrueColorImage::strokeHard(uint8_t cr, uint8_t cg, uint8_t cb, uint8_t ca, 
 	);
 }
 
-void TrueColorImage::compose(TrueColorImage const &source, int x0, int y0, double opacity) {
-	//printf("composing wh %d %d source wh %d %d at %d %d op %f\n", w, h, source.w, source.h, x0, y0, opacity);
-	fflush(stdout);
-	struct V {
-		int const source;
-		int const dest;
-		int const span;
-	};
-	auto calcV = [&](auto at, auto sourceSpan, auto destSpan) {
-		if (at < 0) {
-			return V{-at, 0, std::min(destSpan, sourceSpan + at)};
-		} else {
-			return V{0, at, std::min(destSpan - at, sourceSpan)};
-		}
-	};
-	V const x = calcV(x0, source.w, w);
-	V const y = calcV(y0, source.h, h);
-	//printf("ranges: x %d %d %d; y %d %d %d\n", x.source, x.dest, x.span, y.source, y.dest, y.span);
-	for (int y1 = 0; y1 < y.span; ++y1) {
-		for (int x1 = 0; x1 < x.span; ++x1) {
-			//printf("\tcomp %d %d, dest %d %d, source %d %d span span %d %d\n", x1, y1, x.dest + x1, y.dest + y1, x.source + x1, y.source + y1, x.span, y.span);
-			uint8_t * const destPixel = &pixels[((y.dest + y1) * w + (x.dest + x1)) * channels];
-			uint8_t const * const sourcePixel = &source.pixels[((y.source + y1) * source.w + (x.source + x1)) * channels];
-			float const sourceAlpha = sourcePixel[3] / 255.0 * opacity;
-			float const destAlpha = destPixel[3] / 255.0;
-			float const outAlpha = destAlpha * (1.0 - sourceAlpha) + sourceAlpha;
-			/*
-			printf("composing dest %u %u %u %u; src %u %u %u %u; dest alpha %f, source alpha %f, out alpha %f\n",
-				destPixel[0],
-				destPixel[1],
-				destPixel[2],
-				destPixel[3],
-				sourcePixel[0],
-				sourcePixel[1],
-				sourcePixel[2],
-				sourcePixel[3],
-				destAlpha,
-				sourceAlpha,
-				outAlpha
-			);
-			*/
-			for (int i = 0; i < channels - 1; ++i) {
-				float const destValue = destPixel[i] * destAlpha * (1.0 - sourceAlpha);
-				float const sourceValue = sourcePixel[i] * sourceAlpha;
-				float const sum = destValue + sourceValue;
-				float const scaled = sum / outAlpha;
-				uint8_t const byte = scaled;
+static inline void compose(uint8_t *dest, c_t const d_w, c_t const d_h, uint8_t const * const source, c_t const s_w, c_t const s_h, int32_t x0, int32_t y0, double opacity) {
+	merge(
+		dest, d_w, d_h, source, s_w, s_h, x0, y0,
+		[opacity](uint8_t *dest, uint8_t const * const source, int span) {
+			for (l_t x1 = 0; x1 < span; ++x1) {
+				//printf("\tcomp %d %d, dest %d %d, source %d %d span span %d %d\n", x1, y1, x.dest + x1, y.dest + y1, x.source + x1, y.source + y1, x.span, y.span);
+				uint8_t * const destPixel = &dest[x1 * channels];
+				uint8_t const * const sourcePixel = &source[x1 * channels];
+				float const sourceAlpha = sourcePixel[3] / 255.0 * opacity;
+				float const destAlpha = destPixel[3] / 255.0;
+				float const outAlpha = destAlpha * (1.0 - sourceAlpha) + sourceAlpha;
 				/*
-				printf("\tdest fact %f, source fact %f, sum %f, result %f, byte %u\n",
-					destValue, sourceValue, sum, scaled, byte);
+				printf("composing dest %u %u %u %u; src %u %u %u %u; dest alpha %f, source alpha %f, out alpha %f\n",
+					destPixel[0],
+					destPixel[1],
+					destPixel[2],
+					destPixel[3],
+					sourcePixel[0],
+					sourcePixel[1],
+					sourcePixel[2],
+					sourcePixel[3],
+					destAlpha,
+					sourceAlpha,
+					outAlpha
+				);
 				*/
-				destPixel[i] = byte;
+				for (int i = 0; i < channels - 1; ++i) {
+					float const destValue = destPixel[i] * destAlpha * (1.0 - sourceAlpha);
+					float const sourceValue = sourcePixel[i] * sourceAlpha;
+					float const sum = destValue + sourceValue;
+					float const scaled = sum / outAlpha;
+					uint8_t const byte = scaled;
+					/*
+					printf("\tdest fact %f, source fact %f, sum %f, result %f, byte %u\n",
+						destValue, sourceValue, sum, scaled, byte);
+					*/
+					destPixel[i] = byte;
+				}
+				destPixel[3] = std::min(255, (int)(255 * outAlpha));
 			}
-			destPixel[3] = std::min(255, (int)(255 * outAlpha));
 		}
-	}
+	);
+}
+
+void TrueColorImage::replace(TrueColorImage const & source, int32_t x, int32_t y) {
+	::replace(pixels, w, h, source.pixels, source.w, source.h, x, y);
+}
+
+void TrueColorImage::compose(TrueColorImage const &source, int32_t x, int32_t y, double opacity) {
+	::compose(pixels, w, h, source.pixels, source.w, source.h, x, y, opacity);
+}
+
+void TrueColorImage::compose(PaletteImage const & source, PaletteColors const & palette, int32_t x, int32_t y, double opacity) {
+	auto sourcePixels = source.data(palette);
+	::compose(pixels, w, h, sourcePixels.data, source.getWidth(), source.getHeight(), x, y, opacity);
 }

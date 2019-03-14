@@ -1,6 +1,7 @@
-package com.zarbosoft.pyxyzygy.app.config;
+package com.zarbosoft.pyxyzygy.seed.model.v0;
 
 import com.zarbosoft.interface1.Configuration;
+import com.zarbosoft.luxem.write.RawWriter;
 import javafx.scene.paint.Color;
 
 @Configuration(name = "true-color")

@@ -1,14 +1,13 @@
 package com.zarbosoft.pyxyzygy.generate.model.v0.premodel;
 
 import com.zarbosoft.interface1.Configuration;
-
-import java.util.List;
+import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
 
 @Configuration
-public class Project extends ProjectObject {
+public class PaletteColor extends ProjectObject {
 	@Configuration
-	public List<ProjectNode> top;
+	public int index;
 
 	@Configuration
-	public List<Palette> palettes;
+	public TrueColor color;
 }

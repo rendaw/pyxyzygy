@@ -1,10 +1,11 @@
 package com.zarbosoft.pyxyzygy.app;
 
-import com.zarbosoft.pyxyzygy.app.config.TrueColor;
+import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.parts.editor.Editor;
 import com.zarbosoft.pyxyzygy.app.parts.structure.Structure;
 import com.zarbosoft.pyxyzygy.app.parts.timeline.Timeline;
+import com.zarbosoft.pyxyzygy.app.widgets.ContentReplacer;
 import com.zarbosoft.pyxyzygy.app.widgets.TitledPane;
 import com.zarbosoft.pyxyzygy.app.widgets.TrueColorPicker;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
@@ -15,6 +16,7 @@ import com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage.TrueColorImageNodeWrap
 import com.zarbosoft.pyxyzygy.core.model.v0.*;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.Pair;
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ChangeListener;
@@ -39,9 +41,10 @@ public class Window {
 	public List<FrameMapEntry> timeMap;
 	public SimpleObjectProperty<EditHandle> selectedForEdit = new SimpleObjectProperty<>();
 	public SimpleObjectProperty<CanvasHandle> selectedForView = new SimpleObjectProperty<>();
-	public TabPane leftTabs;
 	public Set<KeyCode> pressed = new HashSet<>();
 	public Editor editor;
+	public ContentReplacer layerTabContent = new ContentReplacer();
+	private Tab layerTab;
 
 	public void start(ProjectContext context, Stage primaryStage, boolean main) {
 		this.stage = stage;
@@ -80,11 +83,14 @@ public class Window {
 			}
 		});
 
-		leftTabs = new TabPane();
+		TabPane leftTabs = new TabPane();
 		leftTabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
 		final Tab structureTab = new Tab("Structure");
 		final Tab configTab = new Tab("Config");
-		leftTabs.getTabs().addAll(structureTab, configTab);
+		layerTab = new Tab("Layer");
+		layerTab.disableProperty().bind(Bindings.isEmpty(layerTabContent.getChildren()));
+		layerTab.setContent(layerTabContent);
+		leftTabs.getTabs().addAll(structureTab, layerTab, configTab);
 
 		Structure structure = new Structure(context, this, main);
 		structureTab.setContent(structure.getWidget());

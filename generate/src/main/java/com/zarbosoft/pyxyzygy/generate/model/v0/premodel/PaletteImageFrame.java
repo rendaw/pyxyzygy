@@ -6,11 +6,11 @@ import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import java.util.Map;
 
 @Configuration
-public class TrueColorImageFrame extends ProjectObject {
+public class PaletteImageFrame extends ProjectObject {
 	@Configuration
 	public int length;
 	@Configuration
 	public Vector offset;
 	@Configuration
-	public Map<Long, TrueColorTileBase> tiles;
+	public Map<Long, PaletteTileBase> tiles;
 }

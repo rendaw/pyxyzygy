@@ -5,6 +5,8 @@ import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.core.model.v0.GroupLayer;
 import com.zarbosoft.pyxyzygy.core.model.v0.GroupPositionFrame;
 import com.zarbosoft.pyxyzygy.core.model.v0.GroupTimeFrame;
+import com.zarbosoft.pyxyzygy.seed.model.Listener;
+import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 
@@ -16,14 +18,14 @@ import static com.zarbosoft.pyxyzygy.app.Misc.moveTo;
 
 public class GroupLayerCanvasHandle extends CanvasHandle {
 	private final CanvasHandle parent;
+	private final Listener.ListAdd<GroupLayer, GroupPositionFrame> positionAddListener;
+	private final Listener.ListRemove<GroupLayer> positionRemoveListener;
+	private final Listener.ListMoveTo<GroupLayer> positionMoveListener;
+	private final Listener.ListAdd<GroupLayer, GroupTimeFrame> timeAddListener;
+	private final Listener.ListRemove<GroupLayer> timeRemoveListener;
+	private final Listener.ListMoveTo<GroupLayer> timeMoveListener;
 	private int zoom;
 	private CanvasHandle childCanvas;
-	private final GroupLayer.PositionFramesAddListener positionAddListener;
-	private final GroupLayer.PositionFramesRemoveListener positionRemoveListener;
-	private final GroupLayer.PositionFramesMoveToListener positionMoveListener;
-	private final GroupLayer.TimeFramesAddListener timeAddListener;
-	private final GroupLayer.TimeFramesRemoveListener timeRemoveListener;
-	private final GroupLayer.TimeFramesMoveToListener timeMoveListener;
 	private final List<Runnable> positionCleanup;
 	private final List<Runnable> timeCleanup;
 	private GroupLayerWrapper wrapper;
@@ -58,13 +60,14 @@ public class GroupLayerCanvasHandle extends CanvasHandle {
 			}
 		});
 		// Don't need clear listeners because clear should never happen (1 frame must always be left)
-		this.positionAddListener = wrapper.node.addPositionFramesAddListeners((target, at, value) -> {
+		positionAddListener = wrapper.node.addPositionFramesAddListeners((target, at, value) -> {
 			updatePosition(context);
 			positionCleanup.addAll(at, value.stream().map(v -> {
-				GroupPositionFrame.LengthSetListener lengthListener = v.addLengthSetListeners((target1, value1) -> {
-					updatePosition(context);
-				});
-				GroupPositionFrame.OffsetSetListener offsetListener =
+				Listener.ScalarSet<GroupPositionFrame, Integer> lengthListener =
+						v.addLengthSetListeners((target1, value1) -> {
+							updatePosition(context);
+						});
+				Listener.ScalarSet<GroupPositionFrame, Vector> offsetListener =
 						v.addOffsetSetListeners((target12, value12) -> updatePosition(context));
 				return (Runnable) () -> {
 					v.removeLengthSetListeners(lengthListener);
@@ -72,23 +75,24 @@ public class GroupLayerCanvasHandle extends CanvasHandle {
 				};
 			}).collect(Collectors.toList()));
 		});
-		this.positionRemoveListener = wrapper.node.addPositionFramesRemoveListeners((target, at, count) -> {
+		positionRemoveListener = wrapper.node.addPositionFramesRemoveListeners((target, at, count) -> {
 			updatePosition(context);
 			List<Runnable> tempClean = positionCleanup.subList(at, at + count);
 			tempClean.forEach(r -> r.run());
 			tempClean.clear();
 		});
-		this.positionMoveListener = wrapper.node.addPositionFramesMoveToListeners((target, source, count, dest) -> {
+		positionMoveListener = wrapper.node.addPositionFramesMoveToListeners((target, source, count, dest) -> {
 			updatePosition(context);
 			moveTo(positionCleanup, source, count, dest);
 		});
-		this.timeAddListener = wrapper.node.addTimeFramesAddListeners((target, at, value) -> {
+		timeAddListener = wrapper.node.addTimeFramesAddListeners((target, at, value) -> {
 			updateTime(context);
 			timeCleanup.addAll(at, value.stream().map(v -> {
-				GroupTimeFrame.LengthSetListener lengthListener = v.addLengthSetListeners((target1, value1) -> {
-					updatePosition(context);
-				});
-				GroupTimeFrame.InnerOffsetSetListener offsetListener =
+				Listener.ScalarSet<GroupTimeFrame, Integer> lengthListener =
+						v.addLengthSetListeners((target1, value1) -> {
+							updatePosition(context);
+						});
+				Listener.ScalarSet<GroupTimeFrame, Integer> offsetListener =
 						v.addInnerOffsetSetListeners((target12, value12) -> updatePosition(context));
 				return (Runnable) () -> {
 					v.removeLengthSetListeners(lengthListener);
@@ -96,13 +100,13 @@ public class GroupLayerCanvasHandle extends CanvasHandle {
 				};
 			}).collect(Collectors.toList()));
 		});
-		this.timeRemoveListener = wrapper.node.addTimeFramesRemoveListeners((target, at, count) -> {
+		timeRemoveListener = wrapper.node.addTimeFramesRemoveListeners((target, at, count) -> {
 			updateTime(context);
 			List<Runnable> tempClean = timeCleanup.subList(at, at + count);
 			tempClean.forEach(r -> r.run());
 			tempClean.clear();
 		});
-		this.timeMoveListener = wrapper.node.addTimeFramesMoveToListeners((target, source, count, dest) -> {
+		timeMoveListener = wrapper.node.addTimeFramesMoveToListeners((target, source, count, dest) -> {
 			updateTime(context);
 			moveTo(timeCleanup, source, count, dest);
 		});

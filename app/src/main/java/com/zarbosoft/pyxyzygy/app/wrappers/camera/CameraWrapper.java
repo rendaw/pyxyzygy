@@ -10,6 +10,7 @@ import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeWrapper;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.pyxyzygy.core.model.v0.Camera;
 import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
+import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.geometry.Insets;
@@ -27,10 +28,10 @@ import java.util.function.BiConsumer;
 
 public class CameraWrapper extends GroupNodeWrapper {
 	public final Camera node;
-	private final Camera.WidthSetListener widthListener;
-	private final Camera.HeightSetListener heightListener;
 	public final SimpleIntegerProperty width = new SimpleIntegerProperty(0);
 	public final SimpleIntegerProperty height = new SimpleIntegerProperty(0);
+	private final Listener.ScalarSet<Camera, Integer> heightListener;
+	private final Listener.ScalarSet<Camera, Integer> widthListener;
 	public boolean adjustViewport = false;
 
 	public CameraNodeConfig config;
@@ -39,13 +40,13 @@ public class CameraWrapper extends GroupNodeWrapper {
 		super(context, parent, parentIndex, node);
 		this.parentIndex = parentIndex;
 		this.node = node;
-		this.widthListener = node.addWidthSetListeners((target, value) -> {
+		widthListener = node.addWidthSetListeners((target, value) -> {
 			width.set(value);
 		});
 		width.addListener((observable, oldValue, newValue) -> context.history.change(c -> c
 				.camera(node)
 				.widthSet(newValue.intValue())));
-		this.heightListener = node.addHeightSetListeners((target, value) -> {
+		heightListener = node.addHeightSetListeners((target, value) -> {
 			height.set(value);
 		});
 		height.addListener((observable, oldValue, newValue) -> context.history.change(c -> c

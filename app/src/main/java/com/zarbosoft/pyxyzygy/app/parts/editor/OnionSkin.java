@@ -2,7 +2,7 @@ package com.zarbosoft.pyxyzygy.app.parts.editor;
 
 import com.google.common.base.Objects;
 import com.zarbosoft.pyxyzygy.app.*;
-import com.zarbosoft.pyxyzygy.app.config.TrueColor;
+import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
@@ -11,8 +11,6 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.image.ImageView;
-
-import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 
 public class OnionSkin {
 	final ImageView widget = NearestNeighborImageView.create();
@@ -74,7 +72,7 @@ public class OnionSkin {
 				.build();
 		final TrueColorImage buffer =
 				TrueColorImage.create((int) renderBounds.width + 1, (int) renderBounds.height + 1);
-		Render.render(context, editHandle.getWrapper().getValue(), buffer, frame, renderBounds.quantize(1), 1);
+		Render.render(context, editHandle.getWrapper().getValue(), buffer, frame, renderBounds.divideContains(1), 1);
 		widget.setImage(HelperJFX.toImage(buffer, color));
 		widget.setOpacity(color.toJfx().getOpacity());
 		widget.setX(renderBounds.x);

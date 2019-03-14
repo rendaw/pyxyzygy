@@ -1,7 +1,7 @@
 package com.zarbosoft.pyxyzygy.app;
 
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
-import com.zarbosoft.pyxyzygy.app.model.v0.Tile;
+import com.zarbosoft.pyxyzygy.app.model.v0.TrueColorTile;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.pyxyzygy.core.model.v0.*;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
@@ -51,10 +51,10 @@ public class Render {
 	public static Rectangle render(
 			ProjectContext context, TrueColorImage gc, TrueColorImageFrame frame, Rectangle crop, double opacity
 	) {
-		Rectangle tileBounds = crop.quantize(context.tileSize);
+		Rectangle tileBounds = crop.divideContains(context.tileSize);
 		for (int x = 0; x < tileBounds.width; ++x) {
 			for (int y = 0; y < tileBounds.height; ++y) {
-				Tile tile = (Tile) frame.tilesGet(tileBounds.corner().plus(x, y).to1D());
+				TrueColorTile tile = (TrueColorTile) frame.tilesGet(tileBounds.corner().plus(x, y).to1D());
 				if (tile == null)
 					continue;
 				final int renderX = (x + tileBounds.x) * context.tileSize - crop.x;

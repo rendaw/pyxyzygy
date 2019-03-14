@@ -8,6 +8,7 @@ import com.zarbosoft.pyxyzygy.app.wrappers.camera.CameraWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage.TrueColorImageNodeWrapper;
 import com.zarbosoft.pyxyzygy.core.model.v0.*;
+import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.rendaw.common.Assertion;
 import javafx.beans.Observable;
 import javafx.beans.binding.Bindings;
@@ -693,21 +694,21 @@ public class Timeline {
 			throw new Assertion();
 		} else if (object instanceof GroupNode) {
 			return new TimeAdapterNode() {
-				private GroupNode.LayersClearListener layersClearListener;
-				private GroupNode.LayersMoveToListener layersMoveToListener;
-				private GroupNode.LayersRemoveListener layersRemoveListener;
-				private GroupNode.LayersAddListener layersAddListener;
+				private final Listener.Clear<GroupNode> layersClearListener;
+				private final Listener.ListMoveTo<GroupNode> layersMoveToListener;
+				private final Listener.ListRemove<GroupNode> layersRemoveListener;
+				private final Listener.ListAdd<GroupNode, GroupLayer> layersAddListener;
 				TimeAdapterNode child;
 
 				{
-					layersAddListener = (target, at, value) -> relocate();
-					((GroupNode) object).addLayersAddListeners(layersAddListener);
-					layersRemoveListener = (target, at, count) -> relocate();
-					((GroupNode) object).addLayersRemoveListeners(layersRemoveListener);
-					layersMoveToListener = (target, source, count, dest) -> relocate();
-					((GroupNode) object).addLayersMoveToListeners(layersMoveToListener);
-					layersClearListener = target -> relocate();
-					((GroupNode) object).addLayersClearListeners(layersClearListener);
+					layersAddListener =
+					((GroupNode) object).addLayersAddListeners((target, at, value) -> relocate());
+					layersRemoveListener =
+					((GroupNode) object).addLayersRemoveListeners((target, at, count) -> relocate());
+					layersMoveToListener =
+					((GroupNode) object).addLayersMoveToListeners((target, source, count, dest) -> relocate());
+					layersClearListener =
+					((GroupNode) object).addLayersClearListeners(target -> relocate());
 				}
 
 				public void relocate() {
@@ -749,7 +750,7 @@ public class Timeline {
 			};
 		} else if (object instanceof GroupLayer) {
 			return new TimeAdapterNode() {
-				private GroupLayer.InnerSetListener innerSetListener;
+				private final Listener.ScalarSet<GroupLayer, ProjectNode> innerSetListener;
 				Runnable framesCleanup;
 				private List<Runnable> frameCleanup = new ArrayList<>();
 				private TimeAdapterNode child;
@@ -758,9 +759,8 @@ public class Timeline {
 				{
 					child = createTimeHandle(((GroupLayer) object).inner());
 
-					innerSetListener = new GroupLayer.InnerSetListener() {
-						@Override
-						public void accept(GroupLayer target, ProjectNode value) {
+					innerSetListener =
+					((GroupLayer) object).addInnerSetListeners((GroupLayer target, ProjectNode value) ->{
 							if (child != null)
 								child.remove();
 							if (value ==
@@ -773,17 +773,16 @@ public class Timeline {
 								child = createEndTimeHandle();
 							recalcTimes();
 						}
-					};
-					((GroupLayer) object).addInnerSetListeners(innerSetListener);
+					);
 
 					suppressRecalc += 1;
 					framesCleanup = ((GroupLayer) object).mirrorTimeFrames(frameCleanup, frame -> {
 						suppressRecalc += 1;
-						GroupTimeFrame.InnerOffsetSetListener innerOffsetSetListener =
+						Listener.ScalarSet<GroupTimeFrame, Integer> innerOffsetSetListener =
 								frame.addInnerOffsetSetListeners((target, value) -> recalcTimes());
-						GroupTimeFrame.LengthSetListener lengthSetListener =
+						Listener.ScalarSet<GroupTimeFrame, Integer> lengthSetListener =
 								frame.addLengthSetListeners((target, value) -> recalcTimes());
-						GroupTimeFrame.InnerLoopSetListener loopListener =
+						Listener.ScalarSet<GroupTimeFrame, Integer> loopListener =
 								frame.addInnerLoopSetListeners((target, value) -> recalcTimes());
 						suppressRecalc -= 1;
 						return () -> {

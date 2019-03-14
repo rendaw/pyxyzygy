@@ -1,5 +1,6 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.camera;
 
+import com.squareup.gifencoder.Color;
 import com.squareup.gifencoder.GifEncoder;
 import com.squareup.gifencoder.Image;
 import com.squareup.gifencoder.ImageOptions;
@@ -13,6 +14,7 @@ import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeEditHandle;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.ToolMove;
 import com.zarbosoft.pyxyzygy.core.model.v0.Camera;
+import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.Tab;
@@ -81,9 +83,10 @@ public class CameraEditHandle extends GroupNodeEditHandle {
 									.addListener((observable, oldValue, newValue) -> context.history.finishChange());
 						})
 						.intSpinner("End frame", 1, 99999, s -> {
-							Camera.EndSetListener listener = wrapper.node.addEndSetListeners((target, value) -> s
-									.getValueFactory()
-									.setValue(value));
+							Listener.ScalarSet<Camera, Integer> listener =
+									wrapper.node.addEndSetListeners((target, value) -> s
+											.getValueFactory()
+											.setValue(value));
 							cleanup.add(() -> wrapper.node.removeEndSetListeners(listener));
 							s
 									.getValueFactory()
@@ -96,7 +99,7 @@ public class CameraEditHandle extends GroupNodeEditHandle {
 									.addListener((observable, oldValue, newValue) -> context.history.finishChange());
 						})
 						.doubleSpinner("Framerate", 1, 999, 1, s -> {
-							Camera.FrameRateSetListener listener =
+							Listener.ScalarSet<Camera, Integer> listener =
 									wrapper.node.addFrameRateSetListeners((target, value) -> s
 											.getValueFactory()
 											.setValue(value / 10.0));
@@ -216,8 +219,8 @@ public class CameraEditHandle extends GroupNodeEditHandle {
 											options.setDelay(TimeUnit.MICROSECONDS.convert(1, TimeUnit.SECONDS) /
 													wrapper.node.frameRate(), TimeUnit.MICROSECONDS);
 
-											com.squareup.gifencoder.Color[][] rgb =
-													new com.squareup.gifencoder.Color[wrapper.node.height()][wrapper.node
+											Color[][] rgb =
+													new Color[wrapper.node.height()][wrapper.node
 															.width()];
 											wrapper.render(context, window, (i, canvas) -> {
 												byte[] bgra = canvas.data();
@@ -228,7 +231,7 @@ public class CameraEditHandle extends GroupNodeEditHandle {
 														double g = Byte.toUnsignedInt(bgra[base + 1]) / 255.0;
 														double r = Byte.toUnsignedInt(bgra[base + 2]) / 255.0;
 														double a = Byte.toUnsignedInt(bgra[base + 3]) / 255.0;
-														rgb[y][x] = new com.squareup.gifencoder.Color(r * a + (1.0 - a),
+														rgb[y][x] = new Color(r * a + (1.0 - a),
 																g * a + (1.0 - a),
 																b * a + (1.0 - a)
 														);

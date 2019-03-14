@@ -1,23 +1,13 @@
 package com.zarbosoft.pyxyzygy.app.config;
 
 import com.zarbosoft.interface1.Configuration;
+import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.beans.property.SimpleStringProperty;
 
 @Configuration(name = "true-color-brush")
-public class TrueColorBrush {
-	@Configuration
-	public SimpleIntegerProperty size = new SimpleIntegerProperty();
-
-	public double sizeInPixels() {
-		return size.get() / 10.0;
-	}
-
-	@Configuration
-	public SimpleStringProperty name = new SimpleStringProperty();
-
+public class TrueColorBrush extends BaseBrush{
 	@Configuration
 	public SimpleObjectProperty<TrueColor> color = new SimpleObjectProperty<>();
 

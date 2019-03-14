@@ -7,13 +7,16 @@ import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage.TrueColorImageCanvasHandle;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.pyxyzygy.core.model.v0.*;
+import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import com.zarbosoft.rendaw.common.ChainComparator;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
+import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
@@ -50,53 +53,40 @@ public class Structure {
 	Set<Wrapper> taggedLifted = new HashSet<>();
 	Set<Wrapper> taggedCopied = new HashSet<>();
 	Hotkeys.Action[] actions = new Hotkeys.Action[] {
-			new Hotkeys.Action(Hotkeys.Scope.STRUCTURE,
-					"link",
-					"Select to link", Global.copyHotkey
-			) {
+			new Hotkeys.Action(Hotkeys.Scope.STRUCTURE, "link", "Select to link", Global.copyHotkey) {
 				@Override
 				public void run(ProjectContext context, Window window) {
 					link();
 				}
-			},
-			new Hotkeys.Action(Hotkeys.Scope.STRUCTURE,
-					"lift",
-					"Lift node", Global.cutHotkey
-			) {
-				@Override
-				public void run(ProjectContext context, Window window) {
-					lift();
-				}
-			},
-			new Hotkeys.Action(Hotkeys.Scope.STRUCTURE,
-					"place-auto",
-					"Place node or link", Global.pasteHotkey
-			) {
-				@Override
-				public void run(ProjectContext context, Window window) {
-					placeAuto();
-				}
-			},
-			new Hotkeys.Action(Hotkeys.Scope.STRUCTURE,
-					"duplicate",
-					"Duplicate node",
-					Hotkeys.Hotkey.create(KeyCode.D, true, false, false)
-			) {
-				@Override
-				public void run(ProjectContext context, Window window) {
-					duplicate();
-				}
-			},
-			new Hotkeys.Action(Hotkeys.Scope.STRUCTURE,
-					"delete",
-					"Delete node",
-					Hotkeys.Hotkey.create(KeyCode.DELETE, false, false, false)
-			) {
-				@Override
-				public void run(ProjectContext context, Window window) {
-					duplicate();
-				}
-			}
+			}, new Hotkeys.Action(Hotkeys.Scope.STRUCTURE, "lift", "Lift node", Global.cutHotkey) {
+		@Override
+		public void run(ProjectContext context, Window window) {
+			lift();
+		}
+	}, new Hotkeys.Action(Hotkeys.Scope.STRUCTURE, "place-auto", "Place node or link", Global.pasteHotkey) {
+		@Override
+		public void run(ProjectContext context, Window window) {
+			placeAuto();
+		}
+	}, new Hotkeys.Action(Hotkeys.Scope.STRUCTURE,
+			"duplicate",
+			"Duplicate node",
+			Hotkeys.Hotkey.create(KeyCode.D, true, false, false)
+	) {
+		@Override
+		public void run(ProjectContext context, Window window) {
+			duplicate();
+		}
+	}, new Hotkeys.Action(Hotkeys.Scope.STRUCTURE,
+			"delete",
+			"Delete node",
+			Hotkeys.Hotkey.create(KeyCode.DELETE, false, false, false)
+	) {
+		@Override
+		public void run(ProjectContext context, Window window) {
+			duplicate();
+		}
+	}
 	};
 
 	public void selectForEdit(Wrapper wrapper) {
@@ -114,11 +104,11 @@ public class Structure {
 			parent = parent.getParent();
 		}
 		if (found) {
-			window.selectedForEdit.set(wrapper.buildEditControls(context, window, window.leftTabs));
+			window.selectedForEdit.set(wrapper.buildEditControls(context, window));
 		} else {
 			window.selectedForEdit.set(null);
 			selectForView(preParent);
-			window.selectedForEdit.set(wrapper.buildEditControls(context, window, window.leftTabs));
+			window.selectedForEdit.set(wrapper.buildEditControls(context, window));
 		}
 		if (main)
 			context.config.editPath = getPath(wrapper.tree.get()).collect(Collectors.toList());
@@ -225,7 +215,7 @@ public class Structure {
 					else
 						showGrabState.setImage(null);
 				};
-				ProjectNode.NameSetListener nameSetListener = (target, value) -> {
+				Listener.ScalarSet<ProjectNode, String> nameSetListener = (target, value) -> {
 					setText(value);
 				};
 				final HBox graphic = new HBox();
@@ -286,7 +276,7 @@ public class Structure {
 				}
 			};
 		});
-		MenuItem addCamera = new MenuItem("Add Camera");
+		MenuItem addCamera = new MenuItem("Add camera");
 		addCamera.setOnAction(e -> {
 			Camera camera = Camera.create(context);
 			camera.initialNameSet(context, uniqueName("Camera"));
@@ -297,25 +287,54 @@ public class Structure {
 			camera.initialWidthSet(context, 320);
 			context.history.change(c -> c.project(context.project).topAdd(camera));
 		});
-		MenuItem addGroup = new MenuItem("Add Group");
+		MenuItem addGroup = new MenuItem("Add group");
 		addGroup.setOnAction(e -> {
 			GroupNode group = GroupNode.create(context);
 			group.initialOpacitySet(context, opacityMax);
 			group.initialNameSet(context, uniqueName("Group"));
 			addNew(group);
 		});
-		MenuItem addImage = new MenuItem("Add True Color Layer");
+		MenuItem addImage = new MenuItem("Add true color layer");
 		addImage.setOnAction(e -> {
 			TrueColorImageNode image = TrueColorImageNode.create(context);
 			image.initialOpacitySet(context, opacityMax);
-			image.initialNameSet(context, uniqueName("True color"));
+			image.initialNameSet(context, uniqueName("True color layer"));
 			TrueColorImageFrame frame = TrueColorImageFrame.create(context);
 			frame.initialLengthSet(context, -1);
 			frame.initialOffsetSet(context, new Vector(0, 0));
 			image.initialFramesAdd(context, ImmutableList.of(frame));
 			addNew(image);
 		});
-		MenuItem importImage = new MenuItem("Import True Color PNG");
+		MenuItem addPalette = new MenuItem("Add palette layer");
+		addPalette.setOnAction(e -> {
+			List<Palette> source = new ArrayList<>(context.project.palettes());
+			source.add(null);
+			ObservableList<String> show = FXCollections.observableArrayList();
+			for (Palette palette : source)
+				show.add(palette == null ? "New palette..." : palette.name());
+			ChoiceDialog<Palette> dialog = new ChoiceDialog<>();
+			Optional<Palette> result = dialog.showAndWait();
+			if (!result.isPresent())
+				return;
+			Palette palette = result.get();
+			if (palette == null) {
+				palette = Palette.create(context);
+				palette.initialNameSet(context, uniqueName("Palette"));
+				Palette finalPalette = palette;
+				context.history.change(c -> c.project(context.project).palettesAdd(finalPalette));
+			}
+			PaletteImageNode image = PaletteImageNode.create(context);
+			image.initialOpacitySet(context, opacityMax);
+			image.initialNameSet(context, uniqueName("Palette layer"));
+			image.initialPaletteSet(context, palette);
+			PaletteImageFrame frame = PaletteImageFrame.create(context);
+			frame.initialLengthSet(context, -1);
+			frame.initialOffsetSet(context, new Vector(0, 0));
+			image.initialFramesAdd(context, ImmutableList.of(frame));
+			addNew(image);
+			context.addPaletteUser(image);
+		});
+		MenuItem importImage = new MenuItem("Import PNG");
 		importImage.setOnAction(e -> {
 			FileChooser fileChooser = new FileChooser();
 			fileChooser.setInitialDirectory(new File(GUILaunch.config.importDir));
@@ -330,6 +349,7 @@ public class Structure {
 				frame.initialOffsetSet(context, new Vector(0, 0));
 				image.initialFramesAdd(context, ImmutableList.of(frame));
 				Rectangle base = new Rectangle(0, 0, data.getWidth(), data.getHeight());
+
 				TrueColorImageCanvasHandle.drop(context, frame, base.plus(base.span().divide(2)), data);
 				addNew(image);
 			});

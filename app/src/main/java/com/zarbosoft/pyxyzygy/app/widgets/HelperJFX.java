@@ -4,8 +4,10 @@ import com.google.common.base.Throwables;
 import com.zarbosoft.pyxyzygy.app.CustomBinding;
 import com.zarbosoft.pyxyzygy.app.GUILaunch;
 import com.zarbosoft.pyxyzygy.app.Global;
-import com.zarbosoft.pyxyzygy.app.config.TrueColor;
+import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
+import com.zarbosoft.pyxyzygy.core.PaletteColors;
+import com.zarbosoft.pyxyzygy.core.PaletteImage;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.Pair;
@@ -15,16 +17,12 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.image.*;
-import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 
-import java.io.FileNotFoundException;
 import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
@@ -104,6 +102,121 @@ public class HelperJFX {
 		return new MenuButton(null, new ImageView(icon(icon)));
 	}
 
+	private abstract static class NativeReader implements PixelReader {
+		private final int width;
+		private final int height;
+		byte[] premultipliedData;
+		byte[] data;
+
+		protected NativeReader(int width, int height) {
+			this.width = width;
+			this.height = height;
+		}
+
+		@Override
+		public PixelFormat getPixelFormat() {
+			return PixelFormat.getByteBgraInstance();
+		}
+
+		@Override
+		public int getArgb(int x, int y) {
+			throw new Assertion();
+		}
+
+		@Override
+		public Color getColor(int x, int y) {
+			throw new Assertion();
+		}
+
+		abstract byte[] getNativeDataPremultiplied();
+		abstract byte[] getNativeData();
+
+		@Override
+		public <T extends Buffer> void getPixels(
+				int x, int y, int w, int h, WritablePixelFormat<T> pixelformat, T buffer, int scanlineStride
+		) {
+			if (scanlineStride != w * 4)
+				throw new Assertion();
+			byte[] data = pixelformat.isPremultiplied() ? (
+					premultipliedData == null ? premultipliedData = getNativeDataPremultiplied() : premultipliedData
+			) : (this.data == null ? this.data = getNativeData() : this.data);
+			if (w == width) {
+				if (x != 0)
+					throw new Assertion();
+				((ByteBuffer) buffer).put(data, y * width * 4, h * width * 4);
+			} else {
+				if (x + w > width)
+					throw new Assertion();
+				if (y + h > height)
+					throw new Assertion();
+				for (int i = y; i < y + h; ++i) {
+					((ByteBuffer) buffer).put(data, (i * width + x) * 4, scanlineStride);
+				}
+			}
+		}
+
+		@Override
+		public void getPixels(
+				int x,
+				int y,
+				int w,
+				int h,
+				WritablePixelFormat<ByteBuffer> pixelformat,
+				byte[] buffer,
+				int offset,
+				int scanlineStride
+		) {
+			if (scanlineStride != w * 4)
+				throw new Assertion();
+			byte[] data = pixelformat.isPremultiplied() ? (
+					premultipliedData == null ? premultipliedData = getNativeDataPremultiplied() : premultipliedData
+			) : (this.data == null ? this.data = getNativeData() : this.data);
+			if (w == width) {
+				if (x != 0)
+					throw new Assertion();
+				System.arraycopy(data, y * width * 4, buffer, offset, h * width * 4);
+			} else {
+				if (x + w > width)
+					throw new Assertion();
+				if (y + h > height)
+					throw new Assertion();
+				for (int i = y; i < y + h; ++i) {
+					System.arraycopy(data, (i * width + x) * 4, buffer, offset + i * w * 4, scanlineStride);
+				}
+			}
+		}
+
+		@Override
+		public void getPixels(
+				int x,
+				int y,
+				int w,
+				int h,
+				WritablePixelFormat<IntBuffer> pixelformat,
+				int[] buffer,
+				int offset,
+				int scanlineStride
+		) {
+			throw new Assertion();
+		}
+	}
+
+	public static Image toImage(PaletteImage image, PaletteColors palette) {
+		final int width = image.getWidth();
+		final int height = image.getHeight();
+		return new WritableImage(new NativeReader(width, height) {
+			@Override
+			byte[] getNativeDataPremultiplied() {
+				return image.dataPremultiplied(palette);
+			}
+
+			@Override
+			byte[] getNativeData() {
+				return image.data(palette);
+			}
+		}, width, height);
+	}
+
 	public static class IconToggleButton extends ToggleButton {
 		public IconToggleButton(String icon, String hint) {
 			super(null, new ImageView(icon(icon)));
@@ -120,92 +233,15 @@ public class HelperJFX {
 	public static WritableImage toImage(TrueColorImage image) {
 		final int width = image.getWidth();
 		final int height = image.getHeight();
-		return new WritableImage(new PixelReader() {
-			byte[] premultipliedData;
-			byte[] data;
-
+		return new WritableImage(new NativeReader(width, height) {
 			@Override
-			public PixelFormat getPixelFormat() {
-				return PixelFormat.getByteBgraInstance();
+			byte[] getNativeDataPremultiplied() {
+				return image.dataPremultiplied();
 			}
 
 			@Override
-			public int getArgb(int x, int y) {
-				throw new Assertion();
-			}
-
-			@Override
-			public Color getColor(int x, int y) {
-				throw new Assertion();
-			}
-
-			@Override
-			public <T extends Buffer> void getPixels(
-					int x, int y, int w, int h, WritablePixelFormat<T> pixelformat, T buffer, int scanlineStride
-			) {
-				if (scanlineStride != w * 4)
-					throw new Assertion();
-				byte[] data = pixelformat.isPremultiplied() ? (
-						premultipliedData == null ? premultipliedData = image.dataPremultiplied() : premultipliedData
-				) : (this.data == null ? this.data = image.data() : this.data);
-				if (w == width) {
-					if (x != 0)
-						throw new Assertion();
-					((ByteBuffer) buffer).put(data, y * width * 4, h * width * 4);
-				} else {
-					if (x + w > width)
-						throw new Assertion();
-					if (y + h > height)
-						throw new Assertion();
-					for (int i = y; i < y + h; ++i) {
-						((ByteBuffer) buffer).put(data, (i * width + x) * 4, scanlineStride);
-					}
-				}
-			}
-
-			@Override
-			public void getPixels(
-					int x,
-					int y,
-					int w,
-					int h,
-					WritablePixelFormat<ByteBuffer> pixelformat,
-					byte[] buffer,
-					int offset,
-					int scanlineStride
-			) {
-				if (scanlineStride != w * 4)
-					throw new Assertion();
-				byte[] data = pixelformat.isPremultiplied() ? (
-						premultipliedData == null ? premultipliedData = image.dataPremultiplied() : premultipliedData
-				) : (this.data == null ? this.data = image.data() : this.data);
-				if (w == width) {
-					if (x != 0)
-						throw new Assertion();
-					System.arraycopy(data, y * width * 4, buffer, offset, h * width * 4);
-				} else {
-					if (x + w > width)
-						throw new Assertion();
-					if (y + h > height)
-						throw new Assertion();
-					for (int i = y; i < y + h; ++i) {
-						System.arraycopy(data, (i * width + x) * 4, buffer, offset + i * w * 4, scanlineStride);
-					}
-				}
-			}
-
-			@Override
-			public void getPixels(
-					int x,
-					int y,
-					int w,
-					int h,
-					WritablePixelFormat<IntBuffer> pixelformat,
-					int[] buffer,
-					int offset,
-					int scanlineStride
-			) {
-				throw new Assertion();
+			byte[] getNativeData() {
+				return image.data();
 			}
 		}, width, height);
 	}

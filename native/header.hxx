@@ -7,6 +7,10 @@
 %include <std_except.i>
 
 %apply jbyte { uint8_t }
+%apply int { l_t }
+%apply int { c_t }
+%apply int { int32_t }
+%apply int { p_t }
 
 %ignore ROBytes;
 
@@ -55,6 +59,7 @@
 
 #endif
 
+#include <vector>
 #include <cstdint>
 #include <stdexcept>
 
@@ -65,36 +70,83 @@ struct ROBytes {
 	ROBytes(size_t const size, uint8_t const * data);
 };
 
+typedef uint32_t p_t;
+typedef uint32_t c_t;
+typedef int32_t l_t;
+
+class PaletteColors {
+	public:
+		void set(p_t index, c_t color);
+		c_t get(p_t index) const;
+	private:
+		std::vector<std::pair<p_t, c_t>> colors;
+};
+
+class PaletteImage {
+	public:
+		~PaletteImage();
+		static PaletteImage * create(l_t w, l_t h);
+		static PaletteImage * deserialize(char const * path) throw(std::runtime_error);
+		PaletteImage * copy(l_t x, l_t y, l_t w, l_t h) const;
+		ROBytes data(PaletteColors const &palette) const;
+		ROBytes dataPremultiplied(PaletteColors const &palette) const;
+		ROBytes dataTint(PaletteColors const &palette, uint8_t cr, uint8_t cg, uint8_t cb) const;
+		ROBytes dataPremultipliedTint(PaletteColors const &palette, uint8_t cr, uint8_t cg, uint8_t cb) const;
+		l_t getWidth() const;
+		l_t getHeight() const;
+		void clear();
+		void clear(l_t x, l_t y, l_t width, l_t height);
+		void serialize(char const * path) const throw(std::runtime_error);
+		void setPixel(p_t index, l_t x, l_t y);
+		void stroke(p_t index, double x1, double y1, double r1, double x2, double y2, double r2);
+		void removeColor(p_t index);
+		void replace(PaletteImage const & source, int32_t x, int32_t y);
+
+		PaletteImage &operator = (PaletteImage const & other) = delete;
+		PaletteImage &operator = (PaletteImage && other) = delete;
+		PaletteImage(PaletteImage &&other) = delete;
+		PaletteImage(PaletteImage const & other) = delete;
+	private:
+		PaletteImage(l_t w, l_t h, p_t * pixels);
+		template <class T> ROBytes calculateData(T calculate) const;
+
+		l_t const w;
+		l_t const h;
+		p_t * const pixels;
+};
+
 class TrueColorImage {
 	public:
 		~TrueColorImage();
-		static TrueColorImage * create(int w, int h);
+		static TrueColorImage * create(l_t w, l_t h);
 		static TrueColorImage * deserialize(char const * path) throw(std::runtime_error);
-		TrueColorImage * copy(int x, int y, int w, int h) const;
-		ROBytes data();
-		ROBytes dataPremultiplied();
-		ROBytes dataTint(uint8_t cr, uint8_t cg, uint8_t cb);
-		ROBytes dataPremultipliedTint(uint8_t cr, uint8_t cg, uint8_t cb);
-		int getWidth() const;
-		int getHeight() const;
+		TrueColorImage * copy(l_t x, l_t y, l_t w, l_t h) const;
+		ROBytes data() const;
+		ROBytes dataPremultiplied() const;
+		ROBytes dataTint(uint8_t cr, uint8_t cg, uint8_t cb) const;
+		ROBytes dataPremultipliedTint(uint8_t cr, uint8_t cg, uint8_t cb) const;
+		l_t getWidth() const;
+		l_t getHeight() const;
 		void clear();
-		void clear(int x, int y, int width, int height);
+		void clear(l_t x, l_t y, l_t width, l_t height);
 		void serialize(char const * path) const throw(std::runtime_error);
 		void setPixel(uint8_t cr, uint8_t cg, uint8_t cb, uint8_t ca, int x, int y);
 		void strokeSoft(uint8_t cr, uint8_t cg, uint8_t cb, uint8_t ca, double x1, double y1, double r1, double x2, double y2, double r2, double blend);
 		void strokeHard(uint8_t cr, uint8_t cg, uint8_t cb, uint8_t ca, double x1, double y1, double r1, double x2, double y2, double r2, double blend);
-		void compose(TrueColorImage const & source, int x, int y, double opacity);
+		void replace(TrueColorImage const & source, int32_t x, int32_t y);
+		void compose(TrueColorImage const & source, int32_t x, int32_t y, double opacity);
+		void compose(PaletteImage const & source, PaletteColors const & palette, int32_t x, int32_t y, double opacity);
 
 		TrueColorImage &operator = (TrueColorImage const & other) = delete;
 		TrueColorImage &operator = (TrueColorImage && other) = delete;
 		TrueColorImage(TrueColorImage &&other) = delete;
 		TrueColorImage(TrueColorImage const & other) = delete;
 	private:
-		TrueColorImage(int w, int h, uint8_t * pixels);
-		template <class T> ROBytes calculateData(T calculate);
+		TrueColorImage(l_t w, l_t h, uint8_t * pixels);
+		template <class T> ROBytes calculateData(T calculate) const;
 
-		int const w;
-		int const h;
+		l_t const w;
+		l_t const h;
 		uint8_t * const pixels;
 };
 

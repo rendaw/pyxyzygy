@@ -1,13 +1,14 @@
-package com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage;
+package com.zarbosoft.pyxyzygy.app.wrappers.paletteimage;
 
 import com.google.common.collect.Range;
 import com.google.common.collect.Streams;
 import com.zarbosoft.pyxyzygy.app.*;
-import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
-import com.zarbosoft.pyxyzygy.app.config.TrueColorBrush;
+import com.zarbosoft.pyxyzygy.app.config.PaletteBrush;
+import com.zarbosoft.pyxyzygy.app.config.PaletteImageNodeConfig;
 import com.zarbosoft.pyxyzygy.app.config.TrueColorImageNodeConfig;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.ContentReplacer;
+import com.zarbosoft.pyxyzygy.app.widgets.TrueColorPicker;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
 import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.BrushButton;
 import com.zarbosoft.rendaw.common.Assertion;
@@ -40,12 +41,12 @@ import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.pad;
 import static com.zarbosoft.rendaw.common.Common.enumerate;
 
-public class TrueColorImageEditHandle extends EditHandle {
-	final TrueColorImageNodeWrapper wrapper;
+public class PaletteImageEditHandle extends EditHandle {
+	final PaletteImageNodeWrapper wrapper;
 	List<Runnable> cleanup = new ArrayList<>();
 
 	private final Runnable brushesCleanup;
-	private HBox toolbarsBox;
+	private HBox toolbarBox;
 	Group overlay;
 	private final Hotkeys.Action[] actions;
 	Tool tool = null;
@@ -60,8 +61,8 @@ public class TrueColorImageEditHandle extends EditHandle {
 		wrapper.config.brush.set(brush);
 	}
 
-	public TrueColorImageEditHandle(
-			ProjectContext context, Window window, final TrueColorImageNodeWrapper wrapper
+	public PaletteImageEditHandle(
+			ProjectContext context, Window window, final PaletteImageNodeWrapper wrapper
 	) {
 		this.wrapper = wrapper;
 
@@ -70,7 +71,7 @@ public class TrueColorImageEditHandle extends EditHandle {
 		actions = Streams.concat(Stream.of(new Hotkeys.Action(Hotkeys.Scope.CANVAS, "paste", "Paste", pasteHotkey) {
 			@Override
 			public void run(ProjectContext context, Window window) {
-				wrapper.config.tool.set(TrueColorImageNodeConfig.Tool.SELECT);
+				wrapper.config.tool.set(PaletteImageNodeConfig.Tool.SELECT);
 				((ToolSelect) tool).paste(context, window);
 			}
 		}, new Hotkeys.Action(Hotkeys.Scope.CANVAS,
@@ -80,13 +81,13 @@ public class TrueColorImageEditHandle extends EditHandle {
 		) {
 			@Override
 			public void run(ProjectContext context, Window window) {
-				if (wrapper.config.tool.get() == TrueColorImageNodeConfig.Tool.BRUSH) {
+				if (wrapper.config.tool.get() == PaletteImageNodeConfig.Tool.BRUSH) {
 					if (wrapper.config.lastBrush < 0 ||
-							wrapper.config.lastBrush >= GUILaunch.config.trueColorBrushes.size())
+							wrapper.config.lastBrush >= GUILaunch.config.paletteBrushes.size())
 						return;
 					setBrush(wrapper.config.lastBrush);
 				} else {
-					wrapper.config.tool.set(TrueColorImageNodeConfig.Tool.BRUSH);
+					wrapper.config.tool.set(PaletteImageNodeConfig.Tool.BRUSH);
 				}
 			}
 		}, new Hotkeys.Action(Hotkeys.Scope.CANVAS,
@@ -96,7 +97,7 @@ public class TrueColorImageEditHandle extends EditHandle {
 		) {
 			@Override
 			public void run(ProjectContext context, Window window) {
-				wrapper.config.tool.set(TrueColorImageNodeConfig.Tool.SELECT);
+				wrapper.config.tool.set(PaletteImageNodeConfig.Tool.SELECT);
 			}
 		}), enumerate(Stream.of(KeyCode.DIGIT1,
 				KeyCode.DIGIT2,
@@ -115,10 +116,10 @@ public class TrueColorImageEditHandle extends EditHandle {
 		) {
 			@Override
 			public void run(ProjectContext context, Window window) {
-				if (p.first >= GUILaunch.config.trueColorBrushes.size())
+				if (p.first >= GUILaunch.config.paletteBrushes.size())
 					return;
 				setBrush(p.first);
-				wrapper.config.tool.set(TrueColorImageNodeConfig.Tool.BRUSH);
+				wrapper.config.tool.set(PaletteImageNodeConfig.Tool.BRUSH);
 			}
 		})).toArray(Hotkeys.Action[]::new);
 		for (Hotkeys.Action action : actions)
@@ -134,7 +135,7 @@ public class TrueColorImageEditHandle extends EditHandle {
 			public void fire() {
 				if (isSelected())
 					return;
-				wrapper.config.tool.set(TrueColorImageNodeConfig.Tool.SELECT);
+				wrapper.config.tool.set(PaletteImageNodeConfig.Tool.SELECT);
 			}
 		};
 		select.selectedProperty().bind(wrapper.config.tool.isEqualTo(TrueColorImageNodeConfig.Tool.SELECT));
@@ -149,32 +150,29 @@ public class TrueColorImageEditHandle extends EditHandle {
 
 		MenuItem menuNew = new MenuItem("New");
 		menuNew.setOnAction(e -> {
-			TrueColorBrush brush = new TrueColorBrush();
+			PaletteBrush brush = new PaletteBrush();
 			brush.name.set(uniqueName("New brush"));
-			brush.useColor.set(true);
-			brush.color.set(TrueColor.rgba(0, 0, 0, 255));
-			brush.blend.set(1000);
 			brush.size.set(20);
-			GUILaunch.config.trueColorBrushes.add(brush);
-			if (GUILaunch.config.trueColorBrushes.size() == 1) {
+			GUILaunch.config.paletteBrushes.add(brush);
+			if (GUILaunch.config.paletteBrushes.size() == 1) {
 				setBrush(0);
 			}
 		});
 		MenuItem menuDelete = new MenuItem("Delete");
 		BooleanBinding brushSelected =
-				Bindings.createBooleanBinding(() -> wrapper.config.tool.get() == TrueColorImageNodeConfig.Tool.BRUSH &&
+				Bindings.createBooleanBinding(() -> wrapper.config.tool.get() == PaletteImageNodeConfig.Tool.BRUSH &&
 								Range
-										.closedOpen(0, GUILaunch.config.trueColorBrushes.size())
+										.closedOpen(0, GUILaunch.config.paletteBrushes.size())
 										.contains(wrapper.config.brush.get()),
-						GUILaunch.config.trueColorBrushes,
+						GUILaunch.config.paletteBrushes,
 						wrapper.config.tool,
 						wrapper.config.brush
 				);
 		menuDelete.disableProperty().bind(brushSelected);
 		menuDelete.setOnAction(e -> {
-			int index = GUILaunch.config.trueColorBrushes.indexOf(wrapper.config.brush.get());
-			GUILaunch.config.trueColorBrushes.remove(index);
-			if (GUILaunch.config.trueColorBrushes.isEmpty()) {
+			int index = GUILaunch.config.paletteBrushes.indexOf(wrapper.config.brush.get());
+			GUILaunch.config.paletteBrushes.remove(index);
+			if (GUILaunch.config.paletteBrushes.isEmpty()) {
 				setBrush(0);
 			} else {
 				setBrush(Math.max(0, index - 1));
@@ -184,21 +182,21 @@ public class TrueColorImageEditHandle extends EditHandle {
 		menuLeft.disableProperty().bind(brushSelected);
 		menuLeft.setOnAction(e -> {
 			int index = wrapper.config.brush.get();
-			TrueColorBrush brush = GUILaunch.config.trueColorBrushes.get(index);
+			PaletteBrush brush = GUILaunch.config.paletteBrushes.get(index);
 			if (index == 0)
 				return;
-			GUILaunch.config.trueColorBrushes.remove(index);
-			GUILaunch.config.trueColorBrushes.add(index - 1, brush);
+			GUILaunch.config.paletteBrushes.remove(index);
+			GUILaunch.config.paletteBrushes.add(index - 1, brush);
 		});
 		MenuItem menuRight = new MenuItem("Move right");
 		menuRight.disableProperty().bind(brushSelected);
 		menuRight.setOnAction(e -> {
-			int index = GUILaunch.config.trueColorBrushes.indexOf(wrapper.config.brush.get());
-			TrueColorBrush brush = GUILaunch.config.trueColorBrushes.get(index);
-			if (index == GUILaunch.config.trueColorBrushes.size() - 1)
+			int index = GUILaunch.config.paletteBrushes.indexOf(wrapper.config.brush.get());
+			PaletteBrush brush = GUILaunch.config.paletteBrushes.get(index);
+			if (index == GUILaunch.config.paletteBrushes.size() - 1)
 				return;
-			GUILaunch.config.trueColorBrushes.remove(index);
-			GUILaunch.config.trueColorBrushes.add(index + 1, brush);
+			GUILaunch.config.paletteBrushes.remove(index);
+			GUILaunch.config.paletteBrushes.add(index + 1, brush);
 		});
 
 		MenuButton menuButton = new MenuButton(null, new ImageView(icon("menu.png")));
@@ -212,50 +210,51 @@ public class TrueColorImageEditHandle extends EditHandle {
 		menuToolbar.setMaxHeight(Double.MAX_VALUE);
 		menuToolbar.getItems().addAll(menuSpring, menuButton);
 
-		toolbarsBox = new HBox();
-		toolbarsBox.setFillHeight(true);
-		toolbarsBox.getChildren().addAll(selectToolbar, brushToolbar, menuToolbar);
+		toolbarBox = new HBox();
+		toolbarBox.setFillHeight(true);
+		toolbarBox.getChildren().addAll(selectToolbar, brushToolbar, menuToolbar);
 
-		brushesCleanup = Misc.mirror(GUILaunch.config.trueColorBrushes, brushToolbar.getItems(), b -> {
-			return new BrushButton(b.size,
-					new CustomBinding.Indirect<Color, Boolean>()
-							.b(use -> use ? b.color : context.config.trueColor)
-							.b(c -> c.get())
-							.b(c -> c.toJfx())
-							.build1(b.useColor),
-					Bindings.createBooleanBinding(() -> wrapper.config.tool.get() ==
-									TrueColorImageNodeConfig.Tool.BRUSH &&
-									wrapper.config.brush.get() == GUILaunch.config.trueColorBrushes.indexOf(b),
-							wrapper.config.tool,
-							wrapper.config.brush,
-							GUILaunch.config.trueColorBrushes
-					)
-			) {
-				@Override
-				public void selectBrush() {
-					wrapper.config.tool.set(TrueColorImageNodeConfig.Tool.BRUSH);
-					wrapper.config.brush.set(GUILaunch.config.trueColorBrushes.indexOf(b));
-				}
-			};
-		}, Misc.noopConsumer(), Misc.noopConsumer());
+		brushesCleanup =
+				Misc.mirror(GUILaunch.config.paletteBrushes, brushToolbar.getItems(), b -> new BrushButton(b.size,
+						new CustomBinding.Indirect<Color, Integer>()
+								.b(index -> wrapper.node.x)
+								.b(c -> c.get())
+								.b(c -> c.toJfx())
+								.build1(wrapper.config.index),
+						Bindings.createBooleanBinding(() -> wrapper.config.tool.get() ==
+										PaletteImageNodeConfig.Tool.BRUSH &&
+										wrapper.config.brush.get() == GUILaunch.config.trueColorBrushes.indexOf(b),
+								wrapper.config.tool,
+								wrapper.config.brush,
+								GUILaunch.config.trueColorBrushes
+						)
+				), Misc.noopConsumer(), Misc.noopConsumer());
 
 		// Tab
+		TrueColorPicker color = new TrueColorPicker();
 		VBox tabBox = new VBox();
 		tabBox
 				.getChildren()
 				.addAll(new Label("Layer"),
 						new WidgetFormBuilder()
 								.apply(b -> cleanup.add(Misc.nodeFormFields(context, b, wrapper)))
+								.text("Palette name", t -> {
+									cleanup.add(CustomBinding.bindBidirectionalMultiple(new CustomBinding.ScalarBinder<>(wrapper.node.palette()::addNameSetListeners,
+											wrapper.node.palette()::removeNameSetListeners,
+											v -> context.history.change(c -> c.palette(wrapper.node.palette()).nameSet(v))
+									), new CustomBinding.PropertyBinder<>(t.textProperty())));
+								})
+								.span(() -> color )
 								.build(),
 						new Label("Tool"),
 						toolProperties
 				);
 		window.layerTabContent.set(this, pad(tabBox));
 
-		wrapper.config.tool.addListener(new ChangeListener<TrueColorImageNodeConfig.Tool>() {
+		wrapper.config.tool.addListener(new ChangeListener<PaletteImageNodeConfig.Tool>() {
 
 			private ChangeListener<Number> brushListener;
-			private ListChangeListener<TrueColorBrush> brushesListener;
+			private ListChangeListener<PaletteBrush> brushesListener;
 
 			{
 				changed(null, null, wrapper.config.tool.get());
@@ -263,44 +262,45 @@ public class TrueColorImageEditHandle extends EditHandle {
 
 			@Override
 			public void changed(
-					ObservableValue<? extends TrueColorImageNodeConfig.Tool> observable,
-					TrueColorImageNodeConfig.Tool oldValue,
-					TrueColorImageNodeConfig.Tool newValue
+					ObservableValue<? extends PaletteImageNodeConfig.Tool> observable,
+					PaletteImageNodeConfig.Tool oldValue,
+					PaletteImageNodeConfig.Tool newValue
 			) {
 				if (brushListener != null) {
 					wrapper.config.brush.removeListener(brushListener);
 					brushListener = null;
 				}
 				if (brushesListener != null) {
-					GUILaunch.config.trueColorBrushes.removeListener(brushesListener);
+					GUILaunch.config.paletteBrushes.removeListener(brushesListener);
 					brushesListener = null;
 				}
-				if (newValue == TrueColorImageNodeConfig.Tool.SELECT) {
-					setTool(context, window, () -> new ToolSelect(context, window, TrueColorImageEditHandle.this));
-				} else if (newValue == TrueColorImageNodeConfig.Tool.BRUSH) {
+				if (newValue == PaletteImageNodeConfig.Tool.SELECT) {
+					setTool(context, window, () -> new ToolSelect(context, window, PaletteImageEditHandle.this));
+				} else if (newValue == PaletteImageNodeConfig.Tool.BRUSH) {
 					Runnable update = new Runnable() {
-						TrueColorBrush lastBrush;
+						PaletteBrush lastBrush;
 
 						@Override
 						public void run() {
 							int i = wrapper.config.brush.get();
-							if (!Range.closedOpen(0, GUILaunch.config.trueColorBrushes.size()).contains(i))
+							if (!Range.closedOpen(0, GUILaunch.config.paletteBrushes.size()).contains(i))
 								return;
-							TrueColorBrush brush = GUILaunch.config.trueColorBrushes.get(i);
+							PaletteBrush brush = GUILaunch.config.paletteBrushes.get(i);
 							setTool(context,
 									window,
-									() -> new ToolBrush(context, window, TrueColorImageEditHandle.this, brush)
+									() -> new ToolBrush(context, window, PaletteImageEditHandle.this, brush)
 							);
 						}
 					};
 					wrapper.config.brush.addListener((observable1, oldValue1, newValue1) -> update.run());
-					GUILaunch.config.trueColorBrushes.addListener(brushesListener = c -> update.run());
+					GUILaunch.config.paletteBrushes.addListener(brushesListener = c -> update.run());
 					update.run();
 				} else {
 					throw new Assertion();
 				}
 			}
 		});
+
 		cleanup.add(() -> {
 			window.layerTabContent.clear(this);
 		});
@@ -316,7 +316,7 @@ public class TrueColorImageEditHandle extends EditHandle {
 
 	@Override
 	public Node getProperties() {
-		return toolbarsBox;
+		return toolbarBox;
 	}
 
 	@Override

@@ -2,13 +2,13 @@ package com.zarbosoft.pyxyzygy.app.config;
 
 import com.zarbosoft.interface1.Configuration;
 import com.zarbosoft.pyxyzygy.app.ConfigBase;
+import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableMap;
 import javafx.scene.paint.Color;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 

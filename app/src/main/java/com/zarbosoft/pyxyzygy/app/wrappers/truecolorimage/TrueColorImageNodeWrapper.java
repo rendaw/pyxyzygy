@@ -1,79 +1,69 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage;
 
-import com.zarbosoft.pyxyzygy.app.*;
+import com.zarbosoft.pyxyzygy.app.EditHandle;
+import com.zarbosoft.pyxyzygy.app.Window;
+import com.zarbosoft.pyxyzygy.app.Wrapper;
 import com.zarbosoft.pyxyzygy.app.config.NodeConfig;
 import com.zarbosoft.pyxyzygy.app.config.TrueColorImageNodeConfig;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
+import com.zarbosoft.pyxyzygy.app.model.v0.TrueColorTile;
+import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
+import com.zarbosoft.pyxyzygy.app.wrappers.FrameFinder;
+import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.BaseImageNodeWrapper;
+import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.WrapTile;
+import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
-import com.zarbosoft.pyxyzygy.core.model.v0.ProjectObject;
 import com.zarbosoft.pyxyzygy.core.model.v0.TrueColorImageFrame;
 import com.zarbosoft.pyxyzygy.core.model.v0.TrueColorImageNode;
-import com.zarbosoft.rendaw.common.Assertion;
-import javafx.scene.control.TabPane;
-import javafx.scene.control.TreeItem;
+import com.zarbosoft.pyxyzygy.core.model.v0.TrueColorTileBase;
+import com.zarbosoft.pyxyzygy.seed.model.Listener;
+import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
+import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
+import javafx.scene.image.Image;
 
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext.uniqueName1;
 
-public class TrueColorImageNodeWrapper extends Wrapper {
-	public final TrueColorImageNode node;
+public class TrueColorImageNodeWrapper extends BaseImageNodeWrapper<TrueColorImageNode, TrueColorImageFrame, TrueColorTileBase, TrueColorImage> {
 	final TrueColorImageNodeConfig config;
-	private final Wrapper parent;
-	public TrueColorImageCanvasHandle canvasHandle;
+	public static FrameFinder<TrueColorImageNode, TrueColorImageFrame> frameFinder =
+			new FrameFinder<TrueColorImageNode, TrueColorImageFrame>() {
+				@Override
+				public TrueColorImageFrame frameGet(TrueColorImageNode node, int i) {
+					return node.framesGet(i);
+				}
+
+				@Override
+				public int frameCount(TrueColorImageNode node) {
+					return node.framesLength();
+				}
+
+				@Override
+				public int frameLength(TrueColorImageFrame frame) {
+					return frame.length();
+				}
+			};
 
 	// Cache values when there's no canvas
 	public TrueColorImageNodeWrapper(ProjectContext context, Wrapper parent, int parentIndex, TrueColorImageNode node) {
-		this.node = node;
+		super(parent, parentIndex, node, frameFinder);
 		this.config = (TrueColorImageNodeConfig) context.config.nodes.computeIfAbsent(node.id(),
 				id -> new TrueColorImageNodeConfig(context)
 		);
-		this.parent = parent;
-		this.parentIndex = parentIndex;
-		tree.set(new TreeItem<>(this));
 	}
 
 	@Override
-	public Wrapper getParent() {
-		return parent;
-	}
-
-	@Override
-	public ProjectObject getValue() {
-		return node;
+	public EditHandle buildEditControls(ProjectContext context, Window window) {
+		return new TrueColorImageEditHandle(context, window, this);
 	}
 
 	@Override
 	public NodeConfig getConfig() {
 		return config;
-	}
-
-	@Override
-	public CanvasHandle buildCanvas(ProjectContext context, CanvasHandle parent) {
-		if (canvasHandle == null)
-			canvasHandle = new TrueColorImageCanvasHandle(context, parent, this);
-		return canvasHandle;
-	}
-
-	@Override
-	public EditHandle buildEditControls(
-			ProjectContext context, Window window, TabPane tabPane
-	) {
-		return new TrueColorImageEditHandle(context, window,this, tabPane);
-	}
-
-	@Override
-	public boolean addChildren(ProjectContext context, int at, List<ProjectNode> child) {
-		return false;
-	}
-
-	@Override
-	public void delete(ProjectContext context) {
-		if (parent != null)
-			parent.removeChild(context, parentIndex);
-		else
-			context.history.change(c -> c.project(context.project).topRemove(parentIndex, 1));
 	}
 
 	@Override
@@ -91,42 +81,131 @@ public class TrueColorImageNodeWrapper extends Wrapper {
 		return clone;
 	}
 
-	public static class FrameResult {
-		public final TrueColorImageFrame frame;
-		public final int at;
-		public final int frameIndex;
-
-		public FrameResult(TrueColorImageFrame frame, int at, int frameIndex) {
-			this.frame = frame;
-			this.at = at;
-			this.frameIndex = frameIndex;
-		}
+	@Override
+	public <I> Runnable mirrorFrames(
+			TrueColorImageNode node,
+			List<I> list,
+			Function<TrueColorImageFrame, I> create,
+			Consumer<I> remove,
+			Consumer<Integer> change
+	) {
+		return node.mirrorFrames(list, create, remove, change);
 	}
 
-	public static FrameResult findFrame(TrueColorImageNode node, int frame) {
-		int at = 0;
-		for (int i = 0; i < node.framesLength(); ++i) {
-			TrueColorImageFrame pos = node.frames().get(i);
-			if ((i == node.framesLength() - 1) || (frame >= at && (pos.length() == -1 || frame < at + pos.length()))) {
-				return new FrameResult(pos, at, i);
+	@Override
+	protected Listener.ScalarSet<TrueColorImageFrame, Vector> addFrameOffsetSetListener(
+			TrueColorImageFrame frame, Listener.ScalarSet<TrueColorImageFrame, Vector> listener
+	) {
+		return frame.addOffsetSetListeners(listener);
+	}
+
+	@Override
+	public Listener.ScalarSet<TrueColorImageFrame, Integer> addFrameLengthSetListener(
+			TrueColorImageFrame frame, Listener.ScalarSet<TrueColorImageFrame, Integer> listener
+	) {
+		return frame.addLengthSetListeners(listener);
+	}
+
+	@Override
+	public void removeFrameOffsetSetListener(
+			TrueColorImageFrame frame, Listener.ScalarSet<TrueColorImageFrame, Vector> listener
+	) {
+		frame.removeOffsetSetListeners(listener);
+	}
+
+	@Override
+	public void removeFrameLengthSetListener(
+			TrueColorImageFrame frame, Listener.ScalarSet<TrueColorImageFrame, Integer> listener
+	) {
+		frame.removeLengthSetListeners(listener);
+	}
+
+	@Override
+	public Listener.MapPutAll<TrueColorImageFrame, Long, TrueColorTileBase> addFrameTilesPutAllListener(
+			TrueColorImageFrame frame, Listener.MapPutAll<TrueColorImageFrame, Long, TrueColorTileBase> listener
+	) {
+		return frame.addTilesPutAllListeners(listener);
+	}
+
+	@Override
+	public Listener.Clear<TrueColorImageFrame> addFrameTilesClearListener(
+			TrueColorImageFrame frame, Listener.Clear<TrueColorImageFrame> listener
+	) {
+		return frame.addTilesClearListeners(listener);
+	}
+
+	@Override
+	public void removeFrameTilesPutAllListener(
+			TrueColorImageFrame frame, Listener.MapPutAll<TrueColorImageFrame, Long, TrueColorTileBase> listener
+	) {
+		frame.removeTilesPutAllListeners(listener);
+	}
+
+	@Override
+	public void removeFrameTilesClearListener(
+			TrueColorImageFrame frame, Listener.Clear<TrueColorImageFrame> listener
+	) {
+		frame.removeTilesClearListeners(listener);
+	}
+
+	@Override
+	public WrapTile<TrueColorTileBase> createWrapTile(int x, int y) {
+		return new WrapTile<TrueColorTileBase>(x, y) {
+			@Override
+			public Image getImage(ProjectContext context, TrueColorTileBase tile) {
+				return HelperJFX.toImage(((TrueColorTile) tile).getData(context));
 			}
-			at += pos.length();
+		};
+	}
+
+	@Override
+	public TrueColorTileBase tileGet(TrueColorImageFrame frame, long key) {
+		return frame.tilesGet(key);
+	}
+
+	@Override
+	public void renderCompose(
+			ProjectContext context, TrueColorImage gc, TrueColorTileBase tile, int x, int y
+	) {
+		TrueColorImage data = ((TrueColorTile) tile).getData(context);
+		gc.compose(data, x, y, (float) 1);
+	}
+
+	@Override
+	public void imageCompose(TrueColorImage image, TrueColorImage other, int x, int y) {
+		image.compose(other, x, y, 1);
+	}
+
+	@Override
+	public void drop(
+			ProjectContext context, TrueColorImageFrame frame, Rectangle unitBounds, TrueColorImage image
+	) {
+		for (int x = 0; x < unitBounds.width; ++x) {
+			for (int y = 0; y < unitBounds.height; ++y) {
+				final int x0 = x;
+				final int y0 = y;
+				TrueColorImage shot =
+						image.copy(x0 * context.tileSize, y0 * context.tileSize, context.tileSize, context.tileSize);
+				context.history.change(c -> c
+						.trueColorImageFrame(frame)
+						.tilesPut(unitBounds.corner().plus(x0, y0).to1D(), TrueColorTile.create(context, shot)));
+			}
 		}
-		throw new Assertion();
 	}
 
 	@Override
-	public void remove(ProjectContext context) {
-		context.config.nodes.remove(node.id());
+	public TrueColorImage grab(
+			ProjectContext context, Rectangle unitBounds, Rectangle bounds
+	) {
+		TrueColorImage canvas = TrueColorImage.create(bounds.width, bounds.height);
+		canvasHandle.render(context, canvas, bounds, unitBounds);
+		return canvas;
 	}
 
 	@Override
-	public void removeChild(ProjectContext context, int index) {
-		throw new Assertion();
-	}
-
-	@Override
-	public TakesChildren takesChildren() {
-		return TakesChildren.NONE;
+	public void clear(
+			ProjectContext context, TrueColorImage image, Vector offset, Vector span
+	) {
+		image.clear(offset.x, offset.y, span.x, span.y);
 	}
 }

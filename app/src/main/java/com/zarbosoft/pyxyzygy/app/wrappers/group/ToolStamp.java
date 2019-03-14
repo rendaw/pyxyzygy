@@ -8,6 +8,7 @@ import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.pyxyzygy.core.model.v0.*;
+import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import com.zarbosoft.rendaw.common.Assertion;
@@ -49,7 +50,7 @@ public class ToolStamp extends Tool {
 				if (item == null) {
 					setText("");
 				} else {
-					final ProjectNode.NameSetListener nameListener = (target, value) -> {
+					Listener.ScalarSet<ProjectNode, String> nameListener = (target, value) -> {
 						setText(value);
 					};
 					((ProjectNode) item.getValue()).addNameSetListeners(nameListener);

@@ -1,28 +1,29 @@
-package com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage;
+package com.zarbosoft.pyxyzygy.app.wrappers.baseimage;
 
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
-import com.zarbosoft.pyxyzygy.app.model.v0.Tile;
+import com.zarbosoft.pyxyzygy.app.model.v0.TrueColorTile;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.pyxyzygy.nearestneighborimageview.NearestNeighborImageView;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.toImage;
 
-public class WrapTile {
+public abstract class WrapTile<T> {
 
-	final ImageView widget;
+	public final ImageView widget;
 
-	WrapTile(ProjectContext context, Tile tile, int x, int y) {
+	public WrapTile(int x, int y) {
 		widget = NearestNeighborImageView.create();
 		widget.setMouseTransparent(true);
 		widget.setLayoutX(x);
 		widget.setLayoutY(y);
 		widget.setManaged(false);
-		update(context, tile);
 	}
 
-	public void update(ProjectContext context, Tile tile) {
-		TrueColorImage image = tile.getData(context);
-		widget.setImage(toImage(image));
+	public void update(ProjectContext context, T tile) {
+		widget.setImage(getImage(context, tile));
 	}
+
+	public abstract Image getImage(ProjectContext context, T tile);
 }

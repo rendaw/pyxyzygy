@@ -6,6 +6,7 @@ import com.zarbosoft.pyxyzygy.app.DoubleVector;
 import com.zarbosoft.pyxyzygy.app.Wrapper;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
+import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -19,10 +20,10 @@ import static com.zarbosoft.pyxyzygy.app.Misc.noopConsumer;
 
 public class GroupNodeCanvasHandle extends CanvasHandle {
 	private final Runnable layerListenCleanup;
-	private final ProjectNode.OpacitySetListener opacityListener;
 	private final ObservableList<CanvasHandle> childHandles = FXCollections.observableArrayList();
 	private final CanvasHandle parent;
 	final SimpleIntegerProperty positiveZoom = new SimpleIntegerProperty(0);
+	private final Listener.ScalarSet<ProjectNode, Integer> opacityListener;
 
 	ToolBar toolBar = new ToolBar();
 	private GroupNodeWrapper wrapper;
@@ -39,7 +40,7 @@ public class GroupNodeCanvasHandle extends CanvasHandle {
 		mirror(childHandles, inner.getChildren(), h -> {
 			return h.getWidget();
 		}, noopConsumer(), noopConsumer());
-		this.opacityListener = wrapper.node.addOpacitySetListeners((target, value) -> {
+		opacityListener = wrapper.node.addOpacitySetListeners((target, value) -> {
 			inner.setOpacity((double) value / opacityMax);
 		});
 		this.wrapper = wrapper;

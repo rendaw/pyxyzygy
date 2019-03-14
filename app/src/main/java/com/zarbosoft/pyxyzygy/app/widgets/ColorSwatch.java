@@ -7,10 +7,10 @@ import javafx.geometry.Insets;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 
-public class TrueColorSwatch extends StackPane {
+public class ColorSwatch extends StackPane {
 	public final SimpleObjectProperty<Color> colorProperty = new SimpleObjectProperty<>();
 
-	public TrueColorSwatch() {
+	public ColorSwatch() {
 		getStyleClass().addAll("color-swatch", "true-color-transparent-pattern");
 		final Pane colorLayer = new Pane();
 		colorProperty.addListener(new ChangeListener<Color>() {

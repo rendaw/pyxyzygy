@@ -30,7 +30,7 @@ public class DoubleRectangle {
 				((DoubleRectangle) obj).height == height;
 	}
 
-	public Rectangle quantize(int scale) {
+	public Rectangle divideContains(int scale) {
 		int outX = Math.floorDiv((int) x, scale);
 		int outY = Math.floorDiv((int) y, scale);
 		return new Rectangle(outX,

@@ -5,10 +5,10 @@ import com.zarbosoft.interface1.Configuration;
 import java.util.List;
 
 @Configuration
-public class Project extends ProjectObject {
+public class PaletteImageNode extends ProjectNode {
 	@Configuration
-	public List<ProjectNode> top;
+	public List<PaletteImageFrame> frames;
 
 	@Configuration
-	public List<Palette> palettes;
+	public Palette palette;
 }

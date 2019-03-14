@@ -5,12 +5,14 @@ import com.zarbosoft.luxem.read.StackReader;
 import com.zarbosoft.luxem.write.RawWriter;
 import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.config.RootProjectConfig;
-import com.zarbosoft.pyxyzygy.app.config.TrueColor;
+import com.zarbosoft.pyxyzygy.core.PaletteColors;
 import com.zarbosoft.pyxyzygy.core.model.v0.*;
 import com.zarbosoft.pyxyzygy.seed.deserialize.ModelDeserializationContext;
 import com.zarbosoft.pyxyzygy.seed.model.Dirtyable;
+import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.pyxyzygy.seed.model.v0.ProjectContextBase;
 import com.zarbosoft.pyxyzygy.seed.model.v0.ProjectObjectInterface;
+import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.DeadCode;
 import javafx.scene.image.Image;
@@ -41,6 +43,49 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 
 	public History history;
 	public Hotkeys hotkeys;
+
+	public static class PaletteWrapper {
+		public PaletteColors colors;
+		public List<Runnable> listeners = new ArrayList<>();
+		public List<PaletteImageNode> users = new ArrayList<>();
+	}
+
+	private Map<Palette, PaletteWrapper> colors = new HashMap<>();
+
+	public void addPaletteUser(PaletteImageNode image) {
+		getPaletteWrapper(image.palette()).users.add(image);
+	}
+
+	public PaletteWrapper getPaletteWrapper(Palette palette) {
+		return this.colors.computeIfAbsent(palette, k -> {
+			PaletteWrapper out = new PaletteWrapper();
+			out.colors = new PaletteColors();
+			palette.mirrorEntries(out.listeners, v -> {
+				if (v instanceof PaletteColor) {
+					final Listener.ScalarSet<PaletteColor, TrueColor> colorChangeListener = (target, value) -> {
+						int r = (int) (value.r * 0xFF);
+						int g = (int) (value.g * 0xFF);
+						int b = (int) (value.b * 0xFF);
+						int a = (int) (value.a * 0xFF);
+						out.colors.set((byte) ((PaletteColor) v).index(), (r << 24) | (g << 16) | (b << 8) | a);
+					};
+					((PaletteColor) v).addColorSetListeners(colorChangeListener);
+					return () -> {
+						((PaletteColor) v).removeColorSetListeners(colorChangeListener);
+					};
+				}
+				throw new Assertion();
+			}, r -> {
+				r.run();
+			}, i -> {
+			});
+			return out;
+		});
+	}
+
+	public PaletteColors getPaletteColors(Palette palette) {
+		return getPaletteWrapper(palette).colors;
+	}
 
 	/**
 	 * Start at count 1 (unwritten) for machine generated names
@@ -87,7 +132,7 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 				((TrueColorImageFrame) o).tiles().values().forEach(incCount);
 			} else if (o instanceof TrueColorImageNode) {
 				((TrueColorImageNode) o).frames().forEach(incCount);
-			} else if (o instanceof TileBase) {
+			} else if (o instanceof TrueColorTileBase) {
 			} else {
 				throw new Assertion(String.format("Unhandled type %s\n", o));
 			}
@@ -167,7 +212,7 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 				try {
 					flushAll();
 				} catch (Exception e) {
-					logger.writeException(e,"Error during project flush");
+					logger.writeException(e, "Error during project flush");
 				}
 			}
 		}, 5000);
@@ -259,8 +304,8 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 
 					@Override
 					public StackReader.State record() {
-						if ("Tile".equals(type))
-							return new Tile.Deserializer(context);
+						if ("TrueColorTile".equals(type))
+							return new TrueColorTile.Deserializer(context);
 						return DeserializeHelper.deserializeModel(context, type);
 					}
 				};

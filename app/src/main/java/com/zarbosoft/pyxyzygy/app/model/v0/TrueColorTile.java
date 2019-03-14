@@ -1,6 +1,6 @@
 package com.zarbosoft.pyxyzygy.app.model.v0;
 
-import com.zarbosoft.pyxyzygy.core.model.v0.TileBase;
+import com.zarbosoft.pyxyzygy.core.model.v0.TrueColorTileBase;
 import com.zarbosoft.pyxyzygy.seed.model.Dirtyable;
 import com.zarbosoft.pyxyzygy.seed.model.v0.ProjectContextBase;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
@@ -19,13 +19,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 
-public class Tile extends TileBase implements Dirtyable {
+public class TrueColorTile extends TrueColorTileBase implements Dirtyable {
 	AtomicBoolean deleted = new AtomicBoolean(false);
 	public WeakReference<TrueColorImage> data;
 	private TrueColorImage dirtyData;
 
-	public static Tile create(ProjectContext context, TrueColorImage data) {
-		Tile out = new Tile();
+	public static TrueColorTile create(ProjectContext context, TrueColorImage data) {
+		TrueColorTile out = new TrueColorTile();
 		out.id = context.nextId++;
 		out.data = new WeakReference<>(data);
 		out.dirtyData = data;
@@ -59,7 +59,7 @@ public class Tile extends TileBase implements Dirtyable {
 
 	@Override
 	public void serialize(RawWriter writer) {
-		writer.type("Tile");
+		writer.type("TrueColorTile");
 		writer.recordBegin();
 		writer.key("id").primitive(Long.toString(id));
 		writer.key("refCount").primitive(Long.toString(refCount));
@@ -93,11 +93,11 @@ public class Tile extends TileBase implements Dirtyable {
 	public static class Deserializer extends StackReader.RecordState {
 		private final ModelDeserializationContext context;
 
-		private final Tile out;
+		private final TrueColorTile out;
 
 		public Deserializer(ModelDeserializationContext context) {
 			this.context = context;
-			out = new Tile();
+			out = new TrueColorTile();
 		}
 
 		@Override
@@ -115,20 +115,11 @@ public class Tile extends TileBase implements Dirtyable {
 
 		@Override
 		public StackReader.State array() {
-			if ("metadata".equals(key))
-				return new GeneralMapState() {
-					public void value(Object value) {
-						data.put((String) key, (String) value);
-					}
-				};
 			throw new RuntimeException(String.format("Key (%s) is unknown or is not an array", key));
 		}
 
 		@Override
 		public StackReader.State record() {
-			if ("offset".equals(key)) {
-				return new Vector.Deserializer();
-			}
 			throw new RuntimeException(String.format("Key (%s) is unknown or is not an record", key));
 		}
 

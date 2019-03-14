@@ -4,6 +4,7 @@ import com.squareup.javapoet.*;
 import com.zarbosoft.interface1.TypeInfo;
 import com.zarbosoft.pyxyzygy.generate.model.v0.premodel.ProjectObject;
 import com.zarbosoft.rendaw.common.Pair;
+import javafx.beans.binding.DoubleBinding;
 import org.apache.tools.ant.Task;
 
 import java.lang.reflect.Method;
@@ -11,6 +12,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.zarbosoft.rendaw.common.Common.*;
@@ -34,13 +36,35 @@ public class Helper extends Task {
 		return k.getSimpleName();
 	}
 
+	public static TypeName toPoetBoxed(TypeInfo info, Map<Class, Pair<ClassName, TypeSpec.Builder>> typeMap) {
+		final Class type = ((Supplier<Class>) () -> {
+			if (info.type == int.class) return Integer.class;
+			if (info.type == long.class) return Long.class;
+			if (info.type == byte.class) return Byte.class;
+			if (info.type == float.class) return Float.class;
+			if (info.type == double.class) return Double.class;
+			if (info.type == boolean.class) return Boolean.class;
+			return (Class) info.type;
+		}).get();
+		TypeName base =
+				Optional.ofNullable(typeMap.get(type)).map(p -> (TypeName) p.first).orElseGet(() -> TypeName.get(type));
+		if (info.parameters != null && info.parameters.length > 0) {
+			return ParameterizedTypeName.get(
+					(ClassName) base,
+					(TypeName[]) Arrays.stream(info.parameters).map(p -> toPoet(p, typeMap)).toArray(TypeName[]::new)
+			);
+		} else
+			return base;
+	}
+
 	public static TypeName toPoet(TypeInfo type, Map<Class, Pair<ClassName, TypeSpec.Builder>> typeMap) {
 		TypeName base = Optional
 				.ofNullable(typeMap.get(type.type))
 				.map(p -> (TypeName) p.first)
 				.orElseGet(() -> TypeName.get(type.type));
 		if (type.parameters != null && type.parameters.length > 0) {
-			return ParameterizedTypeName.get((ClassName) base,
+			return ParameterizedTypeName.get(
+					(ClassName) base,
 					(TypeName[]) Arrays.stream(type.parameters).map(p -> toPoet(p, typeMap)).toArray(TypeName[]::new)
 			);
 		} else
@@ -48,9 +72,8 @@ public class Helper extends Task {
 	}
 
 	public static MethodSpec.Builder poetMethod(Method method, Map<Class, Pair<ClassName, TypeSpec.Builder>> typeMap) {
-		MethodSpec.Builder out = MethodSpec
-				.methodBuilder(method.getName())
-				.returns(toPoet(new TypeInfo(method), typeMap));
+		MethodSpec.Builder out =
+				MethodSpec.methodBuilder(method.getName()).returns(toPoet(new TypeInfo(method), typeMap));
 		if (Modifier.isPublic(method.getModifiers()))
 			out.addModifiers(PUBLIC);
 		if (Modifier.isPrivate(method.getModifiers()))
@@ -86,5 +109,4 @@ public class Helper extends Task {
 		System.out.format("Writing class %s\n", name);
 		uncheck(() -> JavaFile.builder(name.packageName(), spec).build().writeTo(path));
 	}
-
 }

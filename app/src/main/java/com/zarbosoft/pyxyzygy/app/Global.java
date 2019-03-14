@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.zarbosoft.appdirsj.AppDirs;
 import com.zarbosoft.luxem.read.StackReader;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
+import com.zarbosoft.pyxyzygy.core.model.v0.PaletteImageNode;
 import com.zarbosoft.pyxyzygy.core.model.v0.Project;
 import com.zarbosoft.pyxyzygy.seed.deserialize.ModelDeserializationContext;
 import javafx.scene.input.KeyCode;
@@ -80,6 +81,11 @@ public class Global {
 			out.hotkeys = new Hotkeys();
 			out.initConfig();
 			out.debugCheckRefCounts();
+			context.objectMap.values().forEach(n -> {
+				if (n instanceof PaletteImageNode) {
+					out.addPaletteUser((PaletteImageNode) n);
+				}
+			});
 			return out;
 		});
 	}

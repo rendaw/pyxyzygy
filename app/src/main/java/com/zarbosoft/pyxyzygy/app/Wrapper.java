@@ -27,7 +27,7 @@ public abstract class Wrapper {
 	public abstract CanvasHandle buildCanvas(ProjectContext context, CanvasHandle parent);
 
 	public abstract EditHandle buildEditControls(
-			ProjectContext context, Window window, TabPane leftTabs
+			ProjectContext context, Window window
 	);
 
 	public abstract void remove(ProjectContext context);
