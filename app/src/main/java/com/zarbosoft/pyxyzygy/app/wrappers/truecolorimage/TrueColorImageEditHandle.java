@@ -3,13 +3,13 @@ package com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage;
 import com.google.common.collect.Range;
 import com.google.common.collect.Streams;
 import com.zarbosoft.pyxyzygy.app.*;
-import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
 import com.zarbosoft.pyxyzygy.app.config.TrueColorBrush;
 import com.zarbosoft.pyxyzygy.app.config.TrueColorImageNodeConfig;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.ContentReplacer;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
 import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.BrushButton;
+import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
 import com.zarbosoft.rendaw.common.Assertion;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
@@ -27,10 +27,10 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -218,11 +218,9 @@ public class TrueColorImageEditHandle extends EditHandle {
 
 		brushesCleanup = Misc.mirror(GUILaunch.config.trueColorBrushes, brushToolbar.getItems(), b -> {
 			return new BrushButton(b.size,
-					new CustomBinding.Indirect<Color, Boolean>()
-							.b(use -> use ? b.color : context.config.trueColor)
-							.b(c -> c.get())
-							.b(c -> c.toJfx())
-							.build1(b.useColor),
+					new CustomBinding.IndirectHalfBinder<TrueColor>(b.useColor,
+							(Boolean u) -> Optional.of(u ? b.color : context.config.trueColor)
+					).map(c -> Optional.of(c.toJfx())),
 					Bindings.createBooleanBinding(() -> wrapper.config.tool.get() ==
 									TrueColorImageNodeConfig.Tool.BRUSH &&
 									wrapper.config.brush.get() == GUILaunch.config.trueColorBrushes.indexOf(b),
@@ -241,15 +239,11 @@ public class TrueColorImageEditHandle extends EditHandle {
 
 		// Tab
 		VBox tabBox = new VBox();
-		tabBox
-				.getChildren()
-				.addAll(new Label("Layer"),
-						new WidgetFormBuilder()
-								.apply(b -> cleanup.add(Misc.nodeFormFields(context, b, wrapper)))
-								.build(),
-						new Label("Tool"),
-						toolProperties
-				);
+		tabBox.getChildren().addAll(new Label("Layer"),
+				new WidgetFormBuilder().apply(b -> cleanup.add(Misc.nodeFormFields(context, b, wrapper))).build(),
+				new Label("Tool"),
+				toolProperties
+		);
 		window.layerTabContent.set(this, pad(tabBox));
 
 		wrapper.config.tool.addListener(new ChangeListener<TrueColorImageNodeConfig.Tool>() {

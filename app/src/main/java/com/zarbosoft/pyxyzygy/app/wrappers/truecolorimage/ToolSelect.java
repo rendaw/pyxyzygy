@@ -44,7 +44,7 @@ public class ToolSelect extends BaseToolSelect<TrueColorImageFrame,TrueColorImag
 
 	@Override
 	protected void propertiesSet(Node node) {
-		editHandle.paintTab.setContent(node);
+		editHandle.toolProperties.set(this,node);
 	}
 
 	@Override
@@ -60,13 +60,6 @@ public class ToolSelect extends BaseToolSelect<TrueColorImageFrame,TrueColorImag
 	@Override
 	public void clear(ProjectContext context, Rectangle bounds) {
 		editHandle.wrapper.canvasHandle.clear(context, bounds);
-	}
-
-	@Override
-	protected TrueColorImage grab(ProjectContext context, Rectangle rectangle) {
-		TrueColorImage buffer = TrueColorImage.create(rectangle.width, rectangle.height);
-		editHandle.wrapper.canvasHandle.render(context, buffer, rectangle);
-		return buffer;
 	}
 
 	@Override

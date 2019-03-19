@@ -6,6 +6,8 @@
 #include <string>
 #include <cassert>
 #include <cerrno>
+#include <memory>
+#include <netinet/in.h>
 
 #include <png.h>
 #include <zlib.h>
@@ -123,7 +125,7 @@ void PaletteColors::set(p_t index, c_t color) {
 		auto &p = colors[index];
 		if (p.first != index) continue;
 		if (color == 0) {
-			colors.remove(index);
+			colors.erase(colors.begin() + index);
 			return;
 		} else {
 			p.second = color;
@@ -131,7 +133,7 @@ void PaletteColors::set(p_t index, c_t color) {
 		}
 	}
 	if (color == 0) return;
-	colors.add({index, color});
+	colors.emplace_back(index, color);
 }
 
 c_t PaletteColors::get(p_t index) const {
@@ -166,27 +168,85 @@ struct GZ {
 		gzclose(file);
 	}
 
-	void read(uint8_t *dest, size_t bytes) {
-		while (bytes > 0) {
-			int result = gzread(file, dest, bytes);
-			if (result == -1) {
-				throw std::runtime_error(std::string(gzerror(file, &result)));
+	template <class prim> prim read() {
+		static_assert(sizeof(prim) == 1 || sizeof(prim) == 2 || sizeof(prim) == 4, "");
+		prim out;
+		read((uint8_t *)&out, sizeof(out));
+		if (sizeof(prim) == 1) return out;
+		if (sizeof(prim) == 2) return ntohs(out);
+		if (sizeof(prim) == 4) return ntohl(out);
+	}
+
+	template <class prim> prim *reada(size_t const count) {
+		static_assert(sizeof(prim) == 1 || sizeof(prim) == 2 || sizeof(prim) == 4, "");
+		prim *out = new prim[count];
+		read((uint8_t *)&out, sizeof(out) * count);
+		if (sizeof(prim) == 1) {}
+		else if (sizeof(prim) == 2) {
+			for (size_t i = 0; i < count; ++i) {
+				out[i] = ntohs(out[i]);
 			}
-			dest += result;
-			bytes -= result;
+		} else if (sizeof(prim) == 4) {
+			for (size_t i = 0; i < count; ++i) {
+				out[i] = ntohl(out[i]);
+			}
+		}
+		return out;
+	}
+
+	template <class prim> void write(prim const in) {
+		static_assert(sizeof(prim) == 1 || sizeof(prim) == 2 || sizeof(prim) == 4, "");
+		if (sizeof(prim) == 1)
+			write((uint8_t *)&in, sizeof(in));
+		else {
+			uint16_t temp;
+			if (sizeof(prim) == 2) temp = htons(in);
+			else if (sizeof(prim) == 4) temp = htonl(in);
+			write((uint8_t *)&temp, sizeof(temp));
 		}
 	}
 
-	void write(uint8_t *source, size_t bytes) {
-		while (bytes > 0) {
-			int result = gzwrite(file, source, bytes);
-			if (result <= 0) {
-				throw std::runtime_error(std::string(gzerror(file, &result)));
+	template <class prim> void writea(prim const * const in, size_t const count) {
+		static_assert(sizeof(prim) == 1 || sizeof(prim) == 2 || sizeof(prim) == 4, "");
+		if (sizeof(prim) == 1)
+			write((uint8_t *)in, count);
+		else {
+			std::unique_ptr<prim> temp {new prim[count]};
+			if (sizeof(prim) == 2) {
+				for (size_t i = 0; i < count; ++i) {
+					temp.get()[i] = htons(in[i]);
+				}
+			} else if (sizeof(prim) == 4) {
+				for (size_t i = 0; i < count; ++i) {
+					temp.get()[i] = htonl(in[i]);
+				}
 			}
-			source += result;
-			bytes -= result;
+			write((uint8_t *)temp.get(), count);
 		}
 	}
+
+	private:
+		void read(uint8_t *dest, size_t bytes) {
+			while (bytes > 0) {
+				int result = gzread(file, dest, bytes);
+				if (result == -1) {
+					throw std::runtime_error(std::string(gzerror(file, &result)));
+				}
+				dest += result;
+				bytes -= result;
+			}
+		}
+
+		void write(uint8_t const *source, size_t bytes) {
+			while (bytes > 0) {
+				int result = gzwrite(file, source, bytes);
+				if (result <= 0) {
+					throw std::runtime_error(std::string(gzerror(file, &result)));
+				}
+				source += result;
+				bytes -= result;
+			}
+		}
 };
 
 template<class HandleMeasures, class SetPixelLine> static void strokeSolid(
@@ -415,35 +475,38 @@ template<class HandleMeasures, class SetPixelLine> static void strokeSolid(
 	}
 }
 
+struct Overlap1D {
+	l_t const a; // Where overlap starts relative to a
+	l_t const b; // Where overlap starts relative to b
+	l_t const span;
+};
+
+static Overlap1D const calcOverlap(l_t startRelA, l_t aSpan, l_t bSpan) {
+	// startRelA - where b span starts relative to start of a span
+	if (startRelA < 0) {
+		return Overlap1D{0, -startRelA, std::min(aSpan, bSpan + startRelA)};
+	} else {
+		return Overlap1D{startRelA, 0, std::min(aSpan - startRelA, bSpan)};
+	}
+}
+
 template <class HandleLine> static inline void merge(
-	uint8_t *dest, c_t const d_w, c_t const d_h, uint8_t const * const source, c_t const s_w, c_t const s_h, int32_t x0, int32_t y0, HandleLine const &handleLine
+	uint8_t *dest, size_t const unitStride, c_t const d_w, c_t const d_h, uint8_t const * const source, c_t const s_w, c_t const s_h, int32_t x0, int32_t y0, HandleLine const &handleLine
 ) {
-	struct V {
-		l_t const source;
-		l_t const dest;
-		l_t const span;
-	};
-	auto calcV = [&](auto at, auto sourceSpan, auto destSpan) {
-		if (at < 0) {
-			return V{(l_t) -at, 0, std::min(destSpan, sourceSpan + at)};
-		} else {
-			return V{0, (l_t) at, std::min(destSpan - at, sourceSpan)};
-		}
-	};
-	V const x = calcV(x0, s_w, d_w);
-	V const y = calcV(y0, s_h, d_h);
+	auto x = ::calcOverlap(x0, d_w, s_w);
+	auto y = ::calcOverlap(y0, d_h, s_h);
 	for (l_t y1 = 0; y1 < y.span; ++y1) {
 		handleLine(
-			&dest[((y.dest + y1) * d_w + x.dest) * channels],
-			&source[((y.source + y1) * s_w + x.source) * channels],
+			&dest[((y.a + y1) * d_w + x.a) * unitStride],
+			&source[((y.b + y1) * s_w + x.b) * unitStride],
 			x.span
 		);
 	}
 }
 
-static inline void replace(uint8_t *dest, c_t const d_w, c_t const d_h, uint8_t const * const source, c_t const s_w, c_t const s_h, int32_t x0, int32_t y0) {
-	merge(
-		dest, d_w, d_h, source, s_w, s_h, x0, y0,
+static inline void replace(uint8_t *dest, size_t const unitStride, c_t const d_w, c_t const d_h, uint8_t const * const source, c_t const s_w, c_t const s_h, int32_t x0, int32_t y0) {
+	::merge(
+		dest, unitStride, d_w, d_h, source, s_w, s_h, x0, y0,
 		[](uint8_t *dest, uint8_t const * const source, int span) {
 			memcpy(dest, source, span * channels);
 		}
@@ -452,26 +515,23 @@ static inline void replace(uint8_t *dest, c_t const d_w, c_t const d_h, uint8_t 
 
 PaletteImage * PaletteImage::deserialize(char const * const path) throw(std::runtime_error) {
 	GZ source(path, "rb");
-	uint16_t version;
-	source.read((uint8_t *)&version, sizeof(version));
-	l_t dimensions[2];
-	source.read((uint8_t *)dimensions, sizeof(dimensions) * sizeof(c_t));
-	size_t size = dimensions[0] * dimensions[1];
-	p_t *data = new p_t[size];
-	source.read(data, size * palsize);
-	// TODO swap data if system is big endian...
-	return new PaletteImage(dimensions[0], dimensions[1], data);
+	auto version = source.read<uint16_t>();
+	l_t width = source.read<l_t>();
+	l_t height = source.read<l_t>();
+	size_t size = width * height;
+	p_t *data = source.reada<p_t>(size * sizeof(p_t));
+	return new PaletteImage(width, height, data);
 }
 
 PaletteImage * PaletteImage::copy(l_t x0, l_t y0, l_t w0, l_t h0) const {
-	assert(x0 + w0 <= w);
-	assert(y0 + h0 <= h);
+	auto x = ::calcOverlap(x0, w, w0);
+	auto y = ::calcOverlap(y0, h, h0);
 	PaletteImage * out = PaletteImage::create(w0, h0);
-	for (l_t y1 = 0; y1 < h0; ++y1) {
+	for (l_t y1 = 0; y1 < y.span; ++y1) {
 		memcpy(
-			&out->pixels[y1 * out->w],
-			&pixels[((y0 + y1) * w + x0)],
-			out->w * palsize
+			&out->pixels[(y.b + y1) * out->w + x.b],
+			&pixels[(y.a + y1) * w + x.a],
+			x.span * sizeof(p_t)
 		);
 	}
 	return out;
@@ -547,14 +607,18 @@ void PaletteImage::clear(l_t x, l_t y, l_t w0, l_t h0) {
 
 void PaletteImage::serialize(const char *path) const throw(std::runtime_error) {
 	GZ dest(path, "wb");
-	dest.write((uint8_t *)&paletteVersion, sizeof(paletteVersion));
-	l_t dimensions[2] = {w, h};
-	dest.write((uint8_t *)&dimensions[0], sizeof(dimensions) * sizeof(c_t));
-	dest.write(pixels, w * h * palsize);
+	dest.write(paletteVersion);
+	dest.write(w);
+	dest.write(h);
+	dest.writea(pixels, w * h);
 }
 
 void PaletteImage::setPixel(p_t index, l_t x, l_t y) {
 	pixels[y * w + x] = index;
+}
+		
+p_t PaletteImage::getPixel(l_t x, l_t y) const {
+	return pixels[y * w + x];
 }
 
 void PaletteImage::stroke(p_t index, double x1_0, double y1_0, double r1_0, double x2_0, double y2_0, double r2_0) {
@@ -585,7 +649,7 @@ void PaletteImage::removeColor(p_t index) {
 }
 
 void PaletteImage::replace(PaletteImage const & source, int32_t x, int32_t y) {
-	::replace(pixels, w, h, source.pixels, source.w, source.h, x, y);
+	::replace((uint8_t *)pixels, sizeof(p_t), w, h, (uint8_t const *)source.pixels, source.w, source.h, x, y);
 }
 
 TrueColorImage::TrueColorImage(l_t w, l_t h, uint8_t * const pixels) :
@@ -618,14 +682,14 @@ TrueColorImage * TrueColorImage::deserialize(char const * const path) throw(std:
 }
 
 TrueColorImage * TrueColorImage::copy(l_t x0, l_t y0, l_t w0, l_t h0) const {
-	assert(x0 + w0 <= w);
-	assert(y0 + h0 <= h);
+	auto x = ::calcOverlap(x0, w, w0);
+	auto y = ::calcOverlap(y0, h, h0);
 	TrueColorImage * out = TrueColorImage::create(w0, h0);
-	for (l_t y1 = 0; y1 < h0; ++y1) {
+	for (l_t y1 = 0; y1 < y.span; ++y1) {
 		memcpy(
-			&out->pixels[y1 * out->w * channels],
-			&pixels[((y0 + y1) * w + x0) * channels],
-			out->w * channels
+			&out->pixels[((y.b + y1) * out->w + x.b) * channels],
+			&pixels[((y.a + y1) * w + x.a) * channels],
+			x.span * channels
 		);
 	}
 	return out;
@@ -716,6 +780,26 @@ void TrueColorImage::setPixel(uint8_t cr, uint8_t cg, uint8_t cb, uint8_t ca, in
 	pixel[1] = cg;
 	pixel[2] = cr;
 	pixel[3] = ca;
+}
+
+uint8_t TrueColorImage::getPixelR(int x, int y) const {
+	auto *pixel = &pixels[(y * w + x) * channels];
+	return pixel[2];
+}
+
+uint8_t TrueColorImage::getPixelG(int x, int y) const {
+	auto *pixel = &pixels[(y * w + x) * channels];
+	return pixel[1];
+}
+
+uint8_t TrueColorImage::getPixelB(int x, int y) const {
+	auto *pixel = &pixels[(y * w + x) * channels];
+	return pixel[0];
+}
+
+uint8_t TrueColorImage::getPixelA(int x, int y) const {
+	auto *pixel = &pixels[(y * w + x) * channels];
+	return pixel[3];
 }
 
 void TrueColorImage::strokeSoft(uint8_t cr, uint8_t cg, uint8_t cb, uint8_t ca, double x1_0, double y1_0, double r1_0, double x2_0, double y2_0, double r2_0, double blend) {
@@ -828,8 +912,8 @@ void TrueColorImage::strokeHard(uint8_t cr, uint8_t cg, uint8_t cb, uint8_t ca, 
 }
 
 static inline void compose(uint8_t *dest, c_t const d_w, c_t const d_h, uint8_t const * const source, c_t const s_w, c_t const s_h, int32_t x0, int32_t y0, double opacity) {
-	merge(
-		dest, d_w, d_h, source, s_w, s_h, x0, y0,
+	::merge(
+		dest, channels, d_w, d_h, source, s_w, s_h, x0, y0,
 		[opacity](uint8_t *dest, uint8_t const * const source, int span) {
 			for (l_t x1 = 0; x1 < span; ++x1) {
 				//printf("\tcomp %d %d, dest %d %d, source %d %d span span %d %d\n", x1, y1, x.dest + x1, y.dest + y1, x.source + x1, y.source + y1, x.span, y.span);
@@ -872,7 +956,7 @@ static inline void compose(uint8_t *dest, c_t const d_w, c_t const d_h, uint8_t 
 }
 
 void TrueColorImage::replace(TrueColorImage const & source, int32_t x, int32_t y) {
-	::replace(pixels, w, h, source.pixels, source.w, source.h, x, y);
+	::replace(pixels, channels, w, h, source.pixels, source.w, source.h, x, y);
 }
 
 void TrueColorImage::compose(TrueColorImage const &source, int32_t x, int32_t y, double opacity) {

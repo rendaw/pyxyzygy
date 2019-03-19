@@ -6,6 +6,7 @@ import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.BaseToolSelect;
 import com.zarbosoft.pyxyzygy.core.PaletteImage;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
+import com.zarbosoft.pyxyzygy.core.model.v0.PaletteImageFrame;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import com.zarbosoft.rendaw.common.Pair;
@@ -24,28 +25,14 @@ import java.util.Optional;
 
 import static com.zarbosoft.pyxyzygy.app.Global.nameSymbol;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
+import static com.zarbosoft.rendaw.common.Common.workingDir;
 
-public class ToolSelect extends BaseToolSelect<PaletteImage> {
+public class ToolSelect extends BaseToolSelect<PaletteImageFrame, PaletteImage> {
 	final PaletteImageEditHandle editHandle;
 
 	public ToolSelect(ProjectContext context, Window window, PaletteImageEditHandle editHandle) {
-		super(context, window, editHandle.wrapper.canvasHandle.zoom);
+		super(context, window, editHandle.wrapper,editHandle.wrapper.canvasHandle.zoom);
 		this.editHandle = editHandle;
-	}
-
-	@Override
-	protected void place(
-			ProjectContext context,
-			PaletteImage lifted,
-			Rectangle bounds,
-			Rectangle destQuantizedBounds,
-			Rectangle dropBounds,
-			Vector offset
-	) {
-		TrueColorImage composeCanvas = TrueColorImage.create(dropBounds.width, dropBounds.height);
-		editHandle.wrapper.canvasHandle.renderPalette(context, composeCanvas, dropBounds);
-		composeCanvas.compose(lifted, offset.x, offset.y);
-		editHandle.wrapper.canvasHandle.drop(context, destQuantizedBounds, composeCanvas);
 	}
 
 	static DataFormat dataFormat = new DataFormat(nameSymbol + "/palette-image");
@@ -64,12 +51,12 @@ public class ToolSelect extends BaseToolSelect<PaletteImage> {
 
 	@Override
 	protected Image toImage(PaletteImage buffer) {
-		return HelperJFX.toImage(buffer);
+		return HelperJFX.toImage(buffer, editHandle.wrapper.palette.colors);
 	}
 
 	@Override
 	protected void propertiesSet(Node node) {
-		editHandle.paintTab.setContent(node);
+		editHandle.toolProperties.set(this,node);
 	}
 
 	@Override
@@ -85,13 +72,6 @@ public class ToolSelect extends BaseToolSelect<PaletteImage> {
 	@Override
 	public void clear(ProjectContext context, Rectangle bounds) {
 		editHandle.wrapper.canvasHandle.clear(context, bounds);
-	}
-
-	@Override
-	protected PaletteImage grab(ProjectContext context, Rectangle rectangle) {
-		TrueColorImage buffer = TrueColorImage.create(rectangle.width, rectangle.height);
-		editHandle.wrapper.canvasHandle.render(context, buffer, rectangle);
-		return buffer;
 	}
 
 	@Override

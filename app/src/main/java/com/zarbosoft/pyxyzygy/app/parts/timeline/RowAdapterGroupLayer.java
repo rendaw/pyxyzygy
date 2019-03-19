@@ -6,6 +6,7 @@ import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeWrapper;
 import com.zarbosoft.pyxyzygy.core.model.v0.GroupLayer;
 import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
+import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.rendaw.common.Assertion;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -20,7 +21,7 @@ public class RowAdapterGroupLayer extends RowAdapter {
 	private final GroupLayer layer;
 	SimpleObjectProperty<Image> stateImage = new SimpleObjectProperty<>(null);
 	Runnable nameCleanup;
-	private GroupLayer.InnerSetListener innerListener;
+	private Listener.ScalarSet<GroupLayer, ProjectNode> innerListener;
 
 	RowAdapterGroupLayer(GroupNodeWrapper wrapper, GroupLayer layer) {
 		this.wrapper = wrapper;
@@ -36,7 +37,7 @@ public class RowAdapterGroupLayer extends RowAdapter {
 				nameCleanup = null;
 			};
 			if (inner != null) {
-				ProjectNode.NameSetListener nameListener =
+				Listener.ScalarSet<ProjectNode, String> nameListener =
 						inner.addNameSetListeners((target1, name) -> out.setValue(name));
 				nameCleanup = () -> {
 					inner.removeNameSetListeners(nameListener);

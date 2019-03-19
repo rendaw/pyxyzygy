@@ -115,6 +115,7 @@ public abstract class BaseImageNodeWrapper<N extends ProjectNode, F, T, L> exten
 
 	/**
 	 * Draw tile onto gc at the given position (just forward to TrueColorImage.compose)
+	 *
 	 * @param context
 	 * @param gc
 	 * @param tile
@@ -129,6 +130,7 @@ public abstract class BaseImageNodeWrapper<N extends ProjectNode, F, T, L> exten
 
 	/**
 	 * Replace tiles with data from unit-multiple size image
+	 *
 	 * @param context
 	 * @param frame
 	 * @param unitBounds
@@ -137,7 +139,9 @@ public abstract class BaseImageNodeWrapper<N extends ProjectNode, F, T, L> exten
 	public abstract void drop(ProjectContext context, F frame, Rectangle unitBounds, L image);
 
 	/**
-	 * Create single image from tile data (size multiple of tile)
+	 * Create single image from tile data.  Unit bounds is bounds / tileSize - as argument to avoid recomputation if
+	 * computed elsewhere.  Bounds is what's actually captured and the size of the returned image.
+	 *
 	 * @param context
 	 * @param unitBounds
 	 * @param bounds
@@ -145,11 +149,14 @@ public abstract class BaseImageNodeWrapper<N extends ProjectNode, F, T, L> exten
 	 */
 	public abstract L grab(ProjectContext context, Rectangle unitBounds, Rectangle bounds);
 
+	public L grab(ProjectContext context, Rectangle bounds) {
+		return grab(context, bounds.divideContains(context.tileSize), bounds);
+	}
+
 	/**
-	 *
 	 * @param context
 	 * @param image
-	 * @param offset relative to image
+	 * @param offset  relative to image
 	 * @param span
 	 */
 	public abstract void clear(ProjectContext context, L image, Vector offset, Vector span);
@@ -158,25 +165,27 @@ public abstract class BaseImageNodeWrapper<N extends ProjectNode, F, T, L> exten
 	public interface DoubleModifyCallback<L> {
 		public void accept(L image, DoubleVector offset);
 	}
+
 	@FunctionalInterface
 	public interface IntModifyCallback<L> {
 		public void accept(L image, Vector offset);
 	}
 
+	public abstract void dump(L image, String name);
+
 	public void modify(ProjectContext context, DoubleRectangle bounds, DoubleModifyCallback<L> modify) {
 		Rectangle unitBounds = bounds.divideContains(context.tileSize);
 		Rectangle outerBounds = unitBounds.multiply(context.tileSize);
 		L canvas = grab(context, unitBounds, outerBounds);
-		DoubleVector offset = bounds.corner().minus(outerBounds.corner());
-		modify.accept(canvas,offset);
+		modify.accept(canvas, DoubleVector.of(outerBounds.corner()));
 		drop(context, canvasHandle.frame, unitBounds, canvas);
 	}
+
 	public void modify(ProjectContext context, Rectangle bounds, IntModifyCallback<L> modify) {
 		Rectangle unitBounds = bounds.divideContains(context.tileSize);
 		Rectangle outerBounds = unitBounds.multiply(context.tileSize);
 		L canvas = grab(context, unitBounds, outerBounds);
-		Vector offset = bounds.corner().minus(outerBounds.corner());
-		modify.accept(canvas,offset);
+		modify.accept(canvas, outerBounds.corner());
 		drop(context, canvasHandle.frame, unitBounds, canvas);
 	}
 }

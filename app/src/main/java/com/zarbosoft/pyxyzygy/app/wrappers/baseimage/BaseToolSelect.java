@@ -550,7 +550,7 @@ public abstract class BaseToolSelect<F, L> extends Tool {
 
 		private void copy(ProjectContext context) {
 			ClipboardContent content = new ClipboardContent();
-			BaseToolSelect.this.copy(content, grab(context, inside.get()));
+			BaseToolSelect.this.copy(content, wrapper.grab(context, inside.get()));
 			Clipboard.getSystemClipboard().setContent(content);
 		}
 
@@ -560,7 +560,7 @@ public abstract class BaseToolSelect<F, L> extends Tool {
 		}
 
 		private void lift(ProjectContext context, Window window) {
-			setState(context, new StateMove(context, window, inside.get(), grab(context, inside.get())));
+			setState(context, new StateMove(context, window, inside.get(), wrapper.grab(context, inside.get())));
 		}
 
 		@Override
@@ -597,8 +597,6 @@ public abstract class BaseToolSelect<F, L> extends Tool {
 				context.hotkeys.unregister(action);
 		}
 	}
-
-	protected abstract L grab(ProjectContext context, Rectangle rectangle);
 
 	State state;
 

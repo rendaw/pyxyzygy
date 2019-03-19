@@ -36,7 +36,7 @@ public class Render {
 			}
 		} else if (node1 instanceof TrueColorImageNode) {
 			TrueColorImageNode node = (TrueColorImageNode) node1;
-			TrueColorImageFrame frame1 = TrueColorImageNodeWrapper.findFrame(node, frame).frame;
+			TrueColorImageFrame frame1 = TrueColorImageNodeWrapper.frameFinder.findFrame(node, frame).frame;
 			frame1.tiles().forEach((key, tile) -> {
 				Vector corner = Vector.from1D(key);
 				out.point(corner);
@@ -95,7 +95,7 @@ public class Render {
 			render(
 					context,
 					out,
-					TrueColorImageNodeWrapper.findFrame(node, frame).frame,
+					TrueColorImageNodeWrapper.frameFinder.findFrame(node, frame).frame,
 					crop,
 					opacity * ((double) node.opacity() / opacityMax)
 			);
@@ -119,7 +119,7 @@ public class Render {
 				out = out.expand(bounds(context, node.inner(), frame1));
 		} else if (node1 instanceof TrueColorImageNode) {
 			TrueColorImageNode node = (TrueColorImageNode) node1;
-			TrueColorImageFrame frame1 = TrueColorImageNodeWrapper.findFrame(node, frame).frame;
+			TrueColorImageFrame frame1 = TrueColorImageNodeWrapper.frameFinder.findFrame(node, frame).frame;
 			for (Long address : frame1.tiles().keySet()) {
 				Vector v = Vector.from1D(address).multiply(context.tileSize);
 				out = out.expand(new Rectangle(v.x, v.y, context.tileSize, context.tileSize));

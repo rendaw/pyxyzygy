@@ -98,6 +98,7 @@ class PaletteImage {
 		void clear(l_t x, l_t y, l_t width, l_t height);
 		void serialize(char const * path) const throw(std::runtime_error);
 		void setPixel(p_t index, l_t x, l_t y);
+		p_t getPixel(l_t x, l_t y) const;
 		void stroke(p_t index, double x1, double y1, double r1, double x2, double y2, double r2);
 		void removeColor(p_t index);
 		void replace(PaletteImage const & source, int32_t x, int32_t y);
@@ -131,6 +132,10 @@ class TrueColorImage {
 		void clear(l_t x, l_t y, l_t width, l_t height);
 		void serialize(char const * path) const throw(std::runtime_error);
 		void setPixel(uint8_t cr, uint8_t cg, uint8_t cb, uint8_t ca, int x, int y);
+		uint8_t getPixelR(int x, int y) const;
+		uint8_t getPixelG(int x, int y) const;
+		uint8_t getPixelB(int x, int y) const;
+		uint8_t getPixelA(int x, int y) const;
 		void strokeSoft(uint8_t cr, uint8_t cg, uint8_t cb, uint8_t ca, double x1, double y1, double r1, double x2, double y2, double r2, double blend);
 		void strokeHard(uint8_t cr, uint8_t cg, uint8_t cb, uint8_t ca, double x1, double y1, double r1, double x2, double y2, double r2, double blend);
 		void replace(TrueColorImage const & source, int32_t x, int32_t y);

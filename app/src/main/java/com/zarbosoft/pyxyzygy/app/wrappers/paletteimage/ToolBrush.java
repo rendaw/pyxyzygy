@@ -4,15 +4,18 @@ import com.zarbosoft.pyxyzygy.app.CustomBinding;
 import com.zarbosoft.pyxyzygy.app.DoubleVector;
 import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.config.PaletteBrush;
+import com.zarbosoft.pyxyzygy.app.model.v0.PaletteTile;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.ColorSwatch;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.app.widgets.TrueColorPicker;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
 import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.BaseToolBrush;
-import com.zarbosoft.pyxyzygy.core.PaletteColors;
 import com.zarbosoft.pyxyzygy.core.PaletteImage;
-import com.zarbosoft.pyxyzygy.core.model.v0.*;
+import com.zarbosoft.pyxyzygy.core.model.v0.Palette;
+import com.zarbosoft.pyxyzygy.core.model.v0.PaletteColor;
+import com.zarbosoft.pyxyzygy.core.model.v0.PaletteImageFrame;
+import com.zarbosoft.pyxyzygy.core.model.v0.ProjectObject;
 import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import com.zarbosoft.rendaw.common.Assertion;
@@ -42,7 +45,6 @@ public class ToolBrush extends BaseToolBrush<PaletteImageFrame, PaletteImage> {
 	final PaletteBrush brush;
 	private final PaletteImageEditHandle editHandle;
 	private final javafx.scene.shape.Rectangle alignedCursor = new javafx.scene.shape.Rectangle();
-	private final PaletteColors nativePalette;
 
 	public ToolBrush(
 			ProjectContext context, Window window, PaletteImageEditHandle paletteImageEditHandle, PaletteBrush brush
@@ -50,7 +52,6 @@ public class ToolBrush extends BaseToolBrush<PaletteImageFrame, PaletteImage> {
 		super(context, window, paletteImageEditHandle.wrapper, brush);
 		this.editHandle = paletteImageEditHandle;
 		this.brush = brush;
-		this.nativePalette = context.getPaletteColors(paletteImageEditHandle.wrapper.node.palette());
 
 		DoubleBinding sizeBinding = Bindings.createDoubleBinding(() -> brush.sizeInPixels(), brush.size);
 		alignedCursor.widthProperty().bind(sizeBinding);
@@ -91,8 +92,8 @@ public class ToolBrush extends BaseToolBrush<PaletteImageFrame, PaletteImage> {
 									e -> Optional.of(((PaletteColor) e).color()),
 									(b, v) -> context.history.change(c -> c.paletteColor((PaletteColor) b).colorSet(v))
 							),
-							new CustomBinding.PropertyBinder<Color>(colorPicker.colorProxyProperty).<TrueColor>convert(c -> TrueColor
-									.fromJfx(c), c -> c.toJfx())
+							new CustomBinding.PropertyBinder<Color>(colorPicker.colorProxyProperty).<TrueColor>bimap(c -> Optional
+									.of(TrueColor.fromJfx(c)), c -> c.toJfx())
 					);
 					return colorPicker;
 				}).custom("Size", () -> {
@@ -153,7 +154,7 @@ public class ToolBrush extends BaseToolBrush<PaletteImageFrame, PaletteImage> {
 							tile.cleanup =
 									new CustomBinding.ScalarHalfBinder<TrueColor>(((PaletteColor) e)::addColorSetListeners,
 											((PaletteColor) e)::removeColorSetListeners
-									).addListener(o -> o.ifPresent(v -> tile.colorProperty.set(v.toJfx())));
+									).addListener(o -> tile.colorProperty.set(o.toJfx()));
 						} else
 							throw new Assertion();
 						tile.setUserData(e);
@@ -271,13 +272,13 @@ public class ToolBrush extends BaseToolBrush<PaletteImageFrame, PaletteImage> {
 			throw new Assertion();
 		} else if (window.pressed.contains(KeyCode.CONTROL)) {
 			Vector quantizedCorner = end.divide(context.tileSize).toInt();
-			PaletteTileBase tile = editHandle.wrapper.canvasHandle.frame.tilesGet(quantizedCorner.to1D());
+			PaletteTile tile = (PaletteTile) editHandle.wrapper.canvasHandle.frame.tilesGet(quantizedCorner.to1D());
 			if (tile == null) {
 				setColor(context, 0);
 			} else {
 				Vector intEnd = end.toInt();
 				Vector tileCorner = quantizedCorner.multiply(context.tileSize);
-				setColor(context, tile.getPixel(intEnd.x - tileCorner.x, intEnd.y - tileCorner.y));
+				setColor(context, tile.getData(context).getPixel(intEnd.x - tileCorner.x, intEnd.y - tileCorner.y));
 			}
 		} else
 			super.mark(context, window, start, end);

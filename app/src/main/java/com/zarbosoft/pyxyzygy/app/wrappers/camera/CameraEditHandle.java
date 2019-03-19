@@ -40,9 +40,9 @@ public class CameraEditHandle extends GroupNodeEditHandle {
 	private final Window window;
 
 	public CameraEditHandle(
-			ProjectContext context, Window window, CameraWrapper wrapper, TabPane tabPane
+			ProjectContext context, Window window, CameraWrapper wrapper
 	) {
-		super(context, window,wrapper, tabPane);
+		super(context, window,wrapper);
 		this.window = window;
 	}
 
@@ -54,14 +54,8 @@ public class CameraEditHandle extends GroupNodeEditHandle {
 						.apply(b -> cleanup.add(nodeFormFields(context, b, wrapper)))
 						.intSpinner("Width", 1, 99999, s -> {
 							cleanup.add(CustomBinding.bindBidirectionalMultiple(
-									new CustomBinding.Binder<Integer>(wrapper.width,
-											() -> Optional.of(wrapper.width.get()),
-											wrapper.width::set
-									),
-									new CustomBinding.Binder<Integer>(s.getValueFactory().valueProperty(),
-											() -> Optional.of(s.getValueFactory().valueProperty().get()),
-											s.getValueFactory().valueProperty()::set
-									)
+									new CustomBinding.PropertyBinder<Integer>(wrapper.width.asObject()),
+									new CustomBinding.PropertyBinder<Integer>(s.getValueFactory().valueProperty())
 							));
 							s
 									.focusedProperty()
@@ -69,14 +63,8 @@ public class CameraEditHandle extends GroupNodeEditHandle {
 						})
 						.intSpinner("Height", 1, 99999, s -> {
 							cleanup.add(CustomBinding.bindBidirectionalMultiple(
-									new CustomBinding.Binder<Integer>(wrapper.height,
-											() -> Optional.of(wrapper.height.get()),
-											wrapper.height::set
-									),
-									new CustomBinding.Binder<Integer>(s.getValueFactory().valueProperty(),
-											() -> Optional.of(s.getValueFactory().valueProperty().get()),
-											s.getValueFactory().valueProperty()::set
-									)
+									new CustomBinding.PropertyBinder<Integer>(wrapper.height.asObject() ),
+									new CustomBinding.PropertyBinder<Integer>(s.getValueFactory().valueProperty() )
 							));
 							s
 									.focusedProperty()

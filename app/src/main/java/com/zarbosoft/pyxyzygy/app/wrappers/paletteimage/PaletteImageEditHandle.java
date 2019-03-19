@@ -11,6 +11,9 @@ import com.zarbosoft.pyxyzygy.app.widgets.ContentReplacer;
 import com.zarbosoft.pyxyzygy.app.widgets.TrueColorPicker;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
 import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.BrushButton;
+import com.zarbosoft.pyxyzygy.core.model.v0.PaletteColor;
+import com.zarbosoft.pyxyzygy.core.model.v0.ProjectObject;
+import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
 import com.zarbosoft.rendaw.common.Assertion;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
@@ -28,10 +31,10 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -69,37 +72,41 @@ public class PaletteImageEditHandle extends EditHandle {
 		positiveZoom.bind(wrapper.canvasHandle.zoom);
 
 		actions = Streams.concat(Stream.of(new Hotkeys.Action(Hotkeys.Scope.CANVAS, "paste", "Paste", pasteHotkey) {
-			@Override
-			public void run(ProjectContext context, Window window) {
-				wrapper.config.tool.set(PaletteImageNodeConfig.Tool.SELECT);
-				((ToolSelect) tool).paste(context, window);
-			}
-		}, new Hotkeys.Action(Hotkeys.Scope.CANVAS,
-				"last-brush",
-				"Last brush",
-				Hotkeys.Hotkey.create(KeyCode.SPACE, false, false, false)
-		) {
-			@Override
-			public void run(ProjectContext context, Window window) {
-				if (wrapper.config.tool.get() == PaletteImageNodeConfig.Tool.BRUSH) {
-					if (wrapper.config.lastBrush < 0 ||
-							wrapper.config.lastBrush >= GUILaunch.config.paletteBrushes.size())
-						return;
-					setBrush(wrapper.config.lastBrush);
-				} else {
-					wrapper.config.tool.set(PaletteImageNodeConfig.Tool.BRUSH);
-				}
-			}
-		}, new Hotkeys.Action(Hotkeys.Scope.CANVAS,
-				"select",
-				"Select",
-				Hotkeys.Hotkey.create(KeyCode.S, false, false, false)
-		) {
-			@Override
-			public void run(ProjectContext context, Window window) {
-				wrapper.config.tool.set(PaletteImageNodeConfig.Tool.SELECT);
-			}
-		}), enumerate(Stream.of(KeyCode.DIGIT1,
+											   @Override
+											   public void run(ProjectContext context, Window window) {
+												   wrapper.config.tool.set(PaletteImageNodeConfig.Tool.SELECT);
+												   ((ToolSelect) tool).paste(context, window);
+											   }
+										   },
+										   new Hotkeys.Action(Hotkeys.Scope.CANVAS,
+												   "last-brush",
+												   "Last brush",
+												   Hotkeys.Hotkey.create(KeyCode.SPACE, false, false, false)
+										   ) {
+											   @Override
+											   public void run(ProjectContext context, Window window) {
+												   if (wrapper.config.tool.get() == PaletteImageNodeConfig.Tool.BRUSH) {
+													   if (wrapper.config.lastBrush < 0 ||
+															   wrapper.config.lastBrush >=
+																	   GUILaunch.config.paletteBrushes.size())
+														   return;
+													   setBrush(wrapper.config.lastBrush);
+												   } else {
+													   wrapper.config.tool.set(PaletteImageNodeConfig.Tool.BRUSH);
+												   }
+											   }
+										   },
+										   new Hotkeys.Action(Hotkeys.Scope.CANVAS,
+												   "select",
+												   "Select",
+												   Hotkeys.Hotkey.create(KeyCode.S, false, false, false)
+										   ) {
+											   @Override
+											   public void run(ProjectContext context, Window window) {
+												   wrapper.config.tool.set(PaletteImageNodeConfig.Tool.SELECT);
+											   }
+										   }
+		), enumerate(Stream.of(KeyCode.DIGIT1,
 				KeyCode.DIGIT2,
 				KeyCode.DIGIT3,
 				KeyCode.DIGIT4,
@@ -213,42 +220,55 @@ public class PaletteImageEditHandle extends EditHandle {
 		toolbarBox = new HBox();
 		toolbarBox.setFillHeight(true);
 		toolbarBox.getChildren().addAll(selectToolbar, brushToolbar, menuToolbar);
-
 		brushesCleanup =
 				Misc.mirror(GUILaunch.config.paletteBrushes, brushToolbar.getItems(), b -> new BrushButton(b.size,
-						new CustomBinding.Indirect<Color, Integer>()
-								.b(index -> wrapper.node.x)
-								.b(c -> c.get())
-								.b(c -> c.toJfx())
-								.build1(wrapper.config.index),
+						new CustomBinding.DoubleIndirectHalfBinder<Integer, List<ProjectObject>, TrueColor>(
+								new CustomBinding.IndirectHalfBinder<Integer>(
+										b.useColor,
+										(Boolean u) -> Optional.of(u ? b.index : wrapper.config.index)
+								),
+								new CustomBinding.ListHalfBinder<ProjectObject>(wrapper.node.palette(), "Entries"),
+								(Integer i, List<ProjectObject> l) -> {
+									ProjectObject o = l.get(i);
+									if (o instanceof PaletteColor) {
+										return Optional.of(new CustomBinding.ScalarHalfBinder<TrueColor>(o, "color"));
+									} else
+										throw new Assertion();
+								}
+						).map(t -> Optional.of(t.toJfx())),
 						Bindings.createBooleanBinding(() -> wrapper.config.tool.get() ==
 										PaletteImageNodeConfig.Tool.BRUSH &&
-										wrapper.config.brush.get() == GUILaunch.config.trueColorBrushes.indexOf(b),
+										wrapper.config.brush.get() == GUILaunch.config.paletteBrushes.indexOf(b),
 								wrapper.config.tool,
 								wrapper.config.brush,
-								GUILaunch.config.trueColorBrushes
+								GUILaunch.config.paletteBrushes
 						)
-				), Misc.noopConsumer(), Misc.noopConsumer());
+				) {
+					@Override
+					public void selectBrush() {
+						wrapper.config.tool.set(PaletteImageNodeConfig.Tool.BRUSH);
+						wrapper.config.brush.set(GUILaunch.config.trueColorBrushes.indexOf(b));
+					}
+				}, Misc.noopConsumer(), Misc.noopConsumer());
 
 		// Tab
 		TrueColorPicker color = new TrueColorPicker();
 		VBox tabBox = new VBox();
-		tabBox
-				.getChildren()
-				.addAll(new Label("Layer"),
-						new WidgetFormBuilder()
-								.apply(b -> cleanup.add(Misc.nodeFormFields(context, b, wrapper)))
-								.text("Palette name", t -> {
-									cleanup.add(CustomBinding.bindBidirectionalMultiple(new CustomBinding.ScalarBinder<>(wrapper.node.palette()::addNameSetListeners,
-											wrapper.node.palette()::removeNameSetListeners,
-											v -> context.history.change(c -> c.palette(wrapper.node.palette()).nameSet(v))
-									), new CustomBinding.PropertyBinder<>(t.textProperty())));
-								})
-								.span(() -> color )
-								.build(),
-						new Label("Tool"),
-						toolProperties
-				);
+		tabBox.getChildren().addAll(new Label("Layer"),
+				new WidgetFormBuilder()
+						.apply(b -> cleanup.add(Misc.nodeFormFields(context, b, wrapper)))
+						.text("Palette name", t -> {
+							cleanup.add(CustomBinding.bindBidirectionalMultiple(new CustomBinding.ScalarBinder<>(wrapper.node
+									.palette()::addNameSetListeners,
+									wrapper.node.palette()::removeNameSetListeners,
+									v -> context.history.change(c -> c.palette(wrapper.node.palette()).nameSet(v))
+							), new CustomBinding.PropertyBinder<>(t.textProperty())));
+						})
+						.span(() -> color)
+						.build(),
+				new Label("Tool"),
+				toolProperties
+		);
 		window.layerTabContent.set(this, pad(tabBox));
 
 		wrapper.config.tool.addListener(new ChangeListener<PaletteImageNodeConfig.Tool>() {

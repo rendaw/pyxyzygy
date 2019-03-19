@@ -160,14 +160,13 @@ public class BaseImageCanvasHandle<N extends ProjectNode, F, T, L> extends Canva
 					continue;
 				}
 				T value = entry.getValue();
-				WrapTile old = wrapTiles.get(key);
-				if (old == null) {
-					WrapTile<T> wrap =
-							wrapper.createWrapTile(indexes.x * context.tileSize, indexes.y * context.tileSize);
+				WrapTile<T> wrap = wrapTiles.get(key);
+				if (wrap == null) {
+					wrap = wrapper.createWrapTile(indexes.x * context.tileSize, indexes.y * context.tileSize);
 					wrapTiles.put(key, wrap);
 					inner.getChildren().add(wrap.widget);
 				}
-				old.update(context, value);
+				wrap.update(context, value);
 			}
 		});
 		tilesClearListener = wrapper.addFrameTilesClearListener(frame, (target) -> {
@@ -196,14 +195,15 @@ public class BaseImageCanvasHandle<N extends ProjectNode, F, T, L> extends Canva
 					continue;
 				final int renderX = (x + unitBounds.x) * context.tileSize - bounds.x;
 				final int renderY = (y + unitBounds.y) * context.tileSize - bounds.y;
+				System.out.format("render tile %s at %s %s\n", unitBounds.corner().plus(x,y), renderX,renderY);
 				wrapper.renderCompose(context, gc, tile, renderX, renderY);
 			}
 		}
 	}
 
 	public void clear(ProjectContext context, Rectangle bounds) {
-		wrapper.modify(context,bounds,(image, offset) -> {
-			wrapper.clear(context,image,offset,bounds.span());
+		wrapper.modify(context, bounds, (image, offset) -> {
+			wrapper.clear(context, image, offset, bounds.span());
 		});
 	}
 

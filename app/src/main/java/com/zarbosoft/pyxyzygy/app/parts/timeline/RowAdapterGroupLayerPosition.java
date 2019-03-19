@@ -6,6 +6,7 @@ import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupLayerWrapper;
 import com.zarbosoft.pyxyzygy.core.model.v0.GroupLayer;
 import com.zarbosoft.pyxyzygy.core.model.v0.GroupPositionFrame;
+import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import com.zarbosoft.rendaw.common.Assertion;
 import javafx.beans.value.ObservableObjectValue;
@@ -122,9 +123,10 @@ public class RowAdapterGroupLayerPosition extends RowAdapter {
 
 			{
 				framesCleanup = layer.mirrorPositionFrames(frameCleanup, f -> {
-					GroupPositionFrame.LengthSetListener lengthListener = f.addLengthSetListeners((target, value) -> {
-						updateTime(context, window);
-					});
+					Listener.ScalarSet<GroupPositionFrame, Integer> lengthListener =
+							f.addLengthSetListeners((target, value) -> {
+								updateTime(context, window);
+							});
 					return () -> {
 						f.removeLengthSetListeners(lengthListener);
 					};

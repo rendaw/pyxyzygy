@@ -7,6 +7,7 @@ import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupLayerWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage.TrueColorImageNodeWrapper;
 import com.zarbosoft.pyxyzygy.core.model.v0.GroupLayer;
 import com.zarbosoft.pyxyzygy.core.model.v0.GroupTimeFrame;
+import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableObjectValue;
 import javafx.beans.value.ObservableValue;
@@ -205,9 +206,10 @@ public class RowAdapterGroupLayerTime extends RowAdapter {
 
 			{
 				framesCleanup = layer.mirrorTimeFrames(frameCleanup, f -> {
-					GroupTimeFrame.LengthSetListener lengthListener = f.addLengthSetListeners((target, value) -> {
-						updateTime(context, window);
-					});
+					Listener.ScalarSet<GroupTimeFrame, Integer> lengthListener =
+							f.addLengthSetListeners((target, value) -> {
+								updateTime(context, window);
+							});
 					return () -> {
 						f.removeLengthSetListeners(lengthListener);
 					};
@@ -258,9 +260,9 @@ public class RowAdapterGroupLayerTime extends RowAdapter {
 								}
 							});
 						};
-						GroupTimeFrame.InnerOffsetSetListener offsetListener =
+						Listener.ScalarSet<GroupTimeFrame, Integer> offsetListener =
 								frame.addInnerOffsetSetListeners((target, value) -> update.run());
-						GroupTimeFrame.InnerLoopSetListener loopListener =
+						Listener.ScalarSet<GroupTimeFrame, Integer> loopListener =
 								frame.addInnerLoopSetListeners((target, value) -> update.run());
 						selectedFrameCleanup = () -> {
 							frame.removeInnerOffsetSetListeners(offsetListener);

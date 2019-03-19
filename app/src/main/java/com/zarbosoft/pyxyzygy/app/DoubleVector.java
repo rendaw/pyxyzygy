@@ -12,6 +12,10 @@ public class DoubleVector {
 		this.y = y;
 	}
 
+	public static DoubleVector of(Vector vector) {
+		return new DoubleVector(vector.x, vector.y);
+	}
+
 	public DoubleVector minus(DoubleVector other) {
 		return new DoubleVector(x - other.x, y - other.y);
 	}
@@ -29,7 +33,7 @@ public class DoubleVector {
 	}
 
 	public Vector toInt() {
-		return new Vector((int) Math.floor( x), (int)Math.floor( y));
+		return new Vector((int) Math.floor(x), (int) Math.floor(y));
 	}
 
 	public DoubleVector divide(double factor) {
@@ -54,6 +58,6 @@ public class DoubleVector {
 	}
 
 	public Point2D toJfx() {
-		return new Point2D(x,y );
+		return new Point2D(x, y);
 	}
 }

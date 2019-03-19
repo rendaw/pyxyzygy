@@ -1,8 +1,9 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.baseimage;
 
+import com.zarbosoft.pyxyzygy.app.CustomBinding;
 import com.zarbosoft.pyxyzygy.app.widgets.ColorSwatch;
 import javafx.beans.binding.IntegerExpression;
-import javafx.beans.value.*;
+import javafx.beans.value.ObservableBooleanValue;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.control.ToggleButton;
@@ -11,7 +12,7 @@ import javafx.scene.paint.Color;
 
 public abstract class BrushButton extends ToggleButton {
 	public BrushButton(
-			IntegerExpression size, ObservableObjectValue<Color> color, ObservableBooleanValue selected
+			IntegerExpression size, CustomBinding.HalfBinder<Color> color, ObservableBooleanValue selected
 	) {
 		getStyleClass().add("brush-button");
 
@@ -28,16 +29,10 @@ public abstract class BrushButton extends ToggleButton {
 
 		selectedProperty().bind(selected);
 
-		color.addListener(new ChangeListener<Color>() {
-			{
-				changed(null,null,color.get());
-			}
-			@Override
-			public void changed(ObservableValue<? extends Color> observable, Color oldValue, Color newValue) {
-				swatch.colorProperty.set(newValue);
-				double darkness = (1.0 - newValue.getBrightness()) * newValue.getOpacity();
-				label.setTextFill(darkness > 0.5 ? Color.WHITE : Color.BLACK);
-			}
+		color.addListener(c -> {
+			swatch.colorProperty.set(c);
+			double darkness = (1.0 - c.getBrightness()) * c.getOpacity();
+			label.setTextFill(darkness > 0.5 ? Color.WHITE : Color.BLACK);
 		});
 	}
 

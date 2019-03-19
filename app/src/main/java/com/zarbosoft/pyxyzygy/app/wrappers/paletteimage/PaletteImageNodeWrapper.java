@@ -1,5 +1,6 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.paletteimage;
 
+import com.zarbosoft.pyxyzygy.app.CanvasHandle;
 import com.zarbosoft.pyxyzygy.app.EditHandle;
 import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.Wrapper;
@@ -9,6 +10,7 @@ import com.zarbosoft.pyxyzygy.app.model.v0.PaletteTile;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.app.wrappers.FrameFinder;
+import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.BaseImageCanvasHandle;
 import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.BaseImageNodeWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.WrapTile;
 import com.zarbosoft.pyxyzygy.core.PaletteImage;
@@ -20,6 +22,7 @@ import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
 import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
+import com.zarbosoft.rendaw.common.Assertion;
 import javafx.scene.image.Image;
 
 import java.util.List;
@@ -31,7 +34,7 @@ import static com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext.uniqueName1;
 
 public class PaletteImageNodeWrapper extends BaseImageNodeWrapper<PaletteImageNode, PaletteImageFrame, PaletteTileBase, PaletteImage> {
 	final PaletteImageNodeConfig config;
-	private final ProjectContext.PaletteWrapper palette;
+	public final ProjectContext.PaletteWrapper palette;
 
 	public PaletteImageNodeWrapper(
 			ProjectContext context,
@@ -41,11 +44,45 @@ public class PaletteImageNodeWrapper extends BaseImageNodeWrapper<PaletteImageNo
 			FrameFinder<PaletteImageNode, PaletteImageFrame> frameFinder
 	) {
 		super(parent, parentIndex, node, frameFinder);
-		config = (PaletteImageNodeConfig) context.config.nodes.computeIfAbsent(
-				node.id(),
+		config = (PaletteImageNodeConfig) context.config.nodes.computeIfAbsent(node.id(),
 				k -> new PaletteImageNodeConfig(context)
 		);
 		this.palette = context.getPaletteWrapper(node.palette());
+	}
+
+	@Override
+	public CanvasHandle buildCanvas(ProjectContext context, CanvasHandle parent) {
+		if (canvasHandle == null)
+			canvasHandle =
+					new BaseImageCanvasHandle<PaletteImageNode, PaletteImageFrame, PaletteTileBase, PaletteImage>(
+							context,
+							parent,
+							this
+					) {
+						private Runnable paletteChangeListener;
+
+						{
+							paletteChangeListener = () -> {
+								wrapTiles.forEach((k, t) -> {
+									t.update(context, wrapper.tileGet(frame, k));
+								});
+							};
+							palette.listeners.add(paletteChangeListener);
+						}
+
+						@Override
+						public void remove(ProjectContext context) {
+							super.remove(context);
+							palette.listeners.remove(paletteChangeListener);
+						}
+					};
+		return canvasHandle;
+	}
+
+	@Override
+	public void dump(PaletteImage image, String name) {
+		// TODO
+		throw new Assertion();
 	}
 
 	@Override
@@ -122,7 +159,7 @@ public class PaletteImageNodeWrapper extends BaseImageNodeWrapper<PaletteImageNo
 			public Image getImage(
 					ProjectContext context, PaletteTileBase tile
 			) {
-				return HelperJFX.toImage(((PaletteTile) tile).getData(context), node.palette());
+				return HelperJFX.toImage(((PaletteTile) tile).getData(context), palette.colors);
 			}
 		};
 	}
@@ -142,14 +179,24 @@ public class PaletteImageNodeWrapper extends BaseImageNodeWrapper<PaletteImageNo
 
 	@Override
 	public void imageCompose(PaletteImage image, PaletteImage other, int x, int y) {
-		image.compose(other, x, y);
+		image.replace(other, x, y);
 	}
 
 	@Override
 	public void drop(
 			ProjectContext context, PaletteImageFrame frame, Rectangle unitBounds, PaletteImage image
 	) {
-
+		for (int x = 0; x < unitBounds.width; ++x) {
+			for (int y = 0; y < unitBounds.height; ++y) {
+				final int x0 = x;
+				final int y0 = y;
+				PaletteImage shot =
+						image.copy(x0 * context.tileSize, y0 * context.tileSize, context.tileSize, context.tileSize);
+				context.history.change(c -> c
+						.paletteImageFrame(frame)
+						.tilesPut(unitBounds.corner().plus(x0, y0).to1D(), PaletteTile.create(context, shot)));
+			}
+		}
 	}
 
 	@Override
@@ -162,7 +209,7 @@ public class PaletteImageNodeWrapper extends BaseImageNodeWrapper<PaletteImageNo
 					continue;
 				final int renderX = (x + unitBounds.x) * context.tileSize - bounds.x;
 				final int renderY = (y + unitBounds.y) * context.tileSize - bounds.y;
-				canvas.place(tile.getData(context), renderX, renderY);
+				canvas.replace(tile.getData(context), renderX, renderY);
 			}
 		}
 		return canvas;
@@ -192,5 +239,12 @@ public class PaletteImageNodeWrapper extends BaseImageNodeWrapper<PaletteImageNo
 			return newFrame;
 		}).collect(Collectors.toList()));
 		return clone;
+	}
+
+	@Override
+	public void clear(
+			ProjectContext context, PaletteImage image, Vector offset, Vector span
+	) {
+		image.clear(offset.x, offset.y, span.x, span.y);
 	}
 }

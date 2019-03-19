@@ -3,9 +3,11 @@ package com.zarbosoft.pyxyzygy.app.parts.timeline;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.WidgetHandle;
 import com.zarbosoft.pyxyzygy.app.Window;
+import com.zarbosoft.pyxyzygy.app.wrappers.FrameFinder;
 import com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage.TrueColorImageNodeWrapper;
 import com.zarbosoft.pyxyzygy.core.model.v0.TrueColorImageFrame;
 import com.zarbosoft.pyxyzygy.core.model.v0.TrueColorImageNode;
+import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ObservableObjectValue;
@@ -41,7 +43,7 @@ class RowAdapterTrueColorImageNode extends RowAdapter {
 		final int inner = window.timeToInner(outer);
 		if (inner == NO_INNER)
 			return false;
-		TrueColorImageNodeWrapper.FrameResult previous = TrueColorImageNodeWrapper.findFrame(node, inner);
+		FrameFinder.Result<TrueColorImageFrame> previous = TrueColorImageNodeWrapper.frameFinder.findFrame(node, inner);
 		return previous.at == inner;
 	}
 
@@ -138,9 +140,10 @@ class RowAdapterTrueColorImageNode extends RowAdapter {
 				layout.getChildren().add(row.get());
 
 				framesCleanup = node.mirrorFrames(frameCleanup, f -> {
-					TrueColorImageFrame.LengthSetListener lengthListener = f.addLengthSetListeners((target, value) -> {
-						updateTime(context, window);
-					});
+					Listener.ScalarSet<TrueColorImageFrame, Integer> lengthListener =
+							f.addLengthSetListeners((target, value) -> {
+								updateTime(context, window);
+							});
 					return () -> {
 						f.removeLengthSetListeners(lengthListener);
 					};
@@ -195,7 +198,7 @@ class RowAdapterTrueColorImageNode extends RowAdapter {
 		final int inner = window.timeToInner(outer);
 		if (inner == NO_INNER)
 			return false;
-		TrueColorImageNodeWrapper.FrameResult previous = TrueColorImageNodeWrapper.findFrame(node, inner);
+		FrameFinder.Result<TrueColorImageFrame> previous = TrueColorImageNodeWrapper.frameFinder.findFrame(node, inner);
 		TrueColorImageFrame newFrame = cb.apply(previous.frame);
 		int offset = inner - previous.at;
 		if (offset == 0) throw new AssertionError();

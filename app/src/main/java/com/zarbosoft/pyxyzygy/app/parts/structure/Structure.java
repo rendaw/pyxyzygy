@@ -1,10 +1,12 @@
 package com.zarbosoft.pyxyzygy.app.parts.structure;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
+import com.zarbosoft.pyxyzygy.app.model.v0.TrueColorTile;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
-import com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage.TrueColorImageCanvasHandle;
+import com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage.TrueColorImageNodeWrapper;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.pyxyzygy.core.model.v0.*;
 import com.zarbosoft.pyxyzygy.seed.model.Listener;
@@ -350,7 +352,27 @@ public class Structure {
 				image.initialFramesAdd(context, ImmutableList.of(frame));
 				Rectangle base = new Rectangle(0, 0, data.getWidth(), data.getHeight());
 
-				TrueColorImageCanvasHandle.drop(context, frame, base.plus(base.span().divide(2)), data);
+				Rectangle offset = base.plus(base.span().divide(2));
+				Rectangle unitBounds = offset.divideContains(context.tileSize);
+				Vector localOffset = offset.corner().minus(unitBounds.corner().multiply(context.tileSize));
+				for (int x = 0; x < unitBounds.width; ++x) {
+					for (int y = 0; y < unitBounds.height; ++y) {
+						final int x0 = x;
+						final int y0 = y;
+						TrueColorImage cut = data.copy(x0 * context.tileSize - localOffset.x,
+								y0 * context.tileSize - localOffset.y,
+								context.tileSize,
+								context.tileSize
+						);
+						frame.initialTilesPutAll(
+								context,
+								ImmutableMap.of(
+										unitBounds.corner().plus(x0, y0).to1D(),
+										TrueColorTile.create(context, cut)
+								)
+						);
+					}
+				}
 				addNew(image);
 			});
 		});

@@ -153,7 +153,7 @@ public class GroupLayerWrapper extends Wrapper {
 
 	@Override
 	public EditHandle buildEditControls(
-			ProjectContext context, Window window, TabPane leftTabs
+			ProjectContext context, Window window
 	) {
 		return null;
 	}

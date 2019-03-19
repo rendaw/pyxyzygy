@@ -2,12 +2,14 @@ package com.zarbosoft.pyxyzygy.app.modelmirror;
 
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.core.model.v0.GroupLayer;
+import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
 import com.zarbosoft.pyxyzygy.core.model.v0.ProjectObject;
+import com.zarbosoft.pyxyzygy.seed.model.Listener;
 
 public class MirrorGroupLayer extends ObjectMirror {
 	private final ObjectMirror parent;
 	private final GroupLayer node;
-	private final GroupLayer.InnerSetListener innerSetListener;
+	private final Listener.ScalarSet<GroupLayer, ProjectNode> innerSetListener;
 	private ObjectMirror child;
 
 	public MirrorGroupLayer(ProjectContext context, ObjectMirror.Context mirrorContext, ObjectMirror parent, GroupLayer node) {

@@ -47,12 +47,6 @@ def main():
     with open(java_dest / f'{module}JNI.java', 'w') as dest:
         dest.write(sub_java)
 
-    c([
-        'protoc',
-        '--cpp_out=.',
-        'pb.proto',
-    ])
-
     general_flags = [
         '-Wall', '-pedantic',
         '-O3',
@@ -73,7 +67,6 @@ def main():
         '-o', java_resource_dest / output,
         'header_wrap.cxx',
         'implementation.cxx',
-        'pb.pb.cc',
         '-lpng',
         '-lz',
     ])

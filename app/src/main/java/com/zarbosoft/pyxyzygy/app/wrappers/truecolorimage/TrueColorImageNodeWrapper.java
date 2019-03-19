@@ -194,6 +194,11 @@ public class TrueColorImageNodeWrapper extends BaseImageNodeWrapper<TrueColorIma
 	}
 
 	@Override
+	public void dump(TrueColorImage image, String name) {
+		image.serialize(name);
+	}
+
+	@Override
 	public TrueColorImage grab(
 			ProjectContext context, Rectangle unitBounds, Rectangle bounds
 	) {

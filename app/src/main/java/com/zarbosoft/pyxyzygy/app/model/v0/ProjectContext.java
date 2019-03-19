@@ -46,8 +46,9 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 
 	public static class PaletteWrapper {
 		public PaletteColors colors;
-		public List<Runnable> listeners = new ArrayList<>();
+		public List<Runnable> cleanup = new ArrayList<>();
 		public List<PaletteImageNode> users = new ArrayList<>();
+		public List<Runnable> listeners = new ArrayList<>();
 	}
 
 	private Map<Palette, PaletteWrapper> colors = new HashMap<>();
@@ -60,7 +61,7 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 		return this.colors.computeIfAbsent(palette, k -> {
 			PaletteWrapper out = new PaletteWrapper();
 			out.colors = new PaletteColors();
-			palette.mirrorEntries(out.listeners, v -> {
+			palette.mirrorEntries(out.cleanup, v -> {
 				if (v instanceof PaletteColor) {
 					final Listener.ScalarSet<PaletteColor, TrueColor> colorChangeListener = (target, value) -> {
 						int r = (int) (value.r * 0xFF);
@@ -73,11 +74,12 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 					return () -> {
 						((PaletteColor) v).removeColorSetListeners(colorChangeListener);
 					};
-				}
-				throw new Assertion();
+				} else
+					throw new Assertion();
 			}, r -> {
 				r.run();
 			}, i -> {
+				out.listeners.forEach(l -> l.run());
 			});
 			return out;
 		});

@@ -13,8 +13,8 @@ import javafx.beans.value.ObservableValue;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.control.Tab;
-import javafx.scene.control.TabPane;
 import javafx.scene.control.ToolBar;
+import javafx.scene.layout.VBox;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,13 +36,15 @@ public class GroupNodeEditHandle extends EditHandle {
 	public final SimpleDoubleProperty mouseY = new SimpleDoubleProperty(0);
 
 	public GroupNodeEditHandle(
-			ProjectContext context, Window window,final GroupNodeWrapper wrapper, TabPane tabPane
+			ProjectContext context, Window window,final GroupNodeWrapper wrapper
 	) {
 		this.wrapper = wrapper;
 
 		// Canvas overlay
 		overlay = new Group();
 		wrapper.canvasHandle.overlay.getChildren().add(overlay);
+
+		VBox controls = new VBox();
 
 		// Group tab
 		groupTab = buildNodeTab(context);
@@ -113,9 +115,9 @@ public class GroupNodeEditHandle extends EditHandle {
 			}
 		});
 
-		tabPane.getTabs().addAll(groupTab, toolTab);
+		window.layerTabContent.set(this,controls);
 		cleanup.add(() -> {
-			tabPane.getTabs().removeAll(groupTab, toolTab);
+			window.layerTabContent.clear(this);
 		});
 	}
 

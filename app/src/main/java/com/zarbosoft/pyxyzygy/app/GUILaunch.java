@@ -2,8 +2,10 @@ package com.zarbosoft.pyxyzygy.app;
 
 import com.google.common.collect.ImmutableList;
 import com.zarbosoft.interface1.TypeInfo;
-import com.zarbosoft.pyxyzygy.app.CustomBinding.Binder;
-import com.zarbosoft.pyxyzygy.app.config.*;
+import com.zarbosoft.pyxyzygy.app.config.CreateMode;
+import com.zarbosoft.pyxyzygy.app.config.RootGlobalConfig;
+import com.zarbosoft.pyxyzygy.app.config.RootProfileConfig;
+import com.zarbosoft.pyxyzygy.app.config.TrueColorBrush;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.core.model.v0.*;
@@ -406,12 +408,12 @@ public class GUILaunch extends Application {
 					}
 				});
 			}
-			CustomBinding.<Path>bindBidirectionalMultiple(new Binder<>(text.textProperty(),
-					() -> Optional.of(cwd.get().resolve(text.getText())),
-					v -> text.setText(v.getFileName().toString())
-			), new Binder<>(listProxy,
-					() -> Optional.ofNullable(listProxy.get()).map(v -> v.path),
-					v -> listProxy.set(entries.get(v))
+			CustomBinding.<Path>bindBidirectionalMultiple(new CustomBinding.PropertyBinder<String>(text.textProperty()).<Path>bimap(
+					t -> Optional.of(cwd.get().resolve(t)),
+					(Path v) -> v.getFileName().toString()
+			), new CustomBinding.PropertyBinder<ChooserEntry>(listProxy).<Path>bimap(
+					e -> Optional.ofNullable(e).map(v -> v.path),
+					(Path v) -> entries.get(v)
 			));
 			resolvedPath.bind(Bindings.createObjectBinding(() -> cwd.get().resolve(text.getText()),
 					cwd,
