@@ -39,8 +39,8 @@ public abstract class BrushButton extends ToggleButton implements Garb {
 
 		cleanupColor = color.addListener(c -> {
 			swatch.colorProperty.set(c);
-			double darkness = (1.0 - c.getBrightness()) * c.getOpacity();
-			label.setTextFill(darkness > 0.5 ? Color.WHITE : Color.BLACK);
+				double darkness = c == null ? 0 : (1.0 - c.getBrightness()) * c.getOpacity();
+				label.setTextFill(darkness > 0.5 ? Color.WHITE : Color.BLACK);
 		});
 	}
 

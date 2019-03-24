@@ -94,7 +94,6 @@ public class PaletteImageEditHandle extends EditHandle {
 				} else {
 					getStyleClass().remove("selected");
 				}
-				System.out.format("\tstyle: %s\n", getStyleClass());
 			});
 			addEventFilter(MouseEvent.MOUSE_CLICKED, e -> {
 				wrapper.paletteSelOffsetBinder.set(index);
@@ -276,15 +275,15 @@ public class PaletteImageEditHandle extends EditHandle {
 						),
 								new CustomBinding.ListHalfBinder<>(wrapper.node.palette(), "entries"),
 								(Integer i, List<ProjectObject> l) -> {
-									if (i > l.size())
-										return Optional.empty();
+									if (i >= l.size())
+										return opt(new CustomBinding.ConstHalfBinder(null));
 									ProjectObject o = l.get(i);
 									if (o instanceof PaletteColor) {
 										return opt(new CustomBinding.ScalarHalfBinder<TrueColor>(o, "color"));
 									} else
 										throw new Assertion();
 								}
-						).map(t -> opt(t.toJfx())),
+						).map(t -> opt(t == null ? null : t.toJfx())),
 						wrapper.brushBinder.map(b1 -> opt(b1 == b))
 				) {
 					@Override
@@ -301,7 +300,7 @@ public class PaletteImageEditHandle extends EditHandle {
 		Palette palette = wrapper.node.palette();
 
 		TilePane colors = new TilePane();
-		HBox.setHgrow(colors,Priority.ALWAYS);
+		HBox.setHgrow(colors, Priority.ALWAYS);
 		colors.setHgap(2);
 		colors.setVgap(2);
 		paletteTilesCleanup = palette.mirrorEntries(colors.getChildren(),
@@ -327,7 +326,16 @@ public class PaletteImageEditHandle extends EditHandle {
 		);
 
 		CustomBinding.HalfBinder<Integer> indexBinder =
-				wrapper.paletteSelectionBinder.map(p -> opt(p == null ? -1 : tiles.get(p).index));
+				new CustomBinding.DoubleHalfBinder<>(new CustomBinding.ListPropertyHalfBinder<>(colors.getChildren()),
+						wrapper.paletteSelectionBinder,
+						(colorsChildren, selection) -> {
+							if (selection == null)
+								return opt(null);
+							if (!tiles.containsKey(selection))
+								return opt(null);
+							return opt(tiles.get(selection).index);
+						}
+				);
 
 		VBox tabBox = new VBox();
 		tabBox.getChildren().addAll(new TitledPane("Layer",
@@ -340,11 +348,13 @@ public class PaletteImageEditHandle extends EditHandle {
 		}).span(() -> {
 			TrueColorPicker colorPicker = new TrueColorPicker();
 			colorPickerDisableCleanup =
-					CustomBinding.bind(colorPicker.disableProperty(), indexBinder.map(i -> opt(i == 0)));
+					CustomBinding.bind(colorPicker.disableProperty(), indexBinder.map(i -> opt(i == null || i == 0)));
 			GridPane.setHalignment(colorPicker, HPos.CENTER);
 			colorPickerCleanup =
 					CustomBinding.bindBidirectional(new CustomBinding.IndirectBinder<TrueColor>(wrapper.paletteSelectionBinder,
 									e -> {
+										if (e == null)
+											return opt(null);
 										if (e instanceof PaletteColor) {
 											return opt(new CustomBinding.ScalarBinder<TrueColor>(e,
 													"color",
@@ -377,6 +387,7 @@ public class PaletteImageEditHandle extends EditHandle {
 			paletteAddCleanup =
 					CustomBinding.bind(add.disableProperty(), wrapper.paletteSelectionBinder.map(p -> opt(p == null)));
 			add.setOnAction(_e -> {
+				context.history.finishChange();
 				PaletteColor selectedColor = (PaletteColor) wrapper.paletteSelectionBinder.get().get();
 				PaletteColor newColor = PaletteColor.create(context);
 				newColor.initialColorSet(context, selectedColor.color());
@@ -386,29 +397,37 @@ public class PaletteImageEditHandle extends EditHandle {
 				context.history.change(c -> c
 						.palette(palette)
 						.entriesAdd(palette.entries().indexOf(selectedColor) + 1, newColor));
+				context.history.finishChange();
+				wrapper.paletteSelOffsetBinder.set(tiles.get(newColor).index);
 			});
-			paletteRemoveCleanup = CustomBinding.bind(remove.disableProperty(), indexBinder.map(i -> opt(i <= 0)));
+			paletteRemoveCleanup = CustomBinding.bind(remove.disableProperty(), indexBinder.map(i -> opt(i ==null||i <= 0)));
 			remove.setOnAction(_e -> {
 				int index = indexBinder.get().get();
 				if (index < 0)
 					throw new Assertion();
+				context.history.finishChange();
 				context.history.change(c -> c.palette(palette).entriesRemove(index, 1));
+				context.history.finishChange();
 			});
-			paletteMoveUpCleanup = CustomBinding.bind(moveUp.disableProperty(), indexBinder.map(i -> opt(i <= 1)));
+			paletteMoveUpCleanup = CustomBinding.bind(moveUp.disableProperty(), indexBinder.map(i -> opt(i==null||i <= 1)));
 			moveUp.setOnAction(e -> {
 				int index = indexBinder.get().get();
 				if (index < 0)
 					throw new Assertion();
+				context.history.finishChange();
 				context.history.change(c -> c.palette(palette).entriesMoveTo(index, 1, index - 1));
+				context.history.finishChange();
 			});
 			paletteMoveDownCleanup = CustomBinding.bind(moveDown.disableProperty(),
-					indexBinder.map(i -> opt(i < 1 || i >= colors.getChildren().size() - 1))
+					indexBinder.map(i -> opt(i==null|| i < 1 || i >= colors.getChildren().size() - 1))
 			);
 			moveDown.setOnAction(e -> {
 				int index = indexBinder.get().get();
 				if (index < 0)
 					throw new Assertion();
+				context.history.finishChange();
 				context.history.change(c -> c.palette(palette).entriesMoveTo(index, 1, index - 1));
+				context.history.finishChange();
 			});
 
 			return layout;

@@ -94,7 +94,7 @@ public class PaletteImageNodeWrapper extends BaseImageNodeWrapper<PaletteImageNo
 				paletteSelOffsetBinder,
 				new CustomBinding.ListHalfBinder<PaletteColor>(node.palette(), "entries"),
 				(offset, entries) -> {
-					if (entries.size() <= offset) return opt(last(entries));
+					if (entries.size() <= offset) return opt(null);
 					else return opt(entries.get(offset));
 				}
 		);
@@ -210,7 +210,6 @@ public class PaletteImageNodeWrapper extends BaseImageNodeWrapper<PaletteImageNo
 			public Image getImage(
 					ProjectContext context, PaletteTileBase tile
 			) {
-				System.out.format("getting p tile\n");
 				return HelperJFX.toImage(((PaletteTile) tile).getData(context), palette.colors);
 			}
 		};

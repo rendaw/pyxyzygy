@@ -586,6 +586,30 @@ public class CustomBinding {
 		}
 	}
 
+	public static class ConstHalfBinder<T> implements HalfBinder<T> {
+		final T v;
+
+		public ConstHalfBinder(T v) {
+			this.v = v;
+		}
+
+		@Override
+		public Runnable addListener(Consumer<T> listener) {
+			listener.accept(v);
+			return () ->{};
+		}
+
+		@Override
+		public Optional<T> get() {
+			return opt(v);
+		}
+
+		@Override
+		public void destroy() {
+
+		}
+	}
+
 	public static class DoubleIndirectHalfBinder<X, Y, T> implements HalfBinder<T> {
 		private Optional<T> last = Optional.empty();
 		Runnable sourceCleanup;

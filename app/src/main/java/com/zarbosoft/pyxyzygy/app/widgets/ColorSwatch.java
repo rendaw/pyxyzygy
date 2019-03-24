@@ -21,8 +21,6 @@ public class ColorSwatch extends StackPane {
 
 	private Node createClip() {
 		Rectangle clip = new Rectangle();
-		// TODO
-		// This is wrong - the inner radius is reduced by the border width
 		CustomBinding.HalfBinder<CornerRadii> radiiBinder =
 				new CustomBinding.DoubleHalfBinder<>(backgroundProperty(), borderProperty(), (bg, border) -> {
 					if (bg != null)
@@ -66,6 +64,7 @@ public class ColorSwatch extends StackPane {
 		Pane bgLayer = new Pane();
 		bgLayer.getStyleClass().add("true-color-transparent-pattern");
 		bgLayer.setClip(createClip());
+		bgLayer.visibleProperty().bind(colorProperty.isNotNull());
 
 		final Pane colorLayer = new Pane();
 		colorProperty.addListener(new ChangeListener<Color>() {
@@ -77,10 +76,12 @@ public class ColorSwatch extends StackPane {
 			public void changed(
 					ObservableValue<? extends Color> observable, Color oldValue, Color newValue
 			) {
+				if (newValue == null) return;
 				colorLayer.setBackground(new Background(new BackgroundFill(newValue, CornerRadii.EMPTY, Insets.EMPTY)));
 			}
 		});
 		colorLayer.setClip(createClip());
+		colorLayer.visibleProperty().bind(colorProperty.isNotNull());
 
 		getChildren().addAll(bgLayer, colorLayer);
 		layoutBoundsProperty().addListener(new ChangeListener<Bounds>() {

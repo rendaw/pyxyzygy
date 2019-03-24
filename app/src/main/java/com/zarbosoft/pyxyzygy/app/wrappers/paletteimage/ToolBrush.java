@@ -23,6 +23,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.StrokeType;
 
+import static com.zarbosoft.pyxyzygy.app.Misc.unopt;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.pad;
 
 public class ToolBrush extends BaseToolBrush<PaletteImageFrame, PaletteImage> {
@@ -99,10 +100,8 @@ public class ToolBrush extends BaseToolBrush<PaletteImageFrame, PaletteImage> {
 			DoubleVector end,
 			double endRadius
 	) {
-		PaletteColor color = (PaletteColor) editHandle.wrapper.node
-				.palette()
-				.entries()
-				.get(editHandle.wrapper.paletteSelOffsetBinder.get().get());
+		PaletteColor color = (PaletteColor) unopt(editHandle.wrapper.paletteSelectionBinder.get());
+		if (color == null) return;
 		canvas.stroke(color.index(), start.x, start.y, startRadius, end.x, end.y, endRadius);
 	}
 
