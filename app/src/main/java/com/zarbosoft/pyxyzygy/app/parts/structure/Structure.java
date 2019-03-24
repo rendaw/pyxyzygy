@@ -6,19 +6,17 @@ import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.model.v0.TrueColorTile;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
-import com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage.TrueColorImageNodeWrapper;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.pyxyzygy.core.model.v0.*;
 import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
+import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import com.zarbosoft.rendaw.common.ChainComparator;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
-import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
-import javafx.collections.ObservableList;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
@@ -28,9 +26,11 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 
 import java.io.File;
+import java.lang.reflect.Field;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -38,11 +38,12 @@ import java.util.stream.Stream;
 
 import static com.zarbosoft.pyxyzygy.app.Global.opacityMax;
 import static com.zarbosoft.pyxyzygy.app.Misc.moveTo;
+import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.pyxyzygy.app.Wrapper.TakesChildren.NONE;
 import static com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext.uniqueName;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
-import static com.zarbosoft.rendaw.common.Common.last;
-import static com.zarbosoft.rendaw.common.Common.sublist;
+import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.pad;
+import static com.zarbosoft.rendaw.common.Common.*;
 
 public class Structure {
 	private final ProjectContext context;
@@ -309,21 +310,50 @@ public class Structure {
 		});
 		MenuItem addPalette = new MenuItem("Add palette layer");
 		addPalette.setOnAction(e -> {
-			List<Palette> source = new ArrayList<>(context.project.palettes());
-			source.add(null);
-			ObservableList<String> show = FXCollections.observableArrayList();
-			for (Palette palette : source)
-				show.add(palette == null ? "New palette..." : palette.name());
-			ChoiceDialog<Palette> dialog = new ChoiceDialog<>();
-			Optional<Palette> result = dialog.showAndWait();
+			List<Optional<Palette>> source = new ArrayList<>();
+			for (Palette e1 : context.project.palettes())
+				source.add(Optional.of(e1));
+			source.add(Optional.empty());
+			ChoiceDialog<Optional<Palette>> dialog = new ChoiceDialog<Optional<Palette>>(source.get(0), source);
+			{
+				Field cbf = uncheck(() -> dialog.getClass().getDeclaredField("comboBox"));
+				cbf.setAccessible(true);
+				ComboBox<Optional<Palette>> cb = uncheck(() -> (ComboBox<Optional<Palette>>) cbf.get(dialog));
+				cb.setCellFactory(param -> new ListCell<>() {
+					@Override
+					protected void updateItem(Optional<Palette> item, boolean empty) {
+						if (empty || item == null)
+							setText("");
+						else if (!item.isPresent())
+							setText("New palette...");
+						else
+							setText(item.get().name());
+					}
+				});
+				cb.setButtonCell(cb.getCellFactory().call(null));
+			}
+			dialog.setTitle("Choose palette");
+			dialog.setHeaderText("Choose a palette for the new layer");
+			Optional<Optional<Palette>> result = dialog.showAndWait();
 			if (!result.isPresent())
 				return;
-			Palette palette = result.get();
-			if (palette == null) {
+			Optional<Palette> palette0 = result.get();
+			Palette palette;
+			if (!palette0.isPresent()) {
 				palette = Palette.create(context);
 				palette.initialNameSet(context, uniqueName("Palette"));
+				palette.initialNextIdSet(context, 2);
+				PaletteColor transparent = PaletteColor.create(context);
+				transparent.initialIndexSet(context, 0);
+				transparent.initialColorSet(context, TrueColor.fromJfx(Color.TRANSPARENT));
+				PaletteColor black = PaletteColor.create(context);
+				black.initialIndexSet(context, 1);
+				black.initialColorSet(context, TrueColor.fromJfx(Color.BLACK));
+				palette.initialEntriesAdd(context, ImmutableList.of(transparent, black));
 				Palette finalPalette = palette;
 				context.history.change(c -> c.project(context.project).palettesAdd(finalPalette));
+			} else {
+				palette = palette0.get();
 			}
 			PaletteImageNode image = PaletteImageNode.create(context);
 			image.initialOpacitySet(context, opacityMax);
@@ -364,10 +394,8 @@ public class Structure {
 								context.tileSize,
 								context.tileSize
 						);
-						frame.initialTilesPutAll(
-								context,
-								ImmutableMap.of(
-										unitBounds.corner().plus(x0, y0).to1D(),
+						frame.initialTilesPutAll(context,
+								ImmutableMap.of(unitBounds.corner().plus(x0, y0).to1D(),
 										TrueColorTile.create(context, cut)
 								)
 						);
@@ -377,7 +405,7 @@ public class Structure {
 			});
 		});
 		MenuButton addButton = HelperJFX.menuButton("plus.png");
-		addButton.getItems().addAll(addImage, importImage, addGroup, addCamera);
+		addButton.getItems().addAll(addImage, addPalette, importImage, addGroup, addCamera);
 		Button removeButton = HelperJFX.button("minus.png", "Remove");
 		removeButton.disableProperty().bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedIndices()));
 		removeButton.setOnAction(e -> {
@@ -459,7 +487,37 @@ public class Structure {
 		MenuButton linkButton = HelperJFX.menuButton("content-paste.png");
 		linkButton.getItems().addAll(linkBeforeButton, linkInButton, linkAfterButton);
 		toolbar = new ToolBar(addButton, duplicateButton, removeButton, moveUpButton, moveDownButton, linkButton);
-		layout.getChildren().addAll(toolbar, tree);
+
+		HBox opacityBox = new HBox();
+		{
+			opacityBox.setSpacing(3);
+
+			Slider opacity = new Slider();
+			opacity.setMin(0);
+			opacity.setMax(opacityMax);
+			CustomBinding.bindBidirectional(
+					new CustomBinding.IndirectBinder<Integer>(
+							new CustomBinding.PropertyHalfBinder<>(window.selectedForEdit),
+							e -> opt(e == null ?
+									null :
+									new CustomBinding.ScalarBinder<Integer>(
+											e.getWrapper().getValue(),
+											"opacity",
+											v -> context.history.change(c -> c
+													.projectNode((ProjectNode) e.getWrapper().getValue())
+													.opacitySet(v))
+							))
+					),
+					new CustomBinding.PropertyBinder<>(opacity.valueProperty()).bimap(
+							d -> Optional.of((int) (double) d),
+							i -> (double) (int) i
+					)
+			);
+			HBox.setHgrow(opacity,Priority.ALWAYS);
+			opacityBox.getChildren().addAll(new Label("Opacity"), opacity);
+		}
+
+		layout.getChildren().addAll(toolbar, tree, pad(opacityBox));
 		VBox.setVgrow(tree, Priority.ALWAYS);
 	}
 
@@ -502,6 +560,7 @@ public class Structure {
 		});
 
 		if (main) {
+			window.selectedForEdit.set(null);
 			selectForView(findNode(rootTreeItem, viewPath));
 			tree.getSelectionModel().clearSelection();
 			tree.getSelectionModel().select(findNode(rootTreeItem, editPath).tree.get());

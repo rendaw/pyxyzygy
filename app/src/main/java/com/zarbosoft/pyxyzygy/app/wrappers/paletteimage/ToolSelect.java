@@ -30,8 +30,8 @@ import static com.zarbosoft.rendaw.common.Common.workingDir;
 public class ToolSelect extends BaseToolSelect<PaletteImageFrame, PaletteImage> {
 	final PaletteImageEditHandle editHandle;
 
-	public ToolSelect(ProjectContext context, Window window, PaletteImageEditHandle editHandle) {
-		super(context, window, editHandle.wrapper,editHandle.wrapper.canvasHandle.zoom);
+	public ToolSelect(PaletteImageEditHandle editHandle) {
+		super(editHandle.wrapper,editHandle.wrapper.canvasHandle.zoom);
 		this.editHandle = editHandle;
 	}
 

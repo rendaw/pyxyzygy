@@ -1,9 +1,9 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage;
 
-import com.zarbosoft.pyxyzygy.app.EditHandle;
-import com.zarbosoft.pyxyzygy.app.Window;
-import com.zarbosoft.pyxyzygy.app.Wrapper;
+import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.config.NodeConfig;
+import com.zarbosoft.pyxyzygy.app.config.PaletteBrush;
+import com.zarbosoft.pyxyzygy.app.config.TrueColorBrush;
 import com.zarbosoft.pyxyzygy.app.config.TrueColorImageNodeConfig;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.model.v0.TrueColorTile;
@@ -19,13 +19,16 @@ import com.zarbosoft.pyxyzygy.core.model.v0.TrueColorTileBase;
 import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
+import javafx.collections.ObservableList;
 import javafx.scene.image.Image;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext.uniqueName1;
 
 public class TrueColorImageNodeWrapper extends BaseImageNodeWrapper<TrueColorImageNode, TrueColorImageFrame, TrueColorTileBase, TrueColorImage> {
@@ -47,6 +50,7 @@ public class TrueColorImageNodeWrapper extends BaseImageNodeWrapper<TrueColorIma
 					return frame.length();
 				}
 			};
+	public final CustomBinding.HalfBinder<TrueColorBrush> brushBinder;
 
 	// Cache values when there's no canvas
 	public TrueColorImageNodeWrapper(ProjectContext context, Wrapper parent, int parentIndex, TrueColorImageNode node) {
@@ -54,6 +58,26 @@ public class TrueColorImageNodeWrapper extends BaseImageNodeWrapper<TrueColorIma
 		this.config = (TrueColorImageNodeConfig) context.config.nodes.computeIfAbsent(node.id(),
 				id -> new TrueColorImageNodeConfig(context)
 		);
+		this.brushBinder =
+				new CustomBinding.DoubleIndirectHalfBinder<ObservableList<TrueColorBrush>, Integer, TrueColorBrush>(
+						new CustomBinding.ListPropertyHalfBinder<>(GUILaunch.config.trueColorBrushes),
+						new CustomBinding.DoubleIndirectHalfBinder<>(
+								config.tool,
+								config.brush,
+								(t, index) -> {
+									if (t != TrueColorImageNodeConfig.Tool.BRUSH)
+										return opt(null);
+									return opt(index);
+								}
+						),
+						(brushes, index) -> {
+							if (index == null)
+								return opt(null);
+							if (index >= brushes.size())
+								return opt(null);
+							return opt(brushes.get(index));
+						}
+				);
 	}
 
 	@Override

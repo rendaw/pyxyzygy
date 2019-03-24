@@ -27,8 +27,8 @@ import static com.zarbosoft.rendaw.common.Common.uncheck;
 public class ToolSelect extends BaseToolSelect<TrueColorImageFrame,TrueColorImage> {
 	public final TrueColorImageEditHandle editHandle;
 
-	public ToolSelect(ProjectContext context, Window window, TrueColorImageEditHandle editHandle) {
-		super(context, window, editHandle.wrapper,editHandle.wrapper.canvasHandle.zoom);
+	public ToolSelect(TrueColorImageEditHandle editHandle) {
+		super(editHandle.wrapper,editHandle.wrapper.canvasHandle.zoom);
 		this.editHandle = editHandle;
 	}
 

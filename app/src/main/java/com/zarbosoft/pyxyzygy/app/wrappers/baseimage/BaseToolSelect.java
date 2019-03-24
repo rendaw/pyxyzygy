@@ -244,8 +244,8 @@ public abstract class BaseToolSelect<F, L> extends Tool {
 
 		private void place(ProjectContext context, Window window) {
 			clear(context, originalBounds);
-			wrapper.modify(context,bounds,(image, offset) -> {
-				wrapper.imageCompose(image,lifted,offset.x,offset.y);
+			wrapper.modify(context, bounds, (image, offset) -> {
+				wrapper.imageCompose(image, lifted, offset.x, offset.y);
 			});
 			setState(context, new StateCreate(context, window));
 		}
@@ -294,7 +294,7 @@ public abstract class BaseToolSelect<F, L> extends Tool {
 
 	public abstract void clear(ProjectContext context, Rectangle bounds);
 
-	class StateCreate extends State {
+	public class StateCreate extends State {
 		final SelectInside rectangle;
 		final SelectHHandle left;
 		final SelectHHandle right;
@@ -455,7 +455,7 @@ public abstract class BaseToolSelect<F, L> extends Tool {
 			}
 		}
 
-		StateCreate(ProjectContext context, Window window) {
+		public StateCreate(ProjectContext context, Window window) {
 			for (Hotkeys.Action action : actions)
 				context.hotkeys.register(action);
 
@@ -600,14 +600,14 @@ public abstract class BaseToolSelect<F, L> extends Tool {
 
 	State state;
 
-	public BaseToolSelect(ProjectContext context, Window window,BaseImageNodeWrapper<?,F,?,L> wrapper, SimpleIntegerProperty zoom) {
+	public BaseToolSelect(BaseImageNodeWrapper<?, F, ?, L> wrapper, SimpleIntegerProperty zoom) {
 		this.wrapper = wrapper;
-		state = new StateCreate(context, window);
 		this.zoom = zoom;
 	}
 
-	void setState(ProjectContext context, State newState) {
-		state.remove(context);
+	public void setState(ProjectContext context, State newState) {
+		if (state != null)
+			state.remove(context);
 		state = newState;
 	}
 

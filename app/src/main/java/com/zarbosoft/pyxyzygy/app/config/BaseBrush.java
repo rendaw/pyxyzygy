@@ -9,7 +9,7 @@ import javafx.beans.property.SimpleStringProperty;
 @Configuration
 public class BaseBrush {
 	@Configuration
-	public SimpleIntegerProperty size = new SimpleIntegerProperty();
+	public SimpleObjectProperty<Integer> size = new SimpleObjectProperty<>(0);
 
 	public double sizeInPixels() {
 		return size.get() / 10.0;

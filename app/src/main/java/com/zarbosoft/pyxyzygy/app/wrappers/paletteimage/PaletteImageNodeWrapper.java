@@ -1,10 +1,8 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.paletteimage;
 
-import com.zarbosoft.pyxyzygy.app.CanvasHandle;
-import com.zarbosoft.pyxyzygy.app.EditHandle;
-import com.zarbosoft.pyxyzygy.app.Window;
-import com.zarbosoft.pyxyzygy.app.Wrapper;
+import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.config.NodeConfig;
+import com.zarbosoft.pyxyzygy.app.config.PaletteBrush;
 import com.zarbosoft.pyxyzygy.app.config.PaletteImageNodeConfig;
 import com.zarbosoft.pyxyzygy.app.model.v0.PaletteTile;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
@@ -15,37 +13,90 @@ import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.BaseImageNodeWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.WrapTile;
 import com.zarbosoft.pyxyzygy.core.PaletteImage;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
-import com.zarbosoft.pyxyzygy.core.model.v0.PaletteImageFrame;
-import com.zarbosoft.pyxyzygy.core.model.v0.PaletteImageNode;
-import com.zarbosoft.pyxyzygy.core.model.v0.PaletteTileBase;
-import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
+import com.zarbosoft.pyxyzygy.core.model.v0.*;
 import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import com.zarbosoft.rendaw.common.Assertion;
+import javafx.collections.ObservableList;
 import javafx.scene.image.Image;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext.uniqueName1;
+import static com.zarbosoft.rendaw.common.Common.last;
 
 public class PaletteImageNodeWrapper extends BaseImageNodeWrapper<PaletteImageNode, PaletteImageFrame, PaletteTileBase, PaletteImage> {
 	final PaletteImageNodeConfig config;
 	public final ProjectContext.PaletteWrapper palette;
 
+	public static FrameFinder<PaletteImageNode, PaletteImageFrame> frameFinder =
+			new FrameFinder<PaletteImageNode, PaletteImageFrame>() {
+				@Override
+				public PaletteImageFrame frameGet(PaletteImageNode node, int i) {
+					return node.framesGet(i);
+				}
+
+				@Override
+				public int frameCount(PaletteImageNode node) {
+					return node.framesLength();
+				}
+
+				@Override
+				public int frameLength(PaletteImageFrame frame) {
+					return frame.length();
+				}
+			};
+	public final CustomBinding.HalfBinder<PaletteBrush> brushBinder;
+	public final CustomBinding.IndirectBinder<Integer> paletteSelOffsetBinder;
+	public final CustomBinding.HalfBinder<ProjectObject> paletteSelectionBinder;
+
 	public PaletteImageNodeWrapper(
-			ProjectContext context,
-			Wrapper parent,
-			int parentIndex,
-			PaletteImageNode node,
-			FrameFinder<PaletteImageNode, PaletteImageFrame> frameFinder
+			ProjectContext context, Wrapper parent, int parentIndex, PaletteImageNode node
 	) {
 		super(parent, parentIndex, node, frameFinder);
 		config = (PaletteImageNodeConfig) context.config.nodes.computeIfAbsent(node.id(),
 				k -> new PaletteImageNodeConfig(context)
+		);
+		this.brushBinder =
+				new CustomBinding.DoubleHalfBinder<ObservableList<PaletteBrush>, Integer, PaletteBrush>(
+						new CustomBinding.ListPropertyHalfBinder<>(GUILaunch.config.paletteBrushes),
+						new CustomBinding.DoubleHalfBinder<>(
+								config.tool,
+								config.brush,
+								(t, index) -> {
+									if (t != PaletteImageNodeConfig.Tool.BRUSH)
+										return opt(null);
+									return opt(index);
+								}
+						),
+						(brushes, index) -> {
+							if (index == null)
+								return opt(null);
+							if (index >= brushes.size())
+								return opt(null);
+							return opt(brushes.get(index));
+						}
+				);
+		paletteSelOffsetBinder =
+				new CustomBinding.IndirectBinder<Integer>(new CustomBinding.IndirectHalfBinder<Boolean>(
+						brushBinder,
+						b -> opt(b.useColor)
+				),
+						b -> opt((Boolean) b ? brushBinder.get().get().paletteOffset : config.paletteOffset)
+				);
+		paletteSelectionBinder = new CustomBinding.DoubleHalfBinder<>(
+				paletteSelOffsetBinder,
+				new CustomBinding.ListHalfBinder<PaletteColor>(node.palette(), "entries"),
+				(offset, entries) -> {
+					if (entries.size() <= offset) return opt(last(entries));
+					else return opt(entries.get(offset));
+				}
 		);
 		this.palette = context.getPaletteWrapper(node.palette());
 	}
@@ -159,6 +210,7 @@ public class PaletteImageNodeWrapper extends BaseImageNodeWrapper<PaletteImageNo
 			public Image getImage(
 					ProjectContext context, PaletteTileBase tile
 			) {
+				System.out.format("getting p tile\n");
 				return HelperJFX.toImage(((PaletteTile) tile).getData(context), palette.colors);
 			}
 		};

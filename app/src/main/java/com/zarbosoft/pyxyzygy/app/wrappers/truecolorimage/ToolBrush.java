@@ -80,24 +80,25 @@ public class ToolBrush extends BaseToolBrush<TrueColorImageFrame, TrueColorImage
 												pickerBindingCleanup.run();
 												pickerBindingCleanup = null;
 											}
-											pickerBindingCleanup = CustomBinding.<TrueColor, Color>bindBidirectional(
-													color,
-													colorPicker.colorProxyProperty,
-													c -> Optional.of(c.toJfx()),
-													c -> {
-														TrueColor out = new TrueColor();
-														out.r = (byte) (c.getRed() * 255);
-														out.g = (byte) (c.getGreen() * 255);
-														out.b = (byte) (c.getBlue() * 255);
-														out.a = (byte) (c.getOpacity() * 255);
-														return Optional.of(out);
-													}
+											pickerBindingCleanup = CustomBinding.bindBidirectional(
+													new CustomBinding.PropertyBinder<>(color),
+													new CustomBinding.PropertyBinder<>(colorPicker.colorProxyProperty).bimap(
+															c -> {
+																TrueColor out = new TrueColor();
+																out.r = (byte) (c.getRed() * 255);
+																out.g = (byte) (c.getGreen() * 255);
+																out.b = (byte) (c.getBlue() * 255);
+																out.a = (byte) (c.getOpacity() * 255);
+																return Optional.of(out);
+															},
+													c -> c.toJfx()
+													)
 											);
 										}
 									});
 								})
 								.custom("Size", () -> {
-									Pair<Node, SimpleIntegerProperty> brushSize =
+									Pair<Node, SimpleObjectProperty<Integer>> brushSize =
 											HelperJFX.nonlinearSlider(10, 2000, 1, 10);
 									brushSize.second.bindBidirectional(brush.size);
 									return brushSize.first;

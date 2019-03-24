@@ -47,14 +47,11 @@ def main():
     with open(java_dest / f'{module}JNI.java', 'w') as dest:
         dest.write(sub_java)
 
-    general_flags = [
-        '-Wall', '-pedantic',
-        '-O3',
-    ]
-
     c([
         args.cc,
-    ] + general_flags + [
+        '-Wall', '-pedantic',
+        # '-O3',
+        '-ggdb',
         '-shared',
         '-fPIC',
         f'-L{args.lib}',

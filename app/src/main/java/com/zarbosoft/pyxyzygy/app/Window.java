@@ -1,5 +1,6 @@
 package com.zarbosoft.pyxyzygy.app;
 
+import com.zarbosoft.pyxyzygy.app.wrappers.paletteimage.PaletteImageNodeWrapper;
 import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.parts.editor.Editor;
@@ -46,6 +47,22 @@ public class Window {
 	public ContentReplacer layerTabContent = new ContentReplacer();
 	private Tab layerTab;
 
+	public static class Tab extends javafx.scene.control.Tab {
+		ScrollPane scrollPane = new ScrollPane();
+
+		{
+			setContent(scrollPane);
+		}
+
+		public Tab(String title) {
+			super(title);
+		}
+
+		public void setContent2(Node node) {
+			scrollPane.setContent(node);
+		}
+	}
+
 	public void start(ProjectContext context, Stage primaryStage, boolean main) {
 		this.stage = stage;
 		primaryStage.setOnCloseRequest(e -> {
@@ -85,8 +102,8 @@ public class Window {
 
 		TabPane leftTabs = new TabPane();
 		leftTabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
-		final Tab structureTab = new Tab("Structure");
-		final Tab configTab = new Tab("Config");
+		final Tab structureTab = new Tab("Project");
+		final Tab configTab = new Tab("Settings");
 		layerTab = new Tab("Layer");
 		layerTab.disableProperty().bind(Bindings.isEmpty(layerTabContent.getChildren()));
 		layerTab.setContent(layerTabContent);
@@ -287,6 +304,8 @@ public class Window {
 			return new GroupLayerWrapper(context, parent, parentIndex, (GroupLayer) node);
 		} else if (node instanceof TrueColorImageNode) {
 			return new TrueColorImageNodeWrapper(context, parent, parentIndex, (TrueColorImageNode) node);
+		} else if (node instanceof PaletteImageNode) {
+			return new PaletteImageNodeWrapper(context, parent, parentIndex, (PaletteImageNode) node);
 		} else
 			throw new Assertion();
 	}

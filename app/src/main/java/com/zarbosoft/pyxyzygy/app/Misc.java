@@ -10,13 +10,13 @@ import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
 import com.zarbosoft.rendaw.common.Assertion;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.Property;
-import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.scene.paint.Color;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -46,26 +46,28 @@ public class Misc {
 	) {
 		ProjectNode node = (ProjectNode) wrapper.getValue();
 		return new Runnable() {
-
+			private Runnable opacityCleanup;
 			private Runnable nameCleanup;
-			private Listener.ScalarSet<ProjectNode, Integer> opacitySetListener;
 
 			{
 				builder.text("Name", t -> {
 					this.nameCleanup =
-							CustomBinding.bindBidirectionalMultiple(new CustomBinding.ScalarBinder<>(node::addNameSetListeners,
+							CustomBinding.bindBidirectional(new CustomBinding.ScalarBinder<>(node::addNameSetListeners,
 									node::removeNameSetListeners,
 									v -> context.history.change(c -> c.projectNode(node).nameSet(v))
 							), new CustomBinding.PropertyBinder<>(t.textProperty()));
 				});
 				builder.slider("Opacity", 0, Global.opacityMax, slider -> {
 					slider.setValue(node.opacity());
-					Misc.<DoubleProperty, Number>bind(slider.valueProperty(),
-							v -> context.history.change(c -> c.projectNode(node).opacitySet(v.intValue())),
-							setter -> opacitySetListener = node.addOpacitySetListeners((target, value) -> {
-								setter.accept(value);
-							})
-					);
+					opacityCleanup = CustomBinding.bindBidirectional(
+							new CustomBinding.ScalarBinder<Integer>(
+									node,
+									"opacity",
+									v -> context.history.change(c -> c.projectNode(node).opacitySet(v))
+							),
+							new CustomBinding.PropertyBinder<>(slider.valueProperty()).bimap(
+									d -> Optional.of((int) (double) d), i -> (double) (int) i
+					));
 				});
 				builder.check("Onion skin", checkBox -> {
 					checkBox.selectedProperty().bindBidirectional(wrapper.getConfig().onionSkin);
@@ -75,37 +77,7 @@ public class Misc {
 			@Override
 			public void run() {
 				nameCleanup.run();
-				node.removeOpacitySetListeners(opacitySetListener);
-			}
-		};
-	}
-
-	public static <T extends Property, V> void bind(T prop, Consumer<V> setter, Consumer<Consumer<V>> listen) {
-		new Object() {
-			boolean blockValueUpdate = false;
-			boolean blockWidgetUpdate = false;
-
-			{
-				prop.addListener((observable, oldValue, newValue) -> {
-					if (blockWidgetUpdate)
-						return;
-					blockValueUpdate = true;
-					try {
-						setter.accept((V) newValue);
-					} finally {
-						blockValueUpdate = false;
-					}
-				});
-				listen.accept(v -> {
-					if (blockValueUpdate)
-						return;
-					blockWidgetUpdate = true;
-					try {
-						prop.setValue(v);
-					} finally {
-						blockWidgetUpdate = false;
-					}
-				});
+				opacityCleanup.run();
 			}
 		};
 	}
@@ -147,6 +119,7 @@ public class Misc {
 			public void run() {
 				dead = true;
 				source.removeListener(listener);
+				target.forEach(remove);
 			}
 		};
 	}
@@ -158,12 +131,28 @@ public class Misc {
 
 	public static CustomBinding.ScalarBinder<Color> colorBinder(ProjectContext context, ProjectObject o) {
 		if (o instanceof PaletteColor) {
-			return new CustomBinding.ScalarBinder<Color>(
-					((PaletteColor) o)::addColorSetListeners,
+			return new CustomBinding.ScalarBinder<Color>(((PaletteColor) o)::addColorSetListeners,
 					((PaletteColor) o)::removeColorSetListeners,
 					v -> context.history.change(c -> c.paletteColor((PaletteColor) o).colorSet(TrueColor.fromJfx(v)))
 			);
 		} else
 			throw new Assertion();
+	}
+
+	private static Object notReallyNull = new Object();
+
+	public static <T> Optional<T> opt(T v) {
+		if (v == null)
+			return (Optional<T>) Optional.of(notReallyNull);
+		else
+			return Optional.of(v);
+	}
+
+	public static <T> T unopt(Optional<T> v) {
+		Object out = v.get();
+		if (out == notReallyNull)
+			return null;
+		else
+			return (T) out;
 	}
 }

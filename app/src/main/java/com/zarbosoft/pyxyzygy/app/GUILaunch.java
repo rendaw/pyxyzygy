@@ -2,10 +2,7 @@ package com.zarbosoft.pyxyzygy.app;
 
 import com.google.common.collect.ImmutableList;
 import com.zarbosoft.interface1.TypeInfo;
-import com.zarbosoft.pyxyzygy.app.config.CreateMode;
-import com.zarbosoft.pyxyzygy.app.config.RootGlobalConfig;
-import com.zarbosoft.pyxyzygy.app.config.RootProfileConfig;
-import com.zarbosoft.pyxyzygy.app.config.TrueColorBrush;
+import com.zarbosoft.pyxyzygy.app.config.*;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.core.model.v0.*;
@@ -408,13 +405,13 @@ public class GUILaunch extends Application {
 					}
 				});
 			}
-			CustomBinding.<Path>bindBidirectionalMultiple(new CustomBinding.PropertyBinder<String>(text.textProperty()).<Path>bimap(
-					t -> Optional.of(cwd.get().resolve(t)),
+			CustomBinding.<Path>bindBidirectional(new CustomBinding.PropertyBinder<String>(text.textProperty()).<Path>bimap(t -> Optional.of(cwd.get().resolve(t)),
 					(Path v) -> v.getFileName().toString()
-			), new CustomBinding.PropertyBinder<ChooserEntry>(listProxy).<Path>bimap(
-					e -> Optional.ofNullable(e).map(v -> v.path),
-					(Path v) -> entries.get(v)
-			));
+					),
+					new CustomBinding.PropertyBinder<ChooserEntry>(listProxy).<Path>bimap(e -> Optional
+							.ofNullable(e)
+							.map(v -> v.path), (Path v) -> entries.get(v))
+			);
 			resolvedPath.bind(Bindings.createObjectBinding(() -> cwd.get().resolve(text.getText()),
 					cwd,
 					text.textProperty()
@@ -458,11 +455,7 @@ public class GUILaunch extends Application {
 		logger = new Logger.TerminalPlusFile(appDirs);
 		Thread.currentThread().setUncaughtExceptionHandler((thread, e) -> {
 			logger.writeException(e, "Uncaught error");
-			Alert alert = new Alert(Alert.AlertType.ERROR);
-			alert.setTitle("Error creating project");
-			alert.setHeaderText(alert.getTitle());
-			alert.setContentText(e.getMessage());
-			alert.showAndWait();
+			HelperJFX.exceptionPopup(e, "Unexpected error", "An unexpected error occurred.");
 		});
 		new com.zarbosoft.pyxyzygy.core.mynativeJNI();
 
@@ -489,22 +482,36 @@ public class GUILaunch extends Application {
 			return;
 
 		config = ConfigBase.deserialize(new TypeInfo(RootGlobalConfig.class),
-				Global.configDir.resolve(Long.toString(profileId)),
+				Global.configDir.resolve(String.format("profile_%s.luxem", Long.toString(profileId))),
 				() -> {
 					RootGlobalConfig config = new RootGlobalConfig();
-					TrueColorBrush transparentBrush = new TrueColorBrush();
-					transparentBrush.name.set("Transparent");
-					transparentBrush.size.set(50);
-					transparentBrush.blend.set(Global.blendMax);
-					transparentBrush.color.set(TrueColor.fromJfx(Color.TRANSPARENT));
-					transparentBrush.useColor.set(true);
-					TrueColorBrush defaultBrush = new TrueColorBrush();
-					defaultBrush.name.set("Default");
-					defaultBrush.size.set(10);
-					defaultBrush.blend.set(Global.blendMax);
-					defaultBrush.color.set(TrueColor.fromJfx(Color.BLACK));
-					defaultBrush.useColor.set(true);
-					config.trueColorBrushes.addAll(transparentBrush, defaultBrush);
+					{
+						TrueColorBrush transparentBrush = new TrueColorBrush();
+						transparentBrush.name.set("Transparent");
+						transparentBrush.size.set(50);
+						transparentBrush.blend.set(Global.blendMax);
+						transparentBrush.color.set(TrueColor.fromJfx(Color.TRANSPARENT));
+						transparentBrush.useColor.set(true);
+						TrueColorBrush defaultBrush = new TrueColorBrush();
+						defaultBrush.name.set("Default");
+						defaultBrush.size.set(10);
+						defaultBrush.blend.set(Global.blendMax);
+						defaultBrush.color.set(TrueColor.fromJfx(Color.BLACK));
+						defaultBrush.useColor.set(true);
+						config.trueColorBrushes.addAll(transparentBrush, defaultBrush);
+					}
+					{
+						PaletteBrush transparentBrush = new PaletteBrush();
+						transparentBrush.name.set("Transparent");
+						transparentBrush.size.set(50);
+						transparentBrush.paletteOffset.set(0);
+						transparentBrush.useColor.set(true);
+						PaletteBrush defaultBrush = new PaletteBrush();
+						defaultBrush.name.set("Default");
+						defaultBrush.size.set(10);
+						defaultBrush.useColor.set(false);
+						config.paletteBrushes.addAll(transparentBrush, defaultBrush);
+					}
 					return config;
 				}
 		);
@@ -523,7 +530,13 @@ public class GUILaunch extends Application {
 						try {
 							newProject(primaryStage, dialog.resultPath, dialog.resultCreateMode);
 						} catch (Exception e) {
-							HelperJFX.exceptionPopup(e, "Error creating new project");
+							logger.writeException(e, "Error creating new project");
+							HelperJFX.exceptionPopup(e,
+									"Error creating new project",
+									"An error occurred while trying to create the project.\n" +
+											"\n" +
+											"Make sure you have permission to write to the project directory."
+							);
 							continue;
 						}
 						break;
@@ -532,7 +545,13 @@ public class GUILaunch extends Application {
 						try {
 							openProject(primaryStage, dialog.resultPath);
 						} catch (Exception e) {
-							HelperJFX.exceptionPopup(e, "Error opening project");
+							logger.writeException(e, "Error opening project");
+							HelperJFX.exceptionPopup(e,
+									"Error opening project",
+									"An error occurred while trying to open the project.\n" +
+											"\n" +
+											"Make sure you have permission to read and write to the project directory and all the files within."
+							);
 							continue;
 						}
 						break;
@@ -575,14 +594,46 @@ public class GUILaunch extends Application {
 		groupTimeFrame.initialInnerLoopSet(context, NO_LOOP);
 		groupLayer.initialTimeFramesAdd(context, ImmutableList.of(groupTimeFrame));
 
-		TrueColorImageNode trueColorImageNode = TrueColorImageNode.create(context);
-		trueColorImageNode.initialNameSet(context, uniqueName("New Layer"));
-		trueColorImageNode.initialOpacitySet(context, Global.opacityMax);
-		TrueColorImageFrame trueColorImageFrame = TrueColorImageFrame.create(context);
-		trueColorImageFrame.initialLengthSet(context, -1);
-		trueColorImageFrame.initialOffsetSet(context, new Vector(0, 0));
-		trueColorImageNode.initialFramesAdd(context, ImmutableList.of(trueColorImageFrame));
-		groupLayer.initialInnerSet(context, trueColorImageNode);
+		switch (createMode) {
+
+			case normal: {
+				TrueColorImageNode trueColorImageNode = TrueColorImageNode.create(context);
+				trueColorImageNode.initialNameSet(context, uniqueName("True color layer"));
+				trueColorImageNode.initialOpacitySet(context, Global.opacityMax);
+				TrueColorImageFrame trueColorImageFrame = TrueColorImageFrame.create(context);
+				trueColorImageFrame.initialLengthSet(context, -1);
+				trueColorImageFrame.initialOffsetSet(context, new Vector(0, 0));
+				trueColorImageNode.initialFramesAdd(context, ImmutableList.of(trueColorImageFrame));
+				groupLayer.initialInnerSet(context, trueColorImageNode);
+			}
+			break;
+			case pixel: {
+				Palette palette = Palette.create(context);
+				palette.initialNameSet(context, uniqueName("Palette"));
+				palette.initialNextIdSet(context, 2);
+				PaletteColor transparent = PaletteColor.create(context);
+				transparent.initialIndexSet(context, 0);
+				transparent.initialColorSet(context, TrueColor.fromJfx(Color.TRANSPARENT));
+				PaletteColor black = PaletteColor.create(context);
+				black.initialIndexSet(context, 1);
+				black.initialColorSet(context, TrueColor.fromJfx(Color.BLACK));
+				palette.initialEntriesAdd(context, ImmutableList.of(transparent, black));
+				context.project.initialPalettesAdd(context, ImmutableList.of(palette));
+
+				PaletteImageNode paletteImageNode = PaletteImageNode.create(context);
+				paletteImageNode.initialPaletteSet(context, palette);
+				paletteImageNode.initialNameSet(context, uniqueName("Palette layer"));
+				paletteImageNode.initialOpacitySet(context, Global.opacityMax);
+				PaletteImageFrame paletteImageFrame = PaletteImageFrame.create(context);
+				paletteImageFrame.initialLengthSet(context, -1);
+				paletteImageFrame.initialOffsetSet(context, new Vector(0, 0));
+				paletteImageNode.initialFramesAdd(context, ImmutableList.of(paletteImageFrame));
+				groupLayer.initialInnerSet(context, paletteImageNode);
+			}
+			break;
+			default:
+				throw new Assertion();
+		}
 
 		GroupNode groupNode = GroupNode.create(context);
 		groupNode.initialNameSet(context, "Main");

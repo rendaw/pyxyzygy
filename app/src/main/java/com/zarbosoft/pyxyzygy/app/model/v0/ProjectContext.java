@@ -64,14 +64,12 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 			palette.mirrorEntries(out.cleanup, v -> {
 				if (v instanceof PaletteColor) {
 					final Listener.ScalarSet<PaletteColor, TrueColor> colorChangeListener = (target, value) -> {
-						int r = (int) (value.r * 0xFF);
-						int g = (int) (value.g * 0xFF);
-						int b = (int) (value.b * 0xFF);
-						int a = (int) (value.a * 0xFF);
-						out.colors.set((byte) ((PaletteColor) v).index(), (r << 24) | (g << 16) | (b << 8) | a);
+						out.colors.set(((PaletteColor) v).index(), value.r, value.g, value.b, value.a);
+						out.listeners.forEach(l -> l.run());
 					};
 					((PaletteColor) v).addColorSetListeners(colorChangeListener);
 					return () -> {
+						out.colors.set(((PaletteColor) v).index(), (byte) 0, (byte) 0, (byte) 0, (byte) 0);
 						((PaletteColor) v).removeColorSetListeners(colorChangeListener);
 					};
 				} else
@@ -119,6 +117,7 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 			if (false) {
 				throw new Assertion();
 			} else if (o instanceof Project) {
+				((Project) o).palettes().forEach(incCount);
 				((Project) o).top().forEach(incCount);
 			} else if (o instanceof GroupLayer) {
 				if (((GroupLayer) o).inner() != null) {
@@ -135,8 +134,17 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 			} else if (o instanceof TrueColorImageNode) {
 				((TrueColorImageNode) o).frames().forEach(incCount);
 			} else if (o instanceof TrueColorTileBase) {
+			} else if (o instanceof PaletteImageFrame) {
+				((PaletteImageFrame) o).tiles().values().forEach(incCount);
+			} else if (o instanceof PaletteImageNode) {
+				incCount.accept(((PaletteImageNode) o).palette());
+				((PaletteImageNode) o).frames().forEach(incCount);
+			} else if (o instanceof PaletteTileBase) {
+			} else if (o instanceof Palette) {
+				((Palette) o).entries().forEach(incCount);
+			} else if (o instanceof PaletteColor) {
 			} else {
-				throw new Assertion(String.format("Unhandled type %s\n", o));
+				throw new Assertion(String.format("Unhandled type %s\n", o.getClass()));
 			}
 		});
 		history.change.changeStep.changes.forEach(change -> change.debugRefCounts(incCount));
@@ -221,7 +229,7 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 	}
 
 	public void initConfig() {
-		config = ConfigBase.deserialize(new TypeInfo(RootProjectConfig.class), path, () -> {
+		config = ConfigBase.deserialize(new TypeInfo(RootProjectConfig.class), path.resolve("config.luxem"), () -> {
 			RootProjectConfig config = new RootProjectConfig();
 			config.trueColor.set(TrueColor.fromJfx(Color.BLACK));
 			return config;
@@ -308,7 +316,10 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 					public StackReader.State record() {
 						if ("TrueColorTile".equals(type))
 							return new TrueColorTile.Deserializer(context);
-						return DeserializeHelper.deserializeModel(context, type);
+						else if ("PaletteTile".equals(type))
+							return new PaletteTile.Deserializer(context);
+						else
+							return DeserializeHelper.deserializeModel(context, type);
 					}
 				};
 			} else if ("undo".equals(key)) {

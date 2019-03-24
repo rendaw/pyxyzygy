@@ -4,14 +4,15 @@ import com.google.common.base.Throwables;
 import com.zarbosoft.pyxyzygy.app.CustomBinding;
 import com.zarbosoft.pyxyzygy.app.GUILaunch;
 import com.zarbosoft.pyxyzygy.app.Global;
-import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.core.PaletteColors;
 import com.zarbosoft.pyxyzygy.core.PaletteImage;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
+import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.Pair;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -30,6 +31,7 @@ import java.text.DecimalFormat;
 import java.util.Optional;
 import java.util.function.Function;
 
+import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.rendaw.common.Common.getResource;
 
 public class HelperJFX {
@@ -44,7 +46,7 @@ public class HelperJFX {
 		return Color.rgb(source.getRed(), source.getGreen(), source.getBlue());
 	}
 
-	public static Pair<Node, SimpleIntegerProperty> nonlinearSlider(int min, int max, int precision, int divide) {
+	public static Pair<Node, SimpleObjectProperty<Integer>> nonlinearSlider(int min, int max, int precision, int divide) {
 		Slider slider = new Slider();
 		slider.setMin(0);
 		slider.setMax(1);
@@ -61,27 +63,27 @@ public class HelperJFX {
 		out.getChildren().addAll(text, slider);
 
 		double range = max - min;
-		Function<Double, Integer> fromNonlinear = v -> (int) (Math.pow(v, 2) * range + min);
-		Function<Integer, Double> toNonlinear = v -> Math.pow((v - min) / range, 0.5);
-		SimpleIntegerProperty value = new SimpleIntegerProperty();
+		Function<Number, Integer> fromNonlinear = v -> (int) (Math.pow(v.doubleValue(), 2) * range + min);
+		Function<Integer, Number> toNonlinear = v -> Math.pow((v - min) / range, 0.5);
+		SimpleObjectProperty<Integer> value = new SimpleObjectProperty<>(0);
 
-		CustomBinding.bindBidirectional(value,
-				slider.valueProperty(),
-				v -> Optional.of(toNonlinear.apply(v.intValue())),
-				v -> Optional.of(fromNonlinear.apply(v.doubleValue()))
+		CustomBinding.bindBidirectional(new CustomBinding.PropertyBinder<>(value),
+				new CustomBinding.PropertyBinder<>(slider.valueProperty()).<Integer>bimap(n -> opt(n).map(fromNonlinear),
+						toNonlinear)
 		);
 		DecimalFormat textFormat = new DecimalFormat();
 		textFormat.setMaximumFractionDigits(precision);
-		CustomBinding.bindBidirectional(value,
-				text.textProperty(),
-				v -> Optional.of(textFormat.format((double) v.intValue() / divide)),
+		CustomBinding.bindBidirectional(new CustomBinding.PropertyBinder<>(value),
+				new CustomBinding.PropertyBinder<>(text.textProperty()).bimap(
 				v -> {
 					try {
-						return Optional.of((int) (Double.parseDouble(v) * divide));
+						return opt((int) (Double.parseDouble(v) * divide));
 					} catch (NumberFormatException e) {
 						return Optional.empty();
 					}
-				}
+				},
+						v -> textFormat.format((double) v.intValue() / divide)
+				)
 		);
 
 		return new Pair<>(out, value);
@@ -129,6 +131,7 @@ public class HelperJFX {
 		}
 
 		abstract byte[] getNativeDataPremultiplied();
+
 		abstract byte[] getNativeData();
 
 		@Override
@@ -345,11 +348,11 @@ public class HelperJFX {
 		}, width, height);
 	}
 
-	public static void exceptionPopup(Throwable e, String message) {
+	public static void exceptionPopup(Throwable e, String message, String shortDescription) {
 		Alert alert = new Alert(Alert.AlertType.ERROR);
 		alert.setTitle(String.format("%s - error", Global.nameHuman));
 		alert.setHeaderText(message);
-		alert.setContentText(e.getMessage());
+		alert.setContentText(shortDescription);
 		TextArea textArea = new TextArea(Throwables.getStackTraceAsString(e));
 		textArea.setEditable(false);
 		textArea.setWrapText(true);

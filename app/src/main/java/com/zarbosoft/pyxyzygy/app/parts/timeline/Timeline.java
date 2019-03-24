@@ -6,6 +6,7 @@ import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.app.wrappers.camera.CameraWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeWrapper;
+import com.zarbosoft.pyxyzygy.app.wrappers.paletteimage.PaletteImageNodeWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage.TrueColorImageNodeWrapper;
 import com.zarbosoft.pyxyzygy.core.model.v0.*;
 import com.zarbosoft.pyxyzygy.seed.model.Listener;
@@ -92,7 +93,7 @@ public class Timeline {
 	Pane controlAlignment = new Pane();
 	TreeTableColumn<RowAdapter, RowAdapter> framesColumn = new TreeTableColumn();
 	ScrollBar timeScroll = new ScrollBar();
-	private TimeAdapterNode outerTimeHandle;
+	private TimeMapper outerTimeHandle;
 
 	public double getTimelineX(MouseEvent e) {
 		Point2D corner = scrubElements.getLocalToSceneTransform().transform(0, 0);
@@ -407,7 +408,7 @@ public class Timeline {
 		Wrapper edit = edit1.getWrapper();
 
 		// Prepare time translation
-		outerTimeHandle = createTimeHandle(root.getValue());
+		outerTimeHandle = createTimeMapper(root.getValue());
 		outerTimeHandle.updateTime(ImmutableList.of(new FrameMapEntry(Global.NO_LENGTH, 0)));
 		if (window.timeMap == null)
 			throw new Assertion(); // DEBUG
@@ -502,6 +503,12 @@ public class Timeline {
 					.getRoot()
 					.getChildren()
 					.add(new TreeItem(new RowAdapterTrueColorImageNode(this, (TrueColorImageNode) edit.getValue())));
+		}
+		else if (edit instanceof PaletteImageNodeWrapper) {
+			tree
+					.getRoot()
+					.getChildren()
+					.add(new TreeItem<>(new RowAdapterPaletteImageNode(this, (PaletteImageNode) edit.getValue())));
 		}
 	}
 
@@ -687,28 +694,26 @@ public class Timeline {
 		}).collect(Collectors.toList());
 	}
 
-	public TimeAdapterNode createTimeHandle(ProjectObject object) {
+	public TimeMapper createTimeMapper(ProjectObject object) {
 		if (object == window.selectedForEdit.get().getWrapper().getValue())
 			return createEndTimeHandle();
 		if (false) {
 			throw new Assertion();
 		} else if (object instanceof GroupNode) {
-			return new TimeAdapterNode() {
+			return new TimeMapper() {
 				private final Listener.Clear<GroupNode> layersClearListener;
 				private final Listener.ListMoveTo<GroupNode> layersMoveToListener;
 				private final Listener.ListRemove<GroupNode> layersRemoveListener;
 				private final Listener.ListAdd<GroupNode, GroupLayer> layersAddListener;
-				TimeAdapterNode child;
+				TimeMapper child;
 
 				{
-					layersAddListener =
-					((GroupNode) object).addLayersAddListeners((target, at, value) -> relocate());
+					layersAddListener = ((GroupNode) object).addLayersAddListeners((target, at, value) -> relocate());
 					layersRemoveListener =
-					((GroupNode) object).addLayersRemoveListeners((target, at, count) -> relocate());
+							((GroupNode) object).addLayersRemoveListeners((target, at, count) -> relocate());
 					layersMoveToListener =
-					((GroupNode) object).addLayersMoveToListeners((target, source, count, dest) -> relocate());
-					layersClearListener =
-					((GroupNode) object).addLayersClearListeners(target -> relocate());
+							((GroupNode) object).addLayersMoveToListeners((target, source, count, dest) -> relocate());
+					layersClearListener = ((GroupNode) object).addLayersClearListeners(target -> relocate());
 				}
 
 				public void relocate() {
@@ -728,7 +733,7 @@ public class Timeline {
 					if (beforeAt == null)
 						child = createEndTimeHandle();
 					else
-						child = createTimeHandle(beforeAt.getValue());
+						child = createTimeMapper(beforeAt.getValue());
 				}
 
 				@Override
@@ -749,31 +754,30 @@ public class Timeline {
 				}
 			};
 		} else if (object instanceof GroupLayer) {
-			return new TimeAdapterNode() {
+			return new TimeMapper() {
 				private final Listener.ScalarSet<GroupLayer, ProjectNode> innerSetListener;
 				Runnable framesCleanup;
 				private List<Runnable> frameCleanup = new ArrayList<>();
-				private TimeAdapterNode child;
+				private TimeMapper child;
 				int suppressRecalc = 0;
 
 				{
-					child = createTimeHandle(((GroupLayer) object).inner());
+					child = createTimeMapper(((GroupLayer) object).inner());
 
 					innerSetListener =
-					((GroupLayer) object).addInnerSetListeners((GroupLayer target, ProjectNode value) ->{
-							if (child != null)
-								child.remove();
-							if (value ==
-									Optional
-											.ofNullable(window.selectedForEdit.get())
-											.map(e -> e.getWrapper().getValue())
-											.orElse(null))
-								child = createTimeHandle(value);
-							else
-								child = createEndTimeHandle();
-							recalcTimes();
-						}
-					);
+							((GroupLayer) object).addInnerSetListeners((GroupLayer target, ProjectNode value) -> {
+								if (child != null)
+									child.remove();
+								if (value ==
+										Optional
+												.ofNullable(window.selectedForEdit.get())
+												.map(e -> e.getWrapper().getValue())
+												.orElse(null))
+									child = createTimeMapper(value);
+								else
+									child = createEndTimeHandle();
+								recalcTimes();
+							});
 
 					suppressRecalc += 1;
 					framesCleanup = ((GroupLayer) object).mirrorTimeFrames(frameCleanup, frame -> {
@@ -825,12 +829,18 @@ public class Timeline {
 			throw new Assertion();
 		} else if (object instanceof TrueColorImageFrame) {
 			throw new Assertion();
+		} else if (object instanceof PaletteImageNode) {
+			// Should be == edit node, or one of it's parents should == edit node
+			// and this should never be reached
+			throw new Assertion();
+		} else if (object instanceof PaletteImageFrame) {
+			throw new Assertion();
 		} else
 			throw new Assertion();
 	}
 
-	private TimeAdapterNode createEndTimeHandle() {
-		return new TimeAdapterNode() {
+	private TimeMapper createEndTimeHandle() {
+		return new TimeMapper() {
 			@Override
 			public void updateTime(List<FrameMapEntry> timeMap) {
 				window.timeMap = timeMap;

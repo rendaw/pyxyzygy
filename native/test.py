@@ -32,8 +32,9 @@ def main():
         'test_{}.cxx.o'.format(args.test),
         'implementation.cxx.o',
         '-lpng',
+        '-lz',
     ])
-    c(['./test_{}'.format(args.test)])
+    c(['gdb', '-ex=run', './test_{}'.format(args.test)])
 
 
 main()

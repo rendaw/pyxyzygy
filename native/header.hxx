@@ -76,7 +76,7 @@ typedef int32_t l_t;
 
 class PaletteColors {
 	public:
-		void set(p_t index, c_t color);
+		void set(p_t index, uint8_t cr, uint8_t cg, uint8_t cb, uint8_t ca);
 		c_t get(p_t index) const;
 	private:
 		std::vector<std::pair<p_t, c_t>> colors;

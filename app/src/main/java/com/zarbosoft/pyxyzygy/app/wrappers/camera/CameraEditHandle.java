@@ -18,7 +18,6 @@ import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.Tab;
-import javafx.scene.control.TabPane;
 import org.jcodec.api.SequenceEncoder;
 import org.jcodec.common.model.Picture;
 
@@ -27,7 +26,6 @@ import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
@@ -53,7 +51,7 @@ public class CameraEditHandle extends GroupNodeEditHandle {
 				pad(new WidgetFormBuilder()
 						.apply(b -> cleanup.add(nodeFormFields(context, b, wrapper)))
 						.intSpinner("Width", 1, 99999, s -> {
-							cleanup.add(CustomBinding.bindBidirectionalMultiple(
+							cleanup.add(CustomBinding.bindBidirectional(
 									new CustomBinding.PropertyBinder<Integer>(wrapper.width.asObject()),
 									new CustomBinding.PropertyBinder<Integer>(s.getValueFactory().valueProperty())
 							));
@@ -62,7 +60,7 @@ public class CameraEditHandle extends GroupNodeEditHandle {
 									.addListener((observable, oldValue, newValue) -> context.history.finishChange());
 						})
 						.intSpinner("Height", 1, 99999, s -> {
-							cleanup.add(CustomBinding.bindBidirectionalMultiple(
+							cleanup.add(CustomBinding.bindBidirectional(
 									new CustomBinding.PropertyBinder<Integer>(wrapper.height.asObject() ),
 									new CustomBinding.PropertyBinder<Integer>(s.getValueFactory().valueProperty() )
 							));

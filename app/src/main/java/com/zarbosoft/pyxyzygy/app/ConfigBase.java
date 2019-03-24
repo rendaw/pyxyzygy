@@ -55,10 +55,9 @@ public class ConfigBase {
 		}, Duration.ofMinutes(5).toMillis(), Duration.ofMinutes(5).toMillis());
 	}
 
-	public static <T extends ConfigBase> T deserialize(TypeInfo configType, Path configDir, Supplier<T> create) {
-		Path configPath = configDir.resolve("config.luxem");
+	public static <T extends ConfigBase> T deserialize(TypeInfo configType, Path configPath, Supplier<T> create) {
 		T out = uncheck(() -> {
-			Files.createDirectories(configDir);
+			Files.createDirectories(configPath.getParent());
 			try (InputStream source = Files.newInputStream(configPath)) {
 				return (T) Luxem.parse(scan, configType).map(configTypeMap).from(source).findFirst().get();
 			} catch (NoSuchFileException e) {

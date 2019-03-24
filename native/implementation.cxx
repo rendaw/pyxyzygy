@@ -10,7 +10,8 @@
 #include <netinet/in.h>
 
 #include <png.h>
-#include <zlib.h>
+
+#include "gzutil.hxx"
 
 static int const channels = 4;
 static int16_t const paletteVersion = 4;
@@ -120,12 +121,18 @@ ROBytes::ROBytes(size_t const size, uint8_t const * const data) : size(size), da
 
 static const size_t palsize = sizeof(p_t);
 
-void PaletteColors::set(p_t index, c_t color) {
-	for (int index = 0; index < colors.size(); ++index) {
-		auto &p = colors[index];
+void PaletteColors::set(p_t index, uint8_t cr, uint8_t cg, uint8_t cb, uint8_t ca) {
+	uint32_t const color = htonl(
+		((uint32_t)cb << 24) |
+		((uint32_t)cg << 16) |
+		((uint32_t)cr << 8) |
+		(uint32_t)ca
+	);
+	for (int i = 0; i < colors.size(); ++i) {
+		auto &p = colors[i];
 		if (p.first != index) continue;
 		if (color == 0) {
-			colors.erase(colors.begin() + index);
+			colors.erase(colors.begin() + i);
 			return;
 		} else {
 			p.second = color;
@@ -142,112 +149,6 @@ c_t PaletteColors::get(p_t index) const {
 	}
 	return (c_t)0;
 }
-
-PaletteImage::PaletteImage(l_t w, l_t h, p_t * const pixels) :
-   	w(w), h(h), pixels(pixels) {
-}
-
-PaletteImage::~PaletteImage() {
-	delete [] pixels;
-}
-
-PaletteImage * PaletteImage::create(l_t w, l_t h) {
-	auto out = new PaletteImage(w, h, new p_t[w * h]);
-	out->clear();
-	return out;
-}
-
-struct GZ {
-	gzFile file;
-
-	GZ(char const * const path, char const * const mode) : file(gzopen(path, mode)) {
-		if (!file) throw std::runtime_error(std::string(strerror(errno)));
-	}
-
-	~GZ() {
-		gzclose(file);
-	}
-
-	template <class prim> prim read() {
-		static_assert(sizeof(prim) == 1 || sizeof(prim) == 2 || sizeof(prim) == 4, "");
-		prim out;
-		read((uint8_t *)&out, sizeof(out));
-		if (sizeof(prim) == 1) return out;
-		if (sizeof(prim) == 2) return ntohs(out);
-		if (sizeof(prim) == 4) return ntohl(out);
-	}
-
-	template <class prim> prim *reada(size_t const count) {
-		static_assert(sizeof(prim) == 1 || sizeof(prim) == 2 || sizeof(prim) == 4, "");
-		prim *out = new prim[count];
-		read((uint8_t *)&out, sizeof(out) * count);
-		if (sizeof(prim) == 1) {}
-		else if (sizeof(prim) == 2) {
-			for (size_t i = 0; i < count; ++i) {
-				out[i] = ntohs(out[i]);
-			}
-		} else if (sizeof(prim) == 4) {
-			for (size_t i = 0; i < count; ++i) {
-				out[i] = ntohl(out[i]);
-			}
-		}
-		return out;
-	}
-
-	template <class prim> void write(prim const in) {
-		static_assert(sizeof(prim) == 1 || sizeof(prim) == 2 || sizeof(prim) == 4, "");
-		if (sizeof(prim) == 1)
-			write((uint8_t *)&in, sizeof(in));
-		else {
-			uint16_t temp;
-			if (sizeof(prim) == 2) temp = htons(in);
-			else if (sizeof(prim) == 4) temp = htonl(in);
-			write((uint8_t *)&temp, sizeof(temp));
-		}
-	}
-
-	template <class prim> void writea(prim const * const in, size_t const count) {
-		static_assert(sizeof(prim) == 1 || sizeof(prim) == 2 || sizeof(prim) == 4, "");
-		if (sizeof(prim) == 1)
-			write((uint8_t *)in, count);
-		else {
-			std::unique_ptr<prim> temp {new prim[count]};
-			if (sizeof(prim) == 2) {
-				for (size_t i = 0; i < count; ++i) {
-					temp.get()[i] = htons(in[i]);
-				}
-			} else if (sizeof(prim) == 4) {
-				for (size_t i = 0; i < count; ++i) {
-					temp.get()[i] = htonl(in[i]);
-				}
-			}
-			write((uint8_t *)temp.get(), count);
-		}
-	}
-
-	private:
-		void read(uint8_t *dest, size_t bytes) {
-			while (bytes > 0) {
-				int result = gzread(file, dest, bytes);
-				if (result == -1) {
-					throw std::runtime_error(std::string(gzerror(file, &result)));
-				}
-				dest += result;
-				bytes -= result;
-			}
-		}
-
-		void write(uint8_t const *source, size_t bytes) {
-			while (bytes > 0) {
-				int result = gzwrite(file, source, bytes);
-				if (result <= 0) {
-					throw std::runtime_error(std::string(gzerror(file, &result)));
-				}
-				source += result;
-				bytes -= result;
-			}
-		}
-};
 
 template<class HandleMeasures, class SetPixelLine> static void strokeSolid(
 	double const x1_0, double const y1_0, double const r1_0,
@@ -513,13 +414,27 @@ static inline void replace(uint8_t *dest, size_t const unitStride, c_t const d_w
 	);
 }
 
+PaletteImage::PaletteImage(l_t w, l_t h, p_t * const pixels) :
+   	w(w), h(h), pixels(pixels) {
+}
+
+PaletteImage::~PaletteImage() {
+	delete [] pixels;
+}
+
+PaletteImage * PaletteImage::create(l_t w, l_t h) {
+	auto out = new PaletteImage(w, h, new p_t[w * h]);
+	out->clear();
+	return out;
+}
+
 PaletteImage * PaletteImage::deserialize(char const * const path) throw(std::runtime_error) {
 	GZ source(path, "rb");
 	auto version = source.read<uint16_t>();
 	l_t width = source.read<l_t>();
 	l_t height = source.read<l_t>();
-	size_t size = width * height;
-	p_t *data = source.reada<p_t>(size * sizeof(p_t));
+	if (width == 0 || height == 0) throw std::runtime_error("bad image size");
+	p_t *data = source.reada<p_t>(width * height);
 	return new PaletteImage(width, height, data);
 }
 
@@ -546,12 +461,13 @@ template <class T> inline ROBytes PaletteImage::calculateData(T calculate) const
 			calculate(dest, source);
 		}
 	}
-	return {scratchByteWidth * scratchHeight, scratch};
+	return {(size_t)(scratchByteWidth * scratchHeight), scratch};
 }
 
 ROBytes PaletteImage::data(PaletteColors const &palette) const {
 	return calculateData([&](uint8_t *dest, p_t const source) {
-		*((uint32_t *) dest) = palette.get(source);
+		p_t &dest1 = *((p_t *) dest);
+		dest1 = palette.get(source);
 	});
 }
 
@@ -632,9 +548,11 @@ void PaletteImage::stroke(p_t index, double x1_0, double y1_0, double r1_0, doub
 		},
 		[&](l_t y, float start0, float end0) {
 			y += offsetY;
-			c_t start = std::round(start0 + offsetX);
-			c_t end = std::round(end0 + offsetX);
-			memset(&pixels[y * w + start], index, end - start);
+			l_t start = std::round(start0 + offsetX);
+			l_t end = std::round(end0 + offsetX);
+			for (l_t x = start; x < end; ++x) {
+				pixels[y * w + x] = index;
+			}
 		}
 	);
 }
@@ -704,7 +622,7 @@ template <class T> inline ROBytes TrueColorImage::calculateData(T calculate) con
 			calculate(dest, source);
 		}
 	}
-	return {scratchByteWidth * scratchHeight, scratch};
+	return {(size_t)(scratchByteWidth * scratchHeight), scratch};
 }
 
 ROBytes TrueColorImage::data() const {

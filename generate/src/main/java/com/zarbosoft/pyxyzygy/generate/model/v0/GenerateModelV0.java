@@ -1047,6 +1047,7 @@ public class GenerateModelV0 extends TaskBase {
 												Helper.capFirst(fieldName)
 										)
 										.add("remove$LClearListeners(clearListener);\n", Helper.capFirst(fieldName))
+										.add("list.forEach(remove);\n")
 										.unindent()
 										.add("}\n")
 										.unindent()

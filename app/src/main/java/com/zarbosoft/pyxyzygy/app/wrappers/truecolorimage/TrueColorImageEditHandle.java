@@ -7,6 +7,7 @@ import com.zarbosoft.pyxyzygy.app.config.TrueColorBrush;
 import com.zarbosoft.pyxyzygy.app.config.TrueColorImageNodeConfig;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.ContentReplacer;
+import com.zarbosoft.pyxyzygy.app.widgets.TitledPane;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
 import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.BrushButton;
 import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
@@ -20,7 +21,10 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
 import javafx.scene.Group;
 import javafx.scene.Node;
-import javafx.scene.control.*;
+import javafx.scene.control.MenuButton;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.control.ToolBar;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
@@ -35,6 +39,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static com.zarbosoft.pyxyzygy.app.Global.pasteHotkey;
+import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext.uniqueName;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.pad;
@@ -68,37 +73,42 @@ public class TrueColorImageEditHandle extends EditHandle {
 		positiveZoom.bind(wrapper.canvasHandle.zoom);
 
 		actions = Streams.concat(Stream.of(new Hotkeys.Action(Hotkeys.Scope.CANVAS, "paste", "Paste", pasteHotkey) {
-			@Override
-			public void run(ProjectContext context, Window window) {
-				wrapper.config.tool.set(TrueColorImageNodeConfig.Tool.SELECT);
-				((ToolSelect) tool).paste(context, window);
-			}
-		}, new Hotkeys.Action(Hotkeys.Scope.CANVAS,
-				"last-brush",
-				"Last brush",
-				Hotkeys.Hotkey.create(KeyCode.SPACE, false, false, false)
-		) {
-			@Override
-			public void run(ProjectContext context, Window window) {
-				if (wrapper.config.tool.get() == TrueColorImageNodeConfig.Tool.BRUSH) {
-					if (wrapper.config.lastBrush < 0 ||
-							wrapper.config.lastBrush >= GUILaunch.config.trueColorBrushes.size())
-						return;
-					setBrush(wrapper.config.lastBrush);
-				} else {
-					wrapper.config.tool.set(TrueColorImageNodeConfig.Tool.BRUSH);
-				}
-			}
-		}, new Hotkeys.Action(Hotkeys.Scope.CANVAS,
-				"select",
-				"Select",
-				Hotkeys.Hotkey.create(KeyCode.S, false, false, false)
-		) {
-			@Override
-			public void run(ProjectContext context, Window window) {
-				wrapper.config.tool.set(TrueColorImageNodeConfig.Tool.SELECT);
-			}
-		}), enumerate(Stream.of(KeyCode.DIGIT1,
+											   @Override
+											   public void run(ProjectContext context, Window window) {
+												   wrapper.config.tool.set(TrueColorImageNodeConfig.Tool.SELECT);
+												   ((ToolSelect) tool).paste(context, window);
+											   }
+										   },
+										   new Hotkeys.Action(Hotkeys.Scope.CANVAS,
+												   "last-brush",
+												   "Last brush",
+												   Hotkeys.Hotkey.create(KeyCode.SPACE, false, false, false)
+										   ) {
+											   @Override
+											   public void run(ProjectContext context, Window window) {
+												   if (wrapper.config.tool.get() ==
+														   TrueColorImageNodeConfig.Tool.BRUSH) {
+													   if (wrapper.config.lastBrush < 0 ||
+															   wrapper.config.lastBrush >=
+																	   GUILaunch.config.trueColorBrushes.size())
+														   return;
+													   setBrush(wrapper.config.lastBrush);
+												   } else {
+													   wrapper.config.tool.set(TrueColorImageNodeConfig.Tool.BRUSH);
+												   }
+											   }
+										   },
+										   new Hotkeys.Action(Hotkeys.Scope.CANVAS,
+												   "select",
+												   "Select",
+												   Hotkeys.Hotkey.create(KeyCode.S, false, false, false)
+										   ) {
+											   @Override
+											   public void run(ProjectContext context, Window window) {
+												   wrapper.config.tool.set(TrueColorImageNodeConfig.Tool.SELECT);
+											   }
+										   }
+		), enumerate(Stream.of(KeyCode.DIGIT1,
 				KeyCode.DIGIT2,
 				KeyCode.DIGIT3,
 				KeyCode.DIGIT4,
@@ -219,15 +229,9 @@ public class TrueColorImageEditHandle extends EditHandle {
 		brushesCleanup = Misc.mirror(GUILaunch.config.trueColorBrushes, brushToolbar.getItems(), b -> {
 			return new BrushButton(b.size,
 					new CustomBinding.IndirectHalfBinder<TrueColor>(b.useColor,
-							(Boolean u) -> Optional.of(u ? b.color : context.config.trueColor)
-					).map(c -> Optional.of(c.toJfx())),
-					Bindings.createBooleanBinding(() -> wrapper.config.tool.get() ==
-									TrueColorImageNodeConfig.Tool.BRUSH &&
-									wrapper.config.brush.get() == GUILaunch.config.trueColorBrushes.indexOf(b),
-							wrapper.config.tool,
-							wrapper.config.brush,
-							GUILaunch.config.trueColorBrushes
-					)
+							(Boolean u) -> opt(u ? b.color : context.config.trueColor)
+					).map(c -> opt(c.toJfx())),
+					wrapper.brushBinder.map(b1 -> opt(b1 == b))
 			) {
 				@Override
 				public void selectBrush() {
@@ -239,11 +243,11 @@ public class TrueColorImageEditHandle extends EditHandle {
 
 		// Tab
 		VBox tabBox = new VBox();
-		tabBox.getChildren().addAll(new Label("Layer"),
-				new WidgetFormBuilder().apply(b -> cleanup.add(Misc.nodeFormFields(context, b, wrapper))).build(),
-				new Label("Tool"),
-				toolProperties
-		);
+		tabBox.getChildren().addAll(new TitledPane("Layer",
+				new WidgetFormBuilder()
+						.apply(b -> cleanup.add(Misc.nodeFormFields(context, b, wrapper)))
+						.build()
+		), new TitledPane("Tool", toolProperties));
 		window.layerTabContent.set(this, pad(tabBox));
 
 		wrapper.config.tool.addListener(new ChangeListener<TrueColorImageNodeConfig.Tool>() {
@@ -270,7 +274,11 @@ public class TrueColorImageEditHandle extends EditHandle {
 					brushesListener = null;
 				}
 				if (newValue == TrueColorImageNodeConfig.Tool.SELECT) {
-					setTool(context, window, () -> new ToolSelect(context, window, TrueColorImageEditHandle.this));
+					setTool(context, window, () -> {
+						ToolSelect out = new ToolSelect(TrueColorImageEditHandle.this);
+						out.setState(context, out.new StateCreate(context,window));
+						return out;
+					});
 				} else if (newValue == TrueColorImageNodeConfig.Tool.BRUSH) {
 					Runnable update = new Runnable() {
 						TrueColorBrush lastBrush;

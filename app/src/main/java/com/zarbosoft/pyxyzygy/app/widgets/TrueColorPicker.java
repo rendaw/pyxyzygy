@@ -28,7 +28,7 @@ public class TrueColorPicker extends GridPane {
 	private final Region alphaBarMarker;
 
 	public TrueColorPicker() {
-		ColorSwatch newColorDisplay = new ColorSwatch();
+		ColorSwatch newColorDisplay = new ColorSwatch(1);
 		newColorDisplay.colorProperty.bind(colorProxyProperty);
 
 		// Hue bar - select a hue for the slice

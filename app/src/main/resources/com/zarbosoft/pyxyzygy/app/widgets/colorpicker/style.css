@@ -96,6 +96,17 @@
     -fx-border-color: derive(#ececec, -20%);
 }
 
+.color-swatch.large {
+    -fx-pref-height: 2.2em;
+    -fx-pref-width: 2.2em;
+    -fx-border-radius: 0.5em;
+}
+
+.color-swatch.selected {
+    -fx-border-width: 2px;
+    -fx-border-color: black;
+}
+
 .true-color-picker {
     -fx-hgap: 1em;
     -fx-vgap: 1em;

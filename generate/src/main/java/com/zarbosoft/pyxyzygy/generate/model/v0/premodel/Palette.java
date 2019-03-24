@@ -7,6 +7,9 @@ import java.util.List;
 @Configuration
 public class Palette extends ProjectObject {
 	@Configuration
+	public int nextId;
+
+	@Configuration
 	public String name;
 
 	@Configuration

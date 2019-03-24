@@ -4,7 +4,7 @@ import com.zarbosoft.pyxyzygy.app.FrameMapEntry;
 
 import java.util.List;
 
-public abstract class TimeAdapterNode {
+public abstract class TimeMapper {
 	public List<FrameMapEntry> timeMap = null;
 
 	public void remove() {
