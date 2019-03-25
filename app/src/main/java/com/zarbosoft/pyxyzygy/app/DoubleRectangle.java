@@ -31,8 +31,8 @@ public class DoubleRectangle {
 	}
 
 	public Rectangle divideContains(int scale) {
-		int outX = Math.floorDiv((int) x, scale);
-		int outY = Math.floorDiv((int) y, scale);
+		int outX = Math.floorDiv((int)Math.floor(x), scale);
+		int outY = Math.floorDiv((int)Math.floor(y), scale);
 		return new Rectangle(outX,
 				outY,
 				ceilDiv((int) Math.ceil(x + width), scale) - outX,

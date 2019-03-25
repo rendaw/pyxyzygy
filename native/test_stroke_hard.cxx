@@ -166,6 +166,41 @@ int main(int argc, char **argv) {
 	} catch (std::runtime_error const &e) {
 		printf("Failed to serialize: %s", e.what());
 	}
+
+	{
+		std::unique_ptr<TrueColorImage> j(TrueColorImage::create(2, 3));
+		j->strokeHard(255, 255, 255, 255, -0.25, 1.5, 0.5, -0.25, 1.5, 0.5, 1);
+		for (int y = 0; y < j->getHeight(); ++y) {
+			for (int x = 0; x < j->getWidth(); ++x) {
+				printf("%02x ", j->getPixelR(x, y));
+				printf("%02x ", j->getPixelG(x, y));
+				printf("%02x ", j->getPixelB(x, y));
+				printf("%02x ", j->getPixelA(x, y));
+				printf(" ");
+			}
+			printf("\n");
+		}
+		printf("\n");
+		assert(j->getPixelR(1, 0) == 0);
+	}
+
+	{
+		std::unique_ptr<TrueColorImage> j(TrueColorImage::create(2, 3));
+		j->strokeHard(255, 255, 255, 255, 1.75, 1.5, 0.5, 1.75, 1.5, 0.5, 1);
+		for (int y = 0; y < j->getHeight(); ++y) {
+			for (int x = 0; x < j->getWidth(); ++x) {
+				printf("%02x ", j->getPixelR(x, y));
+				printf("%02x ", j->getPixelG(x, y));
+				printf("%02x ", j->getPixelB(x, y));
+				printf("%02x ", j->getPixelA(x, y));
+				printf(" ");
+			}
+			printf("\n");
+		}
+		printf("\n");
+		assert(j->getPixelR(1, 1) == 0xFF);
+	}
+
 	return 0;
 }
 

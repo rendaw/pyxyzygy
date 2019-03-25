@@ -154,7 +154,19 @@ template<class HandleMeasures, class SetPixelLine> static void strokeSolid(
 	double const x1_0, double const y1_0, double const r1_0,
    	double const x2_0, double const y2_0, double const r2_0,
 	int const subpixels,
-   	HandleMeasures &&handleMeasures, SetPixelLine &&setPixelLine
+	/*
+	 * offsetX/Y are the offset of the subpixel rendering region to the original (image) coordinate system.
+	 * The subpixel region is a space scaled by subpixels but aligned to a multiple of subpixels
+	 * So the subpixel left/top coords are always in [0,subpixels)
+	 *
+	 * In the case that subpixels == 1, subpixel top/left will be 0
+	 */
+   	HandleMeasures &&handleMeasures,
+	/*
+	 * y, start, stop are coordinates in subpixel space.
+	 * If subpixels == 1, this will be image space shifted by the offset (actual coord = y/start/end + offsetX/offsetY)
+	 */
+	SetPixelLine &&setPixelLine
 ) {
 	struct FillEdge {
 		virtual std::pair<float, float> getX(int y) const = 0;
@@ -376,6 +388,31 @@ template<class HandleMeasures, class SetPixelLine> static void strokeSolid(
 	}
 }
 
+template<class SetPixel> static void strokeSolidHard(
+	double const x1_0, double const y1_0, double const r1_0,
+   	double const x2_0, double const y2_0, double const r2_0,
+   	SetPixel &&setPixel
+) {
+	l_t offsetX;
+	l_t offsetY;
+	strokeSolid(
+		x1_0, y1_0, r1_0, x2_0, y2_0, r2_0, 1,
+		[&](int const offsetX_0, int const offsetY_0, int const top, int const bottom, int const left, int const right) {
+			offsetX = offsetX_0;
+			offsetY = offsetY_0;
+		},
+		[&](l_t y, float start0, float end0) {
+			l_t start = std::max(0, (l_t)std::round(start0 + offsetX));
+			l_t end = std::round(end0 + offsetX);
+			printf("fill line %u %i: %f - %f %i; %i %i\n", y, offsetY, start0, end0, offsetX, start, end);
+			y += offsetY;
+			for (l_t x = start; x < end; ++x) {
+				setPixel(y, x);
+			}
+		}
+	);
+}
+
 struct Overlap1D {
 	l_t const a; // Where overlap starts relative to a
 	l_t const b; // Where overlap starts relative to b
@@ -538,21 +575,12 @@ p_t PaletteImage::getPixel(l_t x, l_t y) const {
 }
 
 void PaletteImage::stroke(p_t index, double x1_0, double y1_0, double r1_0, double x2_0, double y2_0, double r2_0) {
-	int offsetX;
-	int offsetY;
-	strokeSolid(
-		x1_0, y1_0, r1_0, x2_0, y2_0, r2_0, 1,
-		[&](int const offsetX_0, int const offsetY_0, int const top, int const bottom, int const left, int const right) {
-			offsetX = offsetX_0;
-			offsetY = offsetY_0;
-		},
-		[&](l_t y, float start0, float end0) {
-			y += offsetY;
-			l_t start = std::round(start0 + offsetX);
-			l_t end = std::round(end0 + offsetX);
-			for (l_t x = start; x < end; ++x) {
-				pixels[y * w + x] = index;
-			}
+	strokeSolidHard(
+		x1_0, y1_0, r1_0, x2_0, y2_0, r2_0,
+		[&](l_t y, l_t x) {
+			assert(x >= 0);
+			assert(x < w);
+			pixels[y * w + x] = index;
 		}
 	);
 }
@@ -743,7 +771,9 @@ void TrueColorImage::strokeSoft(uint8_t cr, uint8_t cg, uint8_t cb, uint8_t ca, 
 			//printf("got extents: o %d %d, t %d b %d l %d r %d\n", offsetX, offsetY, subpixelTop, subpixelBottom, subpixelLeft, subpixelRight);
 			prepareBitScratch(subpixelRight, subpixelBottom);
 		},
-		[](c_t const y, float const start, float const end) { setBitScratchLine(y, std::floor(start), std::ceil(end)); }
+		[](c_t const y, float const start, float const end) {
+			setBitScratchLine(y, std::floor(start), std::ceil(end));
+		}
 	);
 
 	// merge + scale down (w/h / 2)
@@ -807,23 +837,13 @@ void TrueColorImage::strokeSoft(uint8_t cr, uint8_t cg, uint8_t cb, uint8_t ca, 
 
 void TrueColorImage::strokeHard(uint8_t cr, uint8_t cg, uint8_t cb, uint8_t ca, double x1_0, double y1_0, double r1_0, double x2_0, double y2_0, double r2_0, double blend) {
 	uint8_t const colors[] {cb, cg, cr, ca};
-	int offsetX;
-	int offsetY;
-	strokeSolid(
-		x1_0, y1_0, r1_0, x2_0, y2_0, r2_0, 1,
-		[&](int const offsetX_0, int const offsetY_0, int const top, int const bottom, int const left, int const right) {
-			offsetX = offsetX_0;
-			offsetY = offsetY_0;
-		},
-		[&](l_t y, float start, float end) {
-			//printf("fill line %u: %f - %f\n", y, start, end);
-			y += offsetY;
-			start = std::round(start + offsetX);
-			end = std::round(end + offsetX);
-			for (l_t x = start; x < end; ++x) {
-				for (int i = 0; i < channels; ++i) {
-					pixels[(y * w + x) * channels + i] = colors[i];
-				}
+	strokeSolidHard(
+		x1_0, y1_0, r1_0, x2_0, y2_0, r2_0,
+		[&](l_t y, l_t x) {
+			assert(x >= 0);
+			assert(x < w);
+			for (int i = 0; i < channels; ++i) {
+				pixels[(y * w + x) * channels + i] = colors[i];
 			}
 		}
 	);
