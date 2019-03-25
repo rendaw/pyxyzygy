@@ -19,22 +19,18 @@ import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
+import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Node;
-import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ToggleButton;
-import javafx.scene.control.ToolBar;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -47,14 +43,25 @@ import static com.zarbosoft.rendaw.common.Common.enumerate;
 
 public class TrueColorImageEditHandle extends EditHandle {
 	final TrueColorImageNodeWrapper wrapper;
+	private final TitledPane toolPane;
 	List<Runnable> cleanup = new ArrayList<>();
 
 	private final Runnable brushesCleanup;
-	private HBox toolbarsBox;
 	Group overlay;
 	private final Hotkeys.Action[] actions;
 	Tool tool = null;
-	ContentReplacer toolProperties = new ContentReplacer();
+	ContentReplacer toolProperties = new ContentReplacer() {
+
+		@Override
+		protected void innerSet(Node content) {
+			toolPane.setContent(content);
+		}
+
+		@Override
+		protected void innerClear() {
+			toolPane.setContent(null);
+		}
+	};
 
 	public final SimpleDoubleProperty mouseX = new SimpleDoubleProperty(0);
 	public final SimpleDoubleProperty mouseY = new SimpleDoubleProperty(0);
@@ -73,42 +80,37 @@ public class TrueColorImageEditHandle extends EditHandle {
 		positiveZoom.bind(wrapper.canvasHandle.zoom);
 
 		actions = Streams.concat(Stream.of(new Hotkeys.Action(Hotkeys.Scope.CANVAS, "paste", "Paste", pasteHotkey) {
-											   @Override
-											   public void run(ProjectContext context, Window window) {
-												   wrapper.config.tool.set(TrueColorImageNodeConfig.Tool.SELECT);
-												   ((ToolSelect) tool).paste(context, window);
-											   }
-										   },
-										   new Hotkeys.Action(Hotkeys.Scope.CANVAS,
-												   "last-brush",
-												   "Last brush",
-												   Hotkeys.Hotkey.create(KeyCode.SPACE, false, false, false)
-										   ) {
-											   @Override
-											   public void run(ProjectContext context, Window window) {
-												   if (wrapper.config.tool.get() ==
-														   TrueColorImageNodeConfig.Tool.BRUSH) {
-													   if (wrapper.config.lastBrush < 0 ||
-															   wrapper.config.lastBrush >=
-																	   GUILaunch.config.trueColorBrushes.size())
-														   return;
-													   setBrush(wrapper.config.lastBrush);
-												   } else {
-													   wrapper.config.tool.set(TrueColorImageNodeConfig.Tool.BRUSH);
-												   }
-											   }
-										   },
-										   new Hotkeys.Action(Hotkeys.Scope.CANVAS,
-												   "select",
-												   "Select",
-												   Hotkeys.Hotkey.create(KeyCode.S, false, false, false)
-										   ) {
-											   @Override
-											   public void run(ProjectContext context, Window window) {
-												   wrapper.config.tool.set(TrueColorImageNodeConfig.Tool.SELECT);
-											   }
-										   }
-		), enumerate(Stream.of(KeyCode.DIGIT1,
+			@Override
+			public void run(ProjectContext context, Window window) {
+				wrapper.config.tool.set(TrueColorImageNodeConfig.Tool.SELECT);
+				((ToolSelect) tool).paste(context, window);
+			}
+		}, new Hotkeys.Action(Hotkeys.Scope.CANVAS,
+				"last-brush",
+				"Last brush",
+				Hotkeys.Hotkey.create(KeyCode.SPACE, false, false, false)
+		) {
+			@Override
+			public void run(ProjectContext context, Window window) {
+				if (wrapper.config.tool.get() == TrueColorImageNodeConfig.Tool.BRUSH) {
+					if (wrapper.config.lastBrush < 0 ||
+							wrapper.config.lastBrush >= GUILaunch.config.trueColorBrushes.size())
+						return;
+					setBrush(wrapper.config.lastBrush);
+				} else {
+					wrapper.config.tool.set(TrueColorImageNodeConfig.Tool.BRUSH);
+				}
+			}
+		}, new Hotkeys.Action(Hotkeys.Scope.CANVAS,
+				"select",
+				"Select",
+				Hotkeys.Hotkey.create(KeyCode.S, false, false, false)
+		) {
+			@Override
+			public void run(ProjectContext context, Window window) {
+				wrapper.config.tool.set(TrueColorImageNodeConfig.Tool.SELECT);
+			}
+		}), enumerate(Stream.of(KeyCode.DIGIT1,
 				KeyCode.DIGIT2,
 				KeyCode.DIGIT3,
 				KeyCode.DIGIT4,
@@ -147,16 +149,10 @@ public class TrueColorImageEditHandle extends EditHandle {
 				wrapper.config.tool.set(TrueColorImageNodeConfig.Tool.SELECT);
 			}
 		};
+		select.setMaxHeight(Double.MAX_VALUE);
 		select.selectedProperty().bind(wrapper.config.tool.isEqualTo(TrueColorImageNodeConfig.Tool.SELECT));
-		ToolBar selectToolbar = new ToolBar();
-		selectToolbar.setMaxHeight(Double.MAX_VALUE);
-		selectToolbar.getItems().addAll(select);
 
 		// Brushes
-		ToolBar brushToolbar = new ToolBar();
-		brushToolbar.setMaxHeight(Double.MAX_VALUE);
-		HBox.setHgrow(brushToolbar, Priority.ALWAYS);
-
 		MenuItem menuNew = new MenuItem("New");
 		menuNew.setOnAction(e -> {
 			TrueColorBrush brush = new TrueColorBrush();
@@ -211,22 +207,13 @@ public class TrueColorImageEditHandle extends EditHandle {
 			GUILaunch.config.trueColorBrushes.add(index + 1, brush);
 		});
 
-		MenuButton menuButton = new MenuButton(null, new ImageView(icon("menu.png")));
-		menuButton.getItems().addAll(menuNew, menuDelete, menuLeft, menuRight);
+		window.menuChildren.set(this, menuNew, menuDelete, menuLeft, menuRight);
 
-		Region menuSpring = new Region();
-		menuSpring.setMinWidth(1);
-		HBox.setHgrow(menuSpring, Priority.ALWAYS);
-
-		ToolBar menuToolbar = new ToolBar();
-		menuToolbar.setMaxHeight(Double.MAX_VALUE);
-		menuToolbar.getItems().addAll(menuSpring, menuButton);
-
-		toolbarsBox = new HBox();
-		toolbarsBox.setFillHeight(true);
-		toolbarsBox.getChildren().addAll(selectToolbar, brushToolbar, menuToolbar);
-
-		brushesCleanup = Misc.mirror(GUILaunch.config.trueColorBrushes, brushToolbar.getItems(), b -> {
+		HBox brushesBox = new HBox();
+		brushesBox.setSpacing(3);
+		brushesBox.setAlignment(Pos.CENTER_LEFT);
+		brushesBox.setFillHeight(true);
+		brushesCleanup = Misc.mirror(GUILaunch.config.trueColorBrushes, brushesBox.getChildren(), b -> {
 			return new BrushButton(b.size,
 					new CustomBinding.IndirectHalfBinder<TrueColor>(b.useColor,
 							(Boolean u) -> opt(u ? b.color : context.config.trueColor)
@@ -241,13 +228,13 @@ public class TrueColorImageEditHandle extends EditHandle {
 			};
 		}, Misc.noopConsumer(), Misc.noopConsumer());
 
+		window.toolBarChildren.set(this, select, brushesBox);
+
 		// Tab
 		VBox tabBox = new VBox();
 		tabBox.getChildren().addAll(new TitledPane("Layer",
-				new WidgetFormBuilder()
-						.apply(b -> cleanup.add(Misc.nodeFormFields(context, b, wrapper)))
-						.build()
-		), new TitledPane("Tool", toolProperties));
+				new WidgetFormBuilder().apply(b -> cleanup.add(Misc.nodeFormFields(context, b, wrapper))).build()
+		), toolPane = new TitledPane("Tool", null));
 		window.layerTabContent.set(this, pad(tabBox));
 
 		wrapper.config.tool.addListener(new ChangeListener<TrueColorImageNodeConfig.Tool>() {
@@ -276,7 +263,7 @@ public class TrueColorImageEditHandle extends EditHandle {
 				if (newValue == TrueColorImageNodeConfig.Tool.SELECT) {
 					setTool(context, window, () -> {
 						ToolSelect out = new ToolSelect(TrueColorImageEditHandle.this);
-						out.setState(context, out.new StateCreate(context,window));
+						out.setState(context, out.new StateCreate(context, window));
 						return out;
 					});
 				} else if (newValue == TrueColorImageNodeConfig.Tool.BRUSH) {
@@ -317,11 +304,6 @@ public class TrueColorImageEditHandle extends EditHandle {
 	}
 
 	@Override
-	public Node getProperties() {
-		return toolbarsBox;
-	}
-
-	@Override
 	public void remove(ProjectContext context, Window window) {
 		if (tool != null) {
 			tool.remove(context, window);
@@ -333,6 +315,8 @@ public class TrueColorImageEditHandle extends EditHandle {
 		cleanup.forEach(Runnable::run);
 		for (Hotkeys.Action action : actions)
 			context.hotkeys.unregister(action);
+		window.menuChildren.clear(this);
+		window.toolBarChildren.clear(this);
 	}
 
 	@Override

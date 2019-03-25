@@ -7,7 +7,6 @@ import com.zarbosoft.pyxyzygy.app.config.PaletteBrush;
 import com.zarbosoft.pyxyzygy.app.config.PaletteImageNodeConfig;
 import com.zarbosoft.pyxyzygy.app.config.TrueColorImageNodeConfig;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
-import com.zarbosoft.pyxyzygy.app.widgets.TitledPane;
 import com.zarbosoft.pyxyzygy.app.widgets.*;
 import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.BrushButton;
 import com.zarbosoft.pyxyzygy.core.model.v0.Palette;
@@ -23,9 +22,12 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
 import javafx.geometry.HPos;
+import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Node;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
@@ -46,6 +48,7 @@ import static com.zarbosoft.rendaw.common.Common.enumerate;
 
 public class PaletteImageEditHandle extends EditHandle {
 	final PaletteImageNodeWrapper wrapper;
+	private final TitledPane toolPane;
 	private Runnable colorPickerDisableCleanup;
 	private Runnable paletteMoveDownCleanup;
 	private Runnable paletteMoveUpCleanup;
@@ -56,11 +59,21 @@ public class PaletteImageEditHandle extends EditHandle {
 	List<Runnable> cleanup = new ArrayList<>();
 
 	private final Runnable brushesCleanup;
-	private HBox toolbarBox;
 	Group overlay;
 	private final Hotkeys.Action[] actions;
 	Tool tool = null;
-	ContentReplacer toolProperties = new ContentReplacer();
+	ContentReplacer toolProperties = new ContentReplacer() {
+
+		@Override
+		protected void innerSet(Node content) {
+			toolPane.setContent(content);
+		}
+
+		@Override
+		protected void innerClear() {
+			toolPane.setContent(null);
+		}
+	};
 
 	public final SimpleDoubleProperty mouseX = new SimpleDoubleProperty(0);
 	public final SimpleDoubleProperty mouseY = new SimpleDoubleProperty(0);
@@ -191,16 +204,10 @@ public class PaletteImageEditHandle extends EditHandle {
 				wrapper.config.tool.set(PaletteImageNodeConfig.Tool.SELECT);
 			}
 		};
+		select.setMaxHeight(Double.MAX_VALUE);
 		select.selectedProperty().bind(wrapper.config.tool.isEqualTo(TrueColorImageNodeConfig.Tool.SELECT));
-		ToolBar selectToolbar = new ToolBar();
-		selectToolbar.setMaxHeight(Double.MAX_VALUE);
-		selectToolbar.getItems().addAll(select);
 
 		// Brushes
-		ToolBar brushToolbar = new ToolBar();
-		brushToolbar.setMaxHeight(Double.MAX_VALUE);
-		HBox.setHgrow(brushToolbar, Priority.ALWAYS);
-
 		MenuItem menuNew = new MenuItem("New");
 		menuNew.setOnAction(e -> {
 			PaletteBrush brush = new PaletteBrush();
@@ -251,23 +258,13 @@ public class PaletteImageEditHandle extends EditHandle {
 			GUILaunch.config.paletteBrushes.remove(index);
 			GUILaunch.config.paletteBrushes.add(index + 1, brush);
 		});
+		window.menuChildren.set(this, menuNew, menuDelete, menuLeft, menuRight);
 
-		MenuButton menuButton = new MenuButton(null, new ImageView(icon("menu.png")));
-		menuButton.getItems().addAll(menuNew, menuDelete, menuLeft, menuRight);
-
-		Region menuSpring = new Region();
-		menuSpring.setMinWidth(1);
-		HBox.setHgrow(menuSpring, Priority.ALWAYS);
-
-		ToolBar menuToolbar = new ToolBar();
-		menuToolbar.setMaxHeight(Double.MAX_VALUE);
-		menuToolbar.getItems().addAll(menuSpring, menuButton);
-
-		toolbarBox = new HBox();
-		toolbarBox.setFillHeight(true);
-		toolbarBox.getChildren().addAll(selectToolbar, brushToolbar, menuToolbar);
+		HBox brushesBox = new HBox();
+		brushesBox.setSpacing(3);
+		brushesBox.setAlignment(Pos.CENTER_LEFT);
 		brushesCleanup = Misc.mirror(GUILaunch.config.paletteBrushes,
-				brushToolbar.getItems(),
+				brushesBox.getChildren(),
 				b -> new BrushButton(b.size,
 						new CustomBinding.DoubleIndirectHalfBinder<Integer, List<ProjectObject>, TrueColor>(new CustomBinding.IndirectHalfBinder<>(
 								b.useColor,
@@ -295,6 +292,8 @@ public class PaletteImageEditHandle extends EditHandle {
 				button -> ((BrushButton) button).destroy(context, window),
 				Misc.noopConsumer()
 		);
+
+		window.toolBarChildren.set(this, select, brushesBox);
 
 		// Tab
 		Palette palette = wrapper.node.palette();
@@ -400,7 +399,8 @@ public class PaletteImageEditHandle extends EditHandle {
 				context.history.finishChange();
 				wrapper.paletteSelOffsetBinder.set(tiles.get(newColor).index);
 			});
-			paletteRemoveCleanup = CustomBinding.bind(remove.disableProperty(), indexBinder.map(i -> opt(i ==null||i <= 0)));
+			paletteRemoveCleanup =
+					CustomBinding.bind(remove.disableProperty(), indexBinder.map(i -> opt(i == null || i <= 0)));
 			remove.setOnAction(_e -> {
 				int index = indexBinder.get().get();
 				if (index < 0)
@@ -409,7 +409,8 @@ public class PaletteImageEditHandle extends EditHandle {
 				context.history.change(c -> c.palette(palette).entriesRemove(index, 1));
 				context.history.finishChange();
 			});
-			paletteMoveUpCleanup = CustomBinding.bind(moveUp.disableProperty(), indexBinder.map(i -> opt(i==null||i <= 1)));
+			paletteMoveUpCleanup =
+					CustomBinding.bind(moveUp.disableProperty(), indexBinder.map(i -> opt(i == null || i <= 1)));
 			moveUp.setOnAction(e -> {
 				int index = indexBinder.get().get();
 				if (index < 0)
@@ -419,7 +420,7 @@ public class PaletteImageEditHandle extends EditHandle {
 				context.history.finishChange();
 			});
 			paletteMoveDownCleanup = CustomBinding.bind(moveDown.disableProperty(),
-					indexBinder.map(i -> opt(i==null|| i < 1 || i >= colors.getChildren().size() - 1))
+					indexBinder.map(i -> opt(i == null || i < 1 || i >= colors.getChildren().size() - 1))
 			);
 			moveDown.setOnAction(e -> {
 				int index = indexBinder.get().get();
@@ -431,7 +432,7 @@ public class PaletteImageEditHandle extends EditHandle {
 			});
 
 			return layout;
-		}).build()), new TitledPane("Tool", toolProperties));
+		}).build()), toolPane = new TitledPane("Tool", null));
 		window.layerTabContent.set(this, pad(tabBox));
 
 		wrapper.config.tool.addListener(new ChangeListener<PaletteImageNodeConfig.Tool>() {
@@ -502,11 +503,6 @@ public class PaletteImageEditHandle extends EditHandle {
 	}
 
 	@Override
-	public Node getProperties() {
-		return toolbarBox;
-	}
-
-	@Override
 	public void remove(ProjectContext context, Window window) {
 		if (tool != null) {
 			tool.remove(context, window);
@@ -525,6 +521,8 @@ public class PaletteImageEditHandle extends EditHandle {
 		cleanup.forEach(Runnable::run);
 		for (Hotkeys.Action action : actions)
 			context.hotkeys.unregister(action);
+		window.menuChildren.clear(this);
+		window.toolBarChildren.clear(this);
 	}
 
 	@Override

@@ -35,19 +35,11 @@ import static com.zarbosoft.rendaw.common.Common.uncheck;
 import static org.jcodec.common.model.ColorSpace.RGB;
 
 public class CameraEditHandle extends GroupNodeEditHandle {
-	private final Window window;
-
 	public CameraEditHandle(
 			ProjectContext context, Window window, CameraWrapper wrapper
 	) {
 		super(context, window,wrapper);
-		this.window = window;
-	}
-
-	@Override
-	public Tab buildNodeTab(ProjectContext context) {
-		CameraWrapper wrapper = (CameraWrapper) super.wrapper;
-		return new Tab("Layer",
+		window.layerTabContent.set(this,
 				pad(new WidgetFormBuilder()
 						.apply(b -> cleanup.add(nodeFormFields(context, b, wrapper)))
 						.intSpinner("Width", 1, 99999, s -> {
@@ -250,9 +242,9 @@ public class CameraEditHandle extends GroupNodeEditHandle {
 	}
 
 	@Override
-	protected ToolMove createToolMove(GroupNodeWrapper wrapper1) {
+	protected ToolMove createToolMove(Window window, GroupNodeWrapper wrapper1) {
 		CameraWrapper wrapper = (CameraWrapper) wrapper1;
-		return new ToolMove(wrapper) {
+		return new ToolMove(window, wrapper) {
 			boolean adjustHorizontal;
 			boolean adjustPositive;
 			int startValue;

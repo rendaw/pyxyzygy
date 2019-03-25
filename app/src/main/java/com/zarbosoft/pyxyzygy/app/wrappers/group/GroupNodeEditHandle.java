@@ -3,7 +3,9 @@ package com.zarbosoft.pyxyzygy.app.wrappers.group;
 import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.config.GroupNodeConfig;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
+import com.zarbosoft.pyxyzygy.app.widgets.ContentReplacer;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
+import com.zarbosoft.pyxyzygy.app.widgets.TitledPane;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
 import com.zarbosoft.rendaw.common.Assertion;
 import javafx.beans.binding.Bindings;
@@ -12,7 +14,6 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.Group;
 import javafx.scene.Node;
-import javafx.scene.control.Tab;
 import javafx.scene.control.ToolBar;
 import javafx.scene.layout.VBox;
 
@@ -23,20 +24,18 @@ import static com.zarbosoft.pyxyzygy.app.Misc.nodeFormFields;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.pad;
 
 public class GroupNodeEditHandle extends EditHandle {
-	private Tab groupTab;
-	public Tab toolTab;
+	public final ContentReplacer toolPropReplacer;
 	protected List<Runnable> cleanup = new ArrayList<>();
 	Tool tool = null;
 
 	Group overlay;
 
-	ToolBar toolBar = new ToolBar();
 	public GroupNodeWrapper wrapper;
 	public final SimpleDoubleProperty mouseX = new SimpleDoubleProperty(0);
 	public final SimpleDoubleProperty mouseY = new SimpleDoubleProperty(0);
 
 	public GroupNodeEditHandle(
-			ProjectContext context, Window window,final GroupNodeWrapper wrapper
+			ProjectContext context, Window window, final GroupNodeWrapper wrapper
 	) {
 		this.wrapper = wrapper;
 
@@ -46,11 +45,25 @@ public class GroupNodeEditHandle extends EditHandle {
 
 		VBox controls = new VBox();
 
-		// Group tab
-		groupTab = buildNodeTab(context);
+		VBox toolProps = new VBox();
+		this.toolPropReplacer = new ContentReplacer() {
+			@Override
+			protected void innerSet(Node content) {
+toolProps.getChildren().addAll(content);
+			}
 
-		// Tool tab
-		toolTab = new Tab();
+			@Override
+			protected void innerClear() {
+toolProps.getChildren().clear();
+			}
+		};
+
+		VBox tabBox = new VBox();
+		tabBox.getChildren().addAll(new TitledPane("Layer", new WidgetFormBuilder().apply(b -> cleanup.add(nodeFormFields(context, b, wrapper))).build()), toolProps);
+		window.layerTabContent.set(
+				this,
+				pad(tabBox)
+		);
 
 		// Toolbar
 		class ToolToggle extends HelperJFX.IconToggleButton {
@@ -62,19 +75,6 @@ public class GroupNodeEditHandle extends EditHandle {
 				selectedProperty().bind(Bindings.createBooleanBinding(() -> {
 					return wrapper.config.tool.get() == value;
 				}, wrapper.config.tool));
-				selectedProperty().addListener(new ChangeListener<Boolean>() {
-					{
-						changed(null, null, selectedProperty().get());
-					}
-
-					@Override
-					public void changed(
-							ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue
-					) {
-						if (newValue)
-							toolTab.setText(hint);
-					}
-				});
 			}
 
 			@Override
@@ -82,7 +82,7 @@ public class GroupNodeEditHandle extends EditHandle {
 				wrapper.config.tool.set(value);
 			}
 		}
-		toolBar.getItems().addAll(
+		window.toolBarChildren.set(this,
 				new ToolToggle("cursor-move.png", "Move", GroupNodeConfig.Tool.MOVE),
 				new ToolToggle("stamper.png", "Stamp", GroupNodeConfig.Tool.STAMP)
 		);
@@ -99,15 +99,14 @@ public class GroupNodeEditHandle extends EditHandle {
 					GroupNodeConfig.Tool newValue
 			) {
 				if (tool != null) {
-					toolTab.setContent(null);
 					tool.remove(context, window);
 				}
 				switch (newValue) {
 					case MOVE:
-						tool = createToolMove(wrapper);
+						tool = createToolMove(window, wrapper);
 						break;
 					case STAMP:
-						tool = new ToolStamp(wrapper, context, GroupNodeEditHandle.this);
+						tool = new ToolStamp(window, wrapper, context, GroupNodeEditHandle.this);
 						break;
 					default:
 						throw new Assertion();
@@ -115,26 +114,14 @@ public class GroupNodeEditHandle extends EditHandle {
 			}
 		});
 
-		window.layerTabContent.set(this,controls);
+		window.layerTabContent.set(this, controls);
 		cleanup.add(() -> {
 			window.layerTabContent.clear(this);
 		});
 	}
 
-	protected ToolMove createToolMove(GroupNodeWrapper wrapper) {
-		return new ToolMove(wrapper);
-	}
-
-	public Tab buildNodeTab(ProjectContext context) {
-		return new Tab(
-				"Layer",
-				pad(new WidgetFormBuilder().apply(b -> cleanup.add(nodeFormFields(context, b, wrapper))).build())
-		);
-	}
-
-	@Override
-	public Node getProperties() {
-		return toolBar;
+	protected ToolMove createToolMove(Window window, GroupNodeWrapper wrapper) {
+		return new ToolMove(window, wrapper);
 	}
 
 	@Override
@@ -146,6 +133,8 @@ public class GroupNodeEditHandle extends EditHandle {
 		if (wrapper.canvasHandle != null)
 			wrapper.canvasHandle.overlay.getChildren().remove(overlay);
 		cleanup.forEach(c -> c.run());
+		window.layerTabContent.clear(this);
+		window.toolBarChildren.clear(this);
 	}
 
 	@Override

@@ -1,33 +1,35 @@
 package com.zarbosoft.pyxyzygy.app;
 
-import com.zarbosoft.pyxyzygy.app.wrappers.paletteimage.PaletteImageNodeWrapper;
-import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.parts.editor.Editor;
 import com.zarbosoft.pyxyzygy.app.parts.structure.Structure;
 import com.zarbosoft.pyxyzygy.app.parts.timeline.Timeline;
-import com.zarbosoft.pyxyzygy.app.widgets.ContentReplacer;
 import com.zarbosoft.pyxyzygy.app.widgets.TitledPane;
-import com.zarbosoft.pyxyzygy.app.widgets.TrueColorPicker;
-import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
+import com.zarbosoft.pyxyzygy.app.widgets.*;
 import com.zarbosoft.pyxyzygy.app.wrappers.camera.CameraWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupLayerWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeWrapper;
+import com.zarbosoft.pyxyzygy.app.wrappers.paletteimage.PaletteImageNodeWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage.TrueColorImageNodeWrapper;
 import com.zarbosoft.pyxyzygy.core.model.v0.*;
+import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.Pair;
-import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.Orientation;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
@@ -36,6 +38,9 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static com.zarbosoft.pyxyzygy.app.Global.nameHuman;
+import static com.zarbosoft.pyxyzygy.app.Misc.opt;
+import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
+import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.pad;
 
 public class Window {
 	public Stage stage;
@@ -44,8 +49,22 @@ public class Window {
 	public SimpleObjectProperty<CanvasHandle> selectedForView = new SimpleObjectProperty<>();
 	public Set<KeyCode> pressed = new HashSet<>();
 	public Editor editor;
-	public ContentReplacer layerTabContent = new ContentReplacer();
 	private Tab layerTab;
+	public ContentReplacer layerTabContent = new ContentReplacer() {
+
+		@Override
+		protected void innerSet(Node content) {
+			layerTab.setContent(content);
+		}
+
+		@Override
+		protected void innerClear() {
+			layerTab.setContent(null);
+		}
+	};
+	private ToolBar toolBar;
+	public ChildrenReplacer<Node> toolBarChildren;
+	public ChildrenReplacer<MenuItem> menuChildren;
 
 	public static class Tab extends javafx.scene.control.Tab {
 		ScrollPane scrollPane = new ScrollPane();
@@ -105,19 +124,83 @@ public class Window {
 		final Tab structureTab = new Tab("Project");
 		final Tab configTab = new Tab("Settings");
 		layerTab = new Tab("Layer");
-		layerTab.disableProperty().bind(Bindings.isEmpty(layerTabContent.getChildren()));
-		layerTab.setContent(layerTabContent);
+		layerTab.disableProperty().bind(layerTab.contentProperty().isNull());
 		leftTabs.getTabs().addAll(structureTab, layerTab, configTab);
 
 		Structure structure = new Structure(context, this, main);
 		structureTab.setContent(structure.getWidget());
 
+		Region menuSpring = new Region();
+		menuSpring.setMinWidth(1);
+		HBox.setHgrow(menuSpring, Priority.ALWAYS);
+
+		Button resetScroll = HelperJFX.button("image-filter-center-focus-weak.png", "Recenter view");
+		resetScroll.setOnAction(e -> {
+			selectedForView.get().getWrapper().getConfig().scroll.set(DoubleVector.zero);
+		});
+
+		HBox zoomBox = new HBox();
+		{
+			zoomBox.setAlignment(Pos.CENTER_LEFT);
+			zoomBox.setFillHeight(true);
+			Spinner<Integer> spinner = new Spinner<Integer>();
+			spinner.setMaxWidth(Double.MAX_VALUE);
+			spinner.setPrefWidth(60);
+			spinner.setEditable(true);
+			spinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(-10, 50));
+			CustomBinding.bindBidirectional(
+					new CustomBinding.IndirectBinder<>(selectedForView,
+							v -> opt(v == null ? null : v.getWrapper().getConfig().zoom)
+					),
+					new CustomBinding.PropertyBinder<Integer>(spinner.getValueFactory().valueProperty())
+			);
+			final ImageView imageView = new ImageView(icon("zoom.png"));
+			zoomBox.getChildren().addAll(imageView, spinner);
+		}
+
+		MenuButton menuButton = new MenuButton(null, new ImageView(icon("menu.png")));
+		menuChildren = new ChildrenReplacer<MenuItem>() {
+			@Override
+			protected void innerSet(MenuItem... content) {
+				menuButton.getItems().addAll(content);
+			}
+
+			@Override
+			protected void innerClear() {
+				menuButton.getItems().clear();
+			}
+		};
+
+		HBox toolbarExtra = new HBox();
+		toolbarExtra.setSpacing(3);
+		toolbarExtra.setFillHeight(true);
+		toolbarExtra.setAlignment(Pos.CENTER_LEFT);
+		toolBarChildren = new ChildrenReplacer<Node>() {
+			@Override
+			protected void innerSet(Node... content) {
+				toolbarExtra.getChildren().addAll(content);
+			}
+
+			@Override
+			protected void innerClear() {
+				toolbarExtra.getChildren().clear();
+			}
+		};
+
+		toolBar = new ToolBar();
+		toolBar.getItems().addAll(toolbarExtra, menuSpring, zoomBox, resetScroll, menuButton);
+
 		editor = new Editor(context, this);
 		Timeline timeline = new Timeline(context, this);
 
+		VBox editorBox = new VBox();
+		editorBox.setFillWidth(true);
+		VBox.setVgrow(editor.getWidget(),Priority.ALWAYS);
+		editorBox.getChildren().addAll(toolBar, editor.getWidget());
+
 		SplitPane specificLayout = new SplitPane();
 		specificLayout.setOrientation(Orientation.VERTICAL);
-		specificLayout.getItems().addAll(editor.getWidget());
+		specificLayout.getItems().addAll(editorBox);
 		SplitPane.setResizableWithParent(timeline.getWidget(), false);
 
 		VBox configLayout = new VBox();

@@ -4,6 +4,7 @@ import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import javafx.geometry.Point2D;
 
 public class DoubleVector {
+	public static DoubleVector zero = new DoubleVector(0,0);
 	public final double x;
 	public final double y;
 

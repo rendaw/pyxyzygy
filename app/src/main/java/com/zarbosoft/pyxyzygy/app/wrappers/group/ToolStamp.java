@@ -1,7 +1,10 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.group;
 
 import com.google.common.collect.ImmutableList;
-import com.zarbosoft.pyxyzygy.app.*;
+import com.zarbosoft.pyxyzygy.app.DoubleVector;
+import com.zarbosoft.pyxyzygy.app.Render;
+import com.zarbosoft.pyxyzygy.app.Tool;
+import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.modelmirror.*;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
@@ -15,6 +18,7 @@ import com.zarbosoft.rendaw.common.Assertion;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.Group;
+import javafx.scene.ImageCursor;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
@@ -25,18 +29,21 @@ import javafx.scene.transform.Scale;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.pad;
+import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 
 public class ToolStamp extends Tool {
 	private final MirrorProject mirror;
 	private final GroupNodeEditHandle editHandle;
+	private final ImageCursor cursor;
 	private ProjectNode stampSource;
 	private final SimpleObjectProperty<Rectangle> stampOverlayBounds =
 			new SimpleObjectProperty<>(new Rectangle(0, 0, 0, 0));
 	private final GroupNodeWrapper wrapper;
 	private final Group overlayGroup;
 
-	ToolStamp(GroupNodeWrapper wrapper, ProjectContext context, GroupNodeEditHandle editHandle) {
+	ToolStamp(
+			Window window, GroupNodeWrapper wrapper, ProjectContext context, GroupNodeEditHandle editHandle
+	) {
 		this.editHandle = editHandle;
 		final TreeView<ObjectMirror> tree = new TreeView<>();
 		tree.setCellFactory(param -> new TreeCell<ObjectMirror>() {
@@ -125,10 +132,11 @@ public class ToolStamp extends Tool {
 				.selectedItemProperty()
 				.addListener((observable, oldValue, newValue) -> updateStampImage.run());
 		wrapper.canvasHandle.positiveZoom.addListener((observable, oldValue, newValue) -> updateStampImage.run());
-		editHandle.toolTab.setContent(pad(new WidgetFormBuilder().span(() -> {
+		editHandle.toolPropReplacer.set(this,new WidgetFormBuilder().span(() -> {
 			return tree;
-		}).build()));
+		}).build());
 		this.wrapper = wrapper;
+		window.editor.outerCanvas.setCursor(cursor = new ImageCursor(icon("stamper.png")));
 	}
 
 	@Override
@@ -161,5 +169,7 @@ public class ToolStamp extends Tool {
 	public void remove(ProjectContext context, Window window) {
 		editHandle.overlay.getChildren().remove(overlayGroup);
 		mirror.remove(context);
+		if (window.editor.outerCanvas.getCursor() == cursor)
+			window.editor.outerCanvas.setCursor(null);
 	}
 }

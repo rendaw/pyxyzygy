@@ -25,7 +25,6 @@ public class Editor {
 	public final Pane canvas;
 	private final Group canvasInner;
 	private final ReadOnlyObjectProperty<Bounds> sizeProperty;
-	private Runnable editCleanup;
 	public final SimpleIntegerProperty positiveZoom = new SimpleIntegerProperty(1);
 	public final SimpleDoubleProperty zoomFactor = new SimpleDoubleProperty(1);
 
@@ -353,22 +352,12 @@ public class Editor {
 			public void changed(
 					ObservableValue<? extends EditHandle> observable, EditHandle oldValue, EditHandle newValue
 			) {
-				if (editCleanup != null) {
-					editCleanup.run();
-					editCleanup = null;
+				if (onionSkin != null) {
+					onionSkin.remove();
+					onionSkin = null;
 				}
 				if (newValue != null) {
 					onionSkin = new OnionSkin(context, newValue);
-					Node header = newValue.getProperties();
-					VBox.setVgrow(header, Priority.NEVER);
-					layout.getChildren().add(0, header);
-					if (header != null) {
-						editCleanup = () -> {
-							onionSkin.remove();
-							onionSkin = null;
-							layout.getChildren().remove(header);
-						};
-					}
 				}
 			}
 		});

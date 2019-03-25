@@ -11,8 +11,6 @@ public abstract class EditHandle {
 
 	public abstract Wrapper getWrapper();
 
-	public abstract Node getProperties();
-
 	public abstract void remove(ProjectContext context, Window window);
 
 	public abstract void mark(
