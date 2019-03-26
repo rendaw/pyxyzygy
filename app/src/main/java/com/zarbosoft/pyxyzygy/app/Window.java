@@ -136,7 +136,7 @@ public class Window {
 
 		Button resetScroll = HelperJFX.button("image-filter-center-focus-weak.png", "Recenter view");
 		resetScroll.setOnAction(e -> {
-			selectedForView.get().getWrapper().getConfig().scroll.set(DoubleVector.zero);
+			editor.updateScroll(context,DoubleVector.zero);
 		});
 
 		HBox zoomBox = new HBox();

@@ -27,6 +27,15 @@ public abstract class NodeConfig {
 	@Configuration
 	public final SimpleBooleanProperty onionSkin = new SimpleBooleanProperty(false);
 
+	@Configuration(optional = true)
+	public final SimpleObjectProperty<Integer> previewStart = new SimpleObjectProperty<>(0);
+
+	@Configuration(optional = true)
+	public final SimpleObjectProperty<Integer> previewLength = new SimpleObjectProperty<>(1);
+
+	@Configuration(optional = true)
+	public final SimpleObjectProperty<Integer> previewRate = new SimpleObjectProperty<>(10);
+
 	public NodeConfig(ProjectContext context) {
 		zoom.set(context.config.defaultZoom);
 	}

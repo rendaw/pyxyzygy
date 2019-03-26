@@ -595,7 +595,6 @@ public class GUILaunch extends Application {
 		groupLayer.initialTimeFramesAdd(context, ImmutableList.of(groupTimeFrame));
 
 		switch (createMode) {
-
 			case normal: {
 				TrueColorImageNode trueColorImageNode = TrueColorImageNode.create(context);
 				trueColorImageNode.initialNameSet(context, uniqueName("True color layer"));

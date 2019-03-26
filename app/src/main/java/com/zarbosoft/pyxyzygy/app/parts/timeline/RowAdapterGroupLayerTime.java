@@ -4,7 +4,6 @@ import com.zarbosoft.pyxyzygy.app.WidgetHandle;
 import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupLayerWrapper;
-import com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage.TrueColorImageNodeWrapper;
 import com.zarbosoft.pyxyzygy.core.model.v0.GroupLayer;
 import com.zarbosoft.pyxyzygy.core.model.v0.GroupTimeFrame;
 import com.zarbosoft.pyxyzygy.seed.model.Listener;
@@ -30,7 +29,7 @@ public class RowAdapterGroupLayerTime extends RowAdapter {
 	final RowAdapterGroupLayer layerRowAdapter;
 	private final Timeline timeline;
 	Optional<RowFramesWidget> row = Optional.empty();
-	Optional<RowTimeRangeWidget> rowInnerRange = Optional.empty();
+	Optional<RowTimeMapRangeWidget> rowInnerRange = Optional.empty();
 
 	public RowAdapterGroupLayerTime(
 			Timeline timeline, GroupLayer layer, RowAdapterGroupLayer layerRowAdapter
@@ -228,7 +227,7 @@ public class RowAdapterGroupLayerTime extends RowAdapter {
 						});
 					} else {
 						if (!rowInnerRange.isPresent()) {
-							rowInnerRange = Optional.of(new RowTimeRangeWidget(timeline));
+							rowInnerRange = Optional.of(new RowTimeMapRangeWidget(timeline));
 							layout.getChildren().add(rowInnerRange.get().base);
 						}
 						GroupTimeFrame frame = ((AdapterTimeFrame) newValue.frame).f;

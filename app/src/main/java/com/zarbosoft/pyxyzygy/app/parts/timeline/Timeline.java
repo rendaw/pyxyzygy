@@ -2,6 +2,7 @@ package com.zarbosoft.pyxyzygy.app.parts.timeline;
 
 import com.google.common.collect.ImmutableList;
 import com.zarbosoft.pyxyzygy.app.*;
+import com.zarbosoft.pyxyzygy.app.config.NodeConfig;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.app.wrappers.camera.CameraWrapper;
@@ -11,11 +12,14 @@ import com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage.TrueColorImageNodeWrap
 import com.zarbosoft.pyxyzygy.core.model.v0.*;
 import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.rendaw.common.Assertion;
+import javafx.application.Platform;
 import javafx.beans.Observable;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableObjectValue;
 import javafx.beans.value.ObservableValue;
@@ -34,9 +38,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.util.Callback;
@@ -44,11 +46,17 @@ import javafx.util.Callback;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.zarbosoft.pyxyzygy.app.Global.logger;
+import static com.zarbosoft.pyxyzygy.app.Misc.opt;
+import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
+import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.pad;
 import static com.zarbosoft.rendaw.common.Common.sublist;
 
 public class Timeline {
@@ -80,7 +88,9 @@ public class Timeline {
 	private final SimpleIntegerProperty requestedMaxFrame = new SimpleIntegerProperty();
 	private final SimpleIntegerProperty calculatedMaxFrame = new SimpleIntegerProperty();
 	private final SimpleIntegerProperty useMaxFrame = new SimpleIntegerProperty();
-	private final SimpleIntegerProperty frame = new SimpleIntegerProperty();
+	final SimpleIntegerProperty frame = new SimpleIntegerProperty();
+	private final SimpleBooleanProperty playingProperty = new SimpleBooleanProperty(false);
+	public PlayThread playThread;
 
 	public Node getWidget() {
 		return foreground;
@@ -121,6 +131,15 @@ public class Timeline {
 			@Override
 			public void run(ProjectContext context, Window window) {
 				frame.set(frame.get() + 1);
+			}
+		}, new Hotkeys.Action(Hotkeys.Scope.CANVAS,
+				"play-toggle",
+				"Play/pause",
+				Hotkeys.Hotkey.create(KeyCode.P, false, false, false)
+		) {
+			@Override
+			public void run(ProjectContext context, Window window) {
+				playingProperty.set(!playingProperty.get());
 			}
 		}).forEach(context.hotkeys::register);
 
@@ -248,7 +267,39 @@ public class Timeline {
 		right.setOnAction(e -> {
 			selectedFrame.get().frame.moveRight(context);
 		});
-		toolBar.getItems().addAll(add, duplicate, left, right, remove, clear);
+
+		Region space = new Region();
+		space.setMinWidth(1);
+		HBox.setHgrow(space, Priority.ALWAYS);
+
+		HBox previewRate = new HBox();
+		{
+			previewRate.setAlignment(Pos.CENTER_LEFT);
+			previewRate.setFillHeight(true);
+			previewRate.setSpacing(3);
+			Spinner<Integer> spinner = new Spinner<Integer>();
+			spinner.setMaxWidth(Double.MAX_VALUE);
+			spinner.setPrefWidth(60);
+			spinner.setEditable(true);
+			spinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 100));
+			CustomBinding.bindBidirectional(
+					new CustomBinding.IndirectBinder<>(window.selectedForView,
+							v -> opt(v == null ? null : v.getWrapper().getConfig().previewRate)
+					),
+					new CustomBinding.PropertyBinder<Integer>(spinner.getValueFactory().valueProperty())
+			);
+			final ImageView imageView = new ImageView(icon("play-speed.png"));
+			previewRate.getChildren().addAll(imageView, spinner);
+		}
+
+		Button previewPlay = new Button();
+		previewPlay.setGraphic(new ImageView());
+		Tooltip.install(previewPlay, new Tooltip("Play/stop"));
+		previewPlay.setOnAction(e -> {
+			playingProperty.set(!playingProperty.get());
+		});
+
+		toolBar.getItems().addAll(add, duplicate, left, right, remove, clear, space, previewRate, previewPlay);
 		nameColumn.setCellValueFactory(p -> new SimpleObjectProperty<>(p.getValue().getValue()));
 		nameColumn.setCellFactory(param -> new TreeTableCell<RowAdapter, RowAdapter>() {
 			final ImageView showViewing = new ImageView();
@@ -375,10 +426,84 @@ public class Timeline {
 
 			@Override
 			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
-				Timeline.this.updateFrameMarker();
+				updateFrameMarker();
 			}
 		};
 		frame.addListener(frameListener);
+
+		playingProperty.addListener(new ChangeListener<Boolean>() {
+			{
+				changed(null, null, playingProperty.get());
+			}
+
+			@Override
+			public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
+				((ImageView) previewPlay.getGraphic()).setImage(newValue ? icon("stop.png") : icon("play.png"));
+				if (!newValue) {
+					if (playThread != null)
+						playThread.playing.set(false);
+					playThread = null;
+				} else {
+					playThread = new PlayThread();
+				}
+			}
+		});
+	}
+
+	public class PlayThread extends Thread {
+		AtomicBoolean playing = new AtomicBoolean(true);
+		AtomicBoolean enqueued = new AtomicBoolean(false);
+
+		public class PlayState {
+			public final long frameMs;
+
+			public PlayState(long frameMs) {
+				this.frameMs = frameMs;
+			}
+		}
+
+		AtomicReference<PlayState> playState = new AtomicReference<>();
+
+		private final NodeConfig config;
+
+		{
+			config = window.selectedForView.get().getWrapper().getConfig();
+			updateState();
+			setDaemon(true);
+			start();
+		}
+
+		public void updateState() {
+			playState.set(new PlayState(1000 / config.previewRate.get()));
+		}
+
+		@Override
+		public void run() {
+			try {
+				while (playing.get()) {
+					if (!enqueued.getAndSet(true))
+						Platform.runLater(() -> {
+							try {
+								frame.set(Math.max(config.previewStart.get(),
+										(frame.get() - config.previewStart.get() + 1) % config.previewLength.get() +
+												config.previewStart.get()
+								));
+								System.out.format("frame set to %s\n",frame.get());
+								updateState();
+							} catch (Exception e) {
+								logger.writeException(e, "Error in JavaFX play thread");
+							} finally {
+								enqueued.set(false);
+							}
+						});
+					PlayState state = playState.get();
+					long now = System.currentTimeMillis();
+					Thread.sleep((now / state.frameMs + 1) * state.frameMs - now);
+				}
+			} catch (Exception e) {
+				logger.writeException(e, "Error in system play thread");
+			}
+		}
 	}
 
 	public void cleanItemSubtree(TreeItem<RowAdapter> item) {
@@ -487,8 +612,71 @@ public class Timeline {
 				}
 			}));
 		}
+		TreeItem preview = new TreeItem(new RowAdapterPreview(this, edit));
 		if (edit instanceof GroupNodeWrapper) {
-			editCleanup.add(((GroupNode) edit.getValue()).mirrorLayers(tree.getRoot().getChildren(), layer -> {
+			TreeItem layersRoot = new TreeItem(new RowAdapter() {
+
+				@Override
+				public ObservableValue<String> getName() {
+					return new SimpleStringProperty("Layers");
+				}
+
+				@Override
+				public boolean hasFrames() {
+					return false;
+				}
+
+				@Override
+				public boolean createFrame(ProjectContext context, Window window, int outer) {
+					return false;
+				}
+
+				@Override
+				public ObservableObjectValue<Image> getStateImage() {
+					return emptyStateImage;
+				}
+
+				@Override
+				public void deselected() {
+
+				}
+
+				@Override
+				public void selected() {
+
+				}
+
+				@Override
+				public boolean duplicateFrame(ProjectContext context, Window window, int outer) {
+					return false;
+				}
+
+				@Override
+				public WidgetHandle createRowWidget(ProjectContext context, Window window) {
+					return null;
+				}
+
+				@Override
+				public int updateTime(ProjectContext context, Window window) {
+					return 0;
+				}
+
+				@Override
+				public void updateFrameMarker(ProjectContext context, Window window) {
+
+				}
+
+				@Override
+				public void remove(ProjectContext context) {
+
+				}
+
+				@Override
+				public boolean frameAt(Window window, int outer) {
+					return false;
+				}
+			});
+			editCleanup.add(((GroupNode) edit.getValue()).mirrorLayers(layersRoot.getChildren(), layer -> {
 				RowAdapterGroupLayer layerRowAdapter = new RowAdapterGroupLayer((GroupNodeWrapper) edit, layer);
 				TreeItem<RowAdapter> layerItem = new TreeItem(layerRowAdapter);
 				layerItem.setExpanded(true);
@@ -497,18 +685,19 @@ public class Timeline {
 				);
 				return layerItem;
 			}, this::cleanItemSubtree, Misc.noopConsumer()));
+			tree.getRoot().getChildren().addAll(preview, layersRoot);
 		}
 		if (edit instanceof TrueColorImageNodeWrapper) {
+			tree.getRoot().getChildren().addAll(preview,
+					new TreeItem(new RowAdapterTrueColorImageNode(this, (TrueColorImageNode) edit.getValue()))
+			);
+		} else if (edit instanceof PaletteImageNodeWrapper) {
 			tree
 					.getRoot()
 					.getChildren()
-					.add(new TreeItem(new RowAdapterTrueColorImageNode(this, (TrueColorImageNode) edit.getValue())));
-		}
-		else if (edit instanceof PaletteImageNodeWrapper) {
-			tree
-					.getRoot()
-					.getChildren()
-					.add(new TreeItem<>(new RowAdapterPaletteImageNode(this, (PaletteImageNode) edit.getValue())));
+					.addAll(preview,
+							new TreeItem<>(new RowAdapterPaletteImageNode(this, (PaletteImageNode) edit.getValue()))
+					);
 		}
 	}
 

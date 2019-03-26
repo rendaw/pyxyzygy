@@ -3,264 +3,76 @@ package com.zarbosoft.pyxyzygy.app.parts.timeline;
 import com.zarbosoft.pyxyzygy.app.DoubleVector;
 import com.zarbosoft.pyxyzygy.app.Window;
 import javafx.beans.binding.Bindings;
-import javafx.geometry.Insets;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.geometry.Point2D;
-import javafx.geometry.Pos;
 import javafx.scene.Group;
-import javafx.scene.canvas.Canvas;
-import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.control.Label;
 import javafx.scene.effect.BlendMode;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.transform.Affine;
-
-import java.awt.*;
-
-import static com.zarbosoft.pyxyzygy.app.Global.NO_INNER;
-import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.c;
-import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
-import static com.zarbosoft.rendaw.common.Common.aeq;
+import javafx.scene.shape.StrokeType;
 
 public class RowTimeRangeWidget {
-	private static final javafx.scene.paint.Color outFill = c(new Color(157, 157, 157));
-	private static final javafx.scene.paint.Color inFill = c(new Color(255, 255, 255));
-	private static final javafx.scene.paint.Color inStroke = c(new Color(0, 0, 0));
-	private static final Image loopIcon = icon("loop-handle.png");
+	public static final SimpleIntegerProperty start = new SimpleIntegerProperty();
+	public static final SimpleIntegerProperty length = new SimpleIntegerProperty();
 
 	final Pane base = new Pane();
-
-	final Rectangle frameMarker = new Rectangle(Timeline.baseSize, Timeline.baseSize * 3);
-
-	private final Rectangle background = new Rectangle(0, Timeline.baseSize * 0.8);
-	private final Rectangle inBackground = new Rectangle(0, Timeline.baseSize);
-
 	private final Group alignment = new Group();
 
-	private final Group outerA = new Group();
-	private final Group outerB = new Group();
-	private final ImageView stopMark = new ImageView(icon("no-inner.png"));
-	private final Rectangle stopSeparator;
+	final Rectangle frameMarker = new Rectangle(Timeline.baseSize, Timeline.baseSize);
 
 	private final Group inner = new Group();
+	private final Rectangle loopRange = new Rectangle();
+	private final Rectangle loopHandle = new Rectangle();
+	private final ImageView loopImage = new ImageView(RowTimeMapRangeWidget.loopIcon);
 
-	private final InBorder inBorder = new InBorder();
-	private final Label inTime = new Label();
-	private final Label loopTime = new Label();
 	private final Timeline timeline;
-
-	private DoubleVector dragMouseStart;
-	private int dragFrameStart;
-	private TimeRangeAdapter adapter;
-
-	private static class InBorder extends Canvas {
-		private final double margin = 5;
-		private final double round = Timeline.baseSize * 0.2;
-		private double pad;
-		private DoubleVector cursor = new DoubleVector(0, 0);
-		private GraphicsContext gc = getGraphicsContext2D();
-		private double baseX;
-		private double baseY;
-
-		{
-			setHeight(Timeline.baseSize * 3 + margin * 2);
-		}
-
-		public void setX(double x) {
-			baseX = x;
-			setLayoutX(x - margin - pad);
-		}
-
-		public void setY(double y) {
-			baseY = y;
-			setLayoutY(y - margin);
-		}
-
-		public void draw(Timeline timeline, int start, int length) {
-			pad = Timeline.baseSize * 0.2 + (Timeline.baseSize - timeline.zoom) * 0.5;
-			setX(baseX);
-			setY(baseY);
-			if (start == NO_INNER) {
-				setWidth(Timeline.baseSize + margin * 2 + pad * 2);
-			} else {
-				if (length == 0) {
-					setWidth(Timeline.baseSize * 2 + margin * 2 + pad * 2);
-				} else {
-					setWidth((length + 1) * timeline.zoom + margin * 2 + pad * 2);
-				}
-			}
-			GraphicsContext gc = getGraphicsContext2D();
-			gc.setGlobalAlpha(1);
-			gc.setTransform(new Affine());
-			gc.clearRect(0, 0, getWidth(), getHeight());
-			gc.translate(margin + pad, Timeline.baseSize + margin);
-			figure(timeline, start, length, true);
-			gc.setFill(inFill);
-			gc.fill();
-			figure(timeline, start, length, false);
-			gc.setStroke(inStroke);
-			gc.stroke();
-
-			if (start != NO_INNER) {
-				if (length == 0) {
-					gc.setGlobalAlpha(0.5);
-					gc.drawImage(
-							loopIcon,
-							0,
-							0,
-							loopIcon.getWidth(),
-							loopIcon.getHeight(),
-							0,
-							Timeline.baseSize,
-							loopIcon.getWidth(),
-							loopIcon.getHeight()
-					);
-					gc.setGlobalAlpha(1);
-				} else {
-					gc.drawImage(
-							loopIcon,
-							0,
-							0,
-							loopIcon.getWidth(),
-							loopIcon.getHeight(),
-							length * timeline.zoom + pad,
-							Timeline.baseSize + round * 0.5,
-							loopIcon.getWidth(),
-							loopIcon.getHeight()
-					);
-				}
-			}
-		}
-
-		private void figure(Timeline timeline, int start, int length, boolean fill) {
-			gc.beginPath();
-			jump(-pad, timeline.zoom * 0.5);
-			seg(timeline.zoom * 0.5 - Timeline.baseSize * 0.3, 0);
-			line(timeline.zoom * 0.5, -Timeline.baseSize * 0.5);
-			line(timeline.zoom * 0.5 + Timeline.baseSize * 0.3, 0);
-
-			if (start == NO_INNER) {
-				seg(timeline.zoom + pad, Timeline.baseSize * 0.5);
-				seg(timeline.zoom * 0.5, Timeline.baseSize);
-			} else {
-				if (length == 0) {
-					seg(Timeline.baseSize * 2, 0);
-					if (fill)
-						line(Timeline.baseSize * 2, Timeline.baseSize);
-					else
-						jump(Timeline.baseSize * 2, Timeline.baseSize);
-					line(timeline.zoom + pad, Timeline.baseSize);
-					seg(timeline.zoom * 0.5, Timeline.baseSize * 2);
-				} else {
-					seg(length * timeline.zoom + pad, Timeline.baseSize * 0.5);
-					cursor = new DoubleVector(length * timeline.zoom + Timeline.baseSize * 0.5 + pad,
-							Timeline.baseSize + round
-					);
-					gc.arcTo(length * timeline.zoom + pad, cursor.y, cursor.x, cursor.y, round * 2);
-					seg(length * timeline.zoom + Timeline.baseSize + pad, Timeline.baseSize + Timeline.baseSize * 0.5);
-					seg(length * timeline.zoom + Timeline.baseSize * 0.5 + pad, Timeline.baseSize + Timeline.baseSize);
-					seg(length * timeline.zoom + pad, Timeline.baseSize + Timeline.baseSize * 0.5);
-					line(length * timeline.zoom + pad, Timeline.baseSize);
-				}
-			}
-			seg(-pad, Timeline.baseSize * 0.5);
-		}
-
-		private void jump(double x, double y) {
-			gc.moveTo(x, y);
-			cursor = new DoubleVector(x, y);
-		}
-
-		private void seg(double x, double y) {
-			if (aeq(x, cursor.x) || aeq(y, cursor.y)) {
-				line(x, y);
-				return;
-			} else if (x > cursor.x) {
-				if (y < cursor.y) {
-					gc.arcTo(cursor.x, y, x, y, round);
-					//gc.lineTo(cursor.x, y);
-					gc.lineTo(x, y);
-				} else {
-					gc.arcTo(x, cursor.y, x, y, round);
-					//gc.lineTo(x, cursor.y);
-					gc.lineTo(x, y);
-				}
-			} else {
-				if (y < cursor.y) {
-					gc.arcTo(x, cursor.y, x, y, round);
-					//gc.lineTo(x, cursor.y);
-					gc.lineTo(x, y);
-				} else {
-					gc.arcTo(cursor.x, y, x, y, round);
-					//gc.lineTo(cursor.x, y);
-					gc.lineTo(x, y);
-				}
-			}
-			cursor = new DoubleVector(x, y);
-		}
-
-		private void line(double x, double y) {
-			gc.lineTo(x, y);
-			cursor = new DoubleVector(x, y);
-		}
-	}
+	private int mouseDragDivideStart;
+	private int mouseDragQuantizeStart;
 
 	public RowTimeRangeWidget(Timeline timeline) {
-		final double pad = 50;
 		this.timeline = timeline;
-		base.setMinHeight(Timeline.baseSize * 3);
+		base.setMinHeight(Timeline.baseSize);
 		base.setPrefHeight(base.getMinHeight());
 		base.setMaxHeight(base.getMinHeight());
-
-		background.setFill(outFill);
-		background.setBlendMode(BlendMode.MULTIPLY);
-		background.widthProperty().bind(base.widthProperty().add(pad * 2));
-		background.setLayoutX(-pad);
-		background.setLayoutY(Timeline.baseSize + Timeline.baseSize * 0.1);
 
 		frameMarker.setFill(Timeline.frameMarkerColor);
 		frameMarker.setBlendMode(BlendMode.MULTIPLY);
 
-		inBackground.setFill(inFill);
-		inBackground.setStroke(inStroke);
-		inBackground.widthProperty().bind(base.widthProperty().add(pad * 2));
-		inBackground
+		loopRange.setHeight(Timeline.baseSize);
+		loopRange.setFill(RowTimeMapRangeWidget.inFill);
+		loopRange.setStroke(RowTimeMapRangeWidget.inStroke);
+		loopRange.setStrokeType(StrokeType.OUTSIDE);
+		loopRange.setArcHeight(RowTimeMapRangeWidget.InBorder.round);
+		loopRange.setArcWidth(RowTimeMapRangeWidget.InBorder.round);
+
+		loopHandle.setHeight(Math.floor(Timeline.baseSize * 0.9));
+		loopHandle.setWidth(Math.ceil(Timeline.baseSize * 1.5));
+		loopHandle.setStrokeType(StrokeType.OUTSIDE);
+		loopHandle
 				.layoutXProperty()
-				.bind(Bindings.createDoubleBinding(() -> Math.max(-pad, alignment.getLayoutX() + inner.getLayoutX()),
-						inner.layoutXProperty(),
-						alignment.layoutXProperty()
-				));
-		inBackground.setLayoutY(Timeline.baseSize);
+				.bind(Bindings.add(loopRange.layoutXProperty(), loopRange.widthProperty()).subtract(Timeline.baseSize * 0.5));
+		loopHandle.setLayoutY(Timeline.baseSize * 0.5 - loopHandle.getHeight() / 2);
+		loopHandle.setFill(Color.TRANSPARENT);
+		loopHandle.setStroke(RowTimeMapRangeWidget.inStroke);
+		loopHandle.setArcHeight(RowTimeMapRangeWidget.InBorder.round);
+		loopHandle.setArcWidth(RowTimeMapRangeWidget.InBorder.round);
 
-		inBorder.setY(0);
-		inBorder.setX(0);
-		inTime.setLayoutX(Timeline.baseSize);
-		inTime.setAlignment(Pos.BOTTOM_LEFT);
-		inTime.setMinHeight(Timeline.baseSize);
-		inTime.setMaxHeight(Timeline.baseSize);
-		inTime.setTextFill(javafx.scene.paint.Color.BLACK);
-		inTime.setPadding(new Insets(0, 0, 2, 2));
-		loopTime.setLayoutY(Timeline.baseSize * 2);
-		loopTime.setAlignment(Pos.TOP_LEFT);
-		loopTime.setMinHeight(Timeline.baseSize);
-		loopTime.setMaxHeight(Timeline.baseSize);
-		loopTime.setTextFill(javafx.scene.paint.Color.BLACK);
-		loopTime.setPadding(new Insets(2, 0, 0, 2));
+		loopImage.setLayoutY(Timeline.baseSize / 2 - loopImage.getImage().getHeight() / 2);
+		loopImage
+				.layoutXProperty()
+				.bind(Bindings
+						.add(loopRange.layoutXProperty(), loopRange.widthProperty())
+						.add(Timeline.baseSize / 2 - loopImage.getImage().getWidth() / 2));
 
-		stopMark.setLayoutX(-Timeline.baseSize * 0.5 - stopMark.getImage().getWidth() * 0.5);
-		stopMark.setLayoutY(Timeline.baseSize + Timeline.baseSize * 0.5 - stopMark.getImage().getHeight() * 0.5);
-		stopSeparator = new Rectangle(1, Timeline.baseSize * 0.7);
-		stopSeparator.setLayoutX(0);
-		stopSeparator.setLayoutY(Timeline.baseSize + Timeline.baseSize * 0.15);
-		outerA.getChildren().addAll(stopSeparator);
-		outerB.getChildren().addAll(stopMark);
-		outerB.layoutXProperty().bind(outerA.layoutXProperty());
-		inner.getChildren().addAll(inBorder, inTime, loopTime);
+		inner.getChildren().addAll(loopHandle, loopRange, loopImage);
 
-		alignment.layoutXProperty().bind(Bindings.createDoubleBinding(() -> {
+		alignment.layoutXProperty().bind(Bindings.createDoubleBinding(
+				() -> {
 					double corner = timeline.controlAlignment.localToScene(0, 0).getX();
 					return corner - base.localToScene(0, 0).getX() - timeline.timeScroll.getValue() +
 							Timeline.baseSize * 2;
@@ -269,30 +81,37 @@ public class RowTimeRangeWidget {
 				timeline.controlAlignment.localToSceneTransformProperty(),
 				timeline.timeScroll.valueProperty()
 		));
-		alignment.getChildren().addAll(frameMarker, outerA, inner, outerB);
+		alignment.getChildren().addAll(frameMarker, inner);
 
-		base.getChildren().addAll(background, inBackground, alignment);
+		base.getChildren().addAll(alignment);
 
 		base.setMouseTransparent(false);
 		base.addEventFilter(MouseEvent.MOUSE_PRESSED, e -> {
-			dragFrameStart = adapter.getInnerStart();
-			dragMouseStart = getRelative(e.getSceneX(), e.getSceneY());
-		});
-		base.addEventFilter(MouseEvent.MOUSE_RELEASED, e -> {
-			dragMouseStart = null;
-		});
+					DoubleVector dragAt = getRelative(e.getSceneX(), e.getSceneY());
+					mouseDragQuantizeStart = (int) (dragAt.x / timeline.zoom);
+					mouseDragDivideStart = start.get() + length.get();
+				});
 		base.addEventFilter(MouseEvent.MOUSE_DRAGGED, e -> {
-			if (dragMouseStart.y < Timeline.baseSize) {
-				// nop
-			} else if (dragMouseStart.y < Timeline.baseSize * 2) {
-				DoubleVector dragAt = getRelative(e.getSceneX(), e.getSceneY());
-				double diff = dragAt.x - dragMouseStart.x;
-				int quantized = (int) (diff / timeline.zoom);
-				adapter.changeStart(Math.max(-1, dragFrameStart + -quantized));
+			DoubleVector dragAt = getRelative(e.getSceneX(), e.getSceneY());
+			int quantized = (int) (dragAt.x / timeline.zoom);
+			if (mouseDragQuantizeStart < mouseDragDivideStart) {
+				start.set(Math.max(0, quantized));
 			} else {
-				DoubleVector dragAt = getRelative(e.getSceneX(), e.getSceneY());
-				int quantized = (int) (dragAt.x / timeline.zoom);
-				adapter.changeLength(Math.max(0, quantized - adapter.getOuterAt()));
+				length.set(Math.max(1, quantized - start.get()));
+			}
+		});
+		inner.layoutXProperty().bind(start.multiply(timeline.zoom));
+		length.addListener(new ChangeListener<Number>() {
+			{
+				changed(null, null, length.get());
+			}
+
+			@Override
+			public void changed(
+					ObservableValue<? extends Number> observable, Number oldValue, Number newValue
+			) {
+				int newLength = newValue.intValue();
+				loopRange.setWidth(newLength * timeline.zoom);
 			}
 		});
 	}
@@ -302,36 +121,9 @@ public class RowTimeRangeWidget {
 		return new DoubleVector(x - corner.getX(), y - corner.getY());
 	}
 
-	public void set(TimeRangeAdapter adapter) {
-		this.adapter = adapter;
-
-		outerA.setLayoutX((adapter.getOuterAt() - adapter.getInnerStart()) * timeline.zoom);
-
-		inner.setLayoutX(adapter.getOuterAt() * timeline.zoom);
-		inBorder.draw(timeline, adapter.getInnerStart(), adapter.getInnerLength());
-
-		if (adapter.getInnerStart() == NO_INNER) {
-			inTime.setVisible(false);
-			loopTime.setVisible(false);
-			inBackground.setVisible(false);
-		} else {
-			inTime.setVisible(true);
-			inTime.setText(Integer.toString(adapter.getInnerStart()));
-			if (adapter.getInnerLength() == 0) {
-				loopTime.setVisible(false);
-				inBackground.setVisible(true);
-			} else {
-				loopTime.setVisible(true);
-				loopTime.setLayoutX((adapter.getInnerLength() + 2) * timeline.zoom);
-				loopTime.setText(Integer.toString(adapter.getInnerStart() + adapter.getInnerLength()));
-				inBackground.setVisible(false);
-			}
-		}
-	}
-
 	public void updateFrameMarker(Window window) {
 		if (window.selectedForView.get() == null)
 			return;
-		frameMarker.setLayoutX(window.selectedForView.get().getWrapper().getConfig().frame.getValue() * timeline.zoom);
+		frameMarker.setLayoutX(timeline.frame.getValue() * timeline.zoom);
 	}
 }

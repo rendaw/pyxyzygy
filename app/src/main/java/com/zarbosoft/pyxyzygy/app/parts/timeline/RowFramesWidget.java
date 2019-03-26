@@ -120,6 +120,7 @@ public class RowFramesWidget extends Pane {
 	public void updateFrameMarker(Window window) {
 		if (window.selectedForView.get() == null)
 			return;
-		frameMarker.setLayoutX(window.selectedForView.get().getWrapper().getConfig().frame.getValue() * timeline.zoom);
+		System.out.format("row frames frame: %s\n", timeline.frame.get());
+		frameMarker.setLayoutX(timeline.frame.getValue() * timeline.zoom);
 	}
 }
