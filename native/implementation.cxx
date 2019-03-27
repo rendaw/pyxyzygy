@@ -641,6 +641,29 @@ TrueColorImage * TrueColorImage::copy(l_t x0, l_t y0, l_t w0, l_t h0) const {
 	return out;
 }
 
+TrueColorImage * TrueColorImage::scale(int scale) const {
+	TrueColorImage * out = TrueColorImage::create(w * scale, h * scale);
+	for (l_t y0 = 0; y0 < h; ++y0) {
+		size_t const stride = w * scale * channels;
+		for (l_t x0 = 0; x0 < w; ++x0) {
+			uint32_t const pixel = *((uint32_t *)&pixels[(y0 * w + x0) * channels]);
+			for (l_t x1 = 0; x1 < scale; ++x1) {
+				*((uint32_t *)&out->pixels[
+					((y0 * scale * w + x0) * scale + x1) * channels
+				]) = pixel;
+			}
+		}
+		for (l_t y1 = 1; y1 < scale; ++y1) {
+			memcpy(
+				&out->pixels[(y0 * scale + y1) * stride],
+				&out->pixels[(y0 * scale) * stride],
+				stride
+			);
+		}
+	}
+	return out;
+}
+
 template <class T> inline ROBytes TrueColorImage::calculateData(T calculate) const {
 	prepareByteScratch(w * channels, h);
 	for (l_t y = 0; y < h; ++y) {

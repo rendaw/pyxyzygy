@@ -56,40 +56,44 @@ public class Structure {
 	Set<Wrapper> taggedLifted = new HashSet<>();
 	Set<Wrapper> taggedCopied = new HashSet<>();
 	Hotkeys.Action[] actions = new Hotkeys.Action[] {
-			new Hotkeys.Action(Hotkeys.Scope.STRUCTURE, "link", "Select to link", Global.copyHotkey) {
+			new Hotkeys.Action(Hotkeys.Scope.STRUCTURE, "link", "Copy", Global.copyHotkey) {
 				@Override
 				public void run(ProjectContext context, Window window) {
 					link();
 				}
-			}, new Hotkeys.Action(Hotkeys.Scope.STRUCTURE, "lift", "Lift node", Global.cutHotkey) {
-		@Override
-		public void run(ProjectContext context, Window window) {
-			lift();
-		}
-	}, new Hotkeys.Action(Hotkeys.Scope.STRUCTURE, "place-auto", "Place node or link", Global.pasteHotkey) {
-		@Override
-		public void run(ProjectContext context, Window window) {
-			placeAuto();
-		}
-	}, new Hotkeys.Action(Hotkeys.Scope.STRUCTURE,
-			"duplicate",
-			"Duplicate node",
-			Hotkeys.Hotkey.create(KeyCode.D, true, false, false)
-	) {
-		@Override
-		public void run(ProjectContext context, Window window) {
-			duplicate();
-		}
-	}, new Hotkeys.Action(Hotkeys.Scope.STRUCTURE,
-			"delete",
-			"Delete node",
-			Hotkeys.Hotkey.create(KeyCode.DELETE, false, false, false)
-	) {
-		@Override
-		public void run(ProjectContext context, Window window) {
-			duplicate();
-		}
-	}
+			},
+			new Hotkeys.Action(Hotkeys.Scope.STRUCTURE, "lift", "Cut", Global.cutHotkey) {
+				@Override
+				public void run(ProjectContext context, Window window) {
+					lift();
+				}
+			},
+			new Hotkeys.Action(Hotkeys.Scope.STRUCTURE, "place-auto", "Paste linked", Global.pasteHotkey) {
+				@Override
+				public void run(ProjectContext context, Window window) {
+					placeAuto();
+				}
+			},
+			new Hotkeys.Action(Hotkeys.Scope.STRUCTURE,
+					"duplicate",
+					"Duplicate",
+					Hotkeys.Hotkey.create(KeyCode.D, true, false, false)
+			) {
+				@Override
+				public void run(ProjectContext context, Window window) {
+					duplicate();
+				}
+			},
+			new Hotkeys.Action(Hotkeys.Scope.STRUCTURE,
+					"delete",
+					"Delete",
+					Hotkeys.Hotkey.create(KeyCode.DELETE, false, false, false)
+			) {
+				@Override
+				public void run(ProjectContext context, Window window) {
+					duplicate();
+				}
+			}
 	};
 
 	public void selectForEdit(Wrapper wrapper) {
@@ -181,6 +185,7 @@ public class Structure {
 			context.hotkeys.register(action);
 
 		tree = new TreeView();
+		tree.getStyleClass().addAll("part-structure");
 		tree.setShowRoot(false);
 		tree.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 		tree.setMinHeight(0);
@@ -274,6 +279,10 @@ public class Structure {
 						cleanup.run();
 						cleanup = null;
 					}
+					if (item != null)
+					cleanup = HelperJFX.bindStyle(this,
+							"link-selected",
+							new CustomBinding.PropertyHalfBinder<>(item.getConfig().selectedSomewhere));
 					wrapper.set(item);
 					super.updateItem(item, empty);
 				}
@@ -404,8 +413,13 @@ public class Structure {
 				addNew(image);
 			});
 		});
+		MenuItem duplicateButton = new MenuItem("Duplicate");
+		duplicateButton.disableProperty().bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedIndices()));
+		duplicateButton.setOnAction(e -> {
+			duplicate();
+		});
 		MenuButton addButton = HelperJFX.menuButton("plus.png");
-		addButton.getItems().addAll(addImage, addPalette, importImage, addGroup, addCamera);
+		addButton.getItems().addAll(addImage, addPalette, importImage, addGroup, addCamera, duplicateButton);
 		Button removeButton = HelperJFX.button("minus.png", "Remove");
 		removeButton.disableProperty().bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedIndices()));
 		removeButton.setOnAction(e -> {
@@ -467,26 +481,35 @@ public class Structure {
 			}
 			context.history.finishChange();
 		});
-		Button duplicateButton = HelperJFX.button("content-copy.png", "Duplicate");
-		duplicateButton.disableProperty().bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedIndices()));
-		duplicateButton.setOnAction(e -> {
-			duplicate();
+		MenuItem cutButton = new MenuItem("Cut");
+		cutButton.setOnAction(e -> {
+			lift();
 		});
-		MenuItem linkBeforeButton = new MenuItem("Before");
+		MenuItem copyButton = new MenuItem("Copy");
+		copyButton.setOnAction(e -> {
+			link();
+		});
+		MenuItem linkBeforeButton = new MenuItem("Paste before");
 		linkBeforeButton.setOnAction(e -> {
 			placeBefore();
 		});
-		MenuItem linkInButton = new MenuItem("In");
+		MenuItem linkInButton = new MenuItem("Paste in");
 		linkInButton.setOnAction(e -> {
 			placeIn();
 		});
-		MenuItem linkAfterButton = new MenuItem("After");
+		MenuItem linkAfterButton = new MenuItem("Paste after");
 		linkAfterButton.setOnAction(e -> {
 			placeAfter();
 		});
-		MenuButton linkButton = HelperJFX.menuButton("content-paste.png");
-		linkButton.getItems().addAll(linkBeforeButton, linkInButton, linkAfterButton);
-		toolbar = new ToolBar(addButton, duplicateButton, removeButton, moveUpButton, moveDownButton, linkButton);
+		MenuItem unlinkButton = new MenuItem("Unlink");
+		unlinkButton.setOnAction(e -> {
+			unlink();
+		});
+		MenuButton linkButton = HelperJFX.menuButton("pencil.png");
+		linkButton
+				.getItems()
+				.addAll(cutButton, copyButton, linkBeforeButton, linkInButton, linkAfterButton, unlinkButton);
+		toolbar = new ToolBar(addButton, removeButton, moveUpButton, moveDownButton, linkButton);
 
 		HBox opacityBox = new HBox();
 		{
@@ -495,25 +518,20 @@ public class Structure {
 			Slider opacity = new Slider();
 			opacity.setMin(0);
 			opacity.setMax(opacityMax);
-			CustomBinding.bindBidirectional(
-					new CustomBinding.IndirectBinder<Integer>(
-							new CustomBinding.PropertyHalfBinder<>(window.selectedForEdit),
-							e -> opt(e == null ?
-									null :
-									new CustomBinding.ScalarBinder<Integer>(
-											e.getWrapper().getValue(),
-											"opacity",
-											v -> context.history.change(c -> c
-													.projectNode((ProjectNode) e.getWrapper().getValue())
-													.opacitySet(v))
+			CustomBinding.bindBidirectional(new CustomBinding.IndirectBinder<Integer>(new CustomBinding.PropertyHalfBinder<>(
+							window.selectedForEdit),
+							e -> opt(e == null ? null : new CustomBinding.ScalarBinder<Integer>(e.getWrapper().getValue(),
+									"opacity",
+									v -> context.history.change(c -> c
+											.projectNode((ProjectNode) e.getWrapper().getValue())
+											.opacitySet(v))
 							))
 					),
-					new CustomBinding.PropertyBinder<>(opacity.valueProperty()).bimap(
-							d -> Optional.of((int) (double) d),
+					new CustomBinding.PropertyBinder<>(opacity.valueProperty()).bimap(d -> Optional.of((int) (double) d),
 							i -> (double) (int) i
 					)
 			);
-			HBox.setHgrow(opacity,Priority.ALWAYS);
+			HBox.setHgrow(opacity, Priority.ALWAYS);
 			opacityBox.getChildren().addAll(new Label("Opacity"), opacity);
 		}
 
@@ -658,6 +676,17 @@ public class Structure {
 		Wrapper destination = window.selectedForEdit.get().getWrapper();
 		ProjectNode clone = destination.separateClone(context);
 		addNew(clone);
+	}
+
+	private void unlink() {
+		context.history.finishChange();
+		Wrapper edit = window.selectedForEdit.get().getWrapper();
+		if (edit == null)
+			return;
+		ProjectNode clone = edit.separateClone(context);
+		addNew(clone);
+		edit.delete(context);
+		context.history.finishChange();
 	}
 
 	private Wrapper getSelection() {

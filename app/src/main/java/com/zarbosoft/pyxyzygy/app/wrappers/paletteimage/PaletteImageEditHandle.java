@@ -100,14 +100,9 @@ public class PaletteImageEditHandle extends EditHandle {
 				Color c = c0.toJfx();
 				colorProperty.set(c);
 			});
-			cleanupBorder = wrapper.paletteSelectionBinder.addListener(o -> {
-				if (o != null && o.id() == color.id()) {
-					if (!getStyleClass().contains("selected"))
-						getStyleClass().add("selected");
-				} else {
-					getStyleClass().remove("selected");
-				}
-			});
+			cleanupBorder = HelperJFX.bindStyle(this,
+					"selected",
+					wrapper.paletteSelectionBinder.map(o -> Optional.of(o != null && o.id() == color.id())));
 			addEventFilter(MouseEvent.MOUSE_CLICKED, e -> {
 				wrapper.paletteSelOffsetBinder.set(index);
 			});
@@ -135,37 +130,41 @@ public class PaletteImageEditHandle extends EditHandle {
 		positiveZoom.bind(wrapper.canvasHandle.zoom);
 
 		actions = Streams.concat(Stream.of(new Hotkeys.Action(Hotkeys.Scope.CANVAS, "paste", "Paste", pasteHotkey) {
-			@Override
-			public void run(ProjectContext context, Window window) {
-				wrapper.config.tool.set(PaletteImageNodeConfig.Tool.SELECT);
-				((ToolSelect) tool).paste(context, window);
-			}
-		}, new Hotkeys.Action(Hotkeys.Scope.CANVAS,
-				"last-brush",
-				"Last brush",
-				Hotkeys.Hotkey.create(KeyCode.SPACE, false, false, false)
-		) {
-			@Override
-			public void run(ProjectContext context, Window window) {
-				if (wrapper.config.tool.get() == PaletteImageNodeConfig.Tool.BRUSH) {
-					if (wrapper.config.lastBrush < 0 ||
-							wrapper.config.lastBrush >= GUILaunch.config.paletteBrushes.size())
-						return;
-					setBrush(wrapper.config.lastBrush);
-				} else {
-					wrapper.config.tool.set(PaletteImageNodeConfig.Tool.BRUSH);
-				}
-			}
-		}, new Hotkeys.Action(Hotkeys.Scope.CANVAS,
-				"select",
-				"Select",
-				Hotkeys.Hotkey.create(KeyCode.S, false, false, false)
-		) {
-			@Override
-			public void run(ProjectContext context, Window window) {
-				wrapper.config.tool.set(PaletteImageNodeConfig.Tool.SELECT);
-			}
-		}), enumerate(Stream.of(KeyCode.DIGIT1,
+											   @Override
+											   public void run(ProjectContext context, Window window) {
+												   wrapper.config.tool.set(PaletteImageNodeConfig.Tool.SELECT);
+												   ((ToolSelect) tool).paste(context, window);
+											   }
+										   },
+										   new Hotkeys.Action(Hotkeys.Scope.CANVAS,
+												   "last-brush",
+												   "Last brush",
+												   Hotkeys.Hotkey.create(KeyCode.SPACE, false, false, false)
+										   ) {
+											   @Override
+											   public void run(ProjectContext context, Window window) {
+												   if (wrapper.config.tool.get() == PaletteImageNodeConfig.Tool.BRUSH) {
+													   if (wrapper.config.lastBrush < 0 ||
+															   wrapper.config.lastBrush >=
+																	   GUILaunch.config.paletteBrushes.size())
+														   return;
+													   setBrush(wrapper.config.lastBrush);
+												   } else {
+													   wrapper.config.tool.set(PaletteImageNodeConfig.Tool.BRUSH);
+												   }
+											   }
+										   },
+										   new Hotkeys.Action(Hotkeys.Scope.CANVAS,
+												   "select",
+												   "Select",
+												   Hotkeys.Hotkey.create(KeyCode.S, false, false, false)
+										   ) {
+											   @Override
+											   public void run(ProjectContext context, Window window) {
+												   wrapper.config.tool.set(PaletteImageNodeConfig.Tool.SELECT);
+											   }
+										   }
+		), enumerate(Stream.of(KeyCode.DIGIT1,
 				KeyCode.DIGIT2,
 				KeyCode.DIGIT3,
 				KeyCode.DIGIT4,

@@ -8,6 +8,7 @@ public abstract class ContentReplacer {
 	private Object key;
 
 	public void set(Object key, Node content) {
+		if (key != this.key) innerClear();
 		this.key = key;
 		innerSet(content);
 	}

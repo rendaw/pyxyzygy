@@ -1,13 +1,17 @@
 package com.zarbosoft.pyxyzygy.app;
 
+import com.zarbosoft.pyxyzygy.app.model.v0.PaletteTile;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.model.v0.TrueColorTile;
+import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupLayerWrapper;
+import com.zarbosoft.pyxyzygy.app.wrappers.paletteimage.PaletteImageNodeWrapper;
+import com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage.TrueColorImageNodeWrapper;
+import com.zarbosoft.pyxyzygy.core.PaletteColors;
+import com.zarbosoft.pyxyzygy.core.PaletteImage;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.pyxyzygy.core.model.v0.*;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
-import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupLayerWrapper;
-import com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage.TrueColorImageNodeWrapper;
 import com.zarbosoft.rendaw.common.Assertion;
 
 import static com.zarbosoft.pyxyzygy.app.Global.opacityMax;
@@ -66,6 +70,25 @@ public class Render {
 		return tileBounds;
 	}
 
+	public static Rectangle render(
+			ProjectContext context, TrueColorImage gc, PaletteImageNode node, PaletteImageFrame frame, Rectangle crop, double opacity
+	) {
+		PaletteColors colors = context.getPaletteColors(node.palette());
+		Rectangle tileBounds = crop.divideContains(context.tileSize);
+		for (int x = 0; x < tileBounds.width; ++x) {
+			for (int y = 0; y < tileBounds.height; ++y) {
+				PaletteTile tile = (PaletteTile) frame.tilesGet(tileBounds.corner().plus(x, y).to1D());
+				if (tile == null)
+					continue;
+				final int renderX = (x + tileBounds.x) * context.tileSize - crop.x;
+				final int renderY = (y + tileBounds.y) * context.tileSize - crop.y;
+				PaletteImage data = tile.getData(context);
+				gc.compose(data, colors, renderX, renderY, (float) opacity);
+			}
+		}
+		return tileBounds;
+	}
+
 	/**
 	 * @param context
 	 * @param node1   subtree to render
@@ -96,6 +119,16 @@ public class Render {
 					context,
 					out,
 					TrueColorImageNodeWrapper.frameFinder.findFrame(node, frame).frame,
+					crop,
+					opacity * ((double) node.opacity() / opacityMax)
+			);
+		} else if (node1 instanceof PaletteImageNode) {
+			PaletteImageNode node = (PaletteImageNode) node1;
+			render(
+					context,
+					out,
+					node,
+					PaletteImageNodeWrapper.frameFinder.findFrame(node, frame).frame,
 					crop,
 					opacity * ((double) node.opacity() / opacityMax)
 			);

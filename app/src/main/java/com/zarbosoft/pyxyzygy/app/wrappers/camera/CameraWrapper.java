@@ -113,13 +113,18 @@ public class CameraWrapper extends GroupNodeWrapper {
 	}
 
 	public void render(
-			ProjectContext context, Window window, BiConsumer<Integer, TrueColorImage> frameConsumer
+			ProjectContext context, Window window, BiConsumer<Integer, TrueColorImage> frameConsumer, int scale
 	) {
-		render(context, window, frameConsumer, 0, node.end());
+		render(context, window, frameConsumer, 0, node.end(), scale);
 	}
 
 	public void render(
-			ProjectContext context, Window window, BiConsumer<Integer, TrueColorImage> frameConsumer, int start, int end
+			ProjectContext context,
+			Window window,
+			BiConsumer<Integer, TrueColorImage> frameConsumer,
+			int start,
+			int end,
+			int scale
 	) {
 		ProgressBar progress = new ProgressBar();
 		progress.setPadding(new Insets(3));
@@ -153,6 +158,7 @@ public class CameraWrapper extends GroupNodeWrapper {
 					} finally {
 						context.lock.readLock().unlock();
 					}
+					if (scale > 1) canvas = canvas.scale(scale);
 					frameConsumer.accept(i, canvas);
 					final double percent = ((double) (i - start)) / (end - start);
 					Platform.runLater(() -> progress.setProgress(percent));

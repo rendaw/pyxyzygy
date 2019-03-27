@@ -127,11 +127,14 @@ public class CameraEditHandle extends GroupNodeEditHandle {
 									.textProperty()
 									.addListener((observable, oldValue, newValue) -> wrapper.config.renderName =
 											newValue);
+						}).intSpinner("Render scale",1,50,s -> {
+							s.getValueFactory().valueProperty().bindBidirectional(wrapper.config.renderScale.asObject());
 						}).button(button -> {
 							button.setText("Render");
 							button.setOnAction(e -> uncheck(() -> {
 								Path dir = Paths.get(wrapper.config.renderDir);
 								Files.createDirectories(dir);
+								int scale = wrapper.config.renderScale.get();
 								switch (wrapper.config.renderMode) {
 									case PNG:
 										wrapper.render(context,
@@ -140,7 +143,8 @@ public class CameraEditHandle extends GroupNodeEditHandle {
 														.resolve(String.format("%s.png", wrapper.config.renderName))
 														.toString()),
 												wrapper.canvasHandle.frameNumber.get(),
-												wrapper.canvasHandle.frameNumber.get() + 1
+												wrapper.canvasHandle.frameNumber.get() + 1,
+												scale
 										);
 										break;
 									case WEBM: {
@@ -148,7 +152,7 @@ public class CameraEditHandle extends GroupNodeEditHandle {
 												.resolve(String.format("%s.webm", wrapper.config.renderName))
 												.toFile(), (int) (wrapper.node.frameRate() / 10.0));
 										Picture rgbPic =
-												Picture.create(wrapper.node.width(), wrapper.node.height(), RGB);
+												Picture.create(wrapper.node.width()*scale, wrapper.node.height()*scale, RGB);
 										byte[] rgb = rgbPic.getPlaneData(0);
 										wrapper.render(context, window, (i, canvas) -> {
 											byte[] bgra = canvas.data();
@@ -172,7 +176,7 @@ public class CameraEditHandle extends GroupNodeEditHandle {
 												}
 											}
 											uncheck(() -> encoder.encodeNativeFrame(rgbPic));
-										});
+										}, scale);
 										encoder.finish();
 										break;
 									}
@@ -198,8 +202,8 @@ public class CameraEditHandle extends GroupNodeEditHandle {
 													wrapper.node.frameRate(), TimeUnit.MICROSECONDS);
 
 											Color[][] rgb =
-													new Color[wrapper.node.height()][wrapper.node
-															.width()];
+													new Color[wrapper.node.height()*scale][wrapper.node
+															.width()*scale];
 											wrapper.render(context, window, (i, canvas) -> {
 												byte[] bgra = canvas.data();
 												for (int y = 0; y < wrapper.node.height(); ++y) {
@@ -219,7 +223,7 @@ public class CameraEditHandle extends GroupNodeEditHandle {
 														Image.fromColors(rgb),
 														options
 												));
-											});
+											}, scale);
 											gifEncoder.finishEncoding();
 										}
 										break;
@@ -231,7 +235,7 @@ public class CameraEditHandle extends GroupNodeEditHandle {
 																wrapper.config.renderName,
 																i
 														))
-														.toString())
+														.toString()),scale
 										);
 									}
 									break;

@@ -43,4 +43,6 @@ public abstract class NodeConfig {
 	public NodeConfig() {
 
 	}
+
+	public final SimpleBooleanProperty selectedSomewhere = new SimpleBooleanProperty(false);
 }

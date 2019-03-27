@@ -122,6 +122,7 @@ class TrueColorImage {
 		static TrueColorImage * create(l_t w, l_t h);
 		static TrueColorImage * deserialize(char const * path) throw(std::runtime_error);
 		TrueColorImage * copy(l_t x, l_t y, l_t w, l_t h) const;
+		TrueColorImage * scale(int scale) const;
 		ROBytes data() const;
 		ROBytes dataPremultiplied() const;
 		ROBytes dataTint(uint8_t cr, uint8_t cg, uint8_t cb) const;

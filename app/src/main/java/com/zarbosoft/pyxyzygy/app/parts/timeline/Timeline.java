@@ -396,6 +396,7 @@ public class Timeline {
 			if (context.hotkeys.event(context, window, Hotkeys.Scope.TIMELINE, e))
 				e.consume();
 		});
+		foreground.getStyleClass().addAll("part-timeline");
 
 		timeScroll.setMin(0);
 		scrubElements.layoutXProperty().bind(Bindings.createDoubleBinding(() -> {
@@ -488,7 +489,6 @@ public class Timeline {
 										(frame.get() - config.previewStart.get() + 1) % config.previewLength.get() +
 												config.previewStart.get()
 								));
-								System.out.format("frame set to %s\n",frame.get());
 								updateState();
 							} catch (Exception e) {
 								logger.writeException(e, "Error in JavaFX play thread");

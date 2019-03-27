@@ -11,7 +11,6 @@ import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.Pair;
-import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -46,7 +45,12 @@ public class HelperJFX {
 		return Color.rgb(source.getRed(), source.getGreen(), source.getBlue());
 	}
 
-	public static Pair<Node, SimpleObjectProperty<Integer>> nonlinearSlider(int min, int max, int precision, int divide) {
+	public static Pair<Node, SimpleObjectProperty<Integer>> nonlinearSlider(
+			int min,
+			int max,
+			int precision,
+			int divide
+	) {
 		Slider slider = new Slider();
 		slider.setMin(0);
 		slider.setMax(1);
@@ -69,21 +73,19 @@ public class HelperJFX {
 
 		CustomBinding.bindBidirectional(new CustomBinding.PropertyBinder<>(value),
 				new CustomBinding.PropertyBinder<>(slider.valueProperty()).<Integer>bimap(n -> opt(n).map(fromNonlinear),
-						toNonlinear)
+						toNonlinear
+				)
 		);
 		DecimalFormat textFormat = new DecimalFormat();
 		textFormat.setMaximumFractionDigits(precision);
 		CustomBinding.bindBidirectional(new CustomBinding.PropertyBinder<>(value),
-				new CustomBinding.PropertyBinder<>(text.textProperty()).bimap(
-				v -> {
+				new CustomBinding.PropertyBinder<>(text.textProperty()).bimap(v -> {
 					try {
 						return opt((int) (Double.parseDouble(v) * divide));
 					} catch (NumberFormatException e) {
 						return Optional.empty();
 					}
-				},
-						v -> textFormat.format((double) v.intValue() / divide)
-				)
+				}, v -> textFormat.format((double) v.intValue() / divide))
 		);
 
 		return new Pair<>(out, value);
@@ -360,5 +362,16 @@ public class HelperJFX {
 		textArea.setMaxHeight(Double.MAX_VALUE);
 		alert.getDialogPane().setExpandableContent(textArea);
 		alert.showAndWait();
+	}
+
+	public static Runnable bindStyle(Node node, String styleClass, CustomBinding.HalfBinder<Boolean> source) {
+		return source.addListener(b -> {
+			System.out.format("style event -> %s %s\n", styleClass, b);
+			if (b) {
+				if (!node.getStyleClass().contains(styleClass))
+					node.getStyleClass().add(styleClass);
+			} else
+				node.getStyleClass().remove(styleClass);
+		});
 	}
 }

@@ -6,6 +6,7 @@ public abstract class ChildrenReplacer<T> {
 	private Object key;
 
 	public void set(Object key, T ...content) {
+		if (key != this.key) innerClear();
 		this.key = key;
 		innerSet(content);
 	}

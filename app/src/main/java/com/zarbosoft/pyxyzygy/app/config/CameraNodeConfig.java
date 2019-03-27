@@ -3,6 +3,7 @@ package com.zarbosoft.pyxyzygy.app.config;
 import com.zarbosoft.interface1.Configuration;
 import com.zarbosoft.pyxyzygy.app.Global;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
+import javafx.beans.property.SimpleIntegerProperty;
 
 @Configuration(name = "camera")
 public class CameraNodeConfig extends GroupNodeConfig {
@@ -53,4 +54,7 @@ public class CameraNodeConfig extends GroupNodeConfig {
 
 	@Configuration
 	public RenderMode renderMode = RenderMode.PNG;
+
+	@Configuration(optional = true)
+	public SimpleIntegerProperty renderScale = new SimpleIntegerProperty(1);
 }

@@ -1,5 +1,6 @@
 package com.zarbosoft.pyxyzygy.app;
 
+import com.zarbosoft.pyxyzygy.app.config.NodeConfig;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.parts.editor.Editor;
 import com.zarbosoft.pyxyzygy.app.parts.structure.Structure;
@@ -114,8 +115,22 @@ public class Window {
 				.forEach(context.hotkeys::register);
 
 		selectedForEdit.addListener((observable, oldValue, newValue) -> {
+			NodeConfig oldConfig;
 			if (oldValue != null) {
 				oldValue.remove(context, this);
+				oldConfig = oldValue.getWrapper().getConfig();
+			}else {
+				oldConfig = null;
+			}
+			NodeConfig newConfig;
+			if (newValue != null) {
+				newConfig = newValue.getWrapper().getConfig();
+			}else {
+				newConfig = null;
+			}
+			if (newConfig != oldConfig) {
+				if (oldConfig != null) oldConfig.selectedSomewhere.set(false);
+				if (newConfig != null) newConfig.selectedSomewhere.set(true);
 			}
 		});
 
@@ -304,7 +319,9 @@ public class Window {
 		scene.addEventFilter(KeyEvent.KEY_RELEASED, e -> {
 			pressed.remove(e.getCode());
 		});
-		scene.getStylesheets().addAll(getClass().getResource("widgets/colorpicker/style.css").toExternalForm(),
+		scene.getStylesheets().addAll(
+				getClass().getResource("widgets/style.css").toExternalForm(),
+				getClass().getResource("widgets/colorpicker/style.css").toExternalForm(),
 				getClass().getResource("widgets/brushbutton/style.css").toExternalForm()
 		);
 
