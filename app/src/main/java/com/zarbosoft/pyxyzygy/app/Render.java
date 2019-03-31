@@ -55,6 +55,7 @@ public class Render {
 	public static Rectangle render(
 			ProjectContext context, TrueColorImage gc, TrueColorImageFrame frame, Rectangle crop, double opacity
 	) {
+		crop = crop.minus(frame.offset());
 		Rectangle tileBounds = crop.divideContains(context.tileSize);
 		for (int x = 0; x < tileBounds.width; ++x) {
 			for (int y = 0; y < tileBounds.height; ++y) {
@@ -73,6 +74,7 @@ public class Render {
 	public static Rectangle render(
 			ProjectContext context, TrueColorImage gc, PaletteImageNode node, PaletteImageFrame frame, Rectangle crop, double opacity
 	) {
+		crop = crop.minus(frame.offset());
 		PaletteColors colors = context.getPaletteColors(node.palette());
 		Rectangle tileBounds = crop.divideContains(context.tileSize);
 		for (int x = 0; x < tileBounds.width; ++x) {
@@ -155,7 +157,14 @@ public class Render {
 			TrueColorImageFrame frame1 = TrueColorImageNodeWrapper.frameFinder.findFrame(node, frame).frame;
 			for (Long address : frame1.tiles().keySet()) {
 				Vector v = Vector.from1D(address).multiply(context.tileSize);
-				out = out.expand(new Rectangle(v.x, v.y, context.tileSize, context.tileSize));
+				out = out.expand(new Rectangle(v.x, v.y, context.tileSize, context.tileSize).plus(frame1.offset()));
+			}
+		} else if (node1 instanceof PaletteImageNode) {
+			PaletteImageNode node = (PaletteImageNode) node1;
+			PaletteImageFrame frame1 = PaletteImageNodeWrapper.frameFinder.findFrame(node, frame).frame;
+			for (Long address : frame1.tiles().keySet()) {
+				Vector v = Vector.from1D(address).multiply(context.tileSize);
+				out = out.expand(new Rectangle(v.x, v.y, context.tileSize, context.tileSize).plus(frame1.offset()));
 			}
 		} else {
 			throw new Assertion();

@@ -20,12 +20,13 @@ public class MirrorGroupNode extends ObjectMirror {
 		this.node = node;
 
 		tree.set(new TreeItem<>(this));
+		tree.get().setExpanded(true);
 
 		layerListenCleanup = node.mirrorLayers(children, layer -> {
 			return mirrorContext.create(context, this, layer);
 		}, child -> child.remove(context), at -> {
 			for (int i = at; i < children.size(); ++i)
-				children.get(i).parentIndex = i;
+				children.get(i).setParentIndex(i);
 		});
 		Misc.mirror(children, tree.get().getChildren(), child -> {
 			child.tree.addListener((observable, oldValue, newValue) -> {

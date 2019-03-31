@@ -57,32 +57,23 @@ public class GroupNodeEditHandle extends EditHandle {
 		overlay = new Group();
 		wrapper.canvasHandle.overlay.getChildren().add(overlay);
 
-		VBox controls = new VBox();
-
-		VBox toolProps = new VBox();
+		TitledPane toolProps = new TitledPane("Tool",null);
 		this.toolPropReplacer = new ContentReplacer<Node>() {
 			@Override
 			protected void innerSet(Node content) {
-				toolProps.getChildren().addAll(content);
+				toolProps.setContent(content);
 			}
 
 			@Override
 			protected void innerClear() {
-				toolProps.getChildren().clear();
+				toolProps.setContent(null);
 			}
 		};
 
-		VBox tabBox = new VBox();
-		tabBox
-				.getChildren()
-				.addAll(new TitledPane(
-						"Layer",
-						new WidgetFormBuilder().apply(b -> cleanup.add(nodeFormFields(context, b, wrapper))).build()
-				), toolProps);
-		window.layerTabContent.set(this, pad(tabBox));
+		window.layerTabContent.set(this, pad(buildTab(context, window,toolProps)));
 
 		// Toolbar
-		window.toolBarChildren.set(this,createToolButtons());
+		window.toolBarChildren.set(this, createToolButtons());
 
 		wrapper.config.tool.addListener(new ChangeListener<String>() {
 			{
@@ -91,36 +82,45 @@ public class GroupNodeEditHandle extends EditHandle {
 
 			@Override
 			public void changed(
-					ObservableValue<? extends String> observable,
-					String oldValue,
-					String newValue
+					ObservableValue<? extends String> observable, String oldValue, String newValue
 			) {
 				if (tool != null) {
 					tool.remove(context, window);
 					tool = null;
 				}
-				if (newValue == null) return;
-				tool = createTool(context,window,newValue);
+				if (newValue == null)
+					return;
+				tool = createTool(context, window, newValue);
 			}
 		});
 
-		window.layerTabContent.set(this, controls);
 		cleanup.add(() -> {
 			window.layerTabContent.clear(this);
 		});
 	}
 
-	protected Tool createTool(ProjectContext context, Window window ,String newValue) {
+	public VBox buildTab(ProjectContext context, Window window, TitledPane toolProps) {
+		VBox tabBox = new VBox();
+		tabBox.getChildren().addAll(
+				new TitledPane("Layer",
+						new WidgetFormBuilder().apply(b -> cleanup.add(nodeFormFields(context, b, wrapper))).build()
+				),
+				toolProps
+		);
+		return tabBox;
+	}
+
+	protected Tool createTool(ProjectContext context, Window window, String newValue) {
 		if (GroupNodeConfig.toolMove.equals(newValue)) {
 			return new ToolMove(window, wrapper);
 		} else if (GroupNodeConfig.toolStamp.equals(newValue)) {
 			return new ToolStamp(context, window, wrapper, GroupNodeEditHandle.this);
-		} else throw new Assertion();
+		} else
+			throw new Assertion();
 	}
 
 	protected List<Node> createToolButtons() {
-		return ImmutableList.of(
-				new ToolToggle("cursor-move16.png", "Move", GroupNodeConfig.toolMove),
+		return ImmutableList.of(new ToolToggle("cursor-move16.png", "Move", GroupNodeConfig.toolMove),
 				new ToolToggle("stamper16.png", "Stamp", GroupNodeConfig.toolStamp)
 		);
 	}

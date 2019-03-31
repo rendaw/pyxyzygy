@@ -9,6 +9,10 @@ public abstract class ObjectMirror {
 	public int parentIndex;
 	public final SimpleObjectProperty<TreeItem<ObjectMirror>> tree = new SimpleObjectProperty<>();
 
+	public void setParentIndex(int index) {
+		this.parentIndex = index;
+	}
+
 	public abstract ObjectMirror getParent();
 
 	public abstract ProjectObject getValue();

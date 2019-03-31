@@ -1,31 +1,46 @@
 package com.zarbosoft.pyxyzygy.app.modelmirror;
 
+import com.zarbosoft.pyxyzygy.app.Misc;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.core.model.v0.Project;
+import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
 import com.zarbosoft.pyxyzygy.core.model.v0.ProjectObject;
+import com.zarbosoft.pyxyzygy.seed.model.Listener;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.scene.control.TreeItem;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static com.zarbosoft.pyxyzygy.app.Misc.moveTo;
 
 public class MirrorProject extends ObjectMirror {
 	private final ObjectMirror parent;
 	private final Project object;
-	private final Runnable cleanup;
+	private final ObservableList<ObjectMirror> children = FXCollections.observableArrayList();
+	private final Runnable topListenCleanup;
 
 	public MirrorProject(
 			ProjectContext context, ObjectMirror.Context mirrorContext, ObjectMirror parent, Project object
 	) {
 		this.parent = parent;
 		this.object = object;
+
 		tree.set(new TreeItem<>(this));
-		cleanup = context.project.mirrorTop(
-				tree.get().getChildren(),
-				o -> new TreeItem<>(mirrorContext.create(context, this, o)),
-				i -> i.getValue().remove(context),
-				index -> {
-					for (int i = index; i < tree.get().getChildren().size(); ++i) {
-						tree.get().getChildren().get(i).getValue().parentIndex = i;
-					}
-				}
-		);
+
+		topListenCleanup = object.mirrorTop(children, layer -> {
+			return mirrorContext.create(context, this, layer);
+		}, child -> child.remove(context), at -> {
+			for (int i = at; i < children.size(); ++i)
+				children.get(i).setParentIndex(i);
+		});
+		Misc.mirror(children, tree.get().getChildren(), child -> {
+			child.tree.addListener((observable, oldValue, newValue) -> {
+				tree.get().getChildren().set(child.parentIndex, newValue);
+			});
+			return child.tree.get();
+		}, Misc.noopConsumer(), Misc.noopConsumer());
 	}
 
 	@Override
@@ -40,6 +55,6 @@ public class MirrorProject extends ObjectMirror {
 
 	@Override
 	public void remove(ProjectContext context) {
-		cleanup.run();
+		topListenCleanup.run();
 	}
 }

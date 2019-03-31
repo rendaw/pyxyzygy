@@ -24,9 +24,16 @@ public class MirrorGroupLayer extends ObjectMirror {
 			}
 			if (value != null) {
 				child = mirrorContext.create(context, MirrorGroupLayer.this, value);
+				child.setParentIndex(parentIndex);
 				tree.bind(child.tree);
 			}
 		});
+	}
+
+	@Override
+	public void setParentIndex(int index) {
+		super.setParentIndex(index);
+		if (child != null) child.setParentIndex(index);
 	}
 
 	@Override

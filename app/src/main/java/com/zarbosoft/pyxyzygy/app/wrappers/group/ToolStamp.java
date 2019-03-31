@@ -1,16 +1,14 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.group;
 
 import com.google.common.collect.ImmutableList;
-import com.zarbosoft.pyxyzygy.app.DoubleVector;
-import com.zarbosoft.pyxyzygy.app.Render;
-import com.zarbosoft.pyxyzygy.app.Tool;
-import com.zarbosoft.pyxyzygy.app.Window;
+import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.modelmirror.*;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.pyxyzygy.core.model.v0.*;
+import com.zarbosoft.pyxyzygy.nearestneighborimageview.NearestNeighborImageView;
 import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
@@ -21,10 +19,11 @@ import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.scene.image.ImageView;
-import javafx.scene.shape.Line;
 import javafx.scene.transform.Scale;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.centerCursor;
@@ -42,9 +41,21 @@ public class ToolStamp extends Tool {
 			ProjectContext context, Window window, GroupNodeWrapper wrapper, GroupNodeEditHandle editHandle
 	) {
 		this.editHandle = editHandle;
+		List<ProjectObject> parents = new ArrayList<>();
+		{
+			Wrapper at = wrapper;
+			while (at != null) {
+				parents.add(at.getValue());
+				at = at.getParent();
+			}
+		}
 		final TreeView<ObjectMirror> tree = new TreeView<>();
 		tree.setCellFactory(param -> new TreeCell<ObjectMirror>() {
 			Runnable cleanup;
+
+			{
+				HelperJFX.bindStyle(this, "disable", new CustomBinding.PropertyHalfBinder<>(disableProperty()));
+			}
 
 			@Override
 			protected void updateItem(ObjectMirror item, boolean empty) {
@@ -54,6 +65,7 @@ public class ToolStamp extends Tool {
 				if (item == null) {
 					setText("");
 				} else {
+					setDisable(parents.contains(item.getValue()));
 					Listener.ScalarSet<ProjectNode, String> nameListener = (target, value) -> {
 						setText(value);
 					};
@@ -84,7 +96,8 @@ public class ToolStamp extends Tool {
 					out = new MirrorPaletteImageNode(parent, (PaletteImageNode) object);
 				} else
 					throw new Assertion();
-				lookup.put(object.id(), out);
+				if (!parents.contains(object))
+					lookup.put(object.id(), out);
 				return out;
 			}
 		}, null, context.project);
@@ -93,7 +106,7 @@ public class ToolStamp extends Tool {
 		ObjectMirror found = lookup.get(wrapper.config.stampSource.get());
 		if (found != null)
 			tree.getSelectionModel().select(found.tree.get());
-		ImageView stampOverlayImage = new ImageView();
+		ImageView stampOverlayImage = NearestNeighborImageView.create();
 		stampOverlayImage.setOpacity(0.5);
 		overlayGroup = new Group();
 		wrapper.canvasHandle.positiveZoom.addListener((observable, oldValue, newValue) -> overlayGroup
@@ -101,13 +114,14 @@ public class ToolStamp extends Tool {
 				.setAll(new Scale(1.0 / wrapper.canvasHandle.positiveZoom.get(),
 						1.0 / wrapper.canvasHandle.positiveZoom.get()
 				)));
-		Line overlayMarker = new Line(0, 0, 10, 10);
-		overlayGroup.getChildren().addAll(stampOverlayImage, overlayMarker);
+		overlayGroup.getChildren().addAll(stampOverlayImage);
 		editHandle.overlay.getChildren().add(overlayGroup);
 		Runnable updateStampImage = () -> {
 			stampOverlayImage.setImage(null);
 			TreeItem<ObjectMirror> item = tree.getSelectionModel().getSelectedItem();
 			if (item == null)
+				return;
+			if (parents.contains(item.getValue().getValue()))
 				return;
 			wrapper.config.stampSource.set(item.getValue().getValue().id());
 			stampSource = (ProjectNode) item.getValue().getValue();
@@ -117,8 +131,8 @@ public class ToolStamp extends Tool {
 			TrueColorImage gc = TrueColorImage.create(stampOverlayBounds.get().width, stampOverlayBounds.get().height);
 			Render.render(context, stampSource, gc, 0, stampOverlayBounds.get(), 1);
 			stampOverlayImage.setImage(HelperJFX.toImage(gc));
-			stampOverlayImage.setLayoutX((double) stampOverlayBounds.get().x * wrapper.canvasHandle.positiveZoom.get());
-			stampOverlayImage.setLayoutY((double) stampOverlayBounds.get().y * wrapper.canvasHandle.positiveZoom.get());
+			stampOverlayImage.setLayoutX((double) stampOverlayBounds.get().x);
+			stampOverlayImage.setLayoutY((double) stampOverlayBounds.get().y);
 		};
 		tree
 				.getSelectionModel()

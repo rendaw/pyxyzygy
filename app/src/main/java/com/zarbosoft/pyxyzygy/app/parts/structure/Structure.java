@@ -464,13 +464,6 @@ public class Structure {
 							.build())
 					.collect(Collectors.toList());
 			int dest = last(removeOrder).getValue().parentIndex - 1;
-			//System.out.format("move up dest: %s\n",dest);
-			System.out.format(
-					"move up dest: %s; %s; %s\n",
-					dest,
-					removeOrder.size(),
-					removeOrder.stream().map(v -> v.getValue().parentIndex).collect(Collectors.toList())
-			);
 			if (dest < 0)
 				return;
 			List<ProjectNode> add =
@@ -502,12 +495,6 @@ public class Structure {
 							.build())
 					.collect(Collectors.toList());
 			int dest = last(removeOrder).getValue().parentIndex + 1;
-			System.out.format(
-					"move down dest: %s; %s; %s\n",
-					dest,
-					removeOrder.size(),
-					removeOrder.stream().map(v -> v.getValue().parentIndex).collect(Collectors.toList())
-			);
 			if (dest > firstParent.getChildren().size() - removeOrder.size())
 				return;
 			List<ProjectNode> add =
