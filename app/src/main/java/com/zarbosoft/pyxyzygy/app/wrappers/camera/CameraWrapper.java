@@ -39,7 +39,6 @@ public class CameraWrapper extends GroupNodeWrapper {
 
 	public CameraWrapper(ProjectContext context, Wrapper parent, int parentIndex, Camera node) {
 		super(context, parent, parentIndex, node);
-		this.parentIndex = parentIndex;
 		this.node = node;
 		cleanupWidth = CustomBinding.bindBidirectional(new CustomBinding.ScalarBinder<Integer>(
 				node,

@@ -12,6 +12,7 @@ import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
 import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
+import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.ChainComparator;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleObjectProperty;
@@ -448,10 +449,12 @@ public class Structure {
 				delete(context, c);
 			});
 		});
-		Button moveUpButton = HelperJFX.button("arrow-up.png", "Move Up");
-		moveUpButton.disableProperty().bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedIndices()));
+		Button moveUpButton = HelperJFX.button("arrow-up.png", "Move up");
+		moveUpButton.disableProperty().bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedItems()));
 		moveUpButton.setOnAction(e -> {
 			List<TreeItem<Wrapper>> selected = tree.getSelectionModel().getSelectedItems();
+			if (selected.isEmpty())
+				throw new Assertion();
 			TreeItem<Wrapper> firstParent = selected.get(0).getParent();
 			List<TreeItem<Wrapper>> removeOrder = selected
 					.stream()
@@ -460,27 +463,36 @@ public class Structure {
 							.greaterFirst(s -> s.getValue().parentIndex)
 							.build())
 					.collect(Collectors.toList());
-			int dest = removeOrder.get(0).getValue().parentIndex;
-			if (dest == 0)
+			int dest = last(removeOrder).getValue().parentIndex - 1;
+			//System.out.format("move up dest: %s\n",dest);
+			System.out.format(
+					"move up dest: %s; %s; %s\n",
+					dest,
+					removeOrder.size(),
+					removeOrder.stream().map(v -> v.getValue().parentIndex).collect(Collectors.toList())
+			);
+			if (dest < 0)
 				return;
-			dest -= 1;
 			List<ProjectNode> add =
 					removeOrder.stream().map(s -> (ProjectNode) s.getValue().getValue()).collect(Collectors.toList());
-			final int dest1 = dest;
 
 			context.change(new ProjectContext.Tuple("struct_move"), c -> {
 				removeOrder.forEach(s -> s.getValue().delete(context, c));
 				if (firstParent.getValue() != null) {
-					firstParent.getValue().addChildren(context, c, dest1, add);
+					firstParent.getValue().addChildren(context, c, dest, add);
 				} else {
-					c.project(context.project).topAdd(dest1, add);
+					c.project(context.project).topAdd(dest, add);
 				}
 			});
+			tree.getSelectionModel().clearSelection();
+			tree.getSelectionModel().select(firstParent.getChildren().get(dest));
 		});
-		Button moveDownButton = HelperJFX.button("arrow-down.png", "Move Down");
-		moveDownButton.disableProperty().bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedIndices()));
+		Button moveDownButton = HelperJFX.button("arrow-down.png", "Move down");
+		moveDownButton.disableProperty().bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedItems()));
 		moveDownButton.setOnAction(e -> {
 			List<TreeItem<Wrapper>> selected = tree.getSelectionModel().getSelectedItems();
+			if (selected.isEmpty())
+				throw new Assertion();
 			TreeItem<Wrapper> firstParent = selected.get(0).getParent();
 			List<TreeItem<Wrapper>> removeOrder = selected
 					.stream()
@@ -489,22 +501,28 @@ public class Structure {
 							.greaterFirst(s -> s.getValue().parentIndex)
 							.build())
 					.collect(Collectors.toList());
-			int dest = last(removeOrder).getValue().parentIndex;
-			if (dest == firstParent.getChildren().size() - 1)
+			int dest = last(removeOrder).getValue().parentIndex + 1;
+			System.out.format(
+					"move down dest: %s; %s; %s\n",
+					dest,
+					removeOrder.size(),
+					removeOrder.stream().map(v -> v.getValue().parentIndex).collect(Collectors.toList())
+			);
+			if (dest > firstParent.getChildren().size() - removeOrder.size())
 				return;
-			dest = dest - removeOrder.size() + 1;
 			List<ProjectNode> add =
 					removeOrder.stream().map(s -> (ProjectNode) s.getValue().getValue()).collect(Collectors.toList());
-			final int dest1 = dest;
 
 			context.change(new ProjectContext.Tuple("struct_move"), c -> {
 				removeOrder.forEach(s -> s.getValue().delete(context, c));
 				if (firstParent.getValue() != null) {
-					firstParent.getValue().addChildren(context, c, dest1, add);
+					firstParent.getValue().addChildren(context, c, dest, add);
 				} else {
-					c.project(context.project).topAdd(dest1, add);
+					c.project(context.project).topAdd(dest, add);
 				}
 			});
+			tree.getSelectionModel().clearSelection();
+			tree.getSelectionModel().select(firstParent.getChildren().get(dest));
 		});
 		MenuItem cutButton = new MenuItem("Cut");
 		cutButton.setOnAction(e -> {
@@ -528,7 +546,6 @@ public class Structure {
 		});
 		MenuItem linkAfterButton = new MenuItem("Paste after");
 		linkAfterButton.setOnAction(e -> {
-			System.out.format("paste after menu item\n");
 			context.change(null, c -> {
 				placeAfter(c);
 			});
@@ -600,13 +617,13 @@ public class Structure {
 			temp.forEach(i -> i.getValue().remove(context));
 			temp.clear();
 			for (int i = at; i < tree.getRoot().getChildren().size(); ++i) {
-				tree.getRoot().getChildren().get(i).getValue().parentIndex = at + i;
+				tree.getRoot().getChildren().get(i).getValue().setParentIndex(at + i);
 			}
 		});
 		context.project.addTopMoveToListeners((target, source, count, dest) -> {
 			moveTo(tree.getRoot().getChildren(), source, count, dest);
 			for (int i = Math.min(source, dest); i < tree.getRoot().getChildren().size(); ++i)
-				tree.getRoot().getChildren().get(i).getValue().parentIndex = i;
+				tree.getRoot().getChildren().get(i).getValue().setParentIndex(i);
 		});
 		context.project.addTopClearListeners(target -> {
 			tree.getRoot().getChildren().forEach(c -> c.getValue().remove(context));
@@ -636,12 +653,10 @@ public class Structure {
 
 	private void placeAfter(ChangeStepBuilder change) {
 		Wrapper destination = window.selectedForEdit.get().getWrapper();
-		System.out.format("place after %s\n", destination);
 		if (destination == null) {
 			place(change, null, false, null);
 		} else {
 			Wrapper pasteParent = destination.getParent();
-			System.out.format("zib\n");
 			place(change, pasteParent, false, destination);
 		}
 	}

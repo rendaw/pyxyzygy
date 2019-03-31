@@ -40,7 +40,7 @@ public class GroupNodeWrapper extends Wrapper {
 			child.remove(context);
 		}, at -> {
 			for (int i = at; i < children.size(); ++i)
-				children.get(i).parentIndex = i;
+				children.get(i).setParentIndex(i);
 		});
 		Misc.mirror(children, tree.get().getChildren(), child -> {
 			child.tree.addListener((observable, oldValue, newValue) -> {

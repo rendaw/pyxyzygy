@@ -20,6 +20,9 @@ public abstract class Wrapper {
 	public final SimpleBooleanProperty tagCopied = new SimpleBooleanProperty(false);
 
 	public abstract Wrapper getParent();
+	public void setParentIndex(int index) {
+		parentIndex = index;
+	}
 
 	public abstract ProjectObject getValue();
 

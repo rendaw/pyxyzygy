@@ -34,7 +34,7 @@ public class Misc {
 		temp0.clear();
 		list.addAll(dest, temp1);
 		for (int i = Math.min(source, dest); i < list.size(); ++i) {
-			list.get(i).parentIndex = i;
+			list.get(i).setParentIndex(i);
 		}
 	}
 

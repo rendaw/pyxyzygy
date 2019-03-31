@@ -31,7 +31,7 @@ public class GroupLayerWrapper extends Wrapper {
 				child.set(null);
 			}
 			if (value != null) {
-				child.set(Window.createNode(context, GroupLayerWrapper.this, 0, value));
+				child.set(Window.createNode(context, GroupLayerWrapper.this, parentIndex, value));
 				tree.bind(child.get().tree);
 			}
 		});
@@ -145,10 +145,15 @@ public class GroupLayerWrapper extends Wrapper {
 	public void removeChild(
 			ProjectContext context, ChangeStepBuilder change, int index
 	) {
-		if (parent == null)
-			change.project(context.project).topRemove(parentIndex, 1);
-		else
-			parent.removeChild(context, change, parentIndex);
+		parent.removeChild(context, change, parentIndex);
+	}
+
+	@Override
+	public void setParentIndex(int index) {
+		this.parentIndex = index;
+		if (child.get() == null)
+			return;
+		child.get().setParentIndex(index);
 	}
 
 	@Override
