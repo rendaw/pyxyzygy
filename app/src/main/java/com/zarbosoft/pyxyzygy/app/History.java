@@ -120,6 +120,7 @@ public class History {
 	}
 
 	public void undo() {
+		finishChange();
 		if (undoHistory.isEmpty())
 			return;
 		ChangeStep.CacheId selectedId = undoHistory.remove(undoHistory.size() - 1);
@@ -129,10 +130,11 @@ public class History {
 		context.setDirty(redo);
 		context.setDirty(context);
 		stepLookup.add(redo);
-		//context.debugCheckRefCounts();
+		context.debugCheckRefCounts();
 	}
 
 	public void redo() {
+		finishChange();
 		if (redoHistory.isEmpty())
 			return;
 		ChangeStep.CacheId selectedId = redoHistory.remove(redoHistory.size() - 1);
@@ -142,7 +144,7 @@ public class History {
 		context.setDirty(context);
 		undoHistory.add(undo.cacheId);
 		stepLookup.add(undo);
-		//context.debugCheckRefCounts();
+		context.debugCheckRefCounts();
 	}
 
 	public void serialize(RawWriter writer) {
