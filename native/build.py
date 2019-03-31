@@ -64,6 +64,7 @@ def main():
         '-o', java_resource_dest / output,
         'header_wrap.cxx',
         'implementation.cxx',
+    ] + (['-lws2_32'] if args.java_platform == 'win32' else []) + [
         '-lpng',
         '-lz',
     ])

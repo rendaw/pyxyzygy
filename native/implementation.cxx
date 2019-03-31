@@ -7,7 +7,6 @@
 #include <cassert>
 #include <cerrno>
 #include <memory>
-#include <netinet/in.h>
 
 #include <png.h>
 

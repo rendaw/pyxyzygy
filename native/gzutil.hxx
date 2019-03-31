@@ -1,7 +1,11 @@
 #include <string>
 #include <cerrno>
 #include <memory>
+#ifdef WIN32
+#include <winsock2.h>
+#else
 #include <netinet/in.h>
+#endif
 #include <cstring>
 
 #include <zlib.h>
