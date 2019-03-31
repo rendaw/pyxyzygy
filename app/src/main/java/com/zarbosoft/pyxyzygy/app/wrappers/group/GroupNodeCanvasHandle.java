@@ -1,9 +1,6 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.group;
 
-import com.zarbosoft.pyxyzygy.app.CanvasHandle;
-import com.zarbosoft.pyxyzygy.app.DoubleRectangle;
-import com.zarbosoft.pyxyzygy.app.DoubleVector;
-import com.zarbosoft.pyxyzygy.app.Wrapper;
+import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
 import com.zarbosoft.pyxyzygy.seed.model.Listener;
@@ -11,8 +8,6 @@ import javafx.beans.property.SimpleIntegerProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.ToolBar;
-
-import java.util.Optional;
 
 import static com.zarbosoft.pyxyzygy.app.Global.opacityMax;
 import static com.zarbosoft.pyxyzygy.app.Misc.mirror;
@@ -29,11 +24,11 @@ public class GroupNodeCanvasHandle extends CanvasHandle {
 	private GroupNodeWrapper wrapper;
 
 	public GroupNodeCanvasHandle(
-			ProjectContext context, CanvasHandle parent, GroupNodeWrapper wrapper
+			ProjectContext context, Window window, CanvasHandle parent, GroupNodeWrapper wrapper
 	) {
 		this.parent = parent;
 		layerListenCleanup = mirror(wrapper.children, childHandles, c -> {
-			final CanvasHandle canvasHandle = c.buildCanvas(context, this);
+			final CanvasHandle canvasHandle = c.buildCanvas(context, window, this);
 			canvasHandle.setViewport(context,bounds.get(),positiveZoom.get());
 			return canvasHandle;
 		}, h -> h.remove(context), noopConsumer());

@@ -9,7 +9,6 @@ import com.zarbosoft.pyxyzygy.core.model.v0.*;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.scene.control.TabPane;
 import javafx.scene.control.TreeItem;
 
 import java.util.List;
@@ -72,8 +71,10 @@ public class GroupNodeWrapper extends Wrapper {
 	}
 
 	@Override
-	public CanvasHandle buildCanvas(ProjectContext context, CanvasHandle parent) {
-		return canvasHandle =new GroupNodeCanvasHandle(context, parent, this);
+	public CanvasHandle buildCanvas(
+			ProjectContext context, Window window, CanvasHandle parent
+	) {
+		return canvasHandle =new GroupNodeCanvasHandle(context,window, parent, this);
 	}
 
 	@Override
@@ -84,9 +85,10 @@ public class GroupNodeWrapper extends Wrapper {
 	}
 
 	@Override
-	public boolean addChildren(ProjectContext context, int at, List<ProjectNode> newChildren) {
-		context.history.change(c -> c
-				.groupNode(node)
+	public boolean addChildren(
+			ProjectContext context, ChangeStepBuilder change, int at, List<ProjectNode> newChildren
+	) {
+	change			.groupNode(node)
 				.layersAdd(at == -1 ? node.layersLength() : at, newChildren.stream().map(child -> {
 					GroupLayer layer = GroupLayer.create(context);
 					layer.initialInnerSet(context, child);
@@ -100,16 +102,16 @@ public class GroupNodeWrapper extends Wrapper {
 					timeFrame.initialInnerLoopSet(context, 0);
 					layer.initialTimeFramesAdd(context, ImmutableList.of(timeFrame));
 					return layer;
-				}).collect(Collectors.toList())));
+				}).collect(Collectors.toList()));
 		return true;
 	}
 
 	@Override
-	public void delete(ProjectContext context) {
+	public void delete(ProjectContext context, ChangeStepBuilder change) {
 		if (parent != null)
-			parent.removeChild(context, parentIndex);
+			parent.removeChild(context, change, parentIndex);
 		else
-			context.history.change(c -> c.project(context.project).topRemove(parentIndex, 1));
+			change.project(context.project).topRemove(parentIndex, 1);
 	}
 
 	public void cloneSet(ProjectContext context, GroupNode clone) {
@@ -143,8 +145,10 @@ public class GroupNodeWrapper extends Wrapper {
 	}
 
 	@Override
-	public void removeChild(ProjectContext context, int index) {
-		context.history.change(c -> c.groupNode(node).layersRemove(index, 1));
+	public void removeChild(
+			ProjectContext context, ChangeStepBuilder change, int index
+	) {
+		change.groupNode(node).layersRemove(index, 1);
 	}
 
 	@Override

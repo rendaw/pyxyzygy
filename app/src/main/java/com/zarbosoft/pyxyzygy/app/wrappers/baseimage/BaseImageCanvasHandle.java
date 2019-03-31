@@ -1,12 +1,10 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.baseimage;
 
-import com.zarbosoft.pyxyzygy.app.CanvasHandle;
-import com.zarbosoft.pyxyzygy.app.DoubleRectangle;
-import com.zarbosoft.pyxyzygy.app.DoubleVector;
-import com.zarbosoft.pyxyzygy.app.Wrapper;
+import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.wrappers.FrameFinder;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
+import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
 import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
 import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
@@ -28,6 +26,7 @@ public class BaseImageCanvasHandle<N extends ProjectNode, F, T, L> extends Canva
 	public SimpleIntegerProperty zoom = new SimpleIntegerProperty(1);
 	private Listener.MapPutAll<F, Long, T> tilesPutListener;
 	private Listener.Clear<F> tilesClearListener;
+	private Listener.ScalarSet<F, Vector> offsetListener;
 
 	public BaseImageCanvasHandle(
 			ProjectContext context, CanvasHandle parent, BaseImageNodeWrapper<N, F, T, L> wrapper
@@ -173,11 +172,16 @@ public class BaseImageCanvasHandle<N extends ProjectNode, F, T, L> extends Canva
 			inner.getChildren().clear();
 			wrapTiles.clear();
 		});
+		offsetListener = wrapper.addFrameOffsetListener(frame, (target, offset )-> {
+			inner.setLayoutX(offset.x);
+			inner.setLayoutY(offset.y);
+		});
 	}
 
 	public void detachTiles() {
 		wrapper.removeFrameTilesPutAllListener(frame, tilesPutListener);
 		wrapper.removeFrameTilesClearListener(frame, tilesClearListener);
+		wrapper.removeFrameOffsetListener(frame, offsetListener);
 		tilesPutListener = null;
 		inner.getChildren().clear();
 		wrapTiles.clear();
@@ -195,15 +199,16 @@ public class BaseImageCanvasHandle<N extends ProjectNode, F, T, L> extends Canva
 					continue;
 				final int renderX = (x + unitBounds.x) * context.tileSize - bounds.x;
 				final int renderY = (y + unitBounds.y) * context.tileSize - bounds.y;
-				System.out.format("render tile %s at %s %s\n", unitBounds.corner().plus(x,y), renderX,renderY);
 				wrapper.renderCompose(context, gc, tile, renderX, renderY);
 			}
 		}
 	}
 
-	public void clear(ProjectContext context, Rectangle bounds) {
-		wrapper.modify(context, bounds, (image, offset) -> {
-			wrapper.clear(context, image, offset, bounds.span());
+	public void clear(
+			ProjectContext context, ChangeStepBuilder change, Rectangle bounds
+	) {
+		wrapper.modify(context, change, bounds, (image, corner) -> {
+			wrapper.clear(context, image, bounds.corner().minus(corner), bounds.span());
 		});
 	}
 

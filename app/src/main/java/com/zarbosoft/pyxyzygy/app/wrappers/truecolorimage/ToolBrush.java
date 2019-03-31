@@ -18,7 +18,6 @@ import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.Pair;
-import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -42,7 +41,7 @@ public class ToolBrush extends BaseToolBrush<TrueColorImageFrame, TrueColorImage
 			TrueColorImageEditHandle trueColorImageEditHandle,
 			TrueColorBrush brush
 	) {
-		super(context, window,trueColorImageEditHandle.wrapper, brush);
+		super(window,trueColorImageEditHandle.wrapper, brush);
 		this.editHandle = trueColorImageEditHandle;
 		this.brush = brush;
 		TrueColorPicker colorPicker = new TrueColorPicker();

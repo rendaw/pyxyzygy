@@ -30,7 +30,9 @@ public class GroupLayerCanvasHandle extends CanvasHandle {
 	private final List<Runnable> timeCleanup;
 	private GroupLayerWrapper wrapper;
 
-	public GroupLayerCanvasHandle(GroupLayerWrapper wrapper, CanvasHandle parent, ProjectContext context) {
+	public GroupLayerCanvasHandle(
+			ProjectContext context, Window window, GroupLayerWrapper wrapper, CanvasHandle parent
+	) {
 		this.wrapper = wrapper;
 		this.parent = parent;
 		positionCleanup = new ArrayList<>();
@@ -52,7 +54,7 @@ public class GroupLayerCanvasHandle extends CanvasHandle {
 					}
 				}
 				if (newValue != null) {
-					childCanvas = newValue.buildCanvas(context, GroupLayerCanvasHandle.this);
+					childCanvas = newValue.buildCanvas(context, window, GroupLayerCanvasHandle.this);
 					childCanvas.setViewport(context,bounds.get(),zoom);
 					inner.getChildren().add(childCanvas.getWidget());
 					GroupLayerCanvasHandle.this.updateChildCanvasPosition(null);

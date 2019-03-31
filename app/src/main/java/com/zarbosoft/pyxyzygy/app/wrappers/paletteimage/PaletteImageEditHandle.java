@@ -1,11 +1,11 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.paletteimage;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
 import com.google.common.collect.Streams;
 import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.config.PaletteBrush;
 import com.zarbosoft.pyxyzygy.app.config.PaletteImageNodeConfig;
-import com.zarbosoft.pyxyzygy.app.config.TrueColorImageNodeConfig;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.*;
 import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.BrushButton;
@@ -13,6 +13,7 @@ import com.zarbosoft.pyxyzygy.core.model.v0.Palette;
 import com.zarbosoft.pyxyzygy.core.model.v0.PaletteColor;
 import com.zarbosoft.pyxyzygy.core.model.v0.ProjectObject;
 import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
+import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import com.zarbosoft.rendaw.common.Assertion;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
@@ -62,7 +63,7 @@ public class PaletteImageEditHandle extends EditHandle {
 	Group overlay;
 	private final Hotkeys.Action[] actions;
 	Tool tool = null;
-	ContentReplacer toolProperties = new ContentReplacer() {
+	ContentReplacer<Node> toolProperties = new ContentReplacer<Node>() {
 
 		@Override
 		protected void innerSet(Node content) {
@@ -102,7 +103,8 @@ public class PaletteImageEditHandle extends EditHandle {
 			});
 			cleanupBorder = HelperJFX.bindStyle(this,
 					"selected",
-					wrapper.paletteSelectionBinder.map(o -> Optional.of(o != null && o.id() == color.id())));
+					wrapper.paletteSelectionBinder.map(o -> Optional.of(o != null && o.id() == color.id()))
+			);
 			addEventFilter(MouseEvent.MOUSE_CLICKED, e -> {
 				wrapper.paletteSelOffsetBinder.set(index);
 			});
@@ -136,34 +138,43 @@ public class PaletteImageEditHandle extends EditHandle {
 												   ((ToolSelect) tool).paste(context, window);
 											   }
 										   },
-										   new Hotkeys.Action(Hotkeys.Scope.CANVAS,
-												   "last-brush",
-												   "Last brush",
-												   Hotkeys.Hotkey.create(KeyCode.SPACE, false, false, false)
-										   ) {
-											   @Override
-											   public void run(ProjectContext context, Window window) {
-												   if (wrapper.config.tool.get() == PaletteImageNodeConfig.Tool.BRUSH) {
-													   if (wrapper.config.lastBrush < 0 ||
-															   wrapper.config.lastBrush >=
-																	   GUILaunch.config.paletteBrushes.size())
-														   return;
-													   setBrush(wrapper.config.lastBrush);
-												   } else {
-													   wrapper.config.tool.set(PaletteImageNodeConfig.Tool.BRUSH);
-												   }
-											   }
-										   },
-										   new Hotkeys.Action(Hotkeys.Scope.CANVAS,
-												   "select",
-												   "Select",
-												   Hotkeys.Hotkey.create(KeyCode.S, false, false, false)
-										   ) {
-											   @Override
-											   public void run(ProjectContext context, Window window) {
-												   wrapper.config.tool.set(PaletteImageNodeConfig.Tool.SELECT);
-											   }
-										   }
+				new Hotkeys.Action(Hotkeys.Scope.CANVAS,
+						"last-brush",
+						"Last brush",
+						Hotkeys.Hotkey.create(KeyCode.SPACE, false, false, false)
+				) {
+					@Override
+					public void run(ProjectContext context, Window window) {
+						if (wrapper.config.tool.get() == PaletteImageNodeConfig.Tool.BRUSH) {
+							if (wrapper.config.lastBrush < 0 ||
+									wrapper.config.lastBrush >= GUILaunch.config.paletteBrushes.size())
+								return;
+							setBrush(wrapper.config.lastBrush);
+						} else {
+							wrapper.config.tool.set(PaletteImageNodeConfig.Tool.BRUSH);
+						}
+					}
+				},
+				new Hotkeys.Action(Hotkeys.Scope.CANVAS,
+						"select",
+						"Select",
+						Hotkeys.Hotkey.create(KeyCode.S, false, false, false)
+				) {
+					@Override
+					public void run(ProjectContext context, Window window) {
+						wrapper.config.tool.set(PaletteImageNodeConfig.Tool.SELECT);
+					}
+				},
+				new Hotkeys.Action(Hotkeys.Scope.CANVAS,
+						"move",
+						"Move",
+						Hotkeys.Hotkey.create(KeyCode.M, false, false, false)
+				) {
+					@Override
+					public void run(ProjectContext context, Window window) {
+						wrapper.config.tool.set(PaletteImageNodeConfig.Tool.MOVE);
+					}
+				}
 		), enumerate(Stream.of(KeyCode.DIGIT1,
 				KeyCode.DIGIT2,
 				KeyCode.DIGIT3,
@@ -194,6 +205,18 @@ public class PaletteImageEditHandle extends EditHandle {
 		overlay = new Group();
 		wrapper.canvasHandle.overlay.getChildren().add(overlay);
 
+		// Move
+		ToggleButton move = new ToggleButton(null, new ImageView(icon("cursor-move16.png"))) {
+			@Override
+			public void fire() {
+				if (isSelected())
+					return;
+				wrapper.config.tool.set(PaletteImageNodeConfig.Tool.MOVE);
+			}
+		};
+		move.setMaxHeight(Double.MAX_VALUE);
+		move.selectedProperty().bind(wrapper.config.tool.isEqualTo(PaletteImageNodeConfig.Tool.MOVE));
+
 		// Select
 		ToggleButton select = new ToggleButton(null, new ImageView(icon("select.png"))) {
 			@Override
@@ -204,7 +227,7 @@ public class PaletteImageEditHandle extends EditHandle {
 			}
 		};
 		select.setMaxHeight(Double.MAX_VALUE);
-		select.selectedProperty().bind(wrapper.config.tool.isEqualTo(TrueColorImageNodeConfig.Tool.SELECT));
+		select.selectedProperty().bind(wrapper.config.tool.isEqualTo(PaletteImageNodeConfig.Tool.SELECT));
 
 		// Brushes
 		MenuItem menuNew = new MenuItem("New");
@@ -257,7 +280,7 @@ public class PaletteImageEditHandle extends EditHandle {
 			GUILaunch.config.paletteBrushes.remove(index);
 			GUILaunch.config.paletteBrushes.add(index + 1, brush);
 		});
-		window.menuChildren.set(this, menuNew, menuDelete, menuLeft, menuRight);
+		window.menuChildren.set(this, ImmutableList.of(menuNew, menuDelete, menuLeft, menuRight));
 
 		HBox brushesBox = new HBox();
 		brushesBox.setSpacing(3);
@@ -292,7 +315,7 @@ public class PaletteImageEditHandle extends EditHandle {
 				Misc.noopConsumer()
 		);
 
-		window.toolBarChildren.set(this, select, brushesBox);
+		window.toolBarChildren.set(this, ImmutableList.of(move, select, brushesBox));
 
 		// Tab
 		Palette palette = wrapper.node.palette();
@@ -341,7 +364,9 @@ public class PaletteImageEditHandle extends EditHandle {
 		), new TitledPane("Palette", new WidgetFormBuilder().text("Name", t -> {
 			cleanup.add(CustomBinding.bindBidirectional(new CustomBinding.ScalarBinder<>(wrapper.node.palette()::addNameSetListeners,
 					wrapper.node.palette()::removeNameSetListeners,
-					v -> context.history.change(c -> c.palette(wrapper.node.palette()).nameSet(v))
+					v -> context.change(new ProjectContext.Tuple(wrapper, "palette_name"),
+							c -> c.palette(wrapper.node.palette()).nameSet(v)
+					)
 			), new CustomBinding.PropertyBinder<>(t.textProperty())));
 		}).span(() -> {
 			TrueColorPicker colorPicker = new TrueColorPicker();
@@ -356,9 +381,9 @@ public class PaletteImageEditHandle extends EditHandle {
 										if (e instanceof PaletteColor) {
 											return opt(new CustomBinding.ScalarBinder<TrueColor>(e,
 													"color",
-													v -> context.history.change(c -> c
-															.paletteColor((PaletteColor) e)
-															.colorSet(v))
+													v -> context.change(new ProjectContext.Tuple(e, "color"),
+															c -> c.paletteColor((PaletteColor) e).colorSet(v)
+													)
 											));
 										} else
 											throw new Assertion();
@@ -385,17 +410,15 @@ public class PaletteImageEditHandle extends EditHandle {
 			paletteAddCleanup =
 					CustomBinding.bind(add.disableProperty(), wrapper.paletteSelectionBinder.map(p -> opt(p == null)));
 			add.setOnAction(_e -> {
-				context.history.finishChange();
 				PaletteColor selectedColor = (PaletteColor) wrapper.paletteSelectionBinder.get().get();
 				PaletteColor newColor = PaletteColor.create(context);
 				newColor.initialColorSet(context, selectedColor.color());
 				int id = palette.nextId();
 				newColor.initialIndexSet(context, id);
-				context.history.change(c -> c.palette(palette).nextIdSet(id + 1));
-				context.history.change(c -> c
-						.palette(palette)
-						.entriesAdd(palette.entries().indexOf(selectedColor) + 1, newColor));
-				context.history.finishChange();
+				context.change(null, c -> {
+					c.palette(palette).nextIdSet(id + 1);
+					c.palette(palette).entriesAdd(palette.entries().indexOf(selectedColor) + 1, newColor);
+				});
 				wrapper.paletteSelOffsetBinder.set(tiles.get(newColor).index);
 			});
 			paletteRemoveCleanup =
@@ -404,9 +427,7 @@ public class PaletteImageEditHandle extends EditHandle {
 				int index = indexBinder.get().get();
 				if (index < 0)
 					throw new Assertion();
-				context.history.finishChange();
-				context.history.change(c -> c.palette(palette).entriesRemove(index, 1));
-				context.history.finishChange();
+				context.change(null, c -> c.palette(palette).entriesRemove(index, 1));
 			});
 			paletteMoveUpCleanup =
 					CustomBinding.bind(moveUp.disableProperty(), indexBinder.map(i -> opt(i == null || i <= 1)));
@@ -414,9 +435,7 @@ public class PaletteImageEditHandle extends EditHandle {
 				int index = indexBinder.get().get();
 				if (index < 0)
 					throw new Assertion();
-				context.history.finishChange();
-				context.history.change(c -> c.palette(palette).entriesMoveTo(index, 1, index - 1));
-				context.history.finishChange();
+				context.change(null, c -> c.palette(palette).entriesMoveTo(index, 1, index - 1));
 			});
 			paletteMoveDownCleanup = CustomBinding.bind(moveDown.disableProperty(),
 					indexBinder.map(i -> opt(i == null || i < 1 || i >= colors.getChildren().size() - 1))
@@ -425,9 +444,7 @@ public class PaletteImageEditHandle extends EditHandle {
 				int index = indexBinder.get().get();
 				if (index < 0)
 					throw new Assertion();
-				context.history.finishChange();
-				context.history.change(c -> c.palette(palette).entriesMoveTo(index, 1, index - 1));
-				context.history.finishChange();
+				context.change(null, c -> c.palette(palette).entriesMoveTo(index, 1, index - 1));
 			});
 
 			return layout;
@@ -457,7 +474,11 @@ public class PaletteImageEditHandle extends EditHandle {
 					GUILaunch.config.paletteBrushes.removeListener(brushesListener);
 					brushesListener = null;
 				}
-				if (newValue == PaletteImageNodeConfig.Tool.SELECT) {
+				if (newValue == PaletteImageNodeConfig.Tool.MOVE) {
+					setTool(context, window, () -> {
+						return new ToolMove(window, wrapper);
+					});
+				} else if (newValue == PaletteImageNodeConfig.Tool.SELECT) {
 					setTool(context, window, () -> {
 						ToolSelect out = new ToolSelect(PaletteImageEditHandle.this);
 						out.setState(context, out.new StateCreate(context, window));
@@ -473,10 +494,7 @@ public class PaletteImageEditHandle extends EditHandle {
 							if (!Range.closedOpen(0, GUILaunch.config.paletteBrushes.size()).contains(i))
 								return;
 							PaletteBrush brush = GUILaunch.config.paletteBrushes.get(i);
-							setTool(context,
-									window,
-									() -> new ToolBrush(context, window, PaletteImageEditHandle.this, brush)
-							);
+							setTool(context, window, () -> new ToolBrush(window, PaletteImageEditHandle.this, brush));
 						}
 					};
 					wrapper.config.brush.addListener((observable1, oldValue1, newValue1) -> update.run());
@@ -525,7 +543,7 @@ public class PaletteImageEditHandle extends EditHandle {
 	}
 
 	@Override
-	public void cursorMoved(ProjectContext context, DoubleVector vector) {
+	public void cursorMoved(ProjectContext context, Window window, DoubleVector vector) {
 		vector = Window.toLocal(wrapper.canvasHandle, vector);
 		mouseX.set(vector.x);
 		mouseY.set(vector.y);
@@ -540,7 +558,8 @@ public class PaletteImageEditHandle extends EditHandle {
 	public void markStart(ProjectContext context, Window window, DoubleVector start) {
 		if (tool == null)
 			return;
-		start = Window.toLocal(wrapper.canvasHandle, start);
+		Vector offset = wrapper.canvasHandle.frame.offset();
+		start = Window.toLocal(wrapper.canvasHandle, start).minus(offset);
 		tool.markStart(context, window, start);
 	}
 
@@ -553,8 +572,9 @@ public class PaletteImageEditHandle extends EditHandle {
 	public void mark(ProjectContext context, Window window, DoubleVector start, DoubleVector end) {
 		if (tool == null)
 			return;
-		start = Window.toLocal(wrapper.canvasHandle, start);
-		end = Window.toLocal(wrapper.canvasHandle, end);
+		Vector offset = wrapper.canvasHandle.frame.offset();
+		start = Window.toLocal(wrapper.canvasHandle, start).minus(offset);
+		end = Window.toLocal(wrapper.canvasHandle, end).minus(offset);
 		tool.mark(context, window, start, end);
 	}
 }

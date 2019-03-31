@@ -40,7 +40,6 @@ public class FrameWidget extends Pane {
 		getChildren().add(rectangle);
 
 		addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
-			context.history.finishChange();
 			row.timeline.select(this);
 		});
 		addEventHandler(MouseEvent.MOUSE_DRAGGED, e -> {
@@ -52,10 +51,9 @@ public class FrameWidget extends Pane {
 				frame = Math.min(frame, absEnd - 1);
 			frame = Math.max(frame, absStart);
 			int length = minLength + frame - absStart;
-			((FrameWidget) this.row.frames.get(index - 1)).frame.setLength(context, length);
-		});
-		addEventHandler(MouseEvent.MOUSE_RELEASED, e -> {
-			context.history.finishChange();
+			context.change(new ProjectContext.Tuple(row.adapter.getData(), "frame"),change -> {
+			((FrameWidget) this.row.frames.get(index - 1)).frame.setLength(context, change, length);
+			});
 		});
 		deselect();
 	}

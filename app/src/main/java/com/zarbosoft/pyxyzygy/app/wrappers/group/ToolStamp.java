@@ -15,10 +15,8 @@ import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import com.zarbosoft.rendaw.common.Assertion;
-import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.Group;
-import javafx.scene.ImageCursor;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
@@ -29,12 +27,11 @@ import javafx.scene.transform.Scale;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
+import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.centerCursor;
 
 public class ToolStamp extends Tool {
 	private final MirrorProject mirror;
 	private final GroupNodeEditHandle editHandle;
-	private final ImageCursor cursor;
 	private ProjectNode stampSource;
 	private final SimpleObjectProperty<Rectangle> stampOverlayBounds =
 			new SimpleObjectProperty<>(new Rectangle(0, 0, 0, 0));
@@ -42,7 +39,7 @@ public class ToolStamp extends Tool {
 	private final Group overlayGroup;
 
 	ToolStamp(
-			Window window, GroupNodeWrapper wrapper, ProjectContext context, GroupNodeEditHandle editHandle
+			ProjectContext context, Window window, GroupNodeWrapper wrapper, GroupNodeEditHandle editHandle
 	) {
 		this.editHandle = editHandle;
 		final TreeView<ObjectMirror> tree = new TreeView<>();
@@ -83,6 +80,8 @@ public class ToolStamp extends Tool {
 					out = new MirrorGroupLayer(context, this, parent, (GroupLayer) object);
 				} else if (object instanceof TrueColorImageNode) {
 					out = new MirrorTrueColorImageNode(parent, (TrueColorImageNode) object);
+				} else if (object instanceof PaletteImageNode) {
+					out = new MirrorPaletteImageNode(parent, (PaletteImageNode) object);
 				} else
 					throw new Assertion();
 				lookup.put(object.id(), out);
@@ -102,12 +101,6 @@ public class ToolStamp extends Tool {
 				.setAll(new Scale(1.0 / wrapper.canvasHandle.positiveZoom.get(),
 						1.0 / wrapper.canvasHandle.positiveZoom.get()
 				)));
-		overlayGroup
-				.layoutXProperty()
-				.bind(Bindings.createDoubleBinding(() -> Math.floor(editHandle.mouseX.get()), editHandle.mouseX));
-		overlayGroup
-				.layoutYProperty()
-				.bind(Bindings.createDoubleBinding(() -> Math.floor(editHandle.mouseY.get()), editHandle.mouseY));
 		Line overlayMarker = new Line(0, 0, 10, 10);
 		overlayGroup.getChildren().addAll(stampOverlayImage, overlayMarker);
 		editHandle.overlay.getChildren().add(overlayGroup);
@@ -132,11 +125,11 @@ public class ToolStamp extends Tool {
 				.selectedItemProperty()
 				.addListener((observable, oldValue, newValue) -> updateStampImage.run());
 		wrapper.canvasHandle.positiveZoom.addListener((observable, oldValue, newValue) -> updateStampImage.run());
-		editHandle.toolPropReplacer.set(this,new WidgetFormBuilder().span(() -> {
+		editHandle.toolPropReplacer.set(this, new WidgetFormBuilder().span(() -> {
 			return tree;
 		}).build());
 		this.wrapper = wrapper;
-		window.editor.outerCanvas.setCursor(cursor = new ImageCursor(icon("stamper.png")));
+		window.editorCursor.set(this, centerCursor("stamper32.png"));
 	}
 
 	@Override
@@ -147,17 +140,14 @@ public class ToolStamp extends Tool {
 		layer.initialInnerSet(context, stampSource);
 		GroupPositionFrame positionFrame = GroupPositionFrame.create(context);
 		positionFrame.initialLengthSet(context, -1);
-		positionFrame.initialOffsetSet(
-				context,
-				new Vector((int) Math.floor(editHandle.mouseX.get()), (int) Math.floor(editHandle.mouseY.get()))
-		);
+		positionFrame.initialOffsetSet(context, new Vector((int) Math.floor(start.x), (int) Math.floor(start.y)));
 		layer.initialPositionFramesAdd(context, ImmutableList.of(positionFrame));
 		GroupTimeFrame timeFrame = GroupTimeFrame.create(context);
 		timeFrame.initialLengthSet(context, -1);
 		timeFrame.initialInnerOffsetSet(context, 0);
 		timeFrame.initialInnerLoopSet(context, 0);
 		layer.initialTimeFramesAdd(context, ImmutableList.of(timeFrame));
-		context.history.change(c -> c.groupNode(wrapper.node).layersAdd(layer));
+		context.change(null, c -> c.groupNode(wrapper.node).layersAdd(layer));
 	}
 
 	@Override
@@ -169,7 +159,12 @@ public class ToolStamp extends Tool {
 	public void remove(ProjectContext context, Window window) {
 		editHandle.overlay.getChildren().remove(overlayGroup);
 		mirror.remove(context);
-		if (window.editor.outerCanvas.getCursor() == cursor)
-			window.editor.outerCanvas.setCursor(null);
+		window.editorCursor.clear(this);
+	}
+
+	@Override
+	public void cursorMoved(ProjectContext context, Window window, DoubleVector position) {
+		overlayGroup.setLayoutX(Math.floor(position.x));
+		overlayGroup.setLayoutY(Math.floor(position.y));
 	}
 }

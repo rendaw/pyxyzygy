@@ -17,6 +17,7 @@ public class TrueColorImageNodeConfig extends NodeConfig {
 
 	@Configuration
 	public static enum Tool {
+		@Configuration(name = "move") MOVE,
 		@Configuration(name = "select") SELECT,
 		@Configuration(name = "brush") BRUSH
 	}

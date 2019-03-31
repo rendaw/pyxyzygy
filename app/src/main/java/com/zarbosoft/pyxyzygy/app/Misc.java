@@ -5,11 +5,8 @@ import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
 import com.zarbosoft.pyxyzygy.core.model.v0.PaletteColor;
 import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
 import com.zarbosoft.pyxyzygy.core.model.v0.ProjectObject;
-import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
 import com.zarbosoft.rendaw.common.Assertion;
-import javafx.beans.property.DoubleProperty;
-import javafx.beans.property.Property;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.scene.paint.Color;
@@ -54,7 +51,7 @@ public class Misc {
 					this.nameCleanup =
 							CustomBinding.bindBidirectional(new CustomBinding.ScalarBinder<>(node::addNameSetListeners,
 									node::removeNameSetListeners,
-									v -> context.history.change(c -> c.projectNode(node).nameSet(v))
+									v -> context.change(new ProjectContext.Tuple(wrapper, "name"), c -> c.projectNode(node).nameSet(v))
 							), new CustomBinding.PropertyBinder<>(t.textProperty()));
 				});
 				builder.slider("Opacity", 0, Global.opacityMax, slider -> {
@@ -63,7 +60,7 @@ public class Misc {
 							new CustomBinding.ScalarBinder<Integer>(
 									node,
 									"opacity",
-									v -> context.history.change(c -> c.projectNode(node).opacitySet(v))
+									v -> context.change(new ProjectContext.Tuple(wrapper, "opacity"), c -> c.projectNode(node).opacitySet(v))
 							),
 							new CustomBinding.PropertyBinder<>(slider.valueProperty()).bimap(
 									d -> Optional.of((int) (double) d), i -> (double) (int) i
@@ -127,16 +124,6 @@ public class Misc {
 	public static <T> Consumer<T> noopConsumer() {
 		return t -> {
 		};
-	}
-
-	public static CustomBinding.ScalarBinder<Color> colorBinder(ProjectContext context, ProjectObject o) {
-		if (o instanceof PaletteColor) {
-			return new CustomBinding.ScalarBinder<Color>(((PaletteColor) o)::addColorSetListeners,
-					((PaletteColor) o)::removeColorSetListeners,
-					v -> context.history.change(c -> c.paletteColor((PaletteColor) o).colorSet(TrueColor.fromJfx(v)))
-			);
-		} else
-			throw new Assertion();
 	}
 
 	private static Object notReallyNull = new Object();

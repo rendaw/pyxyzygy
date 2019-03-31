@@ -1,10 +1,9 @@
-package com.zarbosoft.pyxyzygy.app.wrappers.group;
+package com.zarbosoft.pyxyzygy.app.wrappers.paletteimage;
 
 import com.zarbosoft.pyxyzygy.app.DoubleVector;
 import com.zarbosoft.pyxyzygy.app.Tool;
 import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
-import com.zarbosoft.pyxyzygy.core.model.v0.GroupPositionFrame;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import javafx.scene.ImageCursor;
 
@@ -14,36 +13,26 @@ import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 public class ToolMove extends Tool {
 	protected DoubleVector markStart;
 	private Vector markStartOffset;
-	private GroupNodeWrapper wrapper;
+	private PaletteImageNodeWrapper wrapper;
 
-	public ToolMove(Window window, GroupNodeWrapper wrapper) {
+	public ToolMove(Window window, PaletteImageNodeWrapper wrapper) {
 		this.wrapper = wrapper;
-		window.editorCursor.set(this,centerCursor("cursor-move32.png"));
+		window.editorCursor.set(this, centerCursor("cursor-move32.png"));
 	}
 
 	@Override
 	public void markStart(ProjectContext context, Window window, DoubleVector start) {
-		if (wrapper.specificLayer == null)
-			return;
 		this.markStart = start;
-		GroupPositionFrame pos = GroupLayerWrapper.findPosition(
-				wrapper.specificLayer,
-				wrapper.canvasHandle.frameNumber.get()
-		).frame;
-		this.markStartOffset = pos.offset();
+		this.markStartOffset = wrapper.canvasHandle.frame.offset();
 	}
 
 	@Override
 	public void mark(ProjectContext context, Window window, DoubleVector start, DoubleVector end) {
-		if (wrapper.specificLayer == null)
-			return;
-		GroupPositionFrame pos = GroupLayerWrapper.findPosition(
-				wrapper.specificLayer,
-				wrapper.canvasHandle.frameNumber.get()
-		).frame;
-		context.change(new ProjectContext.Tuple(wrapper,"move"), c -> c
-				.groupPositionFrame(pos)
-				.offsetSet(end.minus(markStart).plus(markStartOffset).toInt()));
+		context.change(new ProjectContext.Tuple(wrapper, "move"),
+				c -> c
+						.paletteImageFrame(wrapper.canvasHandle.frame)
+						.offsetSet(end.minus(markStart).plus(markStartOffset).toInt())
+		);
 	}
 
 	@Override

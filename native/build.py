@@ -50,8 +50,8 @@ def main():
     c([
         args.cc,
         '-Wall', '-pedantic',
-        # '-O3',
-        '-ggdb',
+        '-O3',
+        # '-ggdb',
         '-shared',
         '-fPIC',
         f'-L{args.lib}',

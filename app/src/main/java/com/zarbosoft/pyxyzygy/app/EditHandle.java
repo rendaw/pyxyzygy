@@ -7,7 +7,9 @@ import javafx.scene.Node;
 import java.util.Optional;
 
 public abstract class EditHandle {
-	public abstract void cursorMoved(ProjectContext context, DoubleVector vector);
+	public abstract void cursorMoved(
+			ProjectContext context, Window window, DoubleVector vector
+	);
 
 	public abstract Wrapper getWrapper();
 

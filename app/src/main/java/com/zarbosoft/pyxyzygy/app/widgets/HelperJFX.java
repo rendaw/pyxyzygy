@@ -14,6 +14,8 @@ import com.zarbosoft.rendaw.common.Pair;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Cursor;
+import javafx.scene.ImageCursor;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.image.*;
@@ -45,11 +47,18 @@ public class HelperJFX {
 		return Color.rgb(source.getRed(), source.getGreen(), source.getBlue());
 	}
 
+	public static Cursor centerCursor(String res) {
+		Image image = icon(res);
+		return new ImageCursor(image, image.getWidth() / 2, image.getHeight() / 2);
+	}
+
+	public static Cursor cornerCursor(String res) {
+		Image image = icon(res);
+		return new ImageCursor(image, 0, 0);
+	}
+
 	public static Pair<Node, SimpleObjectProperty<Integer>> nonlinearSlider(
-			int min,
-			int max,
-			int precision,
-			int divide
+			int min, int max, int precision, int divide
 	) {
 		Slider slider = new Slider();
 		slider.setMin(0);
@@ -366,7 +375,6 @@ public class HelperJFX {
 
 	public static Runnable bindStyle(Node node, String styleClass, CustomBinding.HalfBinder<Boolean> source) {
 		return source.addListener(b -> {
-			System.out.format("style event -> %s %s\n", styleClass, b);
 			if (b) {
 				if (!node.getStyleClass().contains(styleClass))
 					node.getStyleClass().add(styleClass);

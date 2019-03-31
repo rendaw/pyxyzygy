@@ -20,6 +20,7 @@ import javafx.scene.paint.Color;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
@@ -85,6 +86,41 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 
 	public PaletteColors getPaletteColors(Palette palette) {
 		return getPaletteWrapper(palette).colors;
+	}
+
+	public static class Tuple {
+		final List data;
+
+		public Tuple(Object... data) {
+			this.data = Arrays.asList(data);
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			Tuple other = (Tuple) obj;
+			if (data.size() != other.data.size())
+				return false;
+			for (int i = 0; i < data.size(); ++i)
+				if (!Objects.equals(data.get(i), other.data.get(i)))
+					return false;
+			return true;
+		}
+	}
+
+	private Instant lastChangeTime = Instant.EPOCH;
+	private Tuple lastChangeUnique = null;
+
+	public void change(Tuple unique, Consumer<ChangeStepBuilder> consumer) {
+		Instant now = Instant.now();
+		if (unique == null ||
+				lastChangeUnique == null ||
+				!unique.equals(lastChangeUnique) ||
+				now.isAfter(lastChangeTime.plusSeconds(1))) {
+			history.finishChange();
+		}
+		lastChangeTime = now;
+		lastChangeUnique = unique;
+		history.change(consumer);
 	}
 
 	/**

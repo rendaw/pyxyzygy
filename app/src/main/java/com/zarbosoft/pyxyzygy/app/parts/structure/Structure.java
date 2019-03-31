@@ -36,6 +36,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.zarbosoft.pyxyzygy.app.Global.logger;
 import static com.zarbosoft.pyxyzygy.app.Global.opacityMax;
 import static com.zarbosoft.pyxyzygy.app.Misc.moveTo;
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
@@ -71,7 +72,9 @@ public class Structure {
 			new Hotkeys.Action(Hotkeys.Scope.STRUCTURE, "place-auto", "Paste linked", Global.pasteHotkey) {
 				@Override
 				public void run(ProjectContext context, Window window) {
-					placeAuto();
+					context.change(null, c -> {
+						placeAuto(c);
+					});
 				}
 			},
 			new Hotkeys.Action(Hotkeys.Scope.STRUCTURE,
@@ -81,7 +84,9 @@ public class Structure {
 			) {
 				@Override
 				public void run(ProjectContext context, Window window) {
-					duplicate();
+					context.change(null, c -> {
+						duplicate(c);
+					});
 				}
 			},
 			new Hotkeys.Action(Hotkeys.Scope.STRUCTURE,
@@ -91,7 +96,9 @@ public class Structure {
 			) {
 				@Override
 				public void run(ProjectContext context, Window window) {
-					duplicate();
+					context.change(null, c -> {
+						delete(context, c);
+					});
 				}
 			}
 	};
@@ -135,7 +142,7 @@ public class Structure {
 		if (wrapper != null) {
 			wrapper.tagViewing.set(true);
 			taggedViewing.add(wrapper);
-			window.selectedForView.set(wrapper.buildCanvas(context, null));
+			window.selectedForView.set(wrapper.buildCanvas(context, window, null));
 			if (main)
 				context.config.viewPath = getPath(wrapper.tree.get()).collect(Collectors.toList());
 		}
@@ -280,9 +287,10 @@ public class Structure {
 						cleanup = null;
 					}
 					if (item != null)
-					cleanup = HelperJFX.bindStyle(this,
-							"link-selected",
-							new CustomBinding.PropertyHalfBinder<>(item.getConfig().selectedSomewhere));
+						cleanup = HelperJFX.bindStyle(this,
+								"link-selected",
+								new CustomBinding.PropertyHalfBinder<>(item.getConfig().selectedSomewhere)
+						);
 					wrapper.set(item);
 					super.updateItem(item, empty);
 				}
@@ -293,18 +301,23 @@ public class Structure {
 			Camera camera = Camera.create(context);
 			camera.initialNameSet(context, uniqueName("Camera"));
 			camera.initialOpacitySet(context, opacityMax);
-			camera.initialEndSet(context, 50);
+			camera.initialFrameStartSet(context, 0);
+			camera.initialFrameLengthSet(context, 12);
 			camera.initialFrameRateSet(context, 120);
 			camera.initialHeightSet(context, 240);
 			camera.initialWidthSet(context, 320);
-			context.history.change(c -> c.project(context.project).topAdd(camera));
+			context.change(null, c -> {
+				c.project(context.project).topAdd(camera);
+			});
 		});
 		MenuItem addGroup = new MenuItem("Add group");
 		addGroup.setOnAction(e -> {
 			GroupNode group = GroupNode.create(context);
 			group.initialOpacitySet(context, opacityMax);
 			group.initialNameSet(context, uniqueName("Group"));
-			addNew(group);
+			context.change(null, c -> {
+				addNew(group, c);
+			});
 		});
 		MenuItem addImage = new MenuItem("Add true color layer");
 		addImage.setOnAction(e -> {
@@ -315,7 +328,9 @@ public class Structure {
 			frame.initialLengthSet(context, -1);
 			frame.initialOffsetSet(context, new Vector(0, 0));
 			image.initialFramesAdd(context, ImmutableList.of(frame));
-			addNew(image);
+			context.change(null, c -> {
+				addNew(image, c);
+			});
 		});
 		MenuItem addPalette = new MenuItem("Add palette layer");
 		addPalette.setOnAction(e -> {
@@ -347,33 +362,35 @@ public class Structure {
 			if (!result.isPresent())
 				return;
 			Optional<Palette> palette0 = result.get();
-			Palette palette;
-			if (!palette0.isPresent()) {
-				palette = Palette.create(context);
-				palette.initialNameSet(context, uniqueName("Palette"));
-				palette.initialNextIdSet(context, 2);
-				PaletteColor transparent = PaletteColor.create(context);
-				transparent.initialIndexSet(context, 0);
-				transparent.initialColorSet(context, TrueColor.fromJfx(Color.TRANSPARENT));
-				PaletteColor black = PaletteColor.create(context);
-				black.initialIndexSet(context, 1);
-				black.initialColorSet(context, TrueColor.fromJfx(Color.BLACK));
-				palette.initialEntriesAdd(context, ImmutableList.of(transparent, black));
-				Palette finalPalette = palette;
-				context.history.change(c -> c.project(context.project).palettesAdd(finalPalette));
-			} else {
-				palette = palette0.get();
-			}
-			PaletteImageNode image = PaletteImageNode.create(context);
-			image.initialOpacitySet(context, opacityMax);
-			image.initialNameSet(context, uniqueName("Palette layer"));
-			image.initialPaletteSet(context, palette);
-			PaletteImageFrame frame = PaletteImageFrame.create(context);
-			frame.initialLengthSet(context, -1);
-			frame.initialOffsetSet(context, new Vector(0, 0));
-			image.initialFramesAdd(context, ImmutableList.of(frame));
-			addNew(image);
-			context.addPaletteUser(image);
+			context.change(null, c -> {
+				Palette palette;
+				if (!palette0.isPresent()) {
+					palette = Palette.create(context);
+					palette.initialNameSet(context, uniqueName("Palette"));
+					palette.initialNextIdSet(context, 2);
+					PaletteColor transparent = PaletteColor.create(context);
+					transparent.initialIndexSet(context, 0);
+					transparent.initialColorSet(context, TrueColor.fromJfx(Color.TRANSPARENT));
+					PaletteColor black = PaletteColor.create(context);
+					black.initialIndexSet(context, 1);
+					black.initialColorSet(context, TrueColor.fromJfx(Color.BLACK));
+					palette.initialEntriesAdd(context, ImmutableList.of(transparent, black));
+					Palette finalPalette = palette;
+					c.project(context.project).palettesAdd(finalPalette);
+				} else {
+					palette = palette0.get();
+				}
+				PaletteImageNode image = PaletteImageNode.create(context);
+				image.initialOpacitySet(context, opacityMax);
+				image.initialNameSet(context, uniqueName("Palette layer"));
+				image.initialPaletteSet(context, palette);
+				PaletteImageFrame frame = PaletteImageFrame.create(context);
+				frame.initialLengthSet(context, -1);
+				frame.initialOffsetSet(context, new Vector(0, 0));
+				image.initialFramesAdd(context, ImmutableList.of(frame));
+				addNew(image, c);
+				context.addPaletteUser(image);
+			});
 		});
 		MenuItem importImage = new MenuItem("Import PNG");
 		importImage.setOnAction(e -> {
@@ -410,25 +427,30 @@ public class Structure {
 						);
 					}
 				}
-				addNew(image);
+				context.change(null, c -> {
+					addNew(image, c);
+				});
 			});
 		});
 		MenuItem duplicateButton = new MenuItem("Duplicate");
 		duplicateButton.disableProperty().bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedIndices()));
 		duplicateButton.setOnAction(e -> {
-			duplicate();
+			context.change(null, c -> {
+				duplicate(c);
+			});
 		});
 		MenuButton addButton = HelperJFX.menuButton("plus.png");
 		addButton.getItems().addAll(addImage, addPalette, importImage, addGroup, addCamera, duplicateButton);
 		Button removeButton = HelperJFX.button("minus.png", "Remove");
 		removeButton.disableProperty().bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedIndices()));
 		removeButton.setOnAction(e -> {
-			delete(context);
+			context.change(null, c -> {
+				delete(context, c);
+			});
 		});
 		Button moveUpButton = HelperJFX.button("arrow-up.png", "Move Up");
 		moveUpButton.disableProperty().bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedIndices()));
 		moveUpButton.setOnAction(e -> {
-			context.history.finishChange();
 			List<TreeItem<Wrapper>> selected = tree.getSelectionModel().getSelectedItems();
 			TreeItem<Wrapper> firstParent = selected.get(0).getParent();
 			List<TreeItem<Wrapper>> removeOrder = selected
@@ -444,19 +466,20 @@ public class Structure {
 			dest -= 1;
 			List<ProjectNode> add =
 					removeOrder.stream().map(s -> (ProjectNode) s.getValue().getValue()).collect(Collectors.toList());
-			removeOrder.forEach(s -> s.getValue().delete(context));
-			if (firstParent.getValue() != null) {
-				firstParent.getValue().addChildren(context, dest, add);
-			} else {
-				final int dest1 = dest;
-				context.history.change(c -> c.project(context.project).topAdd(dest1, add));
-			}
-			context.history.finishChange();
+			final int dest1 = dest;
+
+			context.change(new ProjectContext.Tuple("struct_move"), c -> {
+				removeOrder.forEach(s -> s.getValue().delete(context, c));
+				if (firstParent.getValue() != null) {
+					firstParent.getValue().addChildren(context, c, dest1, add);
+				} else {
+					c.project(context.project).topAdd(dest1, add);
+				}
+			});
 		});
 		Button moveDownButton = HelperJFX.button("arrow-down.png", "Move Down");
 		moveDownButton.disableProperty().bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedIndices()));
 		moveDownButton.setOnAction(e -> {
-			context.history.finishChange();
 			List<TreeItem<Wrapper>> selected = tree.getSelectionModel().getSelectedItems();
 			TreeItem<Wrapper> firstParent = selected.get(0).getParent();
 			List<TreeItem<Wrapper>> removeOrder = selected
@@ -472,14 +495,16 @@ public class Structure {
 			dest = dest - removeOrder.size() + 1;
 			List<ProjectNode> add =
 					removeOrder.stream().map(s -> (ProjectNode) s.getValue().getValue()).collect(Collectors.toList());
-			removeOrder.forEach(s -> s.getValue().delete(context));
-			if (firstParent.getValue() != null) {
-				firstParent.getValue().addChildren(context, dest, add);
-			} else {
-				final int dest1 = dest;
-				context.history.change(c -> c.project(context.project).topAdd(dest1, add));
-			}
-			context.history.finishChange();
+			final int dest1 = dest;
+
+			context.change(new ProjectContext.Tuple("struct_move"), c -> {
+				removeOrder.forEach(s -> s.getValue().delete(context, c));
+				if (firstParent.getValue() != null) {
+					firstParent.getValue().addChildren(context, c, dest1, add);
+				} else {
+					c.project(context.project).topAdd(dest1, add);
+				}
+			});
 		});
 		MenuItem cutButton = new MenuItem("Cut");
 		cutButton.setOnAction(e -> {
@@ -491,19 +516,28 @@ public class Structure {
 		});
 		MenuItem linkBeforeButton = new MenuItem("Paste before");
 		linkBeforeButton.setOnAction(e -> {
-			placeBefore();
+			context.change(null, c -> {
+				placeBefore(c);
+			});
 		});
 		MenuItem linkInButton = new MenuItem("Paste in");
 		linkInButton.setOnAction(e -> {
-			placeIn();
+			context.change(null, c -> {
+				placeIn(c);
+			});
 		});
 		MenuItem linkAfterButton = new MenuItem("Paste after");
 		linkAfterButton.setOnAction(e -> {
-			placeAfter();
+			System.out.format("paste after menu item\n");
+			context.change(null, c -> {
+				placeAfter(c);
+			});
 		});
 		MenuItem unlinkButton = new MenuItem("Unlink");
 		unlinkButton.setOnAction(e -> {
-			unlink();
+			context.change(null, c -> {
+				unlink(c);
+			});
 		});
 		MenuButton linkButton = HelperJFX.menuButton("pencil.png");
 		linkButton
@@ -520,12 +554,14 @@ public class Structure {
 			opacity.setMax(opacityMax);
 			CustomBinding.bindBidirectional(new CustomBinding.IndirectBinder<Integer>(new CustomBinding.PropertyHalfBinder<>(
 							window.selectedForEdit),
-							e -> opt(e == null ? null : new CustomBinding.ScalarBinder<Integer>(e.getWrapper().getValue(),
-									"opacity",
-									v -> context.history.change(c -> c
-											.projectNode((ProjectNode) e.getWrapper().getValue())
-											.opacitySet(v))
-							))
+							e -> opt(e == null ?
+									null :
+									new CustomBinding.ScalarBinder<Integer>(e.getWrapper().getValue(),
+											"opacity",
+											v -> context.change(new ProjectContext.Tuple(e.getWrapper(), "opacity"),
+													c -> c.projectNode((ProjectNode) e.getWrapper().getValue()).opacitySet(v)
+											)
+									))
 					),
 					new CustomBinding.PropertyBinder<>(opacity.valueProperty()).bimap(d -> Optional.of((int) (double) d),
 							i -> (double) (int) i
@@ -591,53 +627,53 @@ public class Structure {
 		return findNode(root.getChildren().get(path.get(0)), sublist(path, 1));
 	}
 
-	private void delete(ProjectContext context) {
-		context.history.finishChange();
+	private void delete(ProjectContext context, ChangeStepBuilder change) {
 		Wrapper edit = window.selectedForEdit.get().getWrapper();
 		if (edit == null)
 			return;
-		edit.delete(context);
-		context.history.finishChange();
+		edit.delete(context, change);
 	}
 
-	private void placeAfter() {
+	private void placeAfter(ChangeStepBuilder change) {
 		Wrapper destination = window.selectedForEdit.get().getWrapper();
+		System.out.format("place after %s\n", destination);
 		if (destination == null) {
-			place(null, false, null);
+			place(change, null, false, null);
 		} else {
 			Wrapper pasteParent = destination.getParent();
-			place(pasteParent, false, destination);
+			System.out.format("zib\n");
+			place(change, pasteParent, false, destination);
 		}
 	}
 
-	private void placeIn() {
+	private void placeIn(ChangeStepBuilder change) {
 		Wrapper destination = window.selectedForEdit.get().getWrapper();
 		if (destination == null) {
-			place(null, true, null);
+			place(change, null, true, null);
 		} else {
-			place(destination, true, null);
+			place(change, destination, true, null);
 		}
 	}
 
-	private void placeBefore() {
+	private void placeBefore(ChangeStepBuilder change) {
 		Wrapper destination = window.selectedForEdit.get().getWrapper();
 		if (destination == null) {
-			place(null, true, null);
+			place(change, null, true, null);
 		} else {
 			Wrapper pasteParent = destination.getParent();
-			place(pasteParent, true, destination);
+			place(change, pasteParent, true, destination);
 		}
 	}
 
-	private void placeAuto() {
+	private void placeAuto(ChangeStepBuilder change) {
 		Wrapper destination = getSelection();
 		if (destination == null) {
-			placeAfter();
+			placeAfter(change);
 		} else {
 			if (destination.takesChildren() == NONE) {
-				placeAfter();
+				placeAfter(change);
 			} else {
-				placeIn();
+				placeIn(change);
 			}
 		}
 	}
@@ -672,21 +708,19 @@ public class Structure {
 		});
 	}
 
-	private void duplicate() {
+	private void duplicate(ChangeStepBuilder change) {
 		Wrapper destination = window.selectedForEdit.get().getWrapper();
 		ProjectNode clone = destination.separateClone(context);
-		addNew(clone);
+		addNew(clone, change);
 	}
 
-	private void unlink() {
-		context.history.finishChange();
+	private void unlink(ChangeStepBuilder change) {
 		Wrapper edit = window.selectedForEdit.get().getWrapper();
 		if (edit == null)
 			return;
 		ProjectNode clone = edit.separateClone(context);
-		addNew(clone);
-		edit.delete(context);
-		context.history.finishChange();
+		addNew(clone, change);
+		edit.delete(context, change);
 	}
 
 	private Wrapper getSelection() {
@@ -698,42 +732,47 @@ public class Structure {
 	 *
 	 * @param node
 	 */
-	private void addNew(ProjectNode node) {
-		context.history.finishChange();
+	private void addNew(ProjectNode node, ChangeStepBuilder change) {
 		Wrapper edit = getSelection();
 		Wrapper placeAt = edit;
 		int index = 0;
 		while (placeAt != null) {
-			if (placeAt.addChildren(context, index, ImmutableList.of(node)))
+			if (placeAt.addChildren(context, change, index, ImmutableList.of(node)))
 				return;
 			index = placeAt.parentIndex + 1;
 			placeAt = placeAt.getParent();
 		}
-		context.history.change(c -> c.project(context.project).topAdd(node));
-		context.history.finishChange();
+		change.project(context.project).topAdd(node);
 	}
 
 	/**
 	 * Places exactly within parent/top before/after reference/start=end
 	 *
+	 * @param change
 	 * @param pasteParent
 	 * @param before
 	 * @param reference
 	 */
-	private void place(Wrapper pasteParent, boolean before, Wrapper reference) {
-		context.history.finishChange();
+	private void place(
+			ChangeStepBuilder change, Wrapper pasteParent, boolean before, Wrapper reference
+	) {
 		List<ProjectNode> nodes = new ArrayList<>();
 		Consumer<Wrapper> check = wrapper -> {
 			// Can't place relative to copied element
-			if (wrapper == reference)
+			if (wrapper == reference) {
+				logger.write("Warning: Can't paste relative to copied element; dropping element.");
 				return;
+			}
 
 			// Omit items that would have infinite recursion if pasted
 			if (pasteParent != null) {
 				Wrapper parent = pasteParent;
 				while (parent != null) {
-					if (parent == wrapper)
+					if (parent == wrapper) {
+						logger.write(
+								"Warning: Can't paste relative to copied element - destination is a child of element; dropping element.");
 						return;
+					}
 					parent = parent.getParent();
 				}
 			}
@@ -743,28 +782,32 @@ public class Structure {
 		};
 		taggedLifted.forEach(check);
 		taggedCopied.forEach(check);
+		if (nodes.isEmpty()) {
+			logger.write("Warning: No nodes left to place!");
+		}
 		if (pasteParent != null) {
 			if (reference != null) {
-				if (!pasteParent.addChildren(context, reference.parentIndex + (before ? -1 : 1), nodes))
+				if (!pasteParent.addChildren(context, change, reference.parentIndex + (before ? -1 : 1), nodes)) {
+					logger.write("Warning: Parent refused to place nodes.");
 					return;
+				}
 			} else {
-				if (!pasteParent.addChildren(context, before ? 0 : -1, nodes))
+				if (!pasteParent.addChildren(context, change, before ? 0 : -1, nodes)) {
+					logger.write("Warning: Parent refused to place nodes.");
 					return;
+				}
 			}
 		} else {
 			if (reference != null) {
-				context.history.change(c -> c
-						.project(context.project)
-						.topAdd(reference.parentIndex + (before ? -1 : 1), nodes));
+				change.project(context.project).topAdd(reference.parentIndex + (before ? -1 : 1), nodes);
 			} else {
 				if (before)
-					context.history.change(c -> c.project(context.project).topAdd(0, nodes));
+					change.project(context.project).topAdd(0, nodes);
 				else
-					context.history.change(c -> c.project(context.project).topAdd(context.project.topLength(), nodes));
+					change.project(context.project).topAdd(context.project.topLength(), nodes);
 			}
 		}
-		taggedLifted.forEach(c -> c.delete(context));
-		context.history.finishChange();
+		taggedLifted.forEach(c -> c.delete(context, change));
 		clearTagCopied();
 		clearTagLifted();
 	}

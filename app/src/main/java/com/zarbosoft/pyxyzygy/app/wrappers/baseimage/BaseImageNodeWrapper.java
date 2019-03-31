@@ -1,12 +1,10 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.baseimage;
 
-import com.zarbosoft.pyxyzygy.app.CanvasHandle;
-import com.zarbosoft.pyxyzygy.app.DoubleRectangle;
-import com.zarbosoft.pyxyzygy.app.DoubleVector;
-import com.zarbosoft.pyxyzygy.app.Wrapper;
+import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.wrappers.FrameFinder;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
+import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
 import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
 import com.zarbosoft.pyxyzygy.core.model.v0.ProjectObject;
 import com.zarbosoft.pyxyzygy.seed.model.Listener;
@@ -59,23 +57,27 @@ public abstract class BaseImageNodeWrapper<N extends ProjectNode, F, T, L> exten
 	}
 
 	@Override
-	public CanvasHandle buildCanvas(ProjectContext context, CanvasHandle parent) {
+	public CanvasHandle buildCanvas(
+			ProjectContext context, Window window, CanvasHandle parent
+	) {
 		if (canvasHandle == null)
 			canvasHandle = new BaseImageCanvasHandle<N, F, T, L>(context, parent, this);
 		return canvasHandle;
 	}
 
 	@Override
-	public boolean addChildren(ProjectContext context, int at, List<ProjectNode> child) {
+	public boolean addChildren(
+			ProjectContext context, ChangeStepBuilder change, int at, List<ProjectNode> child
+	) {
 		return false;
 	}
 
 	@Override
-	public void delete(ProjectContext context) {
+	public void delete(ProjectContext context, ChangeStepBuilder change) {
 		if (parent != null)
-			parent.removeChild(context, parentIndex);
+			parent.removeChild(context, change, parentIndex);
 		else
-			context.history.change(c -> c.project(context.project).topRemove(parentIndex, 1));
+			change.project(context.project).topRemove(parentIndex, 1);
 	}
 
 	@Override
@@ -84,7 +86,9 @@ public abstract class BaseImageNodeWrapper<N extends ProjectNode, F, T, L> exten
 	}
 
 	@Override
-	public void removeChild(ProjectContext context, int index) {
+	public void removeChild(
+			ProjectContext context, ChangeStepBuilder change, int index
+	) {
 		throw new Assertion();
 	}
 
@@ -103,6 +107,10 @@ public abstract class BaseImageNodeWrapper<N extends ProjectNode, F, T, L> exten
 
 	public abstract Listener.Clear<F> addFrameTilesClearListener(
 			F frame, Listener.Clear<F> listener
+	);
+
+	public abstract Listener.ScalarSet<F, Vector> addFrameOffsetListener(
+			F frame, Listener.ScalarSet<F, Vector> listener
 	);
 
 	public abstract void removeFrameTilesPutAllListener(F frame, Listener.MapPutAll<F, Long, T> listener);
@@ -132,11 +140,14 @@ public abstract class BaseImageNodeWrapper<N extends ProjectNode, F, T, L> exten
 	 * Replace tiles with data from unit-multiple size image
 	 *
 	 * @param context
+	 * @param change
 	 * @param frame
 	 * @param unitBounds
 	 * @param image
 	 */
-	public abstract void drop(ProjectContext context, F frame, Rectangle unitBounds, L image);
+	public abstract void drop(
+			ProjectContext context, ChangeStepBuilder change, F frame, Rectangle unitBounds, L image
+	);
 
 	/**
 	 * Create single image from tile data.  Unit bounds is bounds / tileSize - as argument to avoid recomputation if
@@ -161,31 +172,37 @@ public abstract class BaseImageNodeWrapper<N extends ProjectNode, F, T, L> exten
 	 */
 	public abstract void clear(ProjectContext context, L image, Vector offset, Vector span);
 
+	public abstract void removeFrameOffsetListener(F frame, Listener.ScalarSet<F, Vector> listener);
+
 	@FunctionalInterface
 	public interface DoubleModifyCallback<L> {
-		public void accept(L image, DoubleVector offset);
+		public void accept(L image, DoubleVector corner);
 	}
 
 	@FunctionalInterface
 	public interface IntModifyCallback<L> {
-		public void accept(L image, Vector offset);
+		public void accept(L image, Vector corner);
 	}
 
 	public abstract void dump(L image, String name);
 
-	public void modify(ProjectContext context, DoubleRectangle bounds, DoubleModifyCallback<L> modify) {
+	public void modify(
+			ProjectContext context, ChangeStepBuilder change, DoubleRectangle bounds, DoubleModifyCallback<L> modify
+	) {
 		Rectangle unitBounds = bounds.divideContains(context.tileSize);
 		Rectangle outerBounds = unitBounds.multiply(context.tileSize);
 		L canvas = grab(context, unitBounds, outerBounds);
 		modify.accept(canvas, DoubleVector.of(outerBounds.corner()));
-		drop(context, canvasHandle.frame, unitBounds, canvas);
+		drop(context, change, canvasHandle.frame, unitBounds, canvas);
 	}
 
-	public void modify(ProjectContext context, Rectangle bounds, IntModifyCallback<L> modify) {
+	public void modify(
+			ProjectContext context, ChangeStepBuilder change, Rectangle bounds, IntModifyCallback<L> modify
+	) {
 		Rectangle unitBounds = bounds.divideContains(context.tileSize);
 		Rectangle outerBounds = unitBounds.multiply(context.tileSize);
 		L canvas = grab(context, unitBounds, outerBounds);
 		modify.accept(canvas, outerBounds.corner());
-		drop(context, canvasHandle.frame, unitBounds, canvas);
+		drop(context, change, canvasHandle.frame, unitBounds, canvas);
 	}
 }

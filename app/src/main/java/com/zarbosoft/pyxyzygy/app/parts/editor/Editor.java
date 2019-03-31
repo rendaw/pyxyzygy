@@ -243,7 +243,6 @@ public class Editor {
 			pointerEventState.dragged = false;
 			if (e.getButton() == MouseButton.PRIMARY) {
 				if (pointerEventState.edit != null) {
-					context.history.finishChange();
 					pointerEventState.edit.markStart(context, window, pointerEventState.previous);
 				}
 			}
@@ -259,7 +258,6 @@ public class Editor {
 							pointerEventState.previous
 					);
 				}
-				context.history.finishChange();
 			}
 		});
 		outerCanvas.addEventFilter(MouseEvent.MOUSE_DRAGGED, e -> {
@@ -286,7 +284,7 @@ public class Editor {
 			CanvasHandle view = window.selectedForView.get();
 			if (view == null)
 				return;
-			edit.cursorMoved(context, normalizeEventCoordinates(view, e));
+			edit.cursorMoved(context, window, normalizeEventCoordinates(view, e));
 		});
 		outerCanvas.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
 			if (context.hotkeys.event(context, window, Hotkeys.Scope.CANVAS, e))

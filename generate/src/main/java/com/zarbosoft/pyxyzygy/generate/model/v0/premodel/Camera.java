@@ -11,7 +11,10 @@ public class Camera extends GroupNode {
 	public int height;
 
 	@Configuration
-	public int end;
+	public int frameStart;
+
+	@Configuration
+	public int frameLength;
 
 	@Configuration
 	public int frameRate;

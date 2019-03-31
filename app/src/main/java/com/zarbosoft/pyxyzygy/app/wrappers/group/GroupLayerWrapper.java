@@ -1,13 +1,15 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.group;
 
-import com.zarbosoft.pyxyzygy.app.*;
+import com.zarbosoft.pyxyzygy.app.CanvasHandle;
+import com.zarbosoft.pyxyzygy.app.EditHandle;
+import com.zarbosoft.pyxyzygy.app.Window;
+import com.zarbosoft.pyxyzygy.app.Wrapper;
 import com.zarbosoft.pyxyzygy.app.config.NodeConfig;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.core.model.v0.*;
 import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.rendaw.common.Assertion;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.scene.control.TabPane;
 
 import java.util.List;
 
@@ -114,17 +116,23 @@ public class GroupLayerWrapper extends Wrapper {
 	}
 
 	@Override
-	public CanvasHandle buildCanvas(ProjectContext context, CanvasHandle parent) {
-		return new GroupLayerCanvasHandle(this, parent, context);
+	public CanvasHandle buildCanvas(
+			ProjectContext context, Window window, CanvasHandle parent
+	) {
+		return new GroupLayerCanvasHandle(context, window, this, parent);
 	}
 
 	@Override
-	public boolean addChildren(ProjectContext context, int at, List<ProjectNode> child) {
-		return false;
+	public boolean addChildren(
+			ProjectContext context, ChangeStepBuilder change, int at, List<ProjectNode> child
+	) {
+		GroupNodeWrapper parent = (GroupNodeWrapper) this.parent;
+		parent.addChildren(context, change, parentIndex + 1, child);
+		return true;
 	}
 
 	@Override
-	public void delete(ProjectContext context) {
+	public void delete(ProjectContext context, ChangeStepBuilder change) {
 		throw new Assertion();
 	}
 
@@ -134,11 +142,13 @@ public class GroupLayerWrapper extends Wrapper {
 	}
 
 	@Override
-	public void removeChild(ProjectContext context, int index) {
+	public void removeChild(
+			ProjectContext context, ChangeStepBuilder change, int index
+	) {
 		if (parent == null)
-			context.history.change(c -> c.project(context.project).topRemove(parentIndex, 1));
+			change.project(context.project).topRemove(parentIndex, 1);
 		else
-			parent.removeChild(context, parentIndex);
+			parent.removeChild(context, change, parentIndex);
 	}
 
 	@Override

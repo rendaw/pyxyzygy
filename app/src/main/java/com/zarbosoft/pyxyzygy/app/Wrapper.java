@@ -2,6 +2,7 @@ package com.zarbosoft.pyxyzygy.app;
 
 import com.zarbosoft.pyxyzygy.app.config.NodeConfig;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
+import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
 import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
 import com.zarbosoft.pyxyzygy.core.model.v0.ProjectObject;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -24,7 +25,9 @@ public abstract class Wrapper {
 
 	public abstract NodeConfig getConfig();
 
-	public abstract CanvasHandle buildCanvas(ProjectContext context, CanvasHandle parent);
+	public abstract CanvasHandle buildCanvas(
+			ProjectContext context, Window window, CanvasHandle parent
+	);
 
 	public abstract EditHandle buildEditControls(
 			ProjectContext context, Window window
@@ -36,17 +39,22 @@ public abstract class Wrapper {
 	 * Used in ProjectNode wrappers only
 	 *
 	 * @param context
+	 * @param change
 	 * @param at
 	 * @param child
 	 * @return List containing placed children
 	 */
-	public abstract boolean addChildren(ProjectContext context, int at, List<ProjectNode> child);
+	public abstract boolean addChildren(
+			ProjectContext context, ChangeStepBuilder change, int at, List<ProjectNode> child
+	);
 
-	public abstract void delete(ProjectContext context);
+	public abstract void delete(ProjectContext context, ChangeStepBuilder change);
 
 	public abstract ProjectNode separateClone(ProjectContext context);
 
-	public abstract void removeChild(ProjectContext context, int index);
+	public abstract void removeChild(
+			ProjectContext context, ChangeStepBuilder change, int index
+	);
 
 	public static enum TakesChildren {
 		NONE,

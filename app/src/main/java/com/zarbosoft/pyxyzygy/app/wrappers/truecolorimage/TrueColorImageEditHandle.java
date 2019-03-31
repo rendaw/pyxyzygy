@@ -1,5 +1,6 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
 import com.google.common.collect.Streams;
 import com.zarbosoft.pyxyzygy.app.*;
@@ -11,6 +12,7 @@ import com.zarbosoft.pyxyzygy.app.widgets.TitledPane;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
 import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.BrushButton;
 import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
+import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import com.zarbosoft.rendaw.common.Assertion;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
@@ -50,7 +52,7 @@ public class TrueColorImageEditHandle extends EditHandle {
 	Group overlay;
 	private final Hotkeys.Action[] actions;
 	Tool tool = null;
-	ContentReplacer toolProperties = new ContentReplacer() {
+	ContentReplacer<Node> toolProperties = new ContentReplacer<Node>() {
 
 		@Override
 		protected void innerSet(Node content) {
@@ -110,6 +112,15 @@ public class TrueColorImageEditHandle extends EditHandle {
 			public void run(ProjectContext context, Window window) {
 				wrapper.config.tool.set(TrueColorImageNodeConfig.Tool.SELECT);
 			}
+		}, new Hotkeys.Action(Hotkeys.Scope.CANVAS,
+				"move",
+				"Move",
+				Hotkeys.Hotkey.create(KeyCode.M, false, false, false)
+		) {
+			@Override
+			public void run(ProjectContext context, Window window) {
+				wrapper.config.tool.set(TrueColorImageNodeConfig.Tool.MOVE);
+			}
 		}), enumerate(Stream.of(KeyCode.DIGIT1,
 				KeyCode.DIGIT2,
 				KeyCode.DIGIT3,
@@ -139,6 +150,18 @@ public class TrueColorImageEditHandle extends EditHandle {
 		// Overlay
 		overlay = new Group();
 		wrapper.canvasHandle.overlay.getChildren().add(overlay);
+
+		// Move
+		ToggleButton move = new ToggleButton(null, new ImageView(icon("cursor-move16.png"))) {
+			@Override
+			public void fire() {
+				if (isSelected())
+					return;
+				wrapper.config.tool.set(TrueColorImageNodeConfig.Tool.MOVE);
+			}
+		};
+		move.setMaxHeight(Double.MAX_VALUE);
+		move.selectedProperty().bind(wrapper.config.tool.isEqualTo(TrueColorImageNodeConfig.Tool.MOVE));
 
 		// Select
 		ToggleButton select = new ToggleButton(null, new ImageView(icon("select.png"))) {
@@ -207,7 +230,7 @@ public class TrueColorImageEditHandle extends EditHandle {
 			GUILaunch.config.trueColorBrushes.add(index + 1, brush);
 		});
 
-		window.menuChildren.set(this, menuNew, menuDelete, menuLeft, menuRight);
+		window.menuChildren.set(this, ImmutableList.of(menuNew, menuDelete, menuLeft, menuRight));
 
 		HBox brushesBox = new HBox();
 		brushesBox.setSpacing(3);
@@ -228,7 +251,7 @@ public class TrueColorImageEditHandle extends EditHandle {
 			};
 		}, Misc.noopConsumer(), Misc.noopConsumer());
 
-		window.toolBarChildren.set(this, select, brushesBox);
+		window.toolBarChildren.set(this, ImmutableList.of(move, select, brushesBox));
 
 		// Tab
 		VBox tabBox = new VBox();
@@ -260,6 +283,11 @@ public class TrueColorImageEditHandle extends EditHandle {
 					GUILaunch.config.trueColorBrushes.removeListener(brushesListener);
 					brushesListener = null;
 				}
+				if (newValue == TrueColorImageNodeConfig.Tool.MOVE) {
+					setTool(context, window, () -> {
+						return new ToolMove(window,wrapper);
+					});
+				} else
 				if (newValue == TrueColorImageNodeConfig.Tool.SELECT) {
 					setTool(context, window, () -> {
 						ToolSelect out = new ToolSelect(TrueColorImageEditHandle.this);
@@ -320,7 +348,7 @@ public class TrueColorImageEditHandle extends EditHandle {
 	}
 
 	@Override
-	public void cursorMoved(ProjectContext context, DoubleVector vector) {
+	public void cursorMoved(ProjectContext context, Window window, DoubleVector vector) {
 		vector = Window.toLocal(wrapper.canvasHandle, vector);
 		mouseX.set(vector.x);
 		mouseY.set(vector.y);
@@ -335,7 +363,8 @@ public class TrueColorImageEditHandle extends EditHandle {
 	public void markStart(ProjectContext context, Window window, DoubleVector start) {
 		if (tool == null)
 			return;
-		start = Window.toLocal(wrapper.canvasHandle, start);
+		Vector offset = wrapper.canvasHandle.frame.offset();
+		start = Window.toLocal(wrapper.canvasHandle, start).minus(offset);
 		tool.markStart(context, window, start);
 	}
 
@@ -348,8 +377,9 @@ public class TrueColorImageEditHandle extends EditHandle {
 	public void mark(ProjectContext context, Window window, DoubleVector start, DoubleVector end) {
 		if (tool == null)
 			return;
-		start = Window.toLocal(wrapper.canvasHandle, start);
-		end = Window.toLocal(wrapper.canvasHandle, end);
+		Vector offset = wrapper.canvasHandle.frame.offset();
+		start = Window.toLocal(wrapper.canvasHandle, start).minus(offset);
+		end = Window.toLocal(wrapper.canvasHandle, end).minus(offset);
 		tool.mark(context, window, start, end);
 	}
 }

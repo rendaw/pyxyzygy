@@ -1,23 +1,24 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.camera;
 
+import com.google.common.collect.ImmutableList;
 import com.squareup.gifencoder.Color;
 import com.squareup.gifencoder.GifEncoder;
 import com.squareup.gifencoder.Image;
 import com.squareup.gifencoder.ImageOptions;
 import com.zarbosoft.pyxyzygy.app.CustomBinding;
-import com.zarbosoft.pyxyzygy.app.DoubleVector;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
+import com.zarbosoft.pyxyzygy.app.Tool;
 import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.config.CameraNodeConfig;
+import com.zarbosoft.pyxyzygy.app.config.GroupNodeConfig;
+import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeEditHandle;
-import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeWrapper;
-import com.zarbosoft.pyxyzygy.app.wrappers.group.ToolMove;
 import com.zarbosoft.pyxyzygy.core.model.v0.Camera;
 import com.zarbosoft.pyxyzygy.seed.model.Listener;
+import javafx.beans.binding.Bindings;
+import javafx.scene.Node;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
-import javafx.scene.control.Tab;
 import org.jcodec.api.SequenceEncoder;
 import org.jcodec.common.model.Picture;
 
@@ -26,6 +27,7 @@ import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
@@ -47,51 +49,13 @@ public class CameraEditHandle extends GroupNodeEditHandle {
 									new CustomBinding.PropertyBinder<Integer>(wrapper.width.asObject()),
 									new CustomBinding.PropertyBinder<Integer>(s.getValueFactory().valueProperty())
 							));
-							s
-									.focusedProperty()
-									.addListener((observable, oldValue, newValue) -> context.history.finishChange());
 						})
 						.intSpinner("Height", 1, 99999, s -> {
 							cleanup.add(CustomBinding.bindBidirectional(
 									new CustomBinding.PropertyBinder<Integer>(wrapper.height.asObject() ),
 									new CustomBinding.PropertyBinder<Integer>(s.getValueFactory().valueProperty() )
 							));
-							s
-									.focusedProperty()
-									.addListener((observable, oldValue, newValue) -> context.history.finishChange());
-						})
-						.intSpinner("End frame", 1, 99999, s -> {
-							Listener.ScalarSet<Camera, Integer> listener =
-									wrapper.node.addEndSetListeners((target, value) -> s
-											.getValueFactory()
-											.setValue(value));
-							cleanup.add(() -> wrapper.node.removeEndSetListeners(listener));
-							s
-									.getValueFactory()
-									.valueProperty()
-									.addListener((observable, oldValue, newValue) -> context.history.change(c -> c
-											.camera(wrapper.node)
-											.endSet(newValue)));
-							s
-									.focusedProperty()
-									.addListener((observable, oldValue, newValue) -> context.history.finishChange());
-						})
-						.doubleSpinner("Framerate", 1, 999, 1, s -> {
-							Listener.ScalarSet<Camera, Integer> listener =
-									wrapper.node.addFrameRateSetListeners((target, value) -> s
-											.getValueFactory()
-											.setValue(value / 10.0));
-							cleanup.add(() -> wrapper.node.removeFrameRateSetListeners(listener));
-							s
-									.getValueFactory()
-									.valueProperty()
-									.addListener((observable, oldValue, newValue) -> context.history.change(c -> c
-											.camera(wrapper.node)
-											.frameRateSet((int) (newValue * 10.0))));
-							s
-									.focusedProperty()
-									.addListener((observable, oldValue, newValue) -> context.history.finishChange());
-						}).<CameraNodeConfig.RenderMode>dropDown("Render type", d -> {
+						}) .<CameraNodeConfig.RenderMode>dropDown("Render type", d -> {
 							Supplier<ListCell<CameraNodeConfig.RenderMode>> cellSupplier = () -> new ListCell<>() {
 								@Override
 								protected void updateItem(
@@ -246,41 +210,19 @@ public class CameraEditHandle extends GroupNodeEditHandle {
 	}
 
 	@Override
-	protected ToolMove createToolMove(Window window, GroupNodeWrapper wrapper1) {
-		CameraWrapper wrapper = (CameraWrapper) wrapper1;
-		return new ToolMove(window, wrapper) {
-			boolean adjustHorizontal;
-			boolean adjustPositive;
-			int startValue;
+	protected List<Node> createToolButtons() {
+		return ImmutableList.of(
+				new ToolToggle("cursor-move16.png", "Move", GroupNodeConfig.toolMove),
+				new ToolToggle("resize.png", "Resize viewport", CameraNodeConfig.toolViewport),
+				new ToolToggle("stamper16.png", "Stamp", GroupNodeConfig.toolStamp)
+		);
+	}
 
-			@Override
-			public void markStart(ProjectContext context, Window window, DoubleVector start) {
-				if (wrapper.adjustViewport) {
-					double xyRatio = (double) wrapper.node.width() / wrapper.node.height();
-					adjustHorizontal = Math.abs(start.x) >= Math.abs(start.y * xyRatio);
-					if (adjustHorizontal) {
-						adjustPositive = start.x >= 0;
-						startValue = wrapper.node.width();
-					} else {
-						adjustPositive = start.y >= 0;
-						startValue = wrapper.node.height();
-					}
-					markStart = start;
-				} else
-					super.markStart(context, window, start);
-			}
-
-			@Override
-			public void mark(ProjectContext context, Window window, DoubleVector start, DoubleVector end) {
-				if (wrapper.adjustViewport) {
-					double negative = adjustPositive ? 2 : -2;
-					if (adjustHorizontal) {
-						wrapper.width.set((int) (startValue + (end.x - markStart.x) * negative));
-					} else {
-						wrapper.height.set((int) (startValue + (end.y - markStart.y) * negative));
-					}
-				}
-			}
-		};
+	@Override
+	protected Tool createTool(ProjectContext context, Window window, String newValue) {
+		if (CameraNodeConfig.toolViewport.equals(newValue)) {
+			return new ToolViewport((CameraWrapper) wrapper);
+		} else
+		return super.createTool(context, window, newValue);
 	}
 }

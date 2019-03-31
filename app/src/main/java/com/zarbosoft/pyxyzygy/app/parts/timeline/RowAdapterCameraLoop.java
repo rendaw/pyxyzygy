@@ -1,10 +1,10 @@
 package com.zarbosoft.pyxyzygy.app.parts.timeline;
 
+import com.zarbosoft.pyxyzygy.app.CustomBinding;
 import com.zarbosoft.pyxyzygy.app.WidgetHandle;
 import com.zarbosoft.pyxyzygy.app.Window;
-import com.zarbosoft.pyxyzygy.app.Wrapper;
-import com.zarbosoft.pyxyzygy.app.config.NodeConfig;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
+import com.zarbosoft.pyxyzygy.core.model.v0.Camera;
 import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ObservableObjectValue;
@@ -12,21 +12,19 @@ import javafx.beans.value.ObservableValue;
 import javafx.scene.Node;
 import javafx.scene.image.Image;
 
-public class RowAdapterPreview extends RowAdapter {
-	private final NodeConfig config;
-	private final Wrapper data;
+public class RowAdapterCameraLoop extends RowAdapter {
+	private final Camera node;
 	RowTimeRangeWidget widget = null;
 	private final Timeline timeline;
 
-	public RowAdapterPreview(Timeline timeline, Wrapper edit) {
+	public RowAdapterCameraLoop(Timeline timeline, Camera node) {
 		this.timeline = timeline;
-		this.config = edit.getConfig();
-		this.data = edit;
+		this.node = node;
 	}
 
 	@Override
 	public ObservableValue<String> getName() {
-		return new SimpleStringProperty("Preview");
+		return new SimpleStringProperty("Time cut");
 	}
 
 	@Override
@@ -68,10 +66,27 @@ public class RowAdapterPreview extends RowAdapter {
 			ProjectContext context, Window window
 	) {
 		return new WidgetHandle() {
+			private final Runnable cleanupStart;
+			private final Runnable cleanupLength;
+
 			{
 				widget = new RowTimeRangeWidget(timeline);
-				widget.start.asObject().bindBidirectional(config.previewStart);
-				widget.length.asObject().bindBidirectional(config.previewLength);
+				cleanupStart = CustomBinding.bindBidirectional(new CustomBinding.ScalarBinder<Integer>(
+						node,
+						"frameStart",
+						v -> context.change(
+								new ProjectContext.Tuple(node, "framestart"),
+								c -> c.camera(node).frameStartSet(v)
+						)
+				), new CustomBinding.PropertyBinder<>(widget.start.asObject()));
+				cleanupLength = CustomBinding.bindBidirectional(new CustomBinding.ScalarBinder<Integer>(
+						node,
+						"frameLength",
+						v -> context.change(
+								new ProjectContext.Tuple(node, "framelength"),
+								c -> c.camera(node).frameLengthSet(v)
+						)
+				), new CustomBinding.PropertyBinder<>(widget.length.asObject()));
 			}
 
 			@Override
@@ -81,8 +96,8 @@ public class RowAdapterPreview extends RowAdapter {
 
 			@Override
 			public void remove() {
-				widget.start.unbind();
-				widget.length.unbind();
+				cleanupStart.run();
+				cleanupLength.run();
 			}
 		};
 	}
@@ -110,6 +125,6 @@ public class RowAdapterPreview extends RowAdapter {
 
 	@Override
 	public Object getData() {
-		return data;
+		return node;
 	}
 }

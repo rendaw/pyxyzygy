@@ -4,6 +4,7 @@ import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.WidgetHandle;
 import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeWrapper;
+import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
 import com.zarbosoft.pyxyzygy.core.model.v0.GroupLayer;
 import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
 import com.zarbosoft.pyxyzygy.seed.model.Listener;
@@ -61,17 +62,26 @@ public class RowAdapterGroupLayer extends RowAdapter {
 	}
 
 	@Override
+	public Object getData() {
+		return layer;
+	}
+
+	@Override
 	public boolean hasFrames() {
 		return false;
 	}
 
 	@Override
-	public boolean createFrame(ProjectContext context, Window window, int outer) {
+	public boolean createFrame(
+			ProjectContext context, Window window, ChangeStepBuilder change, int outer
+	) {
 		throw new Assertion();
 	}
 
 	@Override
-	public boolean duplicateFrame(ProjectContext context, Window window, int outer) {
+	public boolean duplicateFrame(
+			ProjectContext context, Window window, ChangeStepBuilder change, int outer
+	) {
 		throw new Assertion();
 	}
 
@@ -112,6 +122,6 @@ public class RowAdapterGroupLayer extends RowAdapter {
 
 	public void treeSelected() {
 		wrapper.setSpecificLayer(layer);
-		stateImage.set(icon("cursor-move.png"));
+		stateImage.set(icon("cursor-move16.png"));
 	}
 }

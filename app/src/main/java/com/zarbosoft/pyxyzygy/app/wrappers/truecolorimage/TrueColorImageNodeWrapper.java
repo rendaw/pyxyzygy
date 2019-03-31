@@ -2,7 +2,6 @@ package com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage;
 
 import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.config.NodeConfig;
-import com.zarbosoft.pyxyzygy.app.config.PaletteBrush;
 import com.zarbosoft.pyxyzygy.app.config.TrueColorBrush;
 import com.zarbosoft.pyxyzygy.app.config.TrueColorImageNodeConfig;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
@@ -12,10 +11,7 @@ import com.zarbosoft.pyxyzygy.app.wrappers.FrameFinder;
 import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.BaseImageNodeWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.WrapTile;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
-import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
-import com.zarbosoft.pyxyzygy.core.model.v0.TrueColorImageFrame;
-import com.zarbosoft.pyxyzygy.core.model.v0.TrueColorImageNode;
-import com.zarbosoft.pyxyzygy.core.model.v0.TrueColorTileBase;
+import com.zarbosoft.pyxyzygy.core.model.v0.*;
 import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
@@ -23,7 +19,6 @@ import javafx.collections.ObservableList;
 import javafx.scene.image.Image;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -59,9 +54,9 @@ public class TrueColorImageNodeWrapper extends BaseImageNodeWrapper<TrueColorIma
 				id -> new TrueColorImageNodeConfig(context)
 		);
 		this.brushBinder =
-				new CustomBinding.DoubleIndirectHalfBinder<ObservableList<TrueColorBrush>, Integer, TrueColorBrush>(
+				new CustomBinding.DoubleHalfBinder<ObservableList<TrueColorBrush>, Integer, TrueColorBrush>(
 						new CustomBinding.ListPropertyHalfBinder<>(GUILaunch.config.trueColorBrushes),
-						new CustomBinding.DoubleIndirectHalfBinder<>(
+						new CustomBinding.DoubleHalfBinder<>(
 								config.tool,
 								config.brush,
 								(t, index) -> {
@@ -202,7 +197,11 @@ public class TrueColorImageNodeWrapper extends BaseImageNodeWrapper<TrueColorIma
 
 	@Override
 	public void drop(
-			ProjectContext context, TrueColorImageFrame frame, Rectangle unitBounds, TrueColorImage image
+			ProjectContext context,
+			ChangeStepBuilder change,
+			TrueColorImageFrame frame,
+			Rectangle unitBounds,
+			TrueColorImage image
 	) {
 		for (int x = 0; x < unitBounds.width; ++x) {
 			for (int y = 0; y < unitBounds.height; ++y) {
@@ -210,9 +209,8 @@ public class TrueColorImageNodeWrapper extends BaseImageNodeWrapper<TrueColorIma
 				final int y0 = y;
 				TrueColorImage shot =
 						image.copy(x0 * context.tileSize, y0 * context.tileSize, context.tileSize, context.tileSize);
-				context.history.change(c -> c
-						.trueColorImageFrame(frame)
-						.tilesPut(unitBounds.corner().plus(x0, y0).to1D(), TrueColorTile.create(context, shot)));
+						change.trueColorImageFrame(frame)
+						.tilesPut(unitBounds.corner().plus(x0, y0).to1D(), TrueColorTile.create(context, shot));
 			}
 		}
 	}
@@ -236,5 +234,19 @@ public class TrueColorImageNodeWrapper extends BaseImageNodeWrapper<TrueColorIma
 			ProjectContext context, TrueColorImage image, Vector offset, Vector span
 	) {
 		image.clear(offset.x, offset.y, span.x, span.y);
+	}
+
+	@Override
+	public Listener.ScalarSet<TrueColorImageFrame, Vector> addFrameOffsetListener(
+			TrueColorImageFrame frame, Listener.ScalarSet<TrueColorImageFrame, Vector> listener
+	) {
+		return frame.addOffsetSetListeners(listener);
+	}
+
+	@Override
+	public void removeFrameOffsetListener(
+			TrueColorImageFrame frame, Listener.ScalarSet<TrueColorImageFrame, Vector> listener
+	) {
+		frame.removeOffsetSetListeners(listener);
 	}
 }

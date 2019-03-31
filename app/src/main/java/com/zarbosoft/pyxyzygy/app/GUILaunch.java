@@ -639,8 +639,7 @@ public class GUILaunch extends Application {
 		groupNode.initialOpacitySet(context, opacityMax);
 		groupNode.initialLayersAdd(context, ImmutableList.of(groupLayer));
 
-		context.history.change(c -> c.project(context.project).topAdd(groupNode));
-		context.history.finishChange();
+		context.change(null,c -> c.project(context.project).topAdd(groupNode));
 
 		context.config.viewPath = ImmutableList.of(0);
 		context.config.editPath = ImmutableList.of(0, 0);

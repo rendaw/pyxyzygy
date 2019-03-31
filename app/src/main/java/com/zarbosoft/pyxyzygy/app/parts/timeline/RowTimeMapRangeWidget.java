@@ -2,6 +2,7 @@ package com.zarbosoft.pyxyzygy.app.parts.timeline;
 
 import com.zarbosoft.pyxyzygy.app.DoubleVector;
 import com.zarbosoft.pyxyzygy.app.Window;
+import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import javafx.beans.binding.Bindings;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
@@ -208,7 +209,7 @@ public class RowTimeMapRangeWidget {
 		}
 	}
 
-	public RowTimeMapRangeWidget(Timeline timeline) {
+	public RowTimeMapRangeWidget(ProjectContext context, Timeline timeline) {
 		final double pad = 50;
 		this.timeline = timeline;
 		base.setMinHeight(Timeline.baseSize * 3);
@@ -282,18 +283,20 @@ public class RowTimeMapRangeWidget {
 			dragMouseStart = null;
 		});
 		base.addEventFilter(MouseEvent.MOUSE_DRAGGED, e -> {
+			context.change(new ProjectContext.Tuple(adapter.getData(), "timemap"), change->{
 			if (dragMouseStart.y < Timeline.baseSize) {
 				// nop
 			} else if (dragMouseStart.y < Timeline.baseSize * 2) {
 				DoubleVector dragAt = getRelative(e.getSceneX(), e.getSceneY());
 				double diff = dragAt.x - dragMouseStart.x;
 				int quantized = (int) (diff / timeline.zoom);
-				adapter.changeStart(Math.max(-1, dragFrameStart + -quantized));
+				adapter.changeStart(change, Math.max(-1, dragFrameStart + -quantized));
 			} else {
 				DoubleVector dragAt = getRelative(e.getSceneX(), e.getSceneY());
 				int quantized = (int) (dragAt.x / timeline.zoom);
-				adapter.changeLength(Math.max(0, quantized - adapter.getOuterAt()));
+				adapter.changeLength(change, Math.max(0, quantized - adapter.getOuterAt()));
 			}
+			});
 		});
 	}
 

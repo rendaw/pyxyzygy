@@ -22,6 +22,8 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
+import javafx.scene.Cursor;
+import javafx.scene.ImageCursor;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -41,7 +43,6 @@ import java.util.stream.Stream;
 import static com.zarbosoft.pyxyzygy.app.Global.nameHuman;
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
-import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.pad;
 
 public class Window {
 	public Stage stage;
@@ -51,7 +52,7 @@ public class Window {
 	public Set<KeyCode> pressed = new HashSet<>();
 	public Editor editor;
 	private Tab layerTab;
-	public ContentReplacer layerTabContent = new ContentReplacer() {
+	public final ContentReplacer<Node> layerTabContent = new ContentReplacer<Node>() {
 
 		@Override
 		protected void innerSet(Node content) {
@@ -61,6 +62,17 @@ public class Window {
 		@Override
 		protected void innerClear() {
 			layerTab.setContent(null);
+		}
+	};
+	public final ContentReplacer<Cursor> editorCursor = new ContentReplacer<Cursor>() {
+		@Override
+		protected void innerSet(Cursor content) {
+			editor.outerCanvas.setCursor(content);
+		}
+
+		@Override
+		protected void innerClear() {
+editor.outerCanvas.setCursor(null );
 		}
 	};
 	private ToolBar toolBar;
@@ -176,7 +188,7 @@ public class Window {
 		MenuButton menuButton = new MenuButton(null, new ImageView(icon("menu.png")));
 		menuChildren = new ChildrenReplacer<MenuItem>() {
 			@Override
-			protected void innerSet(MenuItem... content) {
+			protected void innerSet(List<MenuItem> content) {
 				menuButton.getItems().addAll(content);
 			}
 
@@ -192,7 +204,7 @@ public class Window {
 		toolbarExtra.setAlignment(Pos.CENTER_LEFT);
 		toolBarChildren = new ChildrenReplacer<Node>() {
 			@Override
-			protected void innerSet(Node... content) {
+			protected void innerSet(List<Node> content) {
 				toolbarExtra.getChildren().addAll(content);
 			}
 

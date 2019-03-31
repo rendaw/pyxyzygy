@@ -1,5 +1,6 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.group;
 
+import com.google.common.collect.ImmutableList;
 import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.config.GroupNodeConfig;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
@@ -9,12 +10,10 @@ import com.zarbosoft.pyxyzygy.app.widgets.TitledPane;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
 import com.zarbosoft.rendaw.common.Assertion;
 import javafx.beans.binding.Bindings;
-import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.Group;
 import javafx.scene.Node;
-import javafx.scene.control.ToolBar;
 import javafx.scene.layout.VBox;
 
 import java.util.ArrayList;
@@ -24,15 +23,30 @@ import static com.zarbosoft.pyxyzygy.app.Misc.nodeFormFields;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.pad;
 
 public class GroupNodeEditHandle extends EditHandle {
-	public final ContentReplacer toolPropReplacer;
+	public final ContentReplacer<Node> toolPropReplacer;
 	protected List<Runnable> cleanup = new ArrayList<>();
 	Tool tool = null;
 
 	Group overlay;
 
 	public GroupNodeWrapper wrapper;
-	public final SimpleDoubleProperty mouseX = new SimpleDoubleProperty(0);
-	public final SimpleDoubleProperty mouseY = new SimpleDoubleProperty(0);
+
+	protected class ToolToggle extends HelperJFX.IconToggleButton {
+		private final String value;
+
+		public ToolToggle(String icon, String hint, String value) {
+			super(icon, hint);
+			this.value = value;
+			selectedProperty().bind(Bindings.createBooleanBinding(() -> {
+				return value.equals(wrapper.config.tool.get());
+			}, wrapper.config.tool));
+		}
+
+		@Override
+		public void fire() {
+			wrapper.config.tool.set(value);
+		}
+	}
 
 	public GroupNodeEditHandle(
 			ProjectContext context, Window window, final GroupNodeWrapper wrapper
@@ -46,71 +60,47 @@ public class GroupNodeEditHandle extends EditHandle {
 		VBox controls = new VBox();
 
 		VBox toolProps = new VBox();
-		this.toolPropReplacer = new ContentReplacer() {
+		this.toolPropReplacer = new ContentReplacer<Node>() {
 			@Override
 			protected void innerSet(Node content) {
-toolProps.getChildren().addAll(content);
+				toolProps.getChildren().addAll(content);
 			}
 
 			@Override
 			protected void innerClear() {
-toolProps.getChildren().clear();
+				toolProps.getChildren().clear();
 			}
 		};
 
 		VBox tabBox = new VBox();
-		tabBox.getChildren().addAll(new TitledPane("Layer", new WidgetFormBuilder().apply(b -> cleanup.add(nodeFormFields(context, b, wrapper))).build()), toolProps);
-		window.layerTabContent.set(
-				this,
-				pad(tabBox)
-		);
+		tabBox
+				.getChildren()
+				.addAll(new TitledPane(
+						"Layer",
+						new WidgetFormBuilder().apply(b -> cleanup.add(nodeFormFields(context, b, wrapper))).build()
+				), toolProps);
+		window.layerTabContent.set(this, pad(tabBox));
 
 		// Toolbar
-		class ToolToggle extends HelperJFX.IconToggleButton {
-			private final GroupNodeConfig.Tool value;
+		window.toolBarChildren.set(this,createToolButtons());
 
-			public ToolToggle(String icon, String hint, GroupNodeConfig.Tool value) {
-				super(icon, hint);
-				this.value = value;
-				selectedProperty().bind(Bindings.createBooleanBinding(() -> {
-					return wrapper.config.tool.get() == value;
-				}, wrapper.config.tool));
-			}
-
-			@Override
-			public void fire() {
-				wrapper.config.tool.set(value);
-			}
-		}
-		window.toolBarChildren.set(this,
-				new ToolToggle("cursor-move.png", "Move", GroupNodeConfig.Tool.MOVE),
-				new ToolToggle("stamper.png", "Stamp", GroupNodeConfig.Tool.STAMP)
-		);
-
-		wrapper.config.tool.addListener(new ChangeListener<GroupNodeConfig.Tool>() {
+		wrapper.config.tool.addListener(new ChangeListener<String>() {
 			{
 				changed(null, null, wrapper.config.tool.get());
 			}
 
 			@Override
 			public void changed(
-					ObservableValue<? extends GroupNodeConfig.Tool> observable,
-					GroupNodeConfig.Tool oldValue,
-					GroupNodeConfig.Tool newValue
+					ObservableValue<? extends String> observable,
+					String oldValue,
+					String newValue
 			) {
 				if (tool != null) {
 					tool.remove(context, window);
+					tool = null;
 				}
-				switch (newValue) {
-					case MOVE:
-						tool = createToolMove(window, wrapper);
-						break;
-					case STAMP:
-						tool = new ToolStamp(window, wrapper, context, GroupNodeEditHandle.this);
-						break;
-					default:
-						throw new Assertion();
-				}
+				if (newValue == null) return;
+				tool = createTool(context,window,newValue);
 			}
 		});
 
@@ -120,8 +110,19 @@ toolProps.getChildren().clear();
 		});
 	}
 
-	protected ToolMove createToolMove(Window window, GroupNodeWrapper wrapper) {
-		return new ToolMove(window, wrapper);
+	protected Tool createTool(ProjectContext context, Window window ,String newValue) {
+		if (GroupNodeConfig.toolMove.equals(newValue)) {
+			return new ToolMove(window, wrapper);
+		} else if (GroupNodeConfig.toolStamp.equals(newValue)) {
+			return new ToolStamp(context, window, wrapper, GroupNodeEditHandle.this);
+		} else throw new Assertion();
+	}
+
+	protected List<Node> createToolButtons() {
+		return ImmutableList.of(
+				new ToolToggle("cursor-move16.png", "Move", GroupNodeConfig.toolMove),
+				new ToolToggle("stamper16.png", "Stamp", GroupNodeConfig.toolStamp)
+		);
 	}
 
 	@Override
@@ -165,9 +166,8 @@ toolProps.getChildren().clear();
 	}
 
 	@Override
-	public void cursorMoved(ProjectContext context, DoubleVector vector) {
+	public void cursorMoved(ProjectContext context, Window window, DoubleVector vector) {
 		vector = Window.toLocal(wrapper.canvasHandle, vector);
-		mouseX.set(vector.x);
-		mouseY.set(vector.y);
+		tool.cursorMoved(context, window, vector);
 	}
 }

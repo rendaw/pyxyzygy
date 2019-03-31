@@ -15,7 +15,7 @@ public abstract class BaseToolBrush<F, L> extends Tool {
 	private ImageCursor cursor = null;
 
 	public BaseToolBrush(
-			ProjectContext context, Window window, BaseImageNodeWrapper<?, F, ?, L> wrapper, BaseBrush brush
+			Window window, BaseImageNodeWrapper<?, F, ?, L> wrapper, BaseBrush brush
 	) {
 		this.wrapper = wrapper;
 		this.brush = brush;
@@ -36,17 +36,24 @@ public abstract class BaseToolBrush<F, L> extends Tool {
 		} else if (window.pressed.contains(KeyCode.SHIFT)) {
 			if (lastEnd == null)
 				lastEnd = end;
-			strokeInner(context, lastEnd, end);
+			strokeInner(context, null, lastEnd, end);
 		} else
-			strokeInner(context, start, end);
+			strokeInner(context, new ProjectContext.Tuple(brush, "stroke"), start, end);
 	}
 
-	private void strokeInner(ProjectContext context, DoubleVector start, DoubleVector end) {
+	private void strokeInner(
+			ProjectContext context,
+			ProjectContext.Tuple changeUnique,
+			DoubleVector start,
+			DoubleVector end
+	) {
 		final double startRadius = brush.size.get() / 20.0;
 		final double endRadius = brush.size.get() / 20.0;
 		final DoubleRectangle bounds = new BoundsBuilder().circle(start, startRadius).circle(end, endRadius).build();
-		wrapper.modify(context, bounds, (image, offset) -> {
-			stroke(context, image, start.minus(offset), startRadius, end.minus(offset), endRadius);
+		context.change(changeUnique, c -> {
+			wrapper.modify(context, c, bounds, (image, corner) -> {
+				stroke(context, image, start.minus(corner), startRadius, end.minus(corner), endRadius);
+			});
 		});
 		lastEnd = end;
 	}
@@ -64,5 +71,10 @@ public abstract class BaseToolBrush<F, L> extends Tool {
 	public void remove(ProjectContext context, Window window) {
 		if (window.editor.outerCanvas.getCursor() == cursor)
 			window.editor.outerCanvas.setCursor(null);
+	}
+
+	@Override
+	public void cursorMoved(ProjectContext context, Window window, DoubleVector position) {
+
 	}
 }

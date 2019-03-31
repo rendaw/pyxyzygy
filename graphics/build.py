@@ -14,27 +14,54 @@ print('Operating in {}'.format(here))
 
 resources = (
     here / '../app/target/resources/com/zarbosoft/pyxyzygy/app').resolve()
-os.makedirs(resources, exist_ok=True)
-dest_icons = resources / 'icons'
-source_icons = here / 'icons'
 
-os.makedirs(dest_icons, exist_ok=True)
+for category in [
+    dict(
+        type='icons',
+        exceptions=[
+            dict(
+                prefix='appicon',
+                sizes=[16, 32, 64],
+            ),
+            dict(
+                prefix='arrow-collapse',
+                sizes=[16, 32],
+            ),
+            dict(
+                prefix='cursor-move',
+                sizes=[16, 32],
+            ),
+            dict(
+                prefix='stamper',
+                sizes=[16, 32],
+            ),
+        ],
+        size=16,
+    ),
+]:
+    dest = resources / category['type']
+    source = here / category['type']
+    os.makedirs(dest, exist_ok=True)
 
-for icon in source_icons.glob('*.svg'):
-    if icon.name.startswith('appicon'):
-        sizes = [16, 32, 64]
-    else:
-        sizes = [16]
-    for size in sizes:
+    def process(icon, name, size):
         size = str(size)
-        name = icon.stem
-        if len(sizes) > 1:
-            name = name + size
-        name = name + '.png'
         c([
             'inkscape',
             icon,
             '-z',
-            '-e', dest_icons / name,
+            '-e', dest / (name + '.png'),
             '-w', size, '-h', size,
         ])
+
+    for icon in source.glob('*.svg'):
+        done = False
+        name = icon.stem
+        for exception in category.get('exceptions', []):
+            if not name.startswith(exception['prefix']):
+                continue
+            for size in exception['sizes']:
+                process(icon, name + str(size), size)
+            done = True
+        if done:
+            continue
+        process(icon, name, category['size'])

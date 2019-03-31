@@ -6,9 +6,11 @@ import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.BaseToolSelect;
 import com.zarbosoft.pyxyzygy.core.PaletteImage;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
+import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
 import com.zarbosoft.pyxyzygy.core.model.v0.PaletteImageFrame;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
+import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.Pair;
 import javafx.scene.Node;
 import javafx.scene.image.Image;
@@ -25,7 +27,6 @@ import java.util.Optional;
 
 import static com.zarbosoft.pyxyzygy.app.Global.nameSymbol;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
-import static com.zarbosoft.rendaw.common.Common.workingDir;
 
 public class ToolSelect extends BaseToolSelect<PaletteImageFrame, PaletteImage> {
 	final PaletteImageEditHandle editHandle;
@@ -40,12 +41,15 @@ public class ToolSelect extends BaseToolSelect<PaletteImageFrame, PaletteImage> 
 	@Override
 	protected void copy(ClipboardContent content, PaletteImage lifted) {
 		uncheck(() -> {
-			Path temp = Files.createTempFile(nameSymbol + "-copy", ".palimg");
-			temp.toFile().deleteOnExit();
-			lifted.serialize(temp.toString());
-			try (InputStream source = Files.newInputStream(temp)) {
-				content.put(dataFormat, ByteBuffer.wrap(source.readAllBytes()));
+			{
+				Path temp = Files.createTempFile(nameSymbol + "-copy", ".palimg");
+				temp.toFile().deleteOnExit();
+				lifted.serialize(temp.toString());
+				try (InputStream source = Files.newInputStream(temp)) {
+					content.put(dataFormat, ByteBuffer.wrap(source.readAllBytes()));
+				}
 			}
+			content.putImage(toImage(lifted));
 		});
 	}
 
@@ -70,8 +74,10 @@ public class ToolSelect extends BaseToolSelect<PaletteImageFrame, PaletteImage> 
 	}
 
 	@Override
-	public void clear(ProjectContext context, Rectangle bounds) {
-		editHandle.wrapper.canvasHandle.clear(context, bounds);
+	public void clear(
+			ProjectContext context, ChangeStepBuilder change, Rectangle bounds
+	) {
+		editHandle.wrapper.canvasHandle.clear(context, change, bounds);
 	}
 
 	@Override
@@ -88,7 +94,7 @@ public class ToolSelect extends BaseToolSelect<PaletteImageFrame, PaletteImage> 
 			if (!(b instanceof ByteBuffer))
 				return null;
 			return uncheck(() -> {
-				Path temp = Files.createTempFile(nameSymbol + "-paste", ".blob");
+				Path temp = Files.createTempFile(nameSymbol + "-paste", ".palimg");
 				temp.toFile().deleteOnExit();
 				try (OutputStream dest = Files.newOutputStream(temp)) {
 					dest.write(((ByteBuffer) b).array());

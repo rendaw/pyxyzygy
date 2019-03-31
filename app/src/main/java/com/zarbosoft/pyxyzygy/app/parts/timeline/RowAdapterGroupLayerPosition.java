@@ -4,6 +4,7 @@ import com.zarbosoft.pyxyzygy.app.WidgetHandle;
 import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupLayerWrapper;
+import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
 import com.zarbosoft.pyxyzygy.core.model.v0.GroupLayer;
 import com.zarbosoft.pyxyzygy.core.model.v0.GroupPositionFrame;
 import com.zarbosoft.pyxyzygy.seed.model.Listener;
@@ -58,49 +59,57 @@ public class RowAdapterGroupLayerPosition extends RowAdapter {
 					}
 
 					@Override
-					public void setLength(ProjectContext context, int length) {
-						context.history.change(c -> c.groupPositionFrame(f).lengthSet(length));
+					public void setLength(
+							ProjectContext context, ChangeStepBuilder change, int length
+					) {
+						change.groupPositionFrame(f).lengthSet(length);
 					}
 
 					@Override
-					public void remove(ProjectContext context) {
-						context.history.change(c -> c.groupLayer(layer).positionFramesRemove(i, 1));
+					public void remove(
+							ProjectContext context, ChangeStepBuilder change
+					) {
+						change.groupLayer(layer).positionFramesRemove(i, 1);
 						if (i == layer.positionFramesLength())
-							context.history.change(c -> c
-									.groupPositionFrame(last(layer.positionFrames()))
-									.lengthSet(-1));
+							change.groupPositionFrame(last(layer.positionFrames())).lengthSet(-1);
 					}
 
 					@Override
-					public void clear(ProjectContext context) {
-						context.history.change(c -> c.groupPositionFrame(f).offsetSet(new Vector(0, 0)));
+					public void clear(
+							ProjectContext context, ChangeStepBuilder change
+					) {
+						change.groupPositionFrame(f).offsetSet(new Vector(0, 0));
 					}
 
 					@Override
-					public void moveLeft(ProjectContext context) {
+					public void moveLeft(
+							ProjectContext context, ChangeStepBuilder change
+					) {
 						if (i == 0)
 							return;
 						GroupPositionFrame frameBefore = layer.positionFramesGet(i - 1);
-						context.history.change(c -> c.groupLayer(layer).positionFramesMoveTo(i, 1, i - 1));
+						change.groupLayer(layer).positionFramesMoveTo(i, 1, i - 1);
 						final int lengthThis = f.length();
 						if (lengthThis == -1) {
 							final int lengthBefore = frameBefore.length();
-							context.history.change(c -> c.groupPositionFrame(f).lengthSet(lengthBefore));
-							context.history.change(c -> c.groupPositionFrame(frameBefore).lengthSet(lengthThis));
+							change.groupPositionFrame(f).lengthSet(lengthBefore);
+							change.groupPositionFrame(frameBefore).lengthSet(lengthThis);
 						}
 					}
 
 					@Override
-					public void moveRight(ProjectContext context) {
+					public void moveRight(
+							ProjectContext context, ChangeStepBuilder change
+					) {
 						if (i == layer.positionFramesLength() - 1)
 							return;
 						GroupPositionFrame frameAfter = layer.positionFramesGet(i + 1);
-						context.history.change(c -> c.groupLayer(layer).positionFramesMoveTo(i, 1, i + 1));
+						change.groupLayer(layer).positionFramesMoveTo(i, 1, i + 1);
 						final int lengthAfter = frameAfter.length();
 						if (lengthAfter == -1) {
 							final int lengthThis = f.length();
-							context.history.change(c -> c.groupPositionFrame(f).lengthSet(lengthAfter));
-							context.history.change(c -> c.groupPositionFrame(frameAfter).lengthSet(lengthThis));
+							change.groupPositionFrame(f).lengthSet(lengthAfter);
+							change.groupPositionFrame(frameAfter).lengthSet(lengthThis);
 						}
 					}
 				});
@@ -169,13 +178,17 @@ public class RowAdapterGroupLayerPosition extends RowAdapter {
 	}
 
 	@Override
-	public boolean createFrame(ProjectContext context, Window window, int outer) {
-		return createFrame(context, window, outer, previous -> GroupPositionFrame.create(context));
+	public boolean createFrame(
+			ProjectContext context, Window window, ChangeStepBuilder change, int outer
+	) {
+		return createFrame(context, window, change, outer, previous -> GroupPositionFrame.create(context));
 	}
 
 	@Override
-	public boolean duplicateFrame(ProjectContext context, Window window, int outer) {
-		return createFrame(context, window, outer, previous -> {
+	public boolean duplicateFrame(
+			ProjectContext context, Window window, ChangeStepBuilder change, int outer
+	) {
+		return createFrame(context, window, change, outer, previous -> {
 			GroupPositionFrame created = GroupPositionFrame.create(context);
 			created.initialOffsetSet(context, previous.offset());
 			return created;
@@ -183,7 +196,11 @@ public class RowAdapterGroupLayerPosition extends RowAdapter {
 	}
 
 	public boolean createFrame(
-			ProjectContext context, Window window, int outer, Function<GroupPositionFrame, GroupPositionFrame> cb
+			ProjectContext context,
+			Window window,
+			ChangeStepBuilder change,
+			int outer,
+			Function<GroupPositionFrame, GroupPositionFrame> cb
 	) {
 		int inner = window.timeToInner(outer);
 		if (inner == NO_INNER)
@@ -198,9 +215,9 @@ public class RowAdapterGroupLayerPosition extends RowAdapter {
 		} else {
 			newFrame.initialLengthSet(context, previous.frame.length() - offset);
 		}
-		context.history.change(c -> c.groupPositionFrame(previous.frame).lengthSet(offset));
+		change.groupPositionFrame(previous.frame).lengthSet(offset);
 		newFrame.initialOffsetSet(context, previous.frame.offset());
-		context.history.change(c -> c.groupLayer(layer).positionFramesAdd(previous.frameIndex + 1, newFrame));
+		change.groupLayer(layer).positionFramesAdd(previous.frameIndex + 1, newFrame);
 		return true;
 	}
 
@@ -230,5 +247,10 @@ public class RowAdapterGroupLayerPosition extends RowAdapter {
 			return false;
 		GroupLayerWrapper.PositionResult previous = GroupLayerWrapper.findPosition(layer, inner);
 		return previous.at == inner;
+	}
+
+	@Override
+	public Object getData() {
+		return layer;
 	}
 }

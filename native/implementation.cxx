@@ -404,7 +404,6 @@ template<class SetPixel> static void strokeSolidHard(
 		[&](l_t y, float start0, float end0) {
 			l_t start = std::max(0, (l_t)std::round(start0 + offsetX));
 			l_t end = std::round(end0 + offsetX);
-			printf("fill line %u %i: %f - %f %i; %i %i\n", y, offsetY, start0, end0, offsetX, start, end);
 			y += offsetY;
 			for (l_t x = start; x < end; ++x) {
 				setPixel(y, x);

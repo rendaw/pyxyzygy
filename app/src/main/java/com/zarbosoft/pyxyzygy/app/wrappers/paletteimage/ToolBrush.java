@@ -32,9 +32,9 @@ public class ToolBrush extends BaseToolBrush<PaletteImageFrame, PaletteImage> {
 	private final javafx.scene.shape.Rectangle alignedCursor = new javafx.scene.shape.Rectangle();
 
 	public ToolBrush(
-			ProjectContext context, Window window, PaletteImageEditHandle paletteImageEditHandle, PaletteBrush brush
+			Window window, PaletteImageEditHandle paletteImageEditHandle, PaletteBrush brush
 	) {
-		super(context, window, paletteImageEditHandle.wrapper, brush);
+		super(window, paletteImageEditHandle.wrapper, brush);
 		this.editHandle = paletteImageEditHandle;
 		this.brush = brush;
 
@@ -76,7 +76,7 @@ public class ToolBrush extends BaseToolBrush<PaletteImageFrame, PaletteImage> {
 
 	}
 
-	private void setColor(ProjectContext context, int index) {
+	private void setColor(int index) {
 		editHandle.wrapper.node.palette().entries().stream().map(new Common.Enumerator<>()).filter(pair -> {
 			if (pair.second instanceof PaletteColor) {
 				return ((PaletteColor) pair.second).index() == index;
@@ -113,11 +113,11 @@ public class ToolBrush extends BaseToolBrush<PaletteImageFrame, PaletteImage> {
 			Vector quantizedCorner = end.divide(context.tileSize).toInt();
 			PaletteTile tile = (PaletteTile) editHandle.wrapper.canvasHandle.frame.tilesGet(quantizedCorner.to1D());
 			if (tile == null) {
-				setColor(context, 0);
+				setColor(0);
 			} else {
 				Vector intEnd = end.toInt();
 				Vector tileCorner = quantizedCorner.multiply(context.tileSize);
-				setColor(context, tile.getData(context).getPixel(intEnd.x - tileCorner.x, intEnd.y - tileCorner.y));
+				setColor(tile.getData(context).getPixel(intEnd.x - tileCorner.x, intEnd.y - tileCorner.y));
 			}
 		} else
 			super.mark(context, window, start, end);

@@ -3,6 +3,7 @@ package com.zarbosoft.pyxyzygy.app.wrappers.baseimage;
 import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
+import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
 import com.zarbosoft.pyxyzygy.nearestneighborimageview.NearestNeighborImageView;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
@@ -152,13 +153,17 @@ public abstract class BaseToolSelect<F, L> extends Tool {
 				) {
 					@Override
 					public void run(ProjectContext context, Window window) {
-						place(context, window);
+						context.change(null, c -> {
+							place(context, c, window);
+						});
 					}
 				},
 				new Hotkeys.Action(Hotkeys.Scope.CANVAS, "cut", "Cut", cutHotkey) {
 					@Override
 					public void run(ProjectContext context, Window window) {
-						cut(context, window);
+						context.change(null, c -> {
+							cut(context, c, window);
+						});
 					}
 				},
 				new Hotkeys.Action(Hotkeys.Scope.CANVAS, "copy", "copy", copyHotkey) {
@@ -170,20 +175,25 @@ public abstract class BaseToolSelect<F, L> extends Tool {
 		};
 
 		StateMove(
-				ProjectContext context, Window window, Rectangle originalBounds, L lifted
+				ProjectContext context, Window window, Rectangle originalBounds, Rectangle bounds, L lifted
 		) {
 			this.originalBounds = originalBounds;
-			this.bounds = originalBounds;
+			this.bounds = bounds;
 
 			for (Hotkeys.Action action : actions)
 				context.hotkeys.register(action);
 
-			originalRectangle = new SelectInside(zoom);
-			originalRectangle.setWidth(originalBounds.width);
-			originalRectangle.setHeight(originalBounds.height);
-			originalRectangle.setLayoutX(originalBounds.x);
-			originalRectangle.setLayoutY(originalBounds.y);
-			originalRectangle.setVisible(true);
+			if (originalBounds != null) {
+				originalRectangle = new SelectInside(zoom);
+				originalRectangle.setWidth(originalBounds.width);
+				originalRectangle.setHeight(originalBounds.height);
+				originalRectangle.setLayoutX(originalBounds.x);
+				originalRectangle.setLayoutY(originalBounds.y);
+				originalRectangle.setVisible(true);
+				overlayAdd(originalRectangle);
+			} else {
+				originalRectangle = null;
+			}
 			rectangle = new SelectInside(zoom);
 			rectangle.setStroke(Color.WHITE);
 			rectangle.setVisible(true);
@@ -194,27 +204,33 @@ public abstract class BaseToolSelect<F, L> extends Tool {
 			ImageView image = NearestNeighborImageView.create();
 			image.imageProperty().bind(Bindings.createObjectBinding(() -> toImage(lifted), zoom));
 			imageGroup.getChildren().add(image);
-			overlayAdd(originalRectangle, rectangle, imageGroup);
+			overlayAdd(rectangle, imageGroup);
 			setPosition(bounds.corner());
 
 			propertiesSet(pad(new WidgetFormBuilder().buttons(u -> u.button(b -> {
 				b.setText("Place");
-				b.setGraphic(new ImageView(icon("arrow-collapse-down.png")));
+				b.setGraphic(new ImageView(icon("arrow-collapse-down16.png")));
 				b.setOnAction(e -> {
-					place(context, window);
+					context.change(null, c -> {
+						place(context, c, window);
+					});
 				});
 			}).button(b -> {
 				b.setText("Clear");
 				b.setGraphic(new ImageView(icon("eraser-variant.png")));
 				b.setOnAction(e -> {
-					clear(context, originalBounds);
+					context.change(null, c -> {
+						clear(context, c, originalBounds);
+					});
 					setState(context, new StateCreate(context, window));
 				});
 			}).button(b -> {
 				b.setText("Cut");
 				b.setGraphic(new ImageView(icon("content-cut.png")));
 				b.setOnAction(e -> uncheck(() -> {
-					cut(context, window);
+					context.change(null, c -> {
+						cut(context, c, window);
+					});
 				}));
 			}).button(b -> {
 				b.setText("Copy");
@@ -236,16 +252,22 @@ public abstract class BaseToolSelect<F, L> extends Tool {
 			Clipboard.getSystemClipboard().setContent(content);
 		}
 
-		private void cut(ProjectContext context, Window window) {
+		private void cut(
+				ProjectContext context, ChangeStepBuilder change, Window window
+		) {
 			copy();
-			clear(context, originalBounds);
+			if (originalBounds != null)
+				clear(context, change, originalBounds);
 			setState(context, new StateCreate(context, window));
 		}
 
-		private void place(ProjectContext context, Window window) {
-			clear(context, originalBounds);
-			wrapper.modify(context, bounds, (image, offset) -> {
-				wrapper.imageCompose(image, lifted, offset.x, offset.y);
+		private void place(
+				ProjectContext context, ChangeStepBuilder change, Window window
+		) {
+			if (originalBounds != null)
+				clear(context, change, originalBounds);
+			wrapper.modify(context, change, bounds, (image, corner) -> {
+				wrapper.imageCompose(image, lifted, bounds.x - corner.x, bounds.y - corner.y);
 			});
 			setState(context, new StateCreate(context, window));
 		}
@@ -292,7 +314,9 @@ public abstract class BaseToolSelect<F, L> extends Tool {
 
 	protected abstract void overlayRemove(Node... nodes);
 
-	public abstract void clear(ProjectContext context, Rectangle bounds);
+	public abstract void clear(
+			ProjectContext context, ChangeStepBuilder change, Rectangle bounds
+	);
 
 	public class StateCreate extends State {
 		final SelectInside rectangle;
@@ -328,7 +352,9 @@ public abstract class BaseToolSelect<F, L> extends Tool {
 				new Hotkeys.Action(Hotkeys.Scope.CANVAS, "cut", "Cut", cutHotkey) {
 					@Override
 					public void run(ProjectContext context, Window window) {
-						cut(context, window);
+						context.change(null, c -> {
+							cut(context, c, window);
+						});
 					}
 				},
 				new Hotkeys.Action(Hotkeys.Scope.CANVAS, "copy", "Copy", copyHotkey) {
@@ -517,13 +543,17 @@ public abstract class BaseToolSelect<F, L> extends Tool {
 				b.setText("Clear");
 				b.setGraphic(new ImageView(icon("eraser-variant.png")));
 				b.setOnAction(e -> {
-					clear(context, window);
+					context.change(null, c -> {
+						clear(context, c, window);
+					});
 				});
 			})).buttons(g -> g.button(b -> {
 				b.setText("Cut");
 				b.setGraphic(new ImageView(icon("content-cut.png")));
 				b.setOnAction(e -> uncheck(() -> {
-					cut(context, window);
+					context.change(null, c -> {
+						cut(context, c, window);
+					});
 				}));
 			}).button(b -> {
 				b.setText("Copy");
@@ -543,9 +573,11 @@ public abstract class BaseToolSelect<F, L> extends Tool {
 			setState(context, new StateCreate(context, window));
 		}
 
-		private void cut(ProjectContext context, Window window) {
+		private void cut(
+				ProjectContext context, ChangeStepBuilder change, Window window
+		) {
 			copy(context);
-			clear(context, window);
+			clear(context, change, window);
 		}
 
 		private void copy(ProjectContext context) {
@@ -554,13 +586,18 @@ public abstract class BaseToolSelect<F, L> extends Tool {
 			Clipboard.getSystemClipboard().setContent(content);
 		}
 
-		private void clear(ProjectContext context, Window window) {
-			BaseToolSelect.this.clear(context, inside.get());
+		private void clear(
+				ProjectContext context, ChangeStepBuilder change, Window window
+		) {
+			BaseToolSelect.this.clear(context, change, inside.get());
 			cancel(context, window);
 		}
 
 		private void lift(ProjectContext context, Window window) {
-			setState(context, new StateMove(context, window, inside.get(), wrapper.grab(context, inside.get())));
+			setState(
+					context,
+					new StateMove(context, window, inside.get(), inside.get(), wrapper.grab(context, inside.get()))
+			);
 		}
 
 		@Override
@@ -635,11 +672,15 @@ public abstract class BaseToolSelect<F, L> extends Tool {
 		Rectangle placeAt = new Rectangle(0, 0, size.x, size.y);
 		placeAt = placeAt.minus(placeAt.span().divide(2));
 		placeAt = placeAt.minus(negViewCenter(window));
-		setState(context, new StateMove(context, window, placeAt, image));
+		setState(context, new StateMove(context, window, null, placeAt, image));
 	}
 
 	protected abstract Vector negViewCenter(Window window);
 
 	protected abstract Pair<L, Vector> uncopy(ProjectContext context);
 
+	@Override
+	public void cursorMoved(ProjectContext context, Window window, DoubleVector position) {
+
+	}
 }

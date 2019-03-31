@@ -10,13 +10,12 @@ import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeWrapper;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.pyxyzygy.core.model.v0.Camera;
 import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
-import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.ProgressBar;
-import javafx.scene.control.TabPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.StrokeType;
@@ -30,9 +29,11 @@ public class CameraWrapper extends GroupNodeWrapper {
 	public final Camera node;
 	public final SimpleIntegerProperty width = new SimpleIntegerProperty(0);
 	public final SimpleIntegerProperty height = new SimpleIntegerProperty(0);
-	private final Listener.ScalarSet<Camera, Integer> heightListener;
-	private final Listener.ScalarSet<Camera, Integer> widthListener;
+	private final Runnable cleanupWidth;
+	private final Runnable cleanupHeight;
 	public boolean adjustViewport = false;
+	private ProjectContext.Tuple actionWidthChange = new ProjectContext.Tuple(this, "width");
+	private ProjectContext.Tuple actionHeightChange = new ProjectContext.Tuple(this,"height");
 
 	public CameraNodeConfig config;
 
@@ -40,18 +41,16 @@ public class CameraWrapper extends GroupNodeWrapper {
 		super(context, parent, parentIndex, node);
 		this.parentIndex = parentIndex;
 		this.node = node;
-		widthListener = node.addWidthSetListeners((target, value) -> {
-			width.set(value);
-		});
-		width.addListener((observable, oldValue, newValue) -> context.history.change(c -> c
-				.camera(node)
-				.widthSet(newValue.intValue())));
-		heightListener = node.addHeightSetListeners((target, value) -> {
-			height.set(value);
-		});
-		height.addListener((observable, oldValue, newValue) -> context.history.change(c -> c
-				.camera(node)
-				.heightSet(newValue.intValue())));
+		cleanupWidth = CustomBinding.bindBidirectional(new CustomBinding.ScalarBinder<Integer>(
+				node,
+				"width",
+				v -> context.change(actionWidthChange, c -> c.camera(node).widthSet(v))
+		), new CustomBinding.PropertyBinder<>(width.asObject()));
+		cleanupHeight = CustomBinding.bindBidirectional(new CustomBinding.ScalarBinder<Integer>(
+				node,
+				"height",
+				v -> context.change(actionHeightChange, c -> c.camera(node).heightSet(v))
+		), new CustomBinding.PropertyBinder<>(height.asObject()));
 	}
 
 	@Override
@@ -62,20 +61,22 @@ public class CameraWrapper extends GroupNodeWrapper {
 
 	@Override
 	public void remove(ProjectContext context) {
-		node.removeWidthSetListeners(widthListener);
-		node.removeHeightSetListeners(heightListener);
+		cleanupWidth.run();
+		cleanupHeight.run();
 		super.remove(context);
 	}
 
 	@Override
-	public CanvasHandle buildCanvas(ProjectContext context, CanvasHandle parent) {
-		return new GroupNodeCanvasHandle(context, parent, this) {
+	public CanvasHandle buildCanvas(
+			ProjectContext context, Window window, CanvasHandle parent
+	) {
+		return new GroupNodeCanvasHandle(context, window,parent, this) {
 			Rectangle cameraBorder;
-			CanvasHandle groupHandle = CameraWrapper.super.buildCanvas(context, parent);
+			CanvasHandle groupHandle = CameraWrapper.super.buildCanvas(context, window, parent);
 
 			{
 				cameraBorder = new Rectangle();
-				cameraBorder.setStrokeWidth(1);
+				cameraBorder.strokeWidthProperty().bind(Bindings.divide(1.0, window.editor.zoomFactor));
 				cameraBorder.setStrokeType(StrokeType.OUTSIDE);
 				cameraBorder.setFill(Color.TRANSPARENT);
 				cameraBorder.setStroke(HelperJFX.c(new java.awt.Color(128, 128, 128)));
@@ -101,7 +102,8 @@ public class CameraWrapper extends GroupNodeWrapper {
 		clone.initialWidthSet(context, node.width());
 		clone.initialHeightSet(context, node.height());
 		clone.initialFrameRateSet(context, node.frameRate());
-		clone.initialEndSet(context, node.end());
+		clone.initialFrameStartSet(context,node.frameStart());
+		clone.initialFrameLengthSet(context,node.frameLength());
 		return clone;
 	}
 
@@ -115,7 +117,7 @@ public class CameraWrapper extends GroupNodeWrapper {
 	public void render(
 			ProjectContext context, Window window, BiConsumer<Integer, TrueColorImage> frameConsumer, int scale
 	) {
-		render(context, window, frameConsumer, 0, node.end(), scale);
+		render(context, window, frameConsumer, node.frameStart(), node.frameStart() + node.frameLength(), scale);
 	}
 
 	public void render(
@@ -158,7 +160,8 @@ public class CameraWrapper extends GroupNodeWrapper {
 					} finally {
 						context.lock.readLock().unlock();
 					}
-					if (scale > 1) canvas = canvas.scale(scale);
+					if (scale > 1)
+						canvas = canvas.scale(scale);
 					frameConsumer.accept(i, canvas);
 					final double percent = ((double) (i - start)) / (end - start);
 					Platform.runLater(() -> progress.setProgress(percent));

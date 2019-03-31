@@ -161,8 +161,8 @@ public class CLIMain {
 			Rectangle bounds = new Rectangle(-node.width() / 2, -node.height() / 2, node.width(), node.height());
 			TrueColorImage canvas = TrueColorImage.create(bounds.width, bounds.height);
 			Path renderPath = Paths.get(output);
-			for (int i = 0; i < node.end(); ++i) {
-				if (i != 0)
+			for (int i = node.frameStart(); i < node.frameStart() + node.frameLength(); ++i) {
+				if (i != node.frameStart())
 					canvas.clear();
 				Render.render(context, node, canvas, i, bounds, 1.0);
 				canvas.serialize(renderPath.resolve(String.format("frame%06d.png", i)).toString());

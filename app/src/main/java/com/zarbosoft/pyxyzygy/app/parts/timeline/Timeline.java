@@ -56,7 +56,6 @@ import java.util.stream.Stream;
 import static com.zarbosoft.pyxyzygy.app.Global.logger;
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
-import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.pad;
 import static com.zarbosoft.rendaw.common.Common.sublist;
 
 public class Timeline {
@@ -212,28 +211,32 @@ public class Timeline {
 		add.setOnAction(e -> {
 			if (window.selectedForView.get() == null)
 				return;
-			tree
-					.getSelectionModel()
-					.getSelectedCells()
-					.stream()
-					.filter(c -> c.getTreeItem() != null &&
-							c.getTreeItem().getValue() != null &&
-							c.getTreeItem().getValue().createFrame(context, window, frame.get()))
-					.findFirst();
+			context.change(null, change -> {
+				tree
+						.getSelectionModel()
+						.getSelectedCells()
+						.stream()
+						.filter(c -> c.getTreeItem() != null &&
+								c.getTreeItem().getValue() != null &&
+								c.getTreeItem().getValue().createFrame(context, window, change, frame.get()))
+						.findFirst();
+			});
 		});
 		duplicate = HelperJFX.button("content-copy.png", "Duplicate");
 		duplicate.disableProperty().bind(frameAt);
 		duplicate.setOnAction(e -> {
 			if (window.selectedForView.get() == null)
 				return;
-			tree
-					.getSelectionModel()
-					.getSelectedCells()
-					.stream()
-					.filter(c -> c.getTreeItem() != null &&
-							c.getTreeItem().getValue() != null &&
-							c.getTreeItem().getValue().duplicateFrame(context, window, frame.get()))
-					.findFirst();
+			context.change(null, change -> {
+				tree
+						.getSelectionModel()
+						.getSelectedCells()
+						.stream()
+						.filter(c -> c.getTreeItem() != null &&
+								c.getTreeItem().getValue() != null &&
+								c.getTreeItem().getValue().duplicateFrame(context, window, change, frame.get()))
+						.findFirst();
+			});
 		});
 		remove = HelperJFX.button("minus.png", "Remove");
 		remove
@@ -241,14 +244,18 @@ public class Timeline {
 				.bind(Bindings.createBooleanBinding(() -> selectedFrame.get() == null ||
 						selectedFrame.get().row.frames.size() == 1, selectedFrame));
 		remove.setOnAction(e -> {
-			selectedFrame.get().frame.remove(context);
+			context.change(null, change -> {
+				selectedFrame.get().frame.remove(context, change);
+			});
 		});
 		clear = HelperJFX.button("eraser-variant.png", "Clear");
 		clear.disableProperty().bind(selectedFrame.isNull());
 		clear.setOnAction(e -> {
 			if (selectedFrame.get() == null)
 				return;
-			selectedFrame.get().frame.clear(context);
+			context.change(null, change -> {
+				selectedFrame.get().frame.clear(context, change);
+			});
 		});
 		left = HelperJFX.button("arrow-left.png", "Left");
 		left
@@ -257,7 +264,9 @@ public class Timeline {
 						selectedFrame
 				));
 		left.setOnAction(e -> {
-			selectedFrame.get().frame.moveLeft(context);
+			context.change(new ProjectContext.Tuple(selectedFrame.get().row.adapter.getData(), "move"), change -> {
+				selectedFrame.get().frame.moveLeft(context, change);
+			});
 		});
 		right = HelperJFX.button("arrow-right.png", "Right");
 		right
@@ -265,7 +274,9 @@ public class Timeline {
 				.bind(Bindings.createBooleanBinding(() -> selectedFrame.get() == null ||
 						selectedFrame.get().index == selectedFrame.get().row.frames.size() - 1, selectedFrame));
 		right.setOnAction(e -> {
-			selectedFrame.get().frame.moveRight(context);
+			context.change(new ProjectContext.Tuple(selectedFrame.get().row.adapter.getData(), "move"), change -> {
+				selectedFrame.get().frame.moveRight(context, change);
+			});
 		});
 
 		Region space = new Region();
@@ -282,12 +293,22 @@ public class Timeline {
 			spinner.setPrefWidth(60);
 			spinner.setEditable(true);
 			spinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 100));
-			CustomBinding.bindBidirectional(
-					new CustomBinding.IndirectBinder<>(window.selectedForView,
-							v -> opt(v == null ? null : v.getWrapper().getConfig().previewRate)
-					),
-					new CustomBinding.PropertyBinder<Integer>(spinner.getValueFactory().valueProperty())
-			);
+			CustomBinding.bindBidirectional(new CustomBinding.IndirectBinder<>(window.selectedForView, v -> {
+				if (v == null)
+					return opt(null);
+				Wrapper wrapper = v.getWrapper();
+				if (wrapper instanceof CameraWrapper) {
+					Camera camera = ((CameraWrapper) wrapper).node;
+					return opt(new CustomBinding.ScalarBinder<Integer>(camera,
+							"frameRate",
+							r -> context.change(new ProjectContext.Tuple(camera, "framerate"),
+									c -> c.camera(camera).frameRateSet(r)
+							)
+					));
+				} else {
+					return opt(wrapper.getConfig().previewRate);
+				}
+			}), new CustomBinding.PropertyBinder<Integer>(spinner.getValueFactory().valueProperty()));
 			final ImageView imageView = new ImageView(icon("play-speed.png"));
 			previewRate.getChildren().addAll(imageView, spinner);
 		}
@@ -445,38 +466,62 @@ public class Timeline {
 						playThread.playing.set(false);
 					playThread = null;
 				} else {
-					playThread = new PlayThread();
+					Wrapper view = window.selectedForView.get().getWrapper();
+					NodeConfig config = view.getConfig();
+					playThread = view instanceof CameraWrapper ? new PlayThread(view) {
+						Camera node = ((CameraWrapper) view).node;
+
+						@Override
+						public PlayState updateState() {
+							return new PlayState(1000 / node.frameRate(),
+									node.frameStart(),
+									node.frameStart() + node.frameLength());
+						}
+					} : new PlayThread(view) {
+						NodeConfig config = view.getConfig();
+
+						@Override
+						public PlayState updateState() {
+							return new PlayState(1000 / config.previewRate.get(),
+									config.previewStart.get(),
+									config.previewStart.get() + config.previewLength.get());
+						}
+					};
 				}
 			}
 		});
 	}
 
-	public class PlayThread extends Thread {
+	public static abstract class PlayThread extends Thread {
+		private final NodeConfig config;
 		AtomicBoolean playing = new AtomicBoolean(true);
 		AtomicBoolean enqueued = new AtomicBoolean(false);
 
+		public PlayThread(Wrapper view) {
+			this.config = view.getConfig();
+		}
+
 		public class PlayState {
 			public final long frameMs;
+			public final int start;
+			public final int length;
 
-			public PlayState(long frameMs) {
+			public PlayState(long frameMs, int start, int length) {
 				this.frameMs = frameMs;
+				this.start = start;
+				this.length = length;
 			}
 		}
 
 		AtomicReference<PlayState> playState = new AtomicReference<>();
 
-		private final NodeConfig config;
-
 		{
-			config = window.selectedForView.get().getWrapper().getConfig();
 			updateState();
 			setDaemon(true);
 			start();
 		}
 
-		public void updateState() {
-			playState.set(new PlayState(1000 / config.previewRate.get()));
-		}
+		public abstract PlayState updateState();
 
 		@Override
 		public void run() {
@@ -485,11 +530,11 @@ public class Timeline {
 					if (!enqueued.getAndSet(true))
 						Platform.runLater(() -> {
 							try {
-								frame.set(Math.max(config.previewStart.get(),
-										(frame.get() - config.previewStart.get() + 1) % config.previewLength.get() +
-												config.previewStart.get()
+								PlayState playState = updateState();
+								this.playState.set(playState);
+								config.frame.set(Math.max(playState.start,
+										(config.frame.get() - playState.start + 1) % playState.length + playState.start
 								));
-								updateState();
 							} catch (Exception e) {
 								logger.writeException(e, "Error in JavaFX play thread");
 							} finally {
@@ -539,80 +584,6 @@ public class Timeline {
 			throw new Assertion(); // DEBUG
 
 		// Prepare rows
-		if (edit instanceof CameraWrapper) {
-			tree.getRoot().getChildren().add(new TreeItem<>(new RowAdapter() {
-				@Override
-				public ObservableValue<String> getName() {
-					return new SimpleObjectProperty<>("Viewport");
-				}
-
-				@Override
-				public boolean hasFrames() {
-					return false;
-				}
-
-				@Override
-				public boolean createFrame(ProjectContext context, Window window, int outer) {
-					return false;
-				}
-
-				@Override
-				public ObservableObjectValue<Image> getStateImage() {
-					return new SimpleObjectProperty<>();
-				}
-
-				@Override
-				public void deselected() {
-					((CameraWrapper) edit).adjustViewport = false;
-				}
-
-				@Override
-				public void selected() {
-					((CameraWrapper) edit).adjustViewport = true;
-				}
-
-				@Override
-				public boolean duplicateFrame(ProjectContext context, Window window, int outer) {
-					return false;
-				}
-
-				@Override
-				public WidgetHandle createRowWidget(ProjectContext context, Window window) {
-					return new WidgetHandle() {
-						@Override
-						public Node getWidget() {
-							return null;
-						}
-
-						@Override
-						public void remove() {
-
-						}
-					};
-				}
-
-				@Override
-				public int updateTime(ProjectContext context, Window window) {
-					return 0;
-				}
-
-				@Override
-				public void updateFrameMarker(ProjectContext context, Window window) {
-
-				}
-
-				@Override
-				public void remove(ProjectContext context) {
-					((CameraWrapper) edit).adjustViewport = false;
-				}
-
-				@Override
-				public boolean frameAt(Window window, int outer) {
-					throw new Assertion();
-				}
-			}));
-		}
-		TreeItem preview = new TreeItem(new RowAdapterPreview(this, edit));
 		if (edit instanceof GroupNodeWrapper) {
 			TreeItem layersRoot = new TreeItem(new RowAdapter() {
 
@@ -627,7 +598,9 @@ public class Timeline {
 				}
 
 				@Override
-				public boolean createFrame(ProjectContext context, Window window, int outer) {
+				public boolean createFrame(
+						ProjectContext context, Window window, ChangeStepBuilder change, int outer
+				) {
 					return false;
 				}
 
@@ -647,7 +620,9 @@ public class Timeline {
 				}
 
 				@Override
-				public boolean duplicateFrame(ProjectContext context, Window window, int outer) {
+				public boolean duplicateFrame(
+						ProjectContext context, Window window, ChangeStepBuilder change, int outer
+				) {
 					return false;
 				}
 
@@ -675,6 +650,11 @@ public class Timeline {
 				public boolean frameAt(Window window, int outer) {
 					return false;
 				}
+
+				@Override
+				public Object getData() {
+					return null;
+				}
 			});
 			editCleanup.add(((GroupNode) edit.getValue()).mirrorLayers(layersRoot.getChildren(), layer -> {
 				RowAdapterGroupLayer layerRowAdapter = new RowAdapterGroupLayer((GroupNodeWrapper) edit, layer);
@@ -685,19 +665,22 @@ public class Timeline {
 				);
 				return layerItem;
 			}, this::cleanItemSubtree, Misc.noopConsumer()));
-			tree.getRoot().getChildren().addAll(preview, layersRoot);
-		}
-		if (edit instanceof TrueColorImageNodeWrapper) {
-			tree.getRoot().getChildren().addAll(preview,
+			TreeItem loop;
+			if (edit instanceof CameraWrapper) {
+				loop = new TreeItem(new RowAdapterCameraLoop(this, ((CameraWrapper) edit).node));
+			} else if (edit.getClass() == GroupNodeWrapper.class) {
+				loop = new TreeItem(new RowAdapterPreview(this, edit));
+			} else
+				throw new Assertion();
+			tree.getRoot().getChildren().addAll(loop, layersRoot);
+		} else if (edit instanceof TrueColorImageNodeWrapper) {
+			tree.getRoot().getChildren().addAll(new TreeItem(new RowAdapterPreview(this, edit)),
 					new TreeItem(new RowAdapterTrueColorImageNode(this, (TrueColorImageNode) edit.getValue()))
 			);
 		} else if (edit instanceof PaletteImageNodeWrapper) {
-			tree
-					.getRoot()
-					.getChildren()
-					.addAll(preview,
-							new TreeItem<>(new RowAdapterPaletteImageNode(this, (PaletteImageNode) edit.getValue()))
-					);
+			tree.getRoot().getChildren().addAll(new TreeItem(new RowAdapterPreview(this, edit)),
+					new TreeItem<>(new RowAdapterPaletteImageNode(this, (PaletteImageNode) edit.getValue()))
+			);
 		}
 	}
 
