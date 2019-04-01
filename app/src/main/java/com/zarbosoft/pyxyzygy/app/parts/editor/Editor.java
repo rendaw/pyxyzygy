@@ -258,6 +258,7 @@ public class Editor {
 							pointerEventState.previous
 					);
 				}
+				context.history.finishChange();
 			}
 		});
 		outerCanvas.addEventFilter(MouseEvent.MOUSE_DRAGGED, e -> {

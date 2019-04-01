@@ -20,6 +20,8 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.pyxyzygy.app.Misc.unopt;
@@ -477,7 +479,8 @@ public class CustomBinding {
 
 		@Override
 		public void set(T v) {
-			if (base == null) return;
+			if (base == null)
+				return;
 			if (base instanceof Property) {
 				((Property) base).setValue(v);
 			} else if (base instanceof Binder) {
@@ -596,7 +599,8 @@ public class CustomBinding {
 		@Override
 		public Runnable addListener(Consumer<T> listener) {
 			listener.accept(v);
-			return () ->{};
+			return () -> {
+			};
 		}
 
 		@Override
@@ -705,7 +709,8 @@ public class CustomBinding {
 				baseCleanup = ((HalfBinder<T>) unopt(base)).addListener(newValue2 -> {
 					accept2(newValue2);
 				});
-			} else throw new Assertion();
+			} else
+				throw new Assertion();
 		}
 
 		private void accept2(T newValue) {
@@ -725,6 +730,39 @@ public class CustomBinding {
 		@Override
 		public Optional<T> get() {
 			return last;
+		}
+	}
+
+	public static class ListElementsHalfBinder<T> implements HalfBinder<T> {
+		List<Consumer<T>> listeners = new ArrayList<>();
+		Optional<T> at = Optional.empty();
+		final List<Runnable> cleanup;
+
+		public <G> ListElementsHalfBinder(List<HalfBinder<G>> list, Function<List<HalfBinder<G>>, Optional<T>> function) {
+			Consumer<G> listener = u0 -> {
+				at = function.apply(list);
+				if (at.isPresent())
+				listeners.forEach(l -> l.accept(at.get()));
+			};
+			cleanup = list.stream().map(t -> t.addListener(listener)).collect(Collectors.toList());
+			listener.accept(null);
+		}
+
+		@Override
+		public Runnable addListener(Consumer<T> listener) {
+			listeners.add(listener);
+			if (at.isPresent()) listener.accept(at.get());
+			return () -> listeners.remove(listener);
+		}
+
+		@Override
+		public Optional<T> get() {
+			return at;
+		}
+
+		@Override
+		public void destroy() {
+			cleanup.forEach(c -> c.run());
 		}
 	}
 }

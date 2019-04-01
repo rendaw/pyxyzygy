@@ -16,14 +16,15 @@ import com.zarbosoft.pyxyzygy.core.model.v0.*;
 import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.Pair;
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.collections.ObservableList;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
-import javafx.scene.ImageCursor;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -38,6 +39,7 @@ import javafx.stage.Stage;
 
 import java.util.*;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.zarbosoft.pyxyzygy.app.Global.nameHuman;
@@ -72,7 +74,7 @@ public class Window {
 
 		@Override
 		protected void innerClear() {
-editor.outerCanvas.setCursor(null );
+			editor.outerCanvas.setCursor(null);
 		}
 	};
 	private ToolBar toolBar;
@@ -131,18 +133,20 @@ editor.outerCanvas.setCursor(null );
 			if (oldValue != null) {
 				oldValue.remove(context, this);
 				oldConfig = oldValue.getWrapper().getConfig();
-			}else {
+			} else {
 				oldConfig = null;
 			}
 			NodeConfig newConfig;
 			if (newValue != null) {
 				newConfig = newValue.getWrapper().getConfig();
-			}else {
+			} else {
 				newConfig = null;
 			}
 			if (newConfig != oldConfig) {
-				if (oldConfig != null) oldConfig.selectedSomewhere.set(false);
-				if (newConfig != null) newConfig.selectedSomewhere.set(true);
+				if (oldConfig != null)
+					oldConfig.selectedSomewhere.set(false);
+				if (newConfig != null)
+					newConfig.selectedSomewhere.set(true);
 			}
 		});
 
@@ -153,6 +157,29 @@ editor.outerCanvas.setCursor(null );
 		layerTab = new Tab("Layer");
 		layerTab.disableProperty().bind(layerTab.contentProperty().isNull());
 		leftTabs.getTabs().addAll(structureTab, layerTab, configTab);
+		{
+			CustomBinding.ListPropertyHalfBinder<ObservableList<javafx.scene.control.Tab>> tabsProp =
+					new CustomBinding.ListPropertyHalfBinder<>(leftTabs.getTabs());
+			CustomBinding.bind(leftTabs.minWidthProperty(),
+					new CustomBinding.IndirectHalfBinder<>(tabsProp.<List<CustomBinding.HalfBinder<Double>>>map(l -> opt(
+							l
+									.stream()
+									.map(t -> new CustomBinding.IndirectHalfBinder<Double>(t.contentProperty(),
+											c -> opt(c==null?null:((Region) c).widthProperty().asObject())
+									))
+									.collect(Collectors.toList()))),
+							l -> opt(new CustomBinding.ListElementsHalfBinder<Double>(l, s -> {
+								double out = leftTabs
+										.getTabs()
+										.stream()
+										.mapToDouble(t -> t.getContent().minWidth(-1))
+										.max()
+										.orElse(0);
+								return opt(out);
+							}))
+					)
+			);
+		}
 
 		Structure structure = new Structure(context, this, main);
 		structureTab.setContent(structure.getWidget());
@@ -163,7 +190,7 @@ editor.outerCanvas.setCursor(null );
 
 		Button resetScroll = HelperJFX.button("image-filter-center-focus-weak.png", "Recenter view");
 		resetScroll.setOnAction(e -> {
-			editor.updateScroll(context,DoubleVector.zero);
+			editor.updateScroll(context, DoubleVector.zero);
 		});
 
 		HBox zoomBox = new HBox();
@@ -175,8 +202,7 @@ editor.outerCanvas.setCursor(null );
 			spinner.setPrefWidth(60);
 			spinner.setEditable(true);
 			spinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(-10, 50));
-			CustomBinding.bindBidirectional(
-					new CustomBinding.IndirectBinder<>(selectedForView,
+			CustomBinding.bindBidirectional(new CustomBinding.IndirectBinder<>(selectedForView,
 							v -> opt(v == null ? null : v.getWrapper().getConfig().zoom)
 					),
 					new CustomBinding.PropertyBinder<Integer>(spinner.getValueFactory().valueProperty())
@@ -186,6 +212,7 @@ editor.outerCanvas.setCursor(null );
 		}
 
 		MenuButton menuButton = new MenuButton(null, new ImageView(icon("menu.png")));
+		menuButton.disableProperty().bind(Bindings.isEmpty(menuButton.getItems()));
 		menuChildren = new ChildrenReplacer<MenuItem>() {
 			@Override
 			protected void innerSet(List<MenuItem> content) {
@@ -222,7 +249,7 @@ editor.outerCanvas.setCursor(null );
 
 		VBox editorBox = new VBox();
 		editorBox.setFillWidth(true);
-		VBox.setVgrow(editor.getWidget(),Priority.ALWAYS);
+		VBox.setVgrow(editor.getWidget(), Priority.ALWAYS);
 		editorBox.getChildren().addAll(toolBar, editor.getWidget());
 
 		SplitPane specificLayout = new SplitPane();
@@ -331,8 +358,7 @@ editor.outerCanvas.setCursor(null );
 		scene.addEventFilter(KeyEvent.KEY_RELEASED, e -> {
 			pressed.remove(e.getCode());
 		});
-		scene.getStylesheets().addAll(
-				getClass().getResource("widgets/style.css").toExternalForm(),
+		scene.getStylesheets().addAll(getClass().getResource("widgets/style.css").toExternalForm(),
 				getClass().getResource("widgets/colorpicker/style.css").toExternalForm(),
 				getClass().getResource("widgets/brushbutton/style.css").toExternalForm()
 		);

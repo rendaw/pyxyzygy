@@ -7,6 +7,7 @@ import javafx.beans.value.ObservableValue;
 import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
+import javafx.scene.effect.ColorAdjust;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
@@ -84,6 +85,14 @@ public class ColorSwatch extends StackPane {
 		colorLayer.visibleProperty().bind(colorProperty.isNotNull());
 
 		getChildren().addAll(bgLayer, colorLayer);
+
+		disableProperty().addListener((observable, oldValue, newValue) -> {
+			if (newValue) {
+				colorLayer.setEffect(new ColorAdjust(0,-1,0,0));
+			}else{
+				colorLayer.setEffect(null);
+			}
+		});
 		layoutBoundsProperty().addListener(new ChangeListener<Bounds>() {
 			{
 				changed(null, null, layoutBoundsProperty().getValue());

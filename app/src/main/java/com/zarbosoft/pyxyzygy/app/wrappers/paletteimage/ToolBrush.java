@@ -1,5 +1,6 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.paletteimage;
 
+import com.zarbosoft.pyxyzygy.app.CustomBinding;
 import com.zarbosoft.pyxyzygy.app.DoubleVector;
 import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.config.PaletteBrush;
@@ -11,6 +12,7 @@ import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.BaseToolBrush;
 import com.zarbosoft.pyxyzygy.core.PaletteImage;
 import com.zarbosoft.pyxyzygy.core.model.v0.PaletteColor;
 import com.zarbosoft.pyxyzygy.core.model.v0.PaletteImageFrame;
+import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.Common;
@@ -18,7 +20,10 @@ import com.zarbosoft.rendaw.common.Pair;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.DoubleBinding;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.scene.Node;
+import javafx.scene.effect.BlendMode;
 import javafx.scene.input.KeyCode;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.StrokeType;
@@ -41,14 +46,15 @@ public class ToolBrush extends BaseToolBrush<PaletteImageFrame, PaletteImage> {
 		DoubleBinding sizeBinding = Bindings.createDoubleBinding(() -> brush.sizeInPixels(), brush.size);
 		alignedCursor.widthProperty().bind(sizeBinding);
 		alignedCursor.heightProperty().bind(sizeBinding);
-		alignedCursor.setStroke(Color.BLACK);
+		alignedCursor.setBlendMode(BlendMode.DIFFERENCE);
+		alignedCursor.setStroke(Color.GRAY);
 		alignedCursor.strokeWidthProperty().bind(Bindings.divide(1.0, editHandle.positiveZoom));
 		alignedCursor.setStrokeType(StrokeType.OUTSIDE);
 		alignedCursor.setFill(Color.TRANSPARENT);
 		alignedCursor
 				.visibleProperty()
 				.bind(Bindings.createBooleanBinding(() -> editHandle.positiveZoom.get() > 1, editHandle.positiveZoom));
-		alignedCursor.setOpacity(0.5);
+		alignedCursor.setOpacity(0.8);
 		alignedCursor.layoutXProperty().bind(Bindings.createDoubleBinding(() -> {
 			return Math.floor(editHandle.mouseX.get()) - brush.sizeInPixels() / 2.0 + 0.5;
 		}, editHandle.mouseX, brush.size));
@@ -66,6 +72,9 @@ public class ToolBrush extends BaseToolBrush<PaletteImageFrame, PaletteImage> {
 									HelperJFX.nonlinearSlider(10, 2000, 1, 10);
 							brushSize.second.bindBidirectional(brush.size);
 							return brushSize.first;
+						})
+						.check("Use brush color", widget -> {
+							widget.selectedProperty().bindBidirectional(brush.useColor);
 						})
 						.build())
 		);

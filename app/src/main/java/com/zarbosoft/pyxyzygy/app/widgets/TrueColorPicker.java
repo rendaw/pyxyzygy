@@ -8,6 +8,7 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
+import javafx.scene.effect.ColorAdjust;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -30,6 +31,7 @@ public class TrueColorPicker extends GridPane {
 	public TrueColorPicker() {
 		ColorSwatch newColorDisplay = new ColorSwatch(1);
 		newColorDisplay.colorProperty.bind(colorProxyProperty);
+		newColorDisplay.disableProperty().bind(disableProperty());
 
 		// Hue bar - select a hue for the slice
 		Pane hueBar = new Pane();
@@ -156,6 +158,17 @@ public class TrueColorPicker extends GridPane {
 		addRow(1, slice, alphaBar);
 
 		// Event handling
+		disableProperty().addListener((observable, oldValue, newValue) -> {
+			if (newValue) {
+				hueBar.setEffect(new ColorAdjust(0,-1,0,0));
+				alphaBarLayer.setEffect(new ColorAdjust(0,-1,0,0));
+				sliceLayerColor.setEffect(new ColorAdjust(0,-1,0,0));
+			} else {
+				hueBar.setEffect(null);
+				alphaBarLayer.setEffect(null);
+				sliceLayerColor.setEffect(null);
+			}
+		});
 		EventHandler<MouseEvent> hueBarMouseHandler = event -> {
 			hue.set(clamp(event.getX() / hueBar.getWidth()) * 360);
 		};
