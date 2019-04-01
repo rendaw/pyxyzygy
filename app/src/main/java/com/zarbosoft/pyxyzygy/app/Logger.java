@@ -32,7 +32,7 @@ public abstract class Logger {
 					sublist(oldLogs, 10 - oldLogs.size()).forEach(p -> uncheck(() -> Files.delete(p)));
 				return new PrintStream(Files.newOutputStream(logRoot.resolve(LocalDateTime
 						.now()
-						.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) + ".txt")));
+						.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME).replaceAll("[:]","_") + ".txt")));
 			});
 		}
 

@@ -315,7 +315,7 @@ public class Structure {
 		addGroup.setOnAction(e -> {
 			GroupNode group = GroupNode.create(context);
 			group.initialOpacitySet(context, opacityMax);
-			group.initialNameSet(context, uniqueName("Group"));
+			group.initialNameSet(context, uniqueName(Global.groupLayerName));
 			context.change(null, c -> {
 				addNew(group, c);
 			});
@@ -324,7 +324,7 @@ public class Structure {
 		addImage.setOnAction(e -> {
 			TrueColorImageNode image = TrueColorImageNode.create(context);
 			image.initialOpacitySet(context, opacityMax);
-			image.initialNameSet(context, uniqueName("True color layer"));
+			image.initialNameSet(context, uniqueName(Global.trueColorLayerName));
 			TrueColorImageFrame frame = TrueColorImageFrame.create(context);
 			frame.initialLengthSet(context, -1);
 			frame.initialOffsetSet(context, new Vector(0, 0));
@@ -367,7 +367,7 @@ public class Structure {
 				Palette palette;
 				if (!palette0.isPresent()) {
 					palette = Palette.create(context);
-					palette.initialNameSet(context, uniqueName("Palette"));
+					palette.initialNameSet(context, uniqueName(Global.paletteName));
 					palette.initialNextIdSet(context, 2);
 					PaletteColor transparent = PaletteColor.create(context);
 					transparent.initialIndexSet(context, 0);
@@ -383,7 +383,7 @@ public class Structure {
 				}
 				PaletteImageNode image = PaletteImageNode.create(context);
 				image.initialOpacitySet(context, opacityMax);
-				image.initialNameSet(context, uniqueName("Palette layer"));
+				image.initialNameSet(context, uniqueName(Global.paletteLayerName));
 				image.initialPaletteSet(context, palette);
 				PaletteImageFrame frame = PaletteImageFrame.create(context);
 				frame.initialLengthSet(context, -1);

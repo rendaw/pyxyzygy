@@ -28,6 +28,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.zarbosoft.pyxyzygy.app.Global.logger;
@@ -121,6 +122,12 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 		lastChangeTime = now;
 		lastChangeUnique = unique;
 		history.change(consumer);
+	}
+
+	public static void countUniqueName(String name) {
+		Pattern re = Pattern.compile("(.*) [0-9]+");
+		name = re.matcher(name).replaceAll(r -> r.group(1));
+		uniqueName(name);
 	}
 
 	/**

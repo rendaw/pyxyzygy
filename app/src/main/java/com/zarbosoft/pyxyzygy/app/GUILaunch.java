@@ -597,7 +597,7 @@ public class GUILaunch extends Application {
 		switch (createMode) {
 			case normal: {
 				TrueColorImageNode trueColorImageNode = TrueColorImageNode.create(context);
-				trueColorImageNode.initialNameSet(context, uniqueName("True color layer"));
+				trueColorImageNode.initialNameSet(context, uniqueName(Global.trueColorLayerName));
 				trueColorImageNode.initialOpacitySet(context, Global.opacityMax);
 				TrueColorImageFrame trueColorImageFrame = TrueColorImageFrame.create(context);
 				trueColorImageFrame.initialLengthSet(context, -1);
@@ -608,7 +608,7 @@ public class GUILaunch extends Application {
 			break;
 			case pixel: {
 				Palette palette = Palette.create(context);
-				palette.initialNameSet(context, uniqueName("Palette"));
+				palette.initialNameSet(context, uniqueName(Global.paletteName));
 				palette.initialNextIdSet(context, 2);
 				PaletteColor transparent = PaletteColor.create(context);
 				transparent.initialIndexSet(context, 0);
@@ -621,7 +621,7 @@ public class GUILaunch extends Application {
 
 				PaletteImageNode paletteImageNode = PaletteImageNode.create(context);
 				paletteImageNode.initialPaletteSet(context, palette);
-				paletteImageNode.initialNameSet(context, uniqueName("Palette layer"));
+				paletteImageNode.initialNameSet(context, uniqueName(Global.paletteLayerName));
 				paletteImageNode.initialOpacitySet(context, Global.opacityMax);
 				PaletteImageFrame paletteImageFrame = PaletteImageFrame.create(context);
 				paletteImageFrame.initialLengthSet(context, -1);
@@ -635,7 +635,7 @@ public class GUILaunch extends Application {
 		}
 
 		GroupNode groupNode = GroupNode.create(context);
-		groupNode.initialNameSet(context, "Main");
+		groupNode.initialNameSet(context, uniqueName(groupLayerName));
 		groupNode.initialOpacitySet(context, opacityMax);
 		groupNode.initialLayersAdd(context, ImmutableList.of(groupLayer));
 

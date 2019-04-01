@@ -6,6 +6,7 @@ import com.zarbosoft.luxem.read.StackReader;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.core.model.v0.PaletteImageNode;
 import com.zarbosoft.pyxyzygy.core.model.v0.Project;
+import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
 import com.zarbosoft.pyxyzygy.seed.deserialize.ModelDeserializationContext;
 import javafx.scene.input.KeyCode;
 
@@ -13,6 +14,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import static com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext.countUniqueName;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 
 public class Global {
@@ -31,6 +33,10 @@ public class Global {
 	public static final String nameHuman = "pyxyzygy";
 
 	public static Logger logger;
+	public final static String trueColorLayerName = "True color layer";
+	public final static String paletteName = "Palette";
+	public final static String paletteLayerName = "Palette layer";
+	public final static String groupLayerName = "Group";
 
 	public static ProjectContext create(Path path, int tileSize) {
 		ProjectContext out = new ProjectContext(path);
@@ -60,7 +66,8 @@ public class Global {
 
 					@Override
 					public StackReader.State record() {
-						if (type == null) throw new IllegalStateException("Project has no version");
+						if (type == null)
+							throw new IllegalStateException("Project has no version");
 						switch (type) {
 							case ProjectContext.version:
 								return new ProjectContext.Deserializer(context, path);
@@ -77,6 +84,11 @@ public class Global {
 					.filter(o -> o instanceof Project)
 					.findFirst()
 					.ifPresent(p -> out.project = (Project) p);
+			context.objectMap
+					.values()
+					.stream()
+					.filter(o -> o instanceof ProjectNode)
+					.forEach(o -> countUniqueName(((ProjectNode) o).name()));
 			out.history = new History(out, context.undoHistory, context.redoHistory, context.activeChange);
 			out.hotkeys = new Hotkeys();
 			out.initConfig();

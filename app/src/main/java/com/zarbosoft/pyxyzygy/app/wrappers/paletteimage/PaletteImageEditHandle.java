@@ -346,18 +346,6 @@ public class PaletteImageEditHandle extends EditHandle {
 				}
 		);
 
-		CustomBinding.HalfBinder<Integer> indexBinder =
-				new CustomBinding.DoubleHalfBinder<>(new CustomBinding.ListPropertyHalfBinder<>(colors.getChildren()),
-						wrapper.paletteSelectionBinder,
-						(colorsChildren, selection) -> {
-							if (selection == null)
-								return opt(null);
-							if (!tiles.containsKey(selection))
-								return opt(null);
-							return opt(tiles.get(selection).index);
-						}
-				);
-
 		VBox tabBox = new VBox();
 		tabBox.getChildren().addAll(new TitledPane("Layer",
 				new WidgetFormBuilder().apply(b -> cleanup.add(Misc.nodeFormFields(context, b, wrapper))).build()
@@ -371,7 +359,7 @@ public class PaletteImageEditHandle extends EditHandle {
 		}).span(() -> {
 			TrueColorPicker colorPicker = new TrueColorPicker();
 			colorPickerDisableCleanup =
-					CustomBinding.bind(colorPicker.disableProperty(), indexBinder.map(i -> opt(i == null || i == 0)));
+					CustomBinding.bind(colorPicker.disableProperty(), wrapper.paletteSelOffsetBinder.map(i -> opt(i == null || i == 0)));
 			GridPane.setHalignment(colorPicker, HPos.CENTER);
 			colorPickerCleanup =
 					CustomBinding.bindBidirectional(new CustomBinding.IndirectBinder<TrueColor>(wrapper.paletteSelectionBinder,
@@ -422,29 +410,33 @@ public class PaletteImageEditHandle extends EditHandle {
 				wrapper.paletteSelOffsetBinder.set(tiles.get(newColor).index);
 			});
 			paletteRemoveCleanup =
-					CustomBinding.bind(remove.disableProperty(), indexBinder.map(i -> opt(i == null || i <= 0)));
+					CustomBinding.bind(remove.disableProperty(), wrapper.paletteSelOffsetBinder.map(i -> opt(i == null || i <= 0)));
 			remove.setOnAction(_e -> {
-				int index = indexBinder.get().get();
+				int index = wrapper.paletteSelOffsetBinder.get().get();
 				if (index < 0)
 					throw new Assertion();
 				context.change(null, c -> c.palette(palette).entriesRemove(index, 1));
 			});
 			paletteMoveUpCleanup =
-					CustomBinding.bind(moveUp.disableProperty(), indexBinder.map(i -> opt(i == null || i <= 1)));
+					CustomBinding.bind(moveUp.disableProperty(), wrapper.paletteSelOffsetBinder.map(i -> opt(i == null || i <= 1)));
 			moveUp.setOnAction(e -> {
-				int index = indexBinder.get().get();
+				int index = wrapper.paletteSelOffsetBinder.get().get();
 				if (index < 0)
 					throw new Assertion();
-				context.change(null, c -> c.palette(palette).entriesMoveTo(index, 1, index - 1));
+				int newOffset = index - 1;
+				context.change(null, c -> c.palette(palette).entriesMoveTo(index, 1, newOffset));
+				wrapper.paletteSelOffsetBinder.set(newOffset);
 			});
 			paletteMoveDownCleanup = CustomBinding.bind(moveDown.disableProperty(),
-					indexBinder.map(i -> opt(i == null || i < 1 || i >= colors.getChildren().size() - 1))
+					wrapper.paletteSelOffsetBinder.map(i -> opt(i == null || i < 1 || i >= colors.getChildren().size() - 1))
 			);
 			moveDown.setOnAction(e -> {
-				int index = indexBinder.get().get();
+				int index = wrapper.paletteSelOffsetBinder.get().get();
 				if (index < 0)
 					throw new Assertion();
-				context.change(null, c -> c.palette(palette).entriesMoveTo(index, 1, index - 1));
+				int newOffset = index + 1;
+				context.change(null, c -> c.palette(palette).entriesMoveTo(index, 1, newOffset));
+				wrapper.paletteSelOffsetBinder.set(newOffset);
 			});
 
 			return layout;
