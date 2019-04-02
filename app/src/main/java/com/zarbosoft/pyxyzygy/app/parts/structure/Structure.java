@@ -340,6 +340,7 @@ public class Structure {
 				source.add(Optional.of(e1));
 			source.add(Optional.empty());
 			ChoiceDialog<Optional<Palette>> dialog = new ChoiceDialog<Optional<Palette>>(source.get(0), source);
+			dialog.initOwner(window.stage);
 			{
 				Field cbf = uncheck(() -> dialog.getClass().getDeclaredField("comboBox"));
 				cbf.setAccessible(true);

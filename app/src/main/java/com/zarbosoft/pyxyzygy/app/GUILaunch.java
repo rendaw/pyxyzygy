@@ -467,7 +467,7 @@ public class GUILaunch extends Application {
 		logger = new Logger.TerminalPlusFile(appDirs);
 		Thread.currentThread().setUncaughtExceptionHandler((thread, e) -> {
 			logger.writeException(e, "Uncaught error");
-			HelperJFX.exceptionPopup(e, "Unexpected error", "An unexpected error occurred.");
+			HelperJFX.exceptionPopup(primaryStage, e, "Unexpected error", "An unexpected error occurred.");
 		});
 		new com.zarbosoft.pyxyzygy.core.mynativeJNI();
 
@@ -544,7 +544,8 @@ public class GUILaunch extends Application {
 							newProject(primaryStage, dialog.resultPath, dialog.resultCreateMode);
 						} catch (Exception e) {
 							logger.writeException(e, "Error creating new project");
-							HelperJFX.exceptionPopup(e,
+							HelperJFX.exceptionPopup(primaryStage,
+									e,
 									"Error creating new project",
 									"An error occurred while trying to create the project.\n" +
 											"\n" +
@@ -559,7 +560,8 @@ public class GUILaunch extends Application {
 							openProject(primaryStage, dialog.resultPath);
 						} catch (Exception e) {
 							logger.writeException(e, "Error opening project");
-							HelperJFX.exceptionPopup(e,
+							HelperJFX.exceptionPopup(primaryStage,
+									e,
 									"Error opening project",
 									"An error occurred while trying to open the project.\n" +
 											"\n" +
@@ -666,6 +668,7 @@ public class GUILaunch extends Application {
 		ProjectContext context;
 		if (rawContext.needsMigrate()) {
 			Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+			confirm.initOwner(primaryStage);
 			confirm.setTitle("Clear Project History");
 			confirm.setHeaderText("Opening this project will clear it's history (undo/redo) data.");
 			confirm.setContentText("Back up your project before proceeding.");

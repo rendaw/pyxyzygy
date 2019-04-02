@@ -23,6 +23,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.stage.Stage;
 
 import java.io.InputStream;
 import java.nio.Buffer;
@@ -359,8 +360,9 @@ public class HelperJFX {
 		}, width, height);
 	}
 
-	public static void exceptionPopup(Throwable e, String message, String shortDescription) {
+	public static void exceptionPopup(Stage stage, Throwable e, String message, String shortDescription) {
 		Alert alert = new Alert(Alert.AlertType.ERROR);
+		alert.initOwner(stage);
 		alert.setTitle(String.format("%s - error", Global.nameHuman));
 		alert.setHeaderText(message);
 		alert.setContentText(shortDescription);

@@ -288,6 +288,7 @@ public class Window {
 								Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
 										"Are you sure you wish to clear undo/redo?"
 								);
+								confirm.initOwner(stage);
 								confirm.showAndWait().filter(b -> b == ButtonType.OK).ifPresent(x -> {
 									context.history.clearHistory();
 								});
