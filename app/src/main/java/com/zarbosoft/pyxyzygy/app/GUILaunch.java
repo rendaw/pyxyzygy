@@ -57,7 +57,15 @@ public class GUILaunch extends Application {
 	private static List<Image> appIcons =
 			Stream.of("appicon16.png", "appicon32.png", "appicon64.png").map(s -> icon(s)).collect(Collectors.toList());
 
-	static {
+	public GUILaunch() {
+		try {
+			// Hack because JavaFX was designed by sea sponges
+			Class glassAppClass = getClass().getClassLoader().loadClass("com.sun.glass.ui.Application");
+			Object glassApp = glassAppClass.getDeclaredMethod("GetApplication").invoke(null);
+			glassApp.getClass().getMethod("setName", String.class).invoke(glassApp, nameHuman);
+		} catch (Exception e) {
+			logger.writeException(e, "Failed to set application name - ignore if not on Linux.");
+		}
 	}
 
 	public static void main(String[] args) {
@@ -107,7 +115,11 @@ public class GUILaunch extends Application {
 					};
 				}
 			});
-			list.getSelectionModel().select(0);
+			profileConfig.profiles
+					.stream()
+					.filter(p -> p.id == profileConfig.lastId)
+					.findFirst()
+					.ifPresentOrElse(p -> list.getSelectionModel().select(p), () -> list.getSelectionModel().select(0));
 			list.setFocusTraversable(false);
 
 			Button newProfile = HelperJFX.button("plus.png", "New profile");
@@ -464,7 +476,7 @@ public class GUILaunch extends Application {
 				() -> {
 					RootProfileConfig config = new RootProfileConfig();
 					RootProfileConfig.Profile profile = new RootProfileConfig.Profile();
-					profile.id = config.lastId++;
+					profile.id = config.nextId++;
 					profile.name.set("Default");
 					config.profiles.add(profile);
 					return config;
@@ -476,6 +488,7 @@ public class GUILaunch extends Application {
 				.orElseGet(() -> {
 					ProfileDialog dialog = new ProfileDialog();
 					dialog.showAndWait();
+					profileConfig.lastId = dialog.profile;
 					return dialog.profile;
 				});
 		if (profileId == null)
@@ -639,7 +652,7 @@ public class GUILaunch extends Application {
 		groupNode.initialOpacitySet(context, opacityMax);
 		groupNode.initialLayersAdd(context, ImmutableList.of(groupLayer));
 
-		context.change(null,c -> c.project(context.project).topAdd(groupNode));
+		context.change(null, c -> c.project(context.project).topAdd(groupNode));
 
 		context.config.viewPath = ImmutableList.of(0);
 		context.config.editPath = ImmutableList.of(0, 0);

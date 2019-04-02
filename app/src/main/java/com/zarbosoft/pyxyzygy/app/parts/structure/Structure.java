@@ -353,6 +353,7 @@ public class Structure {
 							setText("New palette...");
 						else
 							setText(item.get().name());
+						super.updateItem(item, empty);
 					}
 				});
 				cb.setButtonCell(cb.getCellFactory().call(null));
