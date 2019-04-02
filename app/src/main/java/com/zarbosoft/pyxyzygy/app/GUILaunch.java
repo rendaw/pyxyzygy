@@ -54,7 +54,7 @@ import static com.zarbosoft.rendaw.common.Common.uncheck;
 public class GUILaunch extends Application {
 	public static RootProfileConfig profileConfig;
 	public static RootGlobalConfig config;
-	private static List<Image> appIcons =
+	public static List<Image> appIcons =
 			Stream.of("appicon16.png", "appicon32.png", "appicon64.png").map(s -> icon(s)).collect(Collectors.toList());
 
 	public GUILaunch() {

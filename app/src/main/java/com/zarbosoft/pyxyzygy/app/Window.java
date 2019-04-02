@@ -99,6 +99,7 @@ public class Window {
 
 	public void start(ProjectContext context, Stage primaryStage, boolean main) {
 		this.stage = stage;
+		stage.getIcons().addAll(GUILaunch.appIcons);
 		primaryStage.setOnCloseRequest(e -> {
 			context.shutdown();
 		});
@@ -447,5 +448,4 @@ public class Window {
 		} else
 			throw new Assertion();
 	}
-
 }
