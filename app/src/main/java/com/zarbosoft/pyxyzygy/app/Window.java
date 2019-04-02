@@ -47,7 +47,6 @@ import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 
 public class Window {
-	public Stage stage;
 	public List<FrameMapEntry> timeMap;
 	public SimpleObjectProperty<EditHandle> selectedForEdit = new SimpleObjectProperty<>();
 	public SimpleObjectProperty<CanvasHandle> selectedForView = new SimpleObjectProperty<>();
@@ -80,6 +79,7 @@ public class Window {
 	private ToolBar toolBar;
 	public ChildrenReplacer<Node> toolBarChildren;
 	public ChildrenReplacer<MenuItem> menuChildren;
+	public Stage stage;
 
 	public static class Tab extends javafx.scene.control.Tab {
 		ScrollPane scrollPane = new ScrollPane();
@@ -98,8 +98,8 @@ public class Window {
 	}
 
 	public void start(ProjectContext context, Stage primaryStage, boolean main) {
-		this.stage = stage;
-		stage.getIcons().addAll(GUILaunch.appIcons);
+		this.stage = primaryStage;
+		primaryStage.getIcons().addAll(GUILaunch.appIcons);
 		primaryStage.setOnCloseRequest(e -> {
 			context.shutdown();
 		});
