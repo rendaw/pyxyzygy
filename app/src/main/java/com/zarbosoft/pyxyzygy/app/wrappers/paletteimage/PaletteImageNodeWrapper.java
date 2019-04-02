@@ -84,7 +84,7 @@ public class PaletteImageNodeWrapper extends BaseImageNodeWrapper<PaletteImageNo
 						b -> opt((Boolean) b ? brushBinder.get().get().paletteOffset : config.paletteOffset)
 				);
 		paletteSelectionBinder = new CustomBinding.DoubleHalfBinder<>(paletteSelOffsetBinder,
-				new CustomBinding.ListHalfBinder<PaletteColor>(node.palette(), "entries"),
+				new CustomBinding.ListHalfBinder<ProjectObject>(node.palette(), "entries"),
 				(offset, entries) -> {
 					if (entries.size() <= offset)
 						return opt(null);

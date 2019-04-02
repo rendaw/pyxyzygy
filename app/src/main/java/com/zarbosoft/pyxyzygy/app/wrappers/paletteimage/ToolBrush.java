@@ -12,6 +12,7 @@ import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.BaseToolBrush;
 import com.zarbosoft.pyxyzygy.core.PaletteImage;
 import com.zarbosoft.pyxyzygy.core.model.v0.PaletteColor;
 import com.zarbosoft.pyxyzygy.core.model.v0.PaletteImageFrame;
+import com.zarbosoft.pyxyzygy.core.model.v0.PaletteSeparator;
 import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import com.zarbosoft.rendaw.common.Assertion;
@@ -89,6 +90,8 @@ public class ToolBrush extends BaseToolBrush<PaletteImageFrame, PaletteImage> {
 		editHandle.wrapper.node.palette().entries().stream().map(new Common.Enumerator<>()).filter(pair -> {
 			if (pair.second instanceof PaletteColor) {
 				return ((PaletteColor) pair.second).index() == index;
+			} else if (pair.second instanceof PaletteSeparator) {
+				return false;
 			} else
 				throw new Assertion();
 		}).findFirst().ifPresent(pair -> {

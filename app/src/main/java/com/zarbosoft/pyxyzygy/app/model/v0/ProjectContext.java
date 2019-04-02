@@ -74,6 +74,8 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 						out.colors.set(((PaletteColor) v).index(), (byte) 0, (byte) 0, (byte) 0, (byte) 0);
 						((PaletteColor) v).removeColorSetListeners(colorChangeListener);
 					};
+				} else if (v instanceof PaletteSeparator) {
+					return () -> {};
 				} else
 					throw new Assertion();
 			}, r -> {
@@ -186,6 +188,7 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 			} else if (o instanceof Palette) {
 				((Palette) o).entries().forEach(incCount);
 			} else if (o instanceof PaletteColor) {
+			} else if (o instanceof PaletteSeparator) {
 			} else {
 				throw new Assertion(String.format("Unhandled type %s\n", o.getClass()));
 			}
