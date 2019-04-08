@@ -100,7 +100,7 @@ class PaletteImage {
 		void setPixel(p_t index, l_t x, l_t y);
 		p_t getPixel(l_t x, l_t y) const;
 		void stroke(p_t index, double x1, double y1, double r1, double x2, double y2, double r2);
-		void removeColor(p_t index);
+		void mergeColor(p_t oldIndex, p_t newIndex);
 		void replace(PaletteImage const & source, int32_t x, int32_t y);
 
 		PaletteImage &operator = (PaletteImage const & other) = delete;

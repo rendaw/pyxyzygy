@@ -32,6 +32,10 @@ for category in [
                 sizes=[16, 32],
             ),
             dict(
+                prefix='call-merge',
+                sizes=[16, 32],
+            ),
+            dict(
                 prefix='stamper',
                 sizes=[16, 32],
             ),

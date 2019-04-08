@@ -583,11 +583,11 @@ void PaletteImage::stroke(p_t index, double x1_0, double y1_0, double r1_0, doub
 	);
 }
 
-void PaletteImage::removeColor(p_t index) {
+void PaletteImage::mergeColor(p_t oldIndex, p_t newIndex) {
 	for (l_t y = 0; y < h; ++y) {
 		for (l_t x = 0; x < w; ++x) {
 			p_t &source = pixels[y * w + x];
-			if (source == index) source = 0;
+			if (source == oldIndex) source = newIndex;
 		}
 	}
 }

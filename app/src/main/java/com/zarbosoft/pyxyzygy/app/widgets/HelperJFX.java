@@ -52,6 +52,10 @@ public class HelperJFX {
 		Image image = icon(res);
 		return new ImageCursor(image, image.getWidth() / 2, image.getHeight() / 2);
 	}
+	public static Cursor topCenterCursor(String res) {
+		Image image = icon(res);
+		return new ImageCursor(image, image.getWidth() / 2, 0);
+	}
 
 	public static Cursor cornerCursor(String res) {
 		Image image = icon(res);

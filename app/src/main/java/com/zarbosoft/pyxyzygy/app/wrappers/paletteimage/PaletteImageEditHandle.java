@@ -6,9 +6,11 @@ import com.google.common.collect.Streams;
 import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.config.PaletteBrush;
 import com.zarbosoft.pyxyzygy.app.config.PaletteImageNodeConfig;
+import com.zarbosoft.pyxyzygy.app.model.v0.PaletteTile;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.*;
 import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.BrushButton;
+import com.zarbosoft.pyxyzygy.core.PaletteImage;
 import com.zarbosoft.pyxyzygy.core.model.v0.Palette;
 import com.zarbosoft.pyxyzygy.core.model.v0.PaletteColor;
 import com.zarbosoft.pyxyzygy.core.model.v0.PaletteSeparator;
@@ -20,17 +22,20 @@ import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Cursor;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ToggleButton;
+import javafx.scene.control.Tooltip;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
@@ -46,8 +51,7 @@ import java.util.stream.Stream;
 import static com.zarbosoft.pyxyzygy.app.Global.pasteHotkey;
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext.uniqueName;
-import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
-import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.pad;
+import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.*;
 import static com.zarbosoft.rendaw.common.Common.enumerate;
 
 public class PaletteImageEditHandle extends EditHandle {
@@ -91,6 +95,13 @@ public class PaletteImageEditHandle extends EditHandle {
 
 		int index();
 	}
+
+	interface PaletteState extends Garb {
+
+		void merge(ProjectContext context, int index);
+	}
+
+	public final SimpleObjectProperty<PaletteState> paletteState = new SimpleObjectProperty<>();
 
 	class SeparatorTile extends Region implements PaletteTileBase {
 		final PaletteSeparator self;
@@ -148,7 +159,7 @@ public class PaletteImageEditHandle extends EditHandle {
 			getStyleClass().add("large");
 		}
 
-		ColorTile(PaletteColor color) {
+		ColorTile(ProjectContext context, PaletteColor color) {
 			super(2);
 			this.color = color;
 			this.cleanupColor = new CustomBinding.ScalarHalfBinder<TrueColor>(color::addColorSetListeners,
@@ -162,7 +173,12 @@ public class PaletteImageEditHandle extends EditHandle {
 					wrapper.paletteSelectionBinder.map(o -> Optional.of(o != null && o.id() == color.id()))
 			);
 			addEventFilter(MouseEvent.MOUSE_CLICKED, e -> {
-				wrapper.paletteSelOffsetBinder.set(index);
+				if (paletteState.get() != null) {
+					paletteState.get().merge(context, index);
+					paletteState.set(null);
+				} else {
+					wrapper.paletteSelOffsetBinder.set(index);
+				}
 			});
 			tiles.put(color, this);
 		}
@@ -388,6 +404,11 @@ public class PaletteImageEditHandle extends EditHandle {
 		// Tab
 		Palette palette = wrapper.node.palette();
 
+		paletteState.addListener((observable, oldValue, newValue) -> {
+			if (oldValue != null) {
+				oldValue.destroy(context, window);
+			}
+		});
 		TilePane colors = new TilePane();
 		HBox.setHgrow(colors, Priority.ALWAYS);
 		colors.setHgap(2);
@@ -398,7 +419,7 @@ public class PaletteImageEditHandle extends EditHandle {
 					public Node apply(ProjectObject e) {
 						PaletteTileBase tile;
 						if (e instanceof PaletteColor) {
-							tile = new ColorTile((PaletteColor) e);
+							tile = new ColorTile(context, (PaletteColor) e);
 						} else if (e instanceof PaletteSeparator) {
 							tile = new SeparatorTile((PaletteSeparator) e);
 						} else
@@ -411,10 +432,72 @@ public class PaletteImageEditHandle extends EditHandle {
 					r.destroy(context, window);
 				},
 				start -> {
+					paletteState.set(null);
 					for (int i = start; i < colors.getChildren().size(); ++i)
 						((PaletteTileBase) colors.getChildren().get(i)).setIndex(i);
 				}
 		);
+
+		ContentReplacer<Cursor> paletteCursor = new ContentReplacer<Cursor>() {
+			@Override
+			protected void innerSet(Cursor content) {
+				colors.setCursor(content);
+			}
+
+			@Override
+			protected void innerClear() {
+				colors.setCursor(null);
+			}
+		};
+		class MergeState implements PaletteState {
+			private final int index;
+
+			public MergeState(int index) {
+				paletteCursor.set(this, topCenterCursor("call-merge32.png"));
+				this.index = index;
+			}
+
+			@Override
+			public void destroy(ProjectContext context, Window window) {
+				paletteCursor.clear(this);
+			}
+
+			public Optional<Integer> getColor(int i) {
+				ProjectObject entry = wrapper.node.palette().entriesGet(i);
+				if (entry instanceof PaletteColor) {
+					return Optional.of(((PaletteColor) entry).index());
+				} else
+					return Optional.empty();
+			}
+
+			@Override
+			public void merge(ProjectContext context, int index) {
+				try {
+					if (index == this.index) {
+						return;
+					}
+					final int old = getColor(this.index).get();
+					final Optional<Integer> newOpt = getColor(index);
+					if (!newOpt.isPresent()) {
+						return;
+					}
+					final int ne = newOpt.get();
+					context.change(null, c -> {
+						wrapper.palette.users.forEach(p -> p
+								.frames()
+								.forEach(f -> new ArrayList<>(f.tiles().keySet()).forEach(t -> {
+									PaletteImage oldTile = ((PaletteTile) f.tilesGet(t)).getData(context);
+									PaletteImage newTile = oldTile.copy(0, 0, oldTile.getWidth(), oldTile.getHeight());
+									newTile.mergeColor(old, ne);
+									c.paletteImageFrame(f).tilesPut(t, PaletteTile.create(context, newTile));
+								})));
+						c.palette(wrapper.node.palette()).entriesRemove(this.index, 1);
+					});
+				} finally {
+					paletteState.set(null);
+				}
+			}
+		}
 
 		VBox tabBox = new VBox();
 		tabBox.getChildren().addAll(new TitledPane("Layer",
@@ -460,13 +543,26 @@ public class PaletteImageEditHandle extends EditHandle {
 		}).span(() -> {
 			Button add = HelperJFX.button("plus.png", "New color");
 			Button addSeparator = HelperJFX.button("circle-medium.png", "New separator");
-			Button remove = HelperJFX.button("minus.png", "Delete");
+			ToggleButton merge = new ToggleButton(null, new ImageView(icon("minus.png"))) {
+				@Override
+				public void fire() {
+					int index = wrapper.paletteSelOffsetBinder.get().get();
+					if (index < 0)
+						throw new Assertion();
+					if (paletteState.get() == null) {
+						paletteState.set(new MergeState(index));
+					} else {
+						paletteState.set(null);
+					}
+				}
+			};
+			merge.setTooltip(new Tooltip("Merge colors"));
 			Button moveUp = HelperJFX.button("arrow-up.png", "Move back");
 			Button moveDown = HelperJFX.button("arrow-down.png", "Move next");
 
 			VBox tools = new VBox();
 			tools.setSpacing(3);
-			tools.getChildren().addAll(add, addSeparator, remove, moveUp, moveDown);
+			tools.getChildren().addAll(add, addSeparator, merge, moveUp, moveDown);
 
 			HBox layout = new HBox();
 			layout.setSpacing(5);
@@ -496,15 +592,12 @@ public class PaletteImageEditHandle extends EditHandle {
 					c.palette(palette).entriesAdd(palette.entries().indexOf(selectedColor) + 1, sep);
 				});
 			});
-			paletteRemoveCleanup = CustomBinding.bind(remove.disableProperty(),
+			paletteRemoveCleanup = CustomBinding.bind(merge.disableProperty(),
 					wrapper.paletteSelOffsetBinder.map(i -> opt(i == null || i <= 0))
 			);
-			remove.setOnAction(_e -> {
-				int index = wrapper.paletteSelOffsetBinder.get().get();
-				if (index < 0)
-					throw new Assertion();
-				context.change(null, c -> c.palette(palette).entriesRemove(index, 1));
-			});
+			merge
+					.selectedProperty()
+					.bind(Bindings.createBooleanBinding(() -> paletteState.get() instanceof MergeState, paletteState));
 			paletteMoveUpCleanup = CustomBinding.bind(moveUp.disableProperty(),
 					wrapper.paletteSelOffsetBinder.map(i -> opt(i == null || i <= 1))
 			);
@@ -624,6 +717,9 @@ public class PaletteImageEditHandle extends EditHandle {
 			context.hotkeys.unregister(action);
 		window.menuChildren.clear(this);
 		window.toolBarChildren.clear(this);
+		if (paletteState.get() != null) {
+			paletteState.get().destroy(context, window);
+		}
 	}
 
 	@Override
