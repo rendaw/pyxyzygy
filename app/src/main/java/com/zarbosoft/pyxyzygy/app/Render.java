@@ -31,7 +31,7 @@ public class Render {
 			}
 		} else if (node1 instanceof GroupLayer) {
 			GroupLayer node = (GroupLayer) node1;
-			GroupPositionFrame pos = GroupLayerWrapper.findPosition(node, frame).frame;
+			GroupPositionFrame pos = GroupLayerWrapper.positionFrameFinder.findFrame(node, frame).frame;
 			int frame1 = GroupLayerWrapper.findInnerFrame(node, frame);
 			if (node.inner() != null) {
 				Rectangle childBounds = findBounds(context,frame1,node.inner());
@@ -111,7 +111,7 @@ public class Render {
 				render(context, layer, out, frame, crop, useOpacity);
 		} else if (node1 instanceof GroupLayer) {
 			GroupLayer node = (GroupLayer) node1;
-			GroupPositionFrame pos = GroupLayerWrapper.findPosition(node, frame).frame;
+			GroupPositionFrame pos = GroupLayerWrapper.positionFrameFinder.findFrame(node, frame).frame;
 			int frame1 = GroupLayerWrapper.findInnerFrame(node, frame);
 			if (node.inner() != null)
 				render(context, node.inner(), out, frame1, crop.minus(pos.offset()), opacity);

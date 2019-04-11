@@ -3,6 +3,7 @@ package com.zarbosoft.pyxyzygy.app.parts.timeline;
 import com.zarbosoft.pyxyzygy.app.WidgetHandle;
 import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
+import com.zarbosoft.pyxyzygy.app.wrappers.FrameFinder;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupLayerWrapper;
 import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
 import com.zarbosoft.pyxyzygy.core.model.v0.GroupLayer;
@@ -19,23 +20,19 @@ import javafx.scene.layout.VBox;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 
-import static com.zarbosoft.pyxyzygy.app.Global.NO_INNER;
-import static com.zarbosoft.rendaw.common.Common.last;
+import static com.zarbosoft.pyxyzygy.app.Global.NO_LOOP;
 
-public class RowAdapterGroupLayerTime extends RowAdapter {
+public class RowAdapterGroupLayerTime extends BaseFrameRowAdapter<GroupLayer, GroupTimeFrame> {
 	// TODO setup listeners for inner subtree to keep track of the max inner frame (?)
 	final GroupLayer layer;
 	final RowAdapterGroupLayer layerRowAdapter;
-	private final Timeline timeline;
-	Optional<RowFramesWidget> row = Optional.empty();
 	Optional<RowTimeMapRangeWidget> rowInnerRange = Optional.empty();
 
 	public RowAdapterGroupLayerTime(
 			Timeline timeline, GroupLayer layer, RowAdapterGroupLayer layerRowAdapter
 	) {
-		this.timeline = timeline;
+		super(timeline);
 		this.layer = layer;
 		this.layerRowAdapter = layerRowAdapter;
 	}
@@ -51,51 +48,53 @@ public class RowAdapterGroupLayerTime extends RowAdapter {
 	}
 
 	@Override
-	public boolean hasFrames() {
-		return true;
+	protected GroupTimeFrame innerCreateFrame(
+			ProjectContext context, GroupTimeFrame previousFrame
+	) {
+		GroupTimeFrame created = GroupTimeFrame.create(context);
+		created.initialInnerOffsetSet(context, 0);
+		created.initialInnerLoopSet(context, 0);
+		return created;
 	}
 
 	@Override
-	public boolean createFrame(
-			ProjectContext context, Window window, ChangeStepBuilder change, int outer
-	) {
-		return createFrame(context, window,change,outer, previous -> {
-			GroupTimeFrame created =GroupTimeFrame.create(context);
-			created.initialInnerOffsetSet(context, 0);
-			created.initialInnerLoopSet(context, 0);
-			return created;
-		});
+	protected void addFrame(ChangeStepBuilder change, int at, GroupTimeFrame frame) {
+		change.groupLayer(layer).timeFramesAdd(at, frame);
 	}
 
 	@Override
-	public boolean duplicateFrame(
-			ProjectContext context, Window window, ChangeStepBuilder change, int outer
-	) {
-		return createFrame(context, window,change,outer, previous -> {
-			GroupTimeFrame created = GroupTimeFrame.create(context);
-			created.initialInnerOffsetSet(context, previous.innerOffset());
-			created.initialInnerLoopSet(context, previous.innerLoop());
-			return created;
-		});
+	protected void setFrameLength(ChangeStepBuilder change, GroupTimeFrame frame, int length) {
+		change.groupTimeFrame(frame).lengthSet(length);
 	}
 
-	public boolean createFrame(
-			ProjectContext context, Window window, ChangeStepBuilder change,int outer, Function<GroupTimeFrame, GroupTimeFrame> cb
+	@Override
+	protected void setFrameInitialLength(ProjectContext context, GroupTimeFrame frame, int length) {
+		frame.initialLengthSet(context, length);
+	}
+
+	@Override
+	protected int getFrameLength(GroupTimeFrame frame) {
+		return frame.length();
+	}
+
+	@Override
+	public FrameFinder<GroupLayer, GroupTimeFrame> getFrameFinder() {
+		return GroupLayerWrapper.timeFrameFinder;
+	}
+
+	@Override
+	protected GroupTimeFrame innerDuplicateFrame(
+			ProjectContext context, GroupTimeFrame source
 	) {
-		int inner = window.timeToInner(outer);
-		if (inner == NO_INNER) return false;
-		GroupLayerWrapper.TimeResult previous = GroupLayerWrapper.findTime(layer, inner);
-		GroupTimeFrame newFrame = cb.apply(previous.frame);
-		int offset = inner - previous.at;
-		if (previous.frame.length() == -1) {
-			change.groupTimeFrame(previous.frame).lengthSet(offset);
-			newFrame.initialLengthSet(context, -1);
-		} else {
-			newFrame.initialLengthSet(context, previous.frame.length() - offset);
-			change.groupTimeFrame(previous.frame).lengthSet(offset);
-		}
-		change.groupLayer(layer).timeFramesAdd(previous.frameIndex + 1, newFrame);
-		return true;
+		GroupTimeFrame created = GroupTimeFrame.create(context);
+		created.initialInnerOffsetSet(context, source.innerOffset());
+		created.initialInnerLoopSet(context, source.innerLoop());
+		return created;
+	}
+
+	@Override
+	protected GroupLayer getNode() {
+		return layer;
 	}
 
 	@Override
@@ -113,91 +112,25 @@ public class RowAdapterGroupLayerTime extends RowAdapter {
 		layerRowAdapter.treeSelected();
 	}
 
-	static class AdapterTimeFrame extends RowAdapterFrame {
-		final int i;
-		final GroupLayer layer;
-		final GroupTimeFrame f;
-
-		AdapterTimeFrame(int i, GroupLayer layer, GroupTimeFrame f) {
-			this.i = i;
-			this.layer = layer;
-			this.f = f;
-		}
-
-		@Override
-		public Object id() {
-			return f;
-		}
-
-		@Override
-		public int length() {
-			return f.length();
-		}
-
-		@Override
-		public void setLength(
-				ProjectContext context, ChangeStepBuilder change, int length
-		) {
-			change.groupTimeFrame(f).lengthSet(length);
-		}
-
-		@Override
-		public void remove(ProjectContext context, ChangeStepBuilder change) {
-			change.groupLayer(layer).timeFramesRemove(i, 1);
-			if (i == layer.timeFramesLength())
-				change.groupTimeFrame(last(layer.timeFrames())).lengthSet(-1);
-		}
-
-		@Override
-		public void clear(ProjectContext context, ChangeStepBuilder change) {
-			change.groupTimeFrame(f).innerOffsetSet(0);
-		}
-
-		@Override
-		public void moveLeft(ProjectContext context, ChangeStepBuilder change) {
-			if (i == 0)
-				return;
-			GroupTimeFrame frameBefore = layer.timeFramesGet(i - 1);
-			change.groupLayer(layer).timeFramesMoveTo(i, 1, i - 1);
-			final int lengthThis = f.length();
-			if (lengthThis == -1) {
-				final int lengthBefore = frameBefore.length();
-				change.groupTimeFrame(f).lengthSet(lengthBefore);
-				change.groupTimeFrame(frameBefore).lengthSet(lengthThis);
-			}
-		}
-
-		@Override
-		public void moveRight(ProjectContext context, ChangeStepBuilder change) {
-			if (i == layer.timeFramesLength() - 1)
-				return;
-			GroupTimeFrame frameAfter = layer.timeFramesGet(i + 1);
-			change.groupLayer(layer).timeFramesMoveTo(i, 1, i + 1);
-			final int lengthAfter = frameAfter.length();
-			if (lengthAfter == -1) {
-				final int lengthThis = f.length();
-				change.groupTimeFrame(f).lengthSet(lengthAfter);
-				change.groupTimeFrame(frameAfter).lengthSet(lengthThis);
-			}
-		}
+	@Override
+	protected void frameClear(ChangeStepBuilder change, GroupTimeFrame groupTimeFrame) {
+		change.groupTimeFrame(groupTimeFrame).innerOffsetSet(0);
+		change.groupTimeFrame(groupTimeFrame).innerLoopSet(NO_LOOP);
 	}
 
 	@Override
-	public int updateTime(ProjectContext context, Window window) {
-		return row.map(r -> {
-			List<RowAdapterFrame> frameAdapters = new ArrayList<>();
-			for (int i = 0; i < layer.timeFramesLength(); ++i) {
-				GroupTimeFrame f = layer.timeFramesGet(i);
-				frameAdapters.add(new AdapterTimeFrame(i, layer, f));
-			}
-			return r.updateTime(context, window, frameAdapters);
-		}).orElse(0);
+	protected int frameCount() {
+		return layer.timeFramesLength();
 	}
 
 	@Override
-	public void updateFrameMarker(ProjectContext context, Window window) {
-		row.ifPresent(r -> r.updateFrameMarker(window));
-		rowInnerRange.ifPresent(r -> r.updateFrameMarker(window));
+	protected void removeFrame(ChangeStepBuilder change, int at, int count) {
+		change.groupLayer(layer).timeFramesRemove(at, count);
+	}
+
+	@Override
+	protected void moveFramesTo(ChangeStepBuilder change, int source, int count, int dest) {
+		change.groupLayer(layer).timeFramesMoveTo(source, count, dest);
 	}
 
 	@Override
@@ -227,17 +160,17 @@ public class RowAdapterGroupLayerTime extends RowAdapter {
 						selectedFrameCleanup.run();
 						selectedFrameCleanup = null;
 					}
-					if (newValue == null || !(newValue.frame instanceof AdapterTimeFrame)) {
+					if (newValue == null || !(newValue.frame instanceof BaseFrameRowAdapter.AdapterFrame)) {
 						rowInnerRange.ifPresent(w -> {
 							layout.getChildren().remove(w.base);
 							rowInnerRange = Optional.empty();
 						});
 					} else {
 						if (!rowInnerRange.isPresent()) {
-							rowInnerRange = Optional.of(new RowTimeMapRangeWidget(context,timeline));
+							rowInnerRange = Optional.of(new RowTimeMapRangeWidget(context, timeline));
 							layout.getChildren().add(rowInnerRange.get().base);
 						}
-						GroupTimeFrame frame = ((AdapterTimeFrame) newValue.frame).f;
+						GroupTimeFrame frame = ((AdapterFrame) newValue.frame).f;
 						Runnable update = () -> {
 							rowInnerRange.get().set(new TimeRangeAdapter() {
 								@Override
@@ -287,7 +220,7 @@ public class RowAdapterGroupLayerTime extends RowAdapter {
 				};
 				timeline.selectedFrame.addListener(selectedFrameListener);
 				selectedFrameListener.changed(null, null, timeline.selectedFrame.getValue());
-				row = Optional.of(new RowFramesWidget(window, timeline));
+				row = Optional.of(new RowFramesWidget(window, timeline, RowAdapterGroupLayerTime.this));
 				layout.getChildren().addAll(row.get());
 			}
 
@@ -309,19 +242,5 @@ public class RowAdapterGroupLayerTime extends RowAdapter {
 
 	@Override
 	public void remove(ProjectContext context) {
-	}
-
-	@Override
-	public boolean frameAt(Window window, int outer) {
-		final int inner = window.timeToInner(outer);
-		if (inner == NO_INNER)
-			return false;
-		GroupLayerWrapper.TimeResult previous = GroupLayerWrapper.findTime(layer, inner);
-		return previous.at == inner;
-	}
-
-	@Override
-	public Object getData() {
-		return layer;
 	}
 }

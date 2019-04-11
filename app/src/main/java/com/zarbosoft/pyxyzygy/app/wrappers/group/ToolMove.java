@@ -26,7 +26,7 @@ public class ToolMove extends Tool {
 		if (wrapper.specificLayer == null)
 			return;
 		this.markStart = start;
-		GroupPositionFrame pos = GroupLayerWrapper.findPosition(
+		GroupPositionFrame pos = GroupLayerWrapper.positionFrameFinder.findFrame(
 				wrapper.specificLayer,
 				wrapper.canvasHandle.frameNumber.get()
 		).frame;
@@ -37,7 +37,7 @@ public class ToolMove extends Tool {
 	public void mark(ProjectContext context, Window window, DoubleVector start, DoubleVector end) {
 		if (wrapper.specificLayer == null)
 			return;
-		GroupPositionFrame pos = GroupLayerWrapper.findPosition(
+		GroupPositionFrame pos = GroupLayerWrapper.positionFrameFinder.findFrame(
 				wrapper.specificLayer,
 				wrapper.canvasHandle.frameNumber.get()
 		).frame;

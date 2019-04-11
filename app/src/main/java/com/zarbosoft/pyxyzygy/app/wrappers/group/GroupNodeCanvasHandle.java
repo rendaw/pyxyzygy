@@ -62,7 +62,7 @@ public class GroupNodeCanvasHandle extends CanvasHandle {
 				previousFrame.set(-1);
 				break;
 			}
-			int frameIndex = GroupLayerWrapper.findPosition(wrapper.specificLayer, frameNumber).frameIndex - 1;
+			int frameIndex = GroupLayerWrapper.positionFrameFinder.findFrame(wrapper.specificLayer, frameNumber).frameIndex - 1;
 			if (frameIndex == -1)
 				frameIndex = wrapper.specificLayer.positionFramesLength() - 1;
 			int outFrame = 0;

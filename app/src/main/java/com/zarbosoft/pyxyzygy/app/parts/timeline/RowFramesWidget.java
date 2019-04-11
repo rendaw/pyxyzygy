@@ -18,13 +18,16 @@ import static com.zarbosoft.rendaw.common.Common.sublist;
 public class RowFramesWidget extends Pane {
 	final Timeline timeline;
 	Group inner = new Group();
-	RowAdapter adapter;
+	final RowAdapter adapter;
 	Rectangle frameMarker = new Rectangle(Timeline.baseSize, Timeline.baseSize);
 	List<FrameWidget> frames = new ArrayList<>();
 	FrameWidget selected;
 
-	public RowFramesWidget(Window window, Timeline timeline) {
+	public RowFramesWidget(
+			Window window, Timeline timeline, RowAdapter adapter
+	) {
 		this.timeline = timeline;
+		this.adapter = adapter;
 		inner
 				.layoutXProperty()
 				.bind(Bindings.createDoubleBinding(

@@ -119,7 +119,7 @@ public class GroupLayerCanvasHandle extends CanvasHandle {
 	}
 
 	private GroupPositionFrame findPosition(int frame) {
-		return wrapper.findPosition(wrapper.node, frame).frame;
+		return wrapper.positionFrameFinder.findFrame(wrapper.node, frame).frame;
 	}
 
 	private void updateTime(ProjectContext context) {
