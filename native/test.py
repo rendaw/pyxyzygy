@@ -22,7 +22,7 @@ def main():
             '-I/usr/include',
         ])
 
-    compile_obj('implementation.cpp')
+    compile_obj('implementation.cxx')
     compile_obj('test_{}.cxx'.format(args.test))
     c([
         'clang++',
@@ -30,10 +30,11 @@ def main():
         '-L/usr/lib',
         '-o', 'test_{}'.format(args.test),
         'test_{}.cxx.o'.format(args.test),
-        'implementation.cpp.o',
+        'implementation.cxx.o',
         '-lpng',
+        '-lz',
     ])
-    c(['./test_{}'.format(args.test)])
+    c(['gdb', '-ex=run', './test_{}'.format(args.test)])
 
 
 main()

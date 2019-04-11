@@ -5,12 +5,18 @@ stages:
 
 cache:
   paths:
-    - /root/.m2
-
-windows:
-  stage: world
-  script: ./build.py windows
+    - .m2
 
 linux:
   stage: world
-  script: ./build.py linux
+  script: ./build.py linux ${CI_COMMIT_REF_NAME}
+  only:
+    - stable
+    - experimental
+
+windows:
+  stage: world
+  script: ./build.py windows ${CI_COMMIT_REF_NAME}
+  only:
+    - stable
+    - experimental

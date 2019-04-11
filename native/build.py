@@ -16,13 +16,13 @@ def main():
 
     module = 'mynative'
 
-    package = ['com', 'zarbosoft', 'shoedemo']
+    package = ['com', 'zarbosoft', 'pyxyzygy', 'core']
 
     os.chdir(Path(__file__).parent)
-    java_dest = Path() / '..' / 'app' / 'target' / 'src' / '/'.join(package)
+    java_dest = Path() / '..' / 'core' / 'target' / 'src' / '/'.join(package)
     os.makedirs(java_dest, exist_ok=True)
     java_resource_dest = (
-        Path() / '..' / 'app' / 'target' / 'resources' / '/'.join(package)
+        Path() / '..' / 'core' / 'target' / 'resources' / '/'.join(package)
     )
     os.makedirs(java_resource_dest, exist_ok=True)
 
@@ -36,17 +36,22 @@ def main():
         '-c++',
         '-package', '.'.join(package),
         '-outdir', java_dest,
-        'header.hpp',
+        'header.hxx',
     ])
 
-    general_flags = [
-        '-Wall', '-pedantic',
-        '-O3',
-    ]
+    output = f'{module}.{args.suffix}'
+
+    with open(java_dest / f'{module}JNI.java') as source:
+        sub_java = source.read()
+    sub_java = sub_java.replace('##OUTPUT##', output)
+    with open(java_dest / f'{module}JNI.java', 'w') as dest:
+        dest.write(sub_java)
 
     c([
         args.cc,
-    ] + general_flags + [
+        '-Wall', '-pedantic',
+        '-O3',
+        # '-ggdb',
         '-shared',
         '-fPIC',
         f'-L{args.lib}',
@@ -56,9 +61,10 @@ def main():
     ] + (['-static'] if args.java_platform == 'win32' else []) + [
         '-static-libgcc',
         '-static-libstdc++',
-        '-o', java_resource_dest / '{}.{}'.format(module, args.suffix),
+        '-o', java_resource_dest / output,
         'header_wrap.cxx',
         'implementation.cxx',
+    ] + (['-lws2_32'] if args.java_platform == 'win32' else []) + [
         '-lpng',
         '-lz',
     ])

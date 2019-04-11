@@ -4,14 +4,14 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.zarbosoft.internal</groupId>
-    <artifactId>shoedemo-seed</artifactId>
+    <groupId>com.zarbosoft.pyxyzygy</groupId>
+    <artifactId>seed</artifactId>
     <version>1.0.0</version>
     <dependencies>
         <dependency>
             <groupId>com.zarbosoft</groupId>
             <artifactId>luxem</artifactId>
-            <version>1.0.3</version>
+            <version>1.0.4</version>
         </dependency>
         <dependency>
             <groupId>com.zarbosoft.rendaw</groupId>
@@ -22,6 +22,16 @@
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
             <version>11.0.2</version>
+        </dependency>
+        <dependency>
+            <groupId>net.bytebuddy</groupId>
+            <artifactId>byte-buddy</artifactId>
+            <version>1.9.8</version>
+        </dependency>
+        <dependency>
+            <groupId>net.bytebuddy</groupId>
+            <artifactId>byte-buddy-agent</artifactId>
+            <version>1.9.8</version>
         </dependency>
     </dependencies>
     <build>
@@ -35,6 +45,7 @@
                     <target>1.9</target>
                     <compilerArgs>
                         <arg>-parameters</arg>
+                        <arg>--add-exports=javafx.graphics/com.sun.javafx.sg.prism=com.zarbosoft.pyxyzygy_seed</arg>
                     </compilerArgs>
                 </configuration>
             </plugin>

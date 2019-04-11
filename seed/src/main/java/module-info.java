@@ -1,5 +1,9 @@
-open module com.zarbosoft.internal.shoedemo_seed {
-	requires transitive com.zarbosoft.luxem;
-	exports com.zarbosoft.internal.shoedemo_seed.model;
-	exports com.zarbosoft.internal.shoedemo_seed.deserialize;
+open module com.zarbosoft.pyxyzygy.seed {
+	requires com.zarbosoft.luxem;
+	requires net.bytebuddy;
+	requires java.instrument;
+	requires javafx.graphics;
+	exports com.zarbosoft.pyxyzygy.seed.model;
+	exports com.zarbosoft.pyxyzygy.seed.deserialize;
+	exports com.zarbosoft.pyxyzygy.seed.model.v0;
 }

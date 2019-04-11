@@ -6,8 +6,11 @@ def main():
     import shutil
     import argparse
 
+    root = (Path(__file__).parent).resolve()
+
     parser = argparse.ArgumentParser()
     parser.add_argument('platform')
+    parser.add_argument('channel')
     args = parser.parse_args()
 
     # Tools
@@ -26,8 +29,10 @@ def main():
         c([
             'mvn', *extra,
             '-B',
-            '-Dstyle.color=never', '-e',
-            '-global-toolchains', 'app/toolchains.xml',
+            '-Dstyle.color=never',
+            f'-Dmaven.repo.local={root / ".m2" / "repository"}',
+            '-e',
+            '-global-toolchains', 'build/toolchains.xml',
         ], env=dict(JAVA_HOME=java_path))
 
     def template(source, dest, extra):
@@ -42,10 +47,11 @@ def main():
     print('LS', list(Path.cwd().iterdir()))
 
     # Set up directories
-    root = (Path(__file__).parent).resolve()
     path = root / '_build'
     shutil.rmtree(path, ignore_errors=True)
     path.mkdir(parents=True, exist_ok=True)
+
+    os.makedirs('/root/.m2', exist_ok=True)
 
     # More variables
     if False:
@@ -70,9 +76,11 @@ def main():
         cxx = 'x86_64-w64-mingw32-g++'
         c_include = '/usr/x86_64-w64-mingw32/sys-root/mingw/include/c++'
         c_lib = '/usr/x86_64-w64-mingw32/sys-root/mingw/lib'
+    else:
+        raise AssertionError
 
     # Build
-    template('app/toolchains.xml', 'app/toolchains.xml', dict(
+    template('build/toolchains.xml', 'build/toolchains.xml', dict(
         java_home=java_toolchain,
     ))
 
@@ -93,6 +101,13 @@ def main():
         f'-DimageOutput={path / "java"}',
         f'-Djavafx.platform={jfx_platform}',
     )
+    shutil.copy(
+        (
+            root / 'nearestneighborimageviewagent' / 'target' /
+            'nearestneighborimageviewagent-1.0.0.jar'
+        ),
+        path / 'java',
+    )
 
     # Prepare itch deploys + deploy
     if args.platform == 'linux':
@@ -101,7 +116,7 @@ def main():
             '-p', '--strip-unneeded',
             path / 'java/lib/server/libjvm.so'
         ])
-    template('itch/manifest.toml', path / '.itch.toml', dict(
+    template('build/itch_manifest.toml', path / '.itch.toml', dict(
         ext=exe_ext,
     ))
     for b, ds, fs in os.walk(path):
@@ -120,9 +135,8 @@ def main():
     c([
         '/butler/butler', 'push',
         path,
-        f'rendaw/pyxyzygy:{itch_platform}',
+        f'rendaw/pyxyzygy:{itch_platform}-{args.channel}',
     ])
 
 
 main()
-

@@ -1,4 +1,4 @@
-#include "header.hpp"
+#include "header.hxx"
 #include <memory>
 #include <cassert>
 
@@ -13,7 +13,7 @@ int main(int argc, char **argv) {
 	auto const draw = [&](float const x1, float const y1, float const r1, float const x2, float const y2, float const r2) {
 		assert(r1 < pad);
 		assert(r2 < pad);
-		i->stroke(
+		i->strokeSoft(
 			255, 127, 0, 255,
 			x + x1, y + y1, r1,
 			x + x2, y + y2, r2,
@@ -155,6 +155,21 @@ int main(int argc, char **argv) {
 	} catch (std::runtime_error const &e) {
 		printf("Failed to serialize: %s", e.what());
 	}
+
+	std::unique_ptr<TrueColorImage> j(TrueColorImage::create(2, 3));
+	j->strokeSoft(255, 255, 255, 255, -0.25, 1.5, 0.5, -0.25, 1.5, 0.5, 1);
+	for (int y = 0; y < j->getHeight(); ++y) {
+		for (int x = 0; x < j->getWidth(); ++x) {
+			printf("%02x ", j->getPixelR(x, y));
+			printf("%02x ", j->getPixelG(x, y));
+			printf("%02x ", j->getPixelB(x, y));
+			printf("%02x ", j->getPixelA(x, y));
+			printf(" ");
+		}
+		printf("\n");
+	}
+	assert(j->getPixelR(1, 0) == 0);
+
 	return 0;
 }
 

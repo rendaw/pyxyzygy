@@ -1,5 +1,5 @@
-module com.zarbosoft.shoedemo.internal.shoedemo_generate {
-	requires transitive com.zarbosoft.internal.shoedemo_seed;
+module com.zarbosoft.pyxyzygy.generate {
+	requires com.zarbosoft.pyxyzygy.seed;
 	requires com.zarbosoft.luxem;
 	requires javapoet;
 	requires ant;
@@ -7,5 +7,7 @@ module com.zarbosoft.shoedemo.internal.shoedemo_generate {
 	requires java.compiler;
 	requires com.google.common;
 	requires javafx.base;
-	exports com.zarbosoft.internal.shoedemo_generate;
+	requires javafx.graphics;
+	requires com.zarbosoft.rendaw.common;
+	exports com.zarbosoft.pyxyzygy.generate;
 }

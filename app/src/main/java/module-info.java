@@ -1,18 +1,20 @@
-open module com.zarbosoft.shoedemo {
-	requires com.zarbosoft.internal.shoedemo_seed;
+open module com.zarbosoft.pyxyzygy.app {
+	requires com.zarbosoft.pyxyzygy.seed;
+	requires com.zarbosoft.pyxyzygy.core;
 	requires javafx.graphics;
 	requires javafx.controls;
+	requires javafx.swing;
 	requires com.zarbosoft.appdirsj;
 	requires java.desktop;
-	exports com.zarbosoft.shoedemo;
-	exports com.zarbosoft.shoedemo.config;
-	exports com.zarbosoft.shoedemo.model;
-	exports com.zarbosoft.shoedemo.modelmirror;
-	exports com.zarbosoft.shoedemo.parts.editor;
-	exports com.zarbosoft.shoedemo.parts.structure;
-	exports com.zarbosoft.shoedemo.parts.timeline;
-	exports com.zarbosoft.shoedemo.widgets;
-	exports com.zarbosoft.shoedemo.wrappers.camera;
-	exports com.zarbosoft.shoedemo.wrappers.group;
-	exports com.zarbosoft.shoedemo.wrappers.truecolorimage;
+	requires net.bytebuddy;
+	requires java.instrument;
+	requires jdk.attach;
+	requires java.management;
+	requires com.zarbosoft.rendaw.common;
+	requires com.google.common;
+	requires com.zarbosoft.luxem;
+	requires com.zarbosoft.pidgooncommand;
+	requires com.zarbosoft.pyxyzygy.nearestneighborimageview;
+	requires gifencoder;
+	requires jcodec;
 }
