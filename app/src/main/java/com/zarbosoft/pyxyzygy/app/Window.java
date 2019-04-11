@@ -166,7 +166,7 @@ public class Window {
 							l
 									.stream()
 									.map(t -> new CustomBinding.IndirectHalfBinder<Double>(t.contentProperty(),
-											c -> opt(c==null?null:((Region) c).widthProperty().asObject())
+											c -> opt(c == null ? null : ((Region) c).widthProperty().asObject())
 									))
 									.collect(Collectors.toList()))),
 							l -> opt(new CustomBinding.ListElementsHalfBinder<Double>(l, s -> {
@@ -295,6 +295,8 @@ public class Window {
 							});
 						}).check("Show origin", checkBox -> {
 							checkBox.selectedProperty().bindBidirectional(GUILaunch.config.showOrigin);
+						}).check("Show timeline", checkBox -> {
+							checkBox.selectedProperty().bindBidirectional(GUILaunch.config.showTimeline);
 						}).build()),
 						new TitledPane("Hotkeys", (
 								(Supplier<Node>) () -> {
@@ -320,6 +322,26 @@ public class Window {
 
 		Scene scene = new Scene(generalLayout, 1200, 800);
 
+		new CustomBinding.DoubleHalfBinder<Boolean, Boolean, Boolean>(
+				new CustomBinding.PropertyHalfBinder<>(context.config.maxCanvas),
+				new CustomBinding.PropertyHalfBinder<>(GUILaunch.config.showTimeline),
+				(max, show) -> {
+					return opt(!max && show);
+				}
+		).addListener(show -> {
+			if (show) {
+				specificLayout.getItems().add(1, timeline.getWidget());
+				specificLayout.setDividerPositions(context.config.timelineSplit);
+				specificLayout
+						.getDividers()
+						.get(0)
+						.positionProperty()
+						.addListener((observable, oldValue, newValue) -> context.config.timelineSplit = newValue.doubleValue());
+			} else {
+				specificLayout.getItems().remove(timeline.getWidget());
+			}
+		});
+
 		context.config.maxCanvas.addListener(new ChangeListener<Boolean>() {
 			{
 				changed(null, null, false);
@@ -331,21 +353,13 @@ public class Window {
 			) {
 				if (newValue) {
 					generalLayout.getItems().remove(leftTabs);
-					specificLayout.getItems().remove(timeline.getWidget());
 				} else {
-					specificLayout.getItems().add(1, timeline.getWidget());
-					specificLayout.setDividerPositions(context.config.timelineSplit);
 					generalLayout.getItems().add(0, leftTabs);
 					generalLayout.setDividerPositions(context.config.tabsSplit);
 				}
 			}
 		});
 
-		specificLayout
-				.getDividers()
-				.get(0)
-				.positionProperty()
-				.addListener((observable, oldValue, newValue) -> context.config.timelineSplit = newValue.doubleValue());
 		generalLayout
 				.getDividers()
 				.get(0)

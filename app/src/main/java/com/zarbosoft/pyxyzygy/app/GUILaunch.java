@@ -52,7 +52,6 @@ import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 
 public class GUILaunch extends Application {
-	public static RootProfileConfig profileConfig;
 	public static RootGlobalConfig config;
 	public static final List<Image> appIcons =
 			Stream.of("appicon16.png", "appicon32.png", "appicon64.png").map(s -> icon(s)).collect(Collectors.toList());
@@ -73,7 +72,6 @@ public class GUILaunch extends Application {
 	}
 
 	public static void shutdown() {
-		profileConfig.shutdown();
 		config.shutdown();
 	}
 
@@ -81,7 +79,7 @@ public class GUILaunch extends Application {
 		Long profile;
 		private final ListView<RootProfileConfig.Profile> list;
 
-		ProfileDialog() {
+		ProfileDialog(RootProfileConfig profileConfig) {
 			setTitle(String.format("%s - Choose profile", Global.nameHuman));
 			getIcons().addAll(appIcons);
 
@@ -128,10 +126,9 @@ public class GUILaunch extends Application {
 				RootProfileConfig.Profile profile1 = new RootProfileConfig.Profile();
 				profile1.name.set(uniqueName("New Profile"));
 				profile1.id = profileConfig.nextId++;
-				if (list.getSelectionModel().getSelectedItem() != null)
-					list.getItems().add(list.getSelectionModel().getSelectedIndex() + 1, profile1);
-				else
-					list.getItems().add(profile1);
+				list.getItems().add(profile1);
+				list.getSelectionModel().clearSelection();
+				list.getSelectionModel().select(profile1);
 			});
 			Button deleteProfile = HelperJFX.button("minus.png", "Delete profile");
 			deleteProfile.setFocusTraversable(false);
@@ -471,7 +468,7 @@ public class GUILaunch extends Application {
 		});
 		new com.zarbosoft.pyxyzygy.core.mynativeJNI();
 
-		profileConfig = ConfigBase.deserialize(new TypeInfo(RootProfileConfig.class),
+		RootProfileConfig profileConfig = ConfigBase.deserialize(new TypeInfo(RootProfileConfig.class),
 				configDir.resolve("profiles.luxem"),
 				() -> {
 					RootProfileConfig config = new RootProfileConfig();
@@ -486,13 +483,17 @@ public class GUILaunch extends Application {
 				.ofNullable(getParameters().getNamed().get("profile-id"))
 				.map(s -> Long.parseLong(s))
 				.orElseGet(() -> {
-					ProfileDialog dialog = new ProfileDialog();
+					ProfileDialog dialog = new ProfileDialog(profileConfig);
 					dialog.showAndWait();
+					if (dialog.profile == null)
+						return null;
 					profileConfig.lastId = dialog.profile;
 					return dialog.profile;
 				});
 		if (profileId == null)
 			return;
+
+		profileConfig.shutdown();
 
 		config = ConfigBase.deserialize(new TypeInfo(RootGlobalConfig.class),
 				Global.configDir.resolve(String.format("profile_%s.luxem", Long.toString(profileId))),

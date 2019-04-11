@@ -40,4 +40,7 @@ public class RootGlobalConfig extends ConfigBase {
 
 	@Configuration(optional = true)
 	public boolean maximize = true;
+
+	@Configuration(optional = true)
+	public final SimpleBooleanProperty showTimeline = new SimpleBooleanProperty(true);
 }
