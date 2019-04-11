@@ -16,9 +16,12 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.StrokeType;
 
+import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.c;
+
 public class RowTimeRangeWidget {
 	public static final SimpleIntegerProperty start = new SimpleIntegerProperty();
 	public static final SimpleIntegerProperty length = new SimpleIntegerProperty();
+	static final Color inFill = c(new java.awt.Color(203, 238, 255, 255));
 
 	final Pane base = new Pane();
 	private final Group alignment = new Group();
@@ -44,7 +47,7 @@ public class RowTimeRangeWidget {
 		frameMarker.setBlendMode(BlendMode.MULTIPLY);
 
 		loopRange.setHeight(Timeline.baseSize);
-		loopRange.setFill(RowTimeMapRangeWidget.inFill);
+		loopRange.setFill(inFill);
 		loopRange.setStroke(RowTimeMapRangeWidget.inStroke);
 		loopRange.setStrokeType(StrokeType.OUTSIDE);
 		loopRange.setArcHeight(RowTimeMapRangeWidget.InBorder.round);
@@ -81,7 +84,7 @@ public class RowTimeRangeWidget {
 				timeline.controlAlignment.localToSceneTransformProperty(),
 				timeline.timeScroll.valueProperty()
 		));
-		alignment.getChildren().addAll(frameMarker, inner);
+		alignment.getChildren().addAll(inner, frameMarker);
 
 		base.getChildren().addAll(alignment);
 

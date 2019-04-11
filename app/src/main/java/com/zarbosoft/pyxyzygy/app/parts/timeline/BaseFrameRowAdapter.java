@@ -99,7 +99,7 @@ public abstract class BaseFrameRowAdapter<N, F> extends RowAdapter {
 	}
 
 	@Override
-	final public void updateFrameMarker(ProjectContext context, Window window) {
+	public void updateFrameMarker(ProjectContext context, Window window) {
 		row.ifPresent(r -> r.updateFrameMarker(window));
 	}
 

@@ -160,7 +160,9 @@ public class RowAdapterGroupLayerTime extends BaseFrameRowAdapter<GroupLayer, Gr
 						selectedFrameCleanup.run();
 						selectedFrameCleanup = null;
 					}
-					if (newValue == null || !(newValue.frame instanceof BaseFrameRowAdapter.AdapterFrame)) {
+					if (newValue == null ||
+							!(newValue.frame instanceof BaseFrameRowAdapter.AdapterFrame) ||
+							newValue.row.adapter != RowAdapterGroupLayerTime.this) {
 						rowInnerRange.ifPresent(w -> {
 							layout.getChildren().remove(w.base);
 							rowInnerRange = Optional.empty();
@@ -242,5 +244,12 @@ public class RowAdapterGroupLayerTime extends BaseFrameRowAdapter<GroupLayer, Gr
 
 	@Override
 	public void remove(ProjectContext context) {
+	}
+
+	@Override
+	public void updateFrameMarker(ProjectContext context, Window window) {
+		super.updateFrameMarker(context, window);
+		if (rowInnerRange.isPresent())
+			rowInnerRange.get().updateFrameMarker(window);
 	}
 }

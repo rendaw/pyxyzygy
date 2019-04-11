@@ -45,7 +45,7 @@ public class HelperJFX {
 	}
 
 	public static Color c(java.awt.Color source) {
-		return Color.rgb(source.getRed(), source.getGreen(), source.getBlue());
+		return Color.rgb(source.getRed(), source.getGreen(), source.getBlue(), source.getAlpha() / 255.0);
 	}
 
 	public static Cursor centerCursor(String res) {

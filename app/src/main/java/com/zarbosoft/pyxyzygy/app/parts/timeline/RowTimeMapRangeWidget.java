@@ -17,6 +17,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.StrokeType;
 import javafx.scene.transform.Affine;
 
 import java.awt.*;
@@ -28,7 +29,7 @@ import static com.zarbosoft.rendaw.common.Common.aeq;
 
 public class RowTimeMapRangeWidget {
 	static final javafx.scene.paint.Color outFill = c(new Color(157, 157, 157));
-	static final javafx.scene.paint.Color inFill = c(new Color(255, 255, 255));
+	static final javafx.scene.paint.Color inFill = c(new Color(220, 255, 192));
 	static final javafx.scene.paint.Color inStroke = c(new Color(0, 0, 0));
 	static final Image loopIcon = icon("loop-handle.png");
 
@@ -36,7 +37,7 @@ public class RowTimeMapRangeWidget {
 
 	final Rectangle frameMarker = new Rectangle(Timeline.baseSize, Timeline.baseSize * 3);
 
-	private final Rectangle background = new Rectangle(0, Timeline.baseSize * 0.8);
+	private final Rectangle background = new Rectangle(0, Math.ceil(Timeline.baseSize * 0.8));
 	private final Rectangle inBackground = new Rectangle(0, Timeline.baseSize);
 
 	private final Group alignment = new Group();
@@ -216,11 +217,13 @@ public class RowTimeMapRangeWidget {
 		base.setPrefHeight(base.getMinHeight());
 		base.setMaxHeight(base.getMinHeight());
 
-		background.setFill(outFill);
+		background.setFill(javafx.scene.paint.Color.TRANSPARENT);
+		background.setStrokeType(StrokeType.INSIDE);
+		background.setStroke(javafx.scene.paint.Color.GRAY);
 		background.setBlendMode(BlendMode.MULTIPLY);
 		background.widthProperty().bind(base.widthProperty().add(pad * 2));
 		background.setLayoutX(-pad);
-		background.setLayoutY(Timeline.baseSize + Timeline.baseSize * 0.1);
+		background.setLayoutY((int)(Timeline.baseSize + Timeline.baseSize * 0.1));
 
 		frameMarker.setFill(Timeline.frameMarkerColor);
 		frameMarker.setBlendMode(BlendMode.MULTIPLY);
@@ -270,7 +273,7 @@ public class RowTimeMapRangeWidget {
 				timeline.controlAlignment.localToSceneTransformProperty(),
 				timeline.timeScroll.valueProperty()
 		));
-		alignment.getChildren().addAll(frameMarker, outerA, inner, outerB);
+		alignment.getChildren().addAll(outerA, inner, outerB, frameMarker);
 
 		base.getChildren().addAll(background, inBackground, alignment);
 
