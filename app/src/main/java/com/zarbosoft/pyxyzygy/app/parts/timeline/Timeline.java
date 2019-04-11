@@ -244,13 +244,10 @@ public class Timeline {
 				.bind(Bindings.createBooleanBinding(() -> selectedFrame.get() == null ||
 						selectedFrame.get().row.frames.size() == 1, selectedFrame));
 		remove.setOnAction(e -> {
-			int selectNext = Math.max(0, selectedFrame.get().index - 1);
 			RowFramesWidget row = selectedFrame.get().row;
 			context.change(null, change -> {
 				selectedFrame.get().frame.remove(context, change);
 			});
-			if (selectNext < row.frames.size())
-			select(row.frames.get(selectNext));
 		});
 		clear = HelperJFX.button("eraser-variant.png", "Clear");
 		clear.disableProperty().bind(selectedFrame.isNull());
@@ -479,7 +476,8 @@ public class Timeline {
 						public PlayState updateState() {
 							return new PlayState(1000 / node.frameRate(),
 									node.frameStart(),
-									node.frameStart() + node.frameLength());
+									node.frameStart() + node.frameLength()
+							);
 						}
 					} : new PlayThread(view) {
 						NodeConfig config = view.getConfig();
@@ -488,7 +486,8 @@ public class Timeline {
 						public PlayState updateState() {
 							return new PlayState(1000 / config.previewRate.get(),
 									config.previewStart.get(),
-									config.previewStart.get() + config.previewLength.get());
+									config.previewStart.get() + config.previewLength.get()
+							);
 						}
 					};
 				}

@@ -30,7 +30,7 @@ public abstract class BaseFrameRowAdapter<N, F> extends RowAdapter {
 		if (inner == NO_INNER)
 			return false;
 		FrameFinder.Result<F> previous = getFrameFinder().findFrame(getNode(), inner);
-		F source = getFrameFinder().findFrame(getNode(), timeline.selectedFrame.get().absStart).frame;
+		F source = getFrameFinder().frameGet(getNode(), timeline.selectedFrame.get().index);
 		if (source == null)
 			source = getFrameFinder().findFrame(getNode(), inner).frame;
 		return createFrame(context, change, inner, previous, innerDuplicateFrame(context, source));
@@ -56,6 +56,7 @@ public abstract class BaseFrameRowAdapter<N, F> extends RowAdapter {
 		int offset = inner - previous.at;
 		if (offset <= 0)
 			throw new Assertion();
+		timeline.select(null);
 		if (getFrameLength(previous.frame) == -1) {
 			setFrameInitialLength(context, newFrame, -1);
 		} else {
@@ -63,6 +64,11 @@ public abstract class BaseFrameRowAdapter<N, F> extends RowAdapter {
 		}
 		setFrameLength(change, previous.frame, offset);
 		addFrame(change, previous.frameIndex + 1, newFrame);
+		row.ifPresent(r -> r.frames
+				.stream()
+				.filter(f -> f.frame.id() == newFrame)
+				.findFirst()
+				.ifPresent(w -> timeline.select(w)));
 		return true;
 	}
 

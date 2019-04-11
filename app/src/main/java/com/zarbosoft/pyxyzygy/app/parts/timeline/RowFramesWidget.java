@@ -1,8 +1,8 @@
 package com.zarbosoft.pyxyzygy.app.parts.timeline;
 
 import com.zarbosoft.pyxyzygy.app.FrameMapEntry;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.Window;
+import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import javafx.beans.binding.Bindings;
 import javafx.scene.Group;
 import javafx.scene.effect.BlendMode;
@@ -21,24 +21,21 @@ public class RowFramesWidget extends Pane {
 	final RowAdapter adapter;
 	Rectangle frameMarker = new Rectangle(Timeline.baseSize, Timeline.baseSize);
 	List<FrameWidget> frames = new ArrayList<>();
-	FrameWidget selected;
 
 	public RowFramesWidget(
 			Window window, Timeline timeline, RowAdapter adapter
 	) {
 		this.timeline = timeline;
 		this.adapter = adapter;
-		inner
-				.layoutXProperty()
-				.bind(Bindings.createDoubleBinding(
-						() -> {
-							double corner = timeline.controlAlignment.localToScene(0, 0).getX();
-							return corner - localToScene(0, 0).getX() - timeline.timeScroll.getValue() + Timeline.baseSize * 2;
-						},
-						localToSceneTransformProperty(),
-						timeline.controlAlignment.localToSceneTransformProperty(),
-						timeline.timeScroll.valueProperty()
-				));
+		inner.layoutXProperty().bind(Bindings.createDoubleBinding(
+				() -> {
+					double corner = timeline.controlAlignment.localToScene(0, 0).getX();
+					return corner - localToScene(0, 0).getX() - timeline.timeScroll.getValue() + Timeline.baseSize * 2;
+				},
+				localToSceneTransformProperty(),
+				timeline.controlAlignment.localToSceneTransformProperty(),
+				timeline.timeScroll.valueProperty()
+		));
 		setMinHeight(Timeline.baseSize);
 		setPrefHeight(getMinHeight());
 		setMaxHeight(getMinHeight());
@@ -58,7 +55,11 @@ public class RowFramesWidget extends Pane {
 			ProjectContext context, Window window, List<RowAdapterFrame> frameAdapters
 	) {
 		FrameWidget foundSelectedFrame = null;
-		Object selectedId = Optional.ofNullable(timeline.selectedFrame.get()).map(f -> f.frame.id()).orElse(null);
+		Object selectedId = Optional
+				.ofNullable(timeline.selectedFrame.get())
+				.filter(f -> f.row == this)
+				.map(f -> f.frame.id())
+				.orElse(null);
 
 		int frameIndex = 0;
 		int outerAt = 0;
@@ -78,11 +79,9 @@ public class RowFramesWidget extends Pane {
 						this.inner.getChildren().add(frame);
 					} else {
 						frame = frames.get(useFrameIndex);
-						if (frame.frame.id() == selectedId) {
-							foundSelectedFrame = frame;
-						}
 					}
-					frame.set(timeline.zoom,
+					frame.set(
+							timeline.zoom,
 							useFrameIndex,
 							inner,
 							outerAt + innerLeft - outer.innerOffset,
@@ -90,6 +89,9 @@ public class RowFramesWidget extends Pane {
 							innerLeft - previousInnerAt,
 							innerAt - innerLeft
 					);
+					if (inner.id() == selectedId && foundSelectedFrame == null) {
+						foundSelectedFrame = frame;
+					}
 					previousInnerAt = innerAt;
 					innerAt += inner.length();
 				}
@@ -98,21 +100,12 @@ public class RowFramesWidget extends Pane {
 				outerAt += outer.length;
 		}
 
-		if (selected != foundSelectedFrame) {
-			if (selected != null)
-				selected.deselect();
-			selected = foundSelectedFrame;
-			if (selected != null)
-				selected.select();
+		if (selectedId != null) {
+			timeline.select(foundSelectedFrame);
 		}
 
 		if (frameIndex < frames.size()) {
 			List<FrameWidget> remove = sublist(frames, frameIndex);
-			for (FrameWidget frame : remove) {
-				if (selected == frame) {
-					selected = null;
-				}
-			}
 			this.inner.getChildren().removeAll(remove);
 			remove.clear();
 		}
