@@ -14,6 +14,7 @@ import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.ChainComparator;
+import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
@@ -103,6 +104,7 @@ public class Structure {
 				}
 			}
 	};
+	boolean postInit = false;
 
 	public void selectForEdit(Wrapper wrapper) {
 		if (wrapper == null)
@@ -150,10 +152,14 @@ public class Structure {
 	}
 
 	public void treeItemAdded(TreeItem<Wrapper> item) {
-		if (tree.getSelectionModel().getSelectedItem() == null) {
-			tree.getSelectionModel().clearSelection();
+		if (!postInit)
+			return;
+		tree.getSelectionModel().clearSelection();
+		Platform.runLater(() -> {
+			// Layer child initialization happens after tree node mirroring
+			// Thus canvas may not be created yet
 			tree.getSelectionModel().select(item);
-		}
+		});
 	}
 
 	public void treeItemRemoved(TreeItem<Wrapper> item) {
@@ -625,6 +631,7 @@ public class Structure {
 			tree.getSelectionModel().clearSelection();
 			tree.getSelectionModel().select(findNode(rootTreeItem, editPath).tree.get());
 		}
+		postInit = true;
 	}
 
 	private static Wrapper findNode(TreeItem<Wrapper> root, List<Integer> path) {

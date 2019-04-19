@@ -453,8 +453,7 @@ public class Timeline {
 		};
 		frame.addListener(frameListener);
 
-		new CustomBinding.DoubleHalfBinder<Boolean, Pair<CanvasHandle, EditHandle>, Void>(
-				playingProperty,
+		new CustomBinding.DoubleHalfBinder<Boolean, Pair<CanvasHandle, EditHandle>, Void>(playingProperty,
 				new CustomBinding.DoubleHalfBinder<>(window.selectedForView,
 						window.selectedForEdit,
 						(v, e) -> opt(new Pair<>(v, e))
@@ -692,6 +691,13 @@ public class Timeline {
 					new TreeItem<>(new RowAdapterPaletteImageNode(this, (PaletteImageNode) edit.getValue()))
 			);
 		}
+
+		tree.getSelectionModel().clearSelection();
+		tree
+				.getSelectionModel()
+				.select(tree.getRoot().getChildren().size() > 1 ?
+						tree.getRoot().getChildren().get(1) :
+						tree.getRoot().getChildren().get(0));
 	}
 
 	private void updateFrameMarker() {
