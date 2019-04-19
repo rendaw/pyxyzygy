@@ -33,6 +33,11 @@ public class RowAdapterCameraLoop extends RowAdapter {
 	}
 
 	@Override
+	public boolean hasNormalFrames() {
+		return false;
+	}
+
+	@Override
 	public boolean createFrame(
 			ProjectContext context, Window window, ChangeStepBuilder change, int outer
 	) {

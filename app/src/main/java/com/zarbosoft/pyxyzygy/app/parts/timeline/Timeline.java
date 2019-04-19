@@ -196,19 +196,17 @@ public class Timeline {
 		scrub.addEventFilter(MouseEvent.MOUSE_CLICKED, mouseEventEventHandler);
 		scrub.addEventFilter(MouseEvent.MOUSE_DRAGGED, mouseEventEventHandler);
 		add = HelperJFX.button("plus.png", "Add");
-		BooleanBinding frameAt = Bindings.createBooleanBinding(() -> {
+		BooleanBinding hasNoFrames = Bindings.createBooleanBinding(() -> {
 			TreeItem<RowAdapter> selected = tree.getSelectionModel().getSelectedItem();
 			if (selected == null)
 				return true;
 			if (selected.getValue() == null)
 				return true;
-			if (!selected.getValue().hasFrames())
-				return true;
-			if (selected.getValue().frameAt(window, frame.get()))
+			if (!selected.getValue().hasNormalFrames())
 				return true;
 			return false;
-		}, tree.getSelectionModel().selectedItemProperty(), frame);
-		add.disableProperty().bind(frameAt);
+		}, tree.getSelectionModel().selectedItemProperty());
+		add.disableProperty().bind(hasNoFrames);
 		add.setOnAction(e -> {
 			if (window.selectedForView.get() == null)
 				return;
@@ -224,7 +222,7 @@ public class Timeline {
 			});
 		});
 		duplicate = HelperJFX.button("content-copy.png", "Duplicate");
-		duplicate.disableProperty().bind(frameAt);
+		duplicate.disableProperty().bind(hasNoFrames);
 		duplicate.setOnAction(e -> {
 			if (window.selectedForView.get() == null)
 				return;
@@ -601,6 +599,11 @@ public class Timeline {
 
 				@Override
 				public boolean hasFrames() {
+					return false;
+				}
+
+				@Override
+				public boolean hasNormalFrames() {
 					return false;
 				}
 

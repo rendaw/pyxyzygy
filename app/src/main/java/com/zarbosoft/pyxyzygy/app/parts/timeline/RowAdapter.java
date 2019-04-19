@@ -13,6 +13,8 @@ public abstract class RowAdapter {
 
 	public abstract boolean hasFrames();
 
+	public abstract boolean hasNormalFrames();
+
 	public abstract boolean createFrame(
 			ProjectContext context, Window window, ChangeStepBuilder change, int outer
 	);

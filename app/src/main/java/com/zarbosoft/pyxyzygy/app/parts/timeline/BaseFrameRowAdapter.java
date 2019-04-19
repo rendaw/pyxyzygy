@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.zarbosoft.pyxyzygy.app.Global.NO_INNER;
+import static com.zarbosoft.pyxyzygy.app.Global.NO_LENGTH;
 
 public abstract class BaseFrameRowAdapter<N, F> extends RowAdapter {
 	Optional<RowFramesWidget> row = Optional.empty();
@@ -35,7 +36,11 @@ public abstract class BaseFrameRowAdapter<N, F> extends RowAdapter {
 			source = getFrameFinder().frameGet(getNode(), timeline.selectedFrame.get().index);
 		if (source == null)
 			source = getFrameFinder().findFrame(getNode(), inner).frame;
-		return createFrame(context, change, inner, previous, innerDuplicateFrame(context, source));
+		F newFrame = innerDuplicateFrame(context, source);
+		if (previous.at != inner)
+			return createFrame(context, change, inner, previous, newFrame);
+		else
+			return createFrameInsert(context, change, previous.frameIndex, newFrame);
 	}
 
 	@Override
@@ -47,7 +52,21 @@ public abstract class BaseFrameRowAdapter<N, F> extends RowAdapter {
 			return false;
 		FrameFinder.Result<F> previous = getFrameFinder().findFrame(getNode(), inner);
 		F newFrame = innerCreateFrame(context, previous.frame);
-		return createFrame(context, change, inner, previous, newFrame);
+		if (previous.at != inner)
+			return createFrame(context, change, inner, previous, newFrame);
+		else
+			return createFrameInsert(context, change, previous.frameIndex, newFrame);
+	}
+
+	private boolean createFrameInsert(ProjectContext context, ChangeStepBuilder change, int frameIndex, F newFrame) {
+		setFrameInitialLength(context, newFrame, 1);
+		addFrame(change, frameIndex, newFrame);
+		row.ifPresent(r -> r.frames
+				.stream()
+				.filter(f -> f.frame.id() == newFrame)
+				.findFirst()
+				.ifPresent(w -> timeline.select(w)));
+		return true;
 	}
 
 	protected abstract F innerDuplicateFrame(ProjectContext context, F source);
@@ -59,8 +78,8 @@ public abstract class BaseFrameRowAdapter<N, F> extends RowAdapter {
 		if (offset <= 0)
 			throw new Assertion();
 		timeline.select(null);
-		if (getFrameLength(previous.frame) == -1) {
-			setFrameInitialLength(context, newFrame, -1);
+		if (getFrameLength(previous.frame) == NO_LENGTH) {
+			setFrameInitialLength(context, newFrame, NO_LENGTH);
 		} else {
 			setFrameInitialLength(context, newFrame, getFrameLength(previous.frame) - offset);
 		}
@@ -101,6 +120,11 @@ public abstract class BaseFrameRowAdapter<N, F> extends RowAdapter {
 	}
 
 	@Override
+	public boolean hasNormalFrames() {
+		return true;
+	}
+
+	@Override
 	public void updateFrameMarker(ProjectContext context, Window window) {
 		row.ifPresent(r -> r.updateFrameMarker(window));
 	}
@@ -137,11 +161,13 @@ public abstract class BaseFrameRowAdapter<N, F> extends RowAdapter {
 		) {
 			int length = getFrameLength(getFrameFinder().frameGet(getNode(), i));
 			removeFrame(change, i, 1);
-			setFrameLength(
-					change,
-					getFrameFinder().frameGet(getNode(), i - 1),
-					length == -1 ? -1 : getFrameLength(getFrameFinder().frameGet(getNode(), i - 1)) + length
-			);
+			int previousIndex = i - 1;
+			if (previousIndex > 0)
+				setFrameLength(
+						change,
+						getFrameFinder().frameGet(getNode(), i - 1),
+						length == -1 ? -1 : getFrameLength(getFrameFinder().frameGet(getNode(), i - 1)) + length
+				);
 		}
 
 		@Override
