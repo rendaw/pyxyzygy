@@ -40,7 +40,10 @@ public class FrameWidget extends Pane {
 		getChildren().add(rectangle);
 
 		addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
-			row.timeline.select(this);
+			if (row.timeline.selectedFrame.get() == this)
+				row.timeline.select(null);
+			else
+				row.timeline.select(this);
 		});
 		addEventHandler(MouseEvent.MOUSE_DRAGGED, e -> {
 			if (index == 0)

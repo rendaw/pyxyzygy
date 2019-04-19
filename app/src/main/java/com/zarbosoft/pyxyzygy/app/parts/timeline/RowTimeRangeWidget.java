@@ -58,7 +58,9 @@ public class RowTimeRangeWidget {
 		loopHandle.setStrokeType(StrokeType.OUTSIDE);
 		loopHandle
 				.layoutXProperty()
-				.bind(Bindings.add(loopRange.layoutXProperty(), loopRange.widthProperty()).subtract(Timeline.baseSize * 0.5));
+				.bind(Bindings
+						.add(loopRange.layoutXProperty(), loopRange.widthProperty())
+						.subtract(Timeline.baseSize * 0.5));
 		loopHandle.setLayoutY(Timeline.baseSize * 0.5 - loopHandle.getHeight() / 2);
 		loopHandle.setFill(Color.TRANSPARENT);
 		loopHandle.setStroke(RowTimeMapRangeWidget.inStroke);
@@ -90,10 +92,10 @@ public class RowTimeRangeWidget {
 
 		base.setMouseTransparent(false);
 		base.addEventFilter(MouseEvent.MOUSE_PRESSED, e -> {
-					DoubleVector dragAt = getRelative(e.getSceneX(), e.getSceneY());
-					mouseDragQuantizeStart = (int) (dragAt.x / timeline.zoom);
-					mouseDragDivideStart = start.get() + length.get();
-				});
+			DoubleVector dragAt = getRelative(e.getSceneX(), e.getSceneY());
+			mouseDragQuantizeStart = (int) (dragAt.x / timeline.zoom);
+			mouseDragDivideStart = start.get() + length.get();
+		});
 		base.addEventFilter(MouseEvent.MOUSE_DRAGGED, e -> {
 			DoubleVector dragAt = getRelative(e.getSceneX(), e.getSceneY());
 			int quantized = (int) (dragAt.x / timeline.zoom);

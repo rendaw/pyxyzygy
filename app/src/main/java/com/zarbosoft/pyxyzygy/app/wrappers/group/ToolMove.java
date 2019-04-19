@@ -6,10 +6,8 @@ import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.core.model.v0.GroupPositionFrame;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
-import javafx.scene.ImageCursor;
 
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.centerCursor;
-import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 
 public class ToolMove extends Tool {
 	protected DoubleVector markStart;
@@ -18,7 +16,7 @@ public class ToolMove extends Tool {
 
 	public ToolMove(Window window, GroupNodeWrapper wrapper) {
 		this.wrapper = wrapper;
-		window.editorCursor.set(this,centerCursor("cursor-move32.png"));
+		window.editorCursor.set(this, centerCursor("cursor-move32.png"));
 	}
 
 	@Override
@@ -26,8 +24,7 @@ public class ToolMove extends Tool {
 		if (wrapper.specificLayer == null)
 			return;
 		this.markStart = start;
-		GroupPositionFrame pos = GroupLayerWrapper.positionFrameFinder.findFrame(
-				wrapper.specificLayer,
+		GroupPositionFrame pos = GroupLayerWrapper.positionFrameFinder.findFrame(wrapper.specificLayer,
 				wrapper.canvasHandle.frameNumber.get()
 		).frame;
 		this.markStartOffset = pos.offset();
@@ -37,13 +34,13 @@ public class ToolMove extends Tool {
 	public void mark(ProjectContext context, Window window, DoubleVector start, DoubleVector end) {
 		if (wrapper.specificLayer == null)
 			return;
-		GroupPositionFrame pos = GroupLayerWrapper.positionFrameFinder.findFrame(
-				wrapper.specificLayer,
+		GroupPositionFrame pos = GroupLayerWrapper.positionFrameFinder.findFrame(wrapper.specificLayer,
 				wrapper.canvasHandle.frameNumber.get()
 		).frame;
-		context.change(new ProjectContext.Tuple(wrapper,"move"), c -> c
-				.groupPositionFrame(pos)
-				.offsetSet(end.minus(markStart).plus(markStartOffset).toInt()));
+		context.change(
+				new ProjectContext.Tuple(wrapper, "move"),
+				c -> c.groupPositionFrame(pos).offsetSet(end.minus(markStart).plus(markStartOffset).toInt())
+		);
 	}
 
 	@Override

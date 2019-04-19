@@ -22,12 +22,15 @@ public class ToolMove extends Tool {
 
 	@Override
 	public void markStart(ProjectContext context, Window window, DoubleVector start) {
-		this.markStart = start;
-		this.markStartOffset = wrapper.canvasHandle.frame.offset();
+		Vector offset = wrapper.canvasHandle.frame.offset();
+		this.markStart = start.plus(offset);
+		this.markStartOffset = offset;
 	}
 
 	@Override
-	public void mark(ProjectContext context, Window window, DoubleVector start, DoubleVector end) {
+	public void mark(ProjectContext context, Window window, DoubleVector start, DoubleVector end0) {
+		Vector offset = wrapper.canvasHandle.frame.offset();
+		DoubleVector end = end0.plus(offset);
 		context.change(new ProjectContext.Tuple(wrapper, "move"),
 				c -> c
 						.paletteImageFrame(wrapper.canvasHandle.frame)

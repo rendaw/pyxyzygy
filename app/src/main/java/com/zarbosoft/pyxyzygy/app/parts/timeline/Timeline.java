@@ -12,6 +12,7 @@ import com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage.TrueColorImageNodeWrap
 import com.zarbosoft.pyxyzygy.core.model.v0.*;
 import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.rendaw.common.Assertion;
+import com.zarbosoft.rendaw.common.Pair;
 import javafx.application.Platform;
 import javafx.beans.Observable;
 import javafx.beans.binding.Bindings;
@@ -244,7 +245,6 @@ public class Timeline {
 				.bind(Bindings.createBooleanBinding(() -> selectedFrame.get() == null ||
 						selectedFrame.get().row.frames.size() == 1, selectedFrame));
 		remove.setOnAction(e -> {
-			RowFramesWidget row = selectedFrame.get().row;
 			context.change(null, change -> {
 				selectedFrame.get().frame.remove(context, change);
 			});
@@ -455,44 +455,48 @@ public class Timeline {
 		};
 		frame.addListener(frameListener);
 
-		playingProperty.addListener(new ChangeListener<Boolean>() {
-			{
-				changed(null, null, playingProperty.get());
-			}
-
-			@Override
-			public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
-				((ImageView) previewPlay.getGraphic()).setImage(newValue ? icon("stop.png") : icon("play.png"));
-				if (!newValue) {
+		new CustomBinding.DoubleHalfBinder<Boolean, Pair<CanvasHandle, EditHandle>, Void>(
+				playingProperty,
+				new CustomBinding.DoubleHalfBinder<>(window.selectedForView,
+						window.selectedForEdit,
+						(v, e) -> opt(new Pair<>(v, e))
+				),
+				(Boolean playing, Pair<CanvasHandle, EditHandle> sel) -> {
+					((ImageView) previewPlay.getGraphic()).setImage(playing ? icon("stop.png") : icon("play.png"));
 					if (playThread != null)
 						playThread.playing.set(false);
 					playThread = null;
-				} else {
-					Wrapper view = window.selectedForView.get().getWrapper();
-					playThread = view instanceof CameraWrapper ? new PlayThread(view) {
-						Camera node = ((CameraWrapper) view).node;
+					if (playing) {
+						Wrapper view = sel.first.getWrapper();
+						Wrapper edit = sel.second.getWrapper();
+						if (edit instanceof CameraWrapper) {
+							playThread = new PlayThread(view) {
+								Camera node = ((CameraWrapper) edit).node;
 
-						@Override
-						public PlayState updateState() {
-							return new PlayState(1000 / node.frameRate(),
-									node.frameStart(),
-									node.frameStart() + node.frameLength()
-							);
+								@Override
+								public PlayState updateState() {
+									return new PlayState(1000 / node.frameRate(),
+											node.frameStart(),
+											node.frameStart() + node.frameLength()
+									);
+								}
+							};
+						} else {
+							NodeConfig config = edit.getConfig();
+							playThread = new PlayThread(view) {
+								@Override
+								public PlayState updateState() {
+									return new PlayState(1000 / config.previewRate.get(),
+											config.previewStart.get(),
+											config.previewStart.get() + config.previewLength.get()
+									);
+								}
+							};
 						}
-					} : new PlayThread(view) {
-						NodeConfig config = view.getConfig();
-
-						@Override
-						public PlayState updateState() {
-							return new PlayState(1000 / config.previewRate.get(),
-									config.previewStart.get(),
-									config.previewStart.get() + config.previewLength.get()
-							);
-						}
-					};
+					}
+					return Optional.empty();
 				}
-			}
-		});
+		);
 	}
 
 	public static abstract class PlayThread extends Thread {
@@ -519,7 +523,7 @@ public class Timeline {
 		AtomicReference<PlayState> playState = new AtomicReference<>();
 
 		{
-			updateState();
+			playState.set(updateState());
 			setDaemon(true);
 			start();
 		}

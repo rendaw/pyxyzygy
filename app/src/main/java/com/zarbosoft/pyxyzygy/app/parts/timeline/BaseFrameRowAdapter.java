@@ -30,7 +30,9 @@ public abstract class BaseFrameRowAdapter<N, F> extends RowAdapter {
 		if (inner == NO_INNER)
 			return false;
 		FrameFinder.Result<F> previous = getFrameFinder().findFrame(getNode(), inner);
-		F source = getFrameFinder().frameGet(getNode(), timeline.selectedFrame.get().index);
+		F source = null;
+		if (timeline.selectedFrame.get() != null)
+			source = getFrameFinder().frameGet(getNode(), timeline.selectedFrame.get().index);
 		if (source == null)
 			source = getFrameFinder().findFrame(getNode(), inner).frame;
 		return createFrame(context, change, inner, previous, innerDuplicateFrame(context, source));

@@ -1,5 +1,6 @@
 package com.zarbosoft.pyxyzygy.app.parts.timeline;
 
+import com.zarbosoft.pyxyzygy.app.CustomBinding;
 import com.zarbosoft.pyxyzygy.app.WidgetHandle;
 import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.Wrapper;
@@ -68,10 +69,19 @@ public class RowAdapterPreview extends RowAdapter {
 			ProjectContext context, Window window
 	) {
 		return new WidgetHandle() {
+			private final Runnable startCleanup;
+			private final Runnable lengthCleanup;
+
 			{
 				widget = new RowTimeRangeWidget(timeline);
-				widget.start.asObject().bindBidirectional(config.previewStart);
-				widget.length.asObject().bindBidirectional(config.previewLength);
+				startCleanup = CustomBinding.bindBidirectional(
+						new CustomBinding.PropertyBinder<>(config.previewStart),
+						new CustomBinding.PropertyBinder<>(widget.start.asObject())
+				);
+				lengthCleanup = CustomBinding.bindBidirectional(
+						new CustomBinding.PropertyBinder<>(config.previewLength),
+						new CustomBinding.PropertyBinder<>(widget.length.asObject())
+				);
 			}
 
 			@Override
@@ -81,8 +91,8 @@ public class RowAdapterPreview extends RowAdapter {
 
 			@Override
 			public void remove() {
-				widget.start.unbind();
-				widget.length.unbind();
+				startCleanup.run();
+				lengthCleanup.run();
 			}
 		};
 	}

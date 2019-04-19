@@ -577,7 +577,7 @@ public class Structure {
 			opacityBox.getChildren().addAll(new Label("Opacity"), opacity);
 		}
 
-		layout.getChildren().addAll(toolbar, tree, pad(opacityBox));
+		layout.getChildren().addAll(toolbar, pad(opacityBox), tree);
 		VBox.setVgrow(tree, Priority.ALWAYS);
 	}
 
