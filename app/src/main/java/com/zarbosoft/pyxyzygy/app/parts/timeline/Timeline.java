@@ -292,7 +292,7 @@ public class Timeline {
 			spinner.setPrefWidth(60);
 			spinner.setEditable(true);
 			spinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 100));
-			CustomBinding.bindBidirectional(new CustomBinding.IndirectBinder<>(window.selectedForView, v -> {
+			CustomBinding.bindBidirectional(new CustomBinding.IndirectBinder<>(window.selectedForEdit, v -> {
 				if (v == null)
 					return opt(null);
 				Wrapper wrapper = v.getWrapper();
@@ -474,7 +474,7 @@ public class Timeline {
 								public PlayState updateState() {
 									return new PlayState(1000 / node.frameRate(),
 											node.frameStart(),
-											node.frameStart() + node.frameLength()
+											node.frameLength()
 									);
 								}
 							};
@@ -485,7 +485,7 @@ public class Timeline {
 								public PlayState updateState() {
 									return new PlayState(1000 / config.previewRate.get(),
 											config.previewStart.get(),
-											config.previewStart.get() + config.previewLength.get()
+											config.previewLength.get()
 									);
 								}
 							};
