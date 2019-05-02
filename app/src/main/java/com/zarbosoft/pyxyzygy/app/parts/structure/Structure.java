@@ -404,7 +404,7 @@ public class Structure {
 		MenuItem importImage = new MenuItem("Import PNG");
 		importImage.setOnAction(e -> {
 			FileChooser fileChooser = new FileChooser();
-			fileChooser.setInitialDirectory(new File(GUILaunch.config.importDir));
+			fileChooser.setInitialDirectory(new File(GUILaunch.profileConfig.importDir));
 			fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PNG Image", "*.png"));
 			Optional.ofNullable(fileChooser.showOpenDialog(window.stage)).map(f -> f.toPath()).ifPresent(p -> {
 				TrueColorImage data = TrueColorImage.deserialize(p.toString());

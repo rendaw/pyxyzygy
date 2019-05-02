@@ -150,10 +150,10 @@ public class Editor {
 		VBox.setVgrow(outerCanvas, Priority.ALWAYS);
 		outerCanvas
 				.backgroundProperty()
-				.bind(Bindings.createObjectBinding(() -> new Background(new BackgroundFill(context.config.backgroundColor
+				.bind(Bindings.createObjectBinding(() -> new Background(new BackgroundFill(GUILaunch.profileConfig.backgroundColor
 								.get()
 								.toJfx(), CornerRadii.EMPTY, Insets.EMPTY)),
-						context.config.backgroundColor
+						GUILaunch.profileConfig.backgroundColor
 				));
 		outerCanvas.setMouseTransparent(false);
 		outerCanvas.setFocusTraversable(true);

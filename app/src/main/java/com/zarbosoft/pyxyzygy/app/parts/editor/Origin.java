@@ -24,8 +24,8 @@ public class Origin extends Group {
 		originVert.setBlendMode(BlendMode.DIFFERENCE);
 		originHoriz.setOpacity(0.5);
 		originVert.setOpacity(0.5);
-		originHoriz.visibleProperty().bind(GUILaunch.config.showOrigin);
-		originVert.visibleProperty().bind(GUILaunch.config.showOrigin);
+		originHoriz.visibleProperty().bind(GUILaunch.profileConfig.showOrigin);
+		originVert.visibleProperty().bind(GUILaunch.profileConfig.showOrigin);
 		getChildren().addAll(originHoriz, originVert);
 		setBlendMode(BlendMode.MULTIPLY);
 		window.selectedForView.addListener(new ChangeListener<CanvasHandle>() {

@@ -55,7 +55,7 @@ public class TrueColorImageNodeWrapper extends BaseImageNodeWrapper<TrueColorIma
 		);
 		this.brushBinder =
 				new CustomBinding.DoubleHalfBinder<ObservableList<TrueColorBrush>, Integer, TrueColorBrush>(
-						new CustomBinding.ListPropertyHalfBinder<>(GUILaunch.config.trueColorBrushes),
+						new CustomBinding.ListPropertyHalfBinder<>(GUILaunch.profileConfig.trueColorBrushes),
 						new CustomBinding.DoubleHalfBinder<>(
 								config.tool,
 								config.brush,

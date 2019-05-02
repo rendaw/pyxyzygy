@@ -277,6 +277,14 @@ public class Timeline {
 				selectedFrame.get().frame.moveRight(context, change);
 			});
 		});
+		ToggleButton onion = new ToggleButton(null, new ImageView(icon("onion.png")));
+		onion.setTooltip(new Tooltip("Toggle onion skin"));
+		CustomBinding.bindBidirectional(
+				new CustomBinding.IndirectBinder<Boolean>(window.selectedForEdit,
+						e -> Optional.ofNullable(e).map(e1 -> e1.getWrapper().getConfig().onionSkin)
+				),
+				new CustomBinding.PropertyBinder<Boolean>(onion.selectedProperty())
+		);
 
 		Region space = new Region();
 		space.setMinWidth(1);
@@ -319,7 +327,7 @@ public class Timeline {
 			playingProperty.set(!playingProperty.get());
 		});
 
-		toolBar.getItems().addAll(add, duplicate, left, right, remove, clear, space, previewRate, previewPlay);
+		toolBar.getItems().addAll(add, duplicate, left, right, remove, clear, onion, space, previewRate, previewPlay);
 		nameColumn.setCellValueFactory(p -> new SimpleObjectProperty<>(p.getValue().getValue()));
 		nameColumn.setCellFactory(param -> new TreeTableCell<RowAdapter, RowAdapter>() {
 			final ImageView showViewing = new ImageView();

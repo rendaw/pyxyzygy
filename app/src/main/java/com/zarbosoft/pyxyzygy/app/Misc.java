@@ -66,9 +66,6 @@ public class Misc {
 									d -> Optional.of((int) (double) d), i -> (double) (int) i
 					));
 				});
-				builder.check("Onion skin", checkBox -> {
-					checkBox.selectedProperty().bindBidirectional(wrapper.getConfig().onionSkin);
-				});
 			}
 
 			@Override

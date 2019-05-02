@@ -63,7 +63,7 @@ public class PaletteImageNodeWrapper extends BaseImageNodeWrapper<PaletteImageNo
 		);
 		this.brushBinder =
 				new CustomBinding.DoubleHalfBinder<ObservableList<PaletteBrush>, Integer, PaletteBrush>(new CustomBinding.ListPropertyHalfBinder<>(
-						GUILaunch.config.paletteBrushes),
+						GUILaunch.profileConfig.paletteBrushes),
 						new CustomBinding.DoubleHalfBinder<>(config.tool, config.brush, (t, index) -> {
 							if (t != PaletteImageNodeConfig.Tool.BRUSH)
 								return opt(null);

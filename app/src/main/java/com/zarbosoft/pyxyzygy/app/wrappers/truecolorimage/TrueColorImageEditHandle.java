@@ -96,7 +96,7 @@ public class TrueColorImageEditHandle extends EditHandle {
 			public void run(ProjectContext context, Window window) {
 				if (wrapper.config.tool.get() == TrueColorImageNodeConfig.Tool.BRUSH) {
 					if (wrapper.config.lastBrush < 0 ||
-							wrapper.config.lastBrush >= GUILaunch.config.trueColorBrushes.size())
+							wrapper.config.lastBrush >= GUILaunch.profileConfig.trueColorBrushes.size())
 						return;
 					setBrush(wrapper.config.lastBrush);
 				} else {
@@ -138,7 +138,7 @@ public class TrueColorImageEditHandle extends EditHandle {
 		) {
 			@Override
 			public void run(ProjectContext context, Window window) {
-				if (p.first >= GUILaunch.config.trueColorBrushes.size())
+				if (p.first >= GUILaunch.profileConfig.trueColorBrushes.size())
 					return;
 				setBrush(p.first);
 				wrapper.config.tool.set(TrueColorImageNodeConfig.Tool.BRUSH);
@@ -184,8 +184,8 @@ public class TrueColorImageEditHandle extends EditHandle {
 			brush.color.set(TrueColor.rgba(0, 0, 0, 255));
 			brush.blend.set(1000);
 			brush.size.set(20);
-			GUILaunch.config.trueColorBrushes.add(brush);
-			if (GUILaunch.config.trueColorBrushes.size() == 1) {
+			GUILaunch.profileConfig.trueColorBrushes.add(brush);
+			if (GUILaunch.profileConfig.trueColorBrushes.size() == 1) {
 				setBrush(0);
 			}
 		});
@@ -193,17 +193,17 @@ public class TrueColorImageEditHandle extends EditHandle {
 		BooleanBinding brushSelected =
 				Bindings.createBooleanBinding(() -> wrapper.config.tool.get() == TrueColorImageNodeConfig.Tool.BRUSH &&
 								Range
-										.closedOpen(0, GUILaunch.config.trueColorBrushes.size())
+										.closedOpen(0, GUILaunch.profileConfig.trueColorBrushes.size())
 										.contains(wrapper.config.brush.get()),
-						GUILaunch.config.trueColorBrushes,
+						GUILaunch.profileConfig.trueColorBrushes,
 						wrapper.config.tool,
 						wrapper.config.brush
 				);
 		menuDelete.disableProperty().bind(brushSelected);
 		menuDelete.setOnAction(e -> {
-			int index = GUILaunch.config.trueColorBrushes.indexOf(wrapper.config.brush.get());
-			GUILaunch.config.trueColorBrushes.remove(index);
-			if (GUILaunch.config.trueColorBrushes.isEmpty()) {
+			int index = GUILaunch.profileConfig.trueColorBrushes.indexOf(wrapper.config.brush.get());
+			GUILaunch.profileConfig.trueColorBrushes.remove(index);
+			if (GUILaunch.profileConfig.trueColorBrushes.isEmpty()) {
 				setBrush(0);
 			} else {
 				setBrush(Math.max(0, index - 1));
@@ -213,21 +213,21 @@ public class TrueColorImageEditHandle extends EditHandle {
 		menuLeft.disableProperty().bind(brushSelected);
 		menuLeft.setOnAction(e -> {
 			int index = wrapper.config.brush.get();
-			TrueColorBrush brush = GUILaunch.config.trueColorBrushes.get(index);
+			TrueColorBrush brush = GUILaunch.profileConfig.trueColorBrushes.get(index);
 			if (index == 0)
 				return;
-			GUILaunch.config.trueColorBrushes.remove(index);
-			GUILaunch.config.trueColorBrushes.add(index - 1, brush);
+			GUILaunch.profileConfig.trueColorBrushes.remove(index);
+			GUILaunch.profileConfig.trueColorBrushes.add(index - 1, brush);
 		});
 		MenuItem menuRight = new MenuItem("Move right");
 		menuRight.disableProperty().bind(brushSelected);
 		menuRight.setOnAction(e -> {
-			int index = GUILaunch.config.trueColorBrushes.indexOf(wrapper.config.brush.get());
-			TrueColorBrush brush = GUILaunch.config.trueColorBrushes.get(index);
-			if (index == GUILaunch.config.trueColorBrushes.size() - 1)
+			int index = GUILaunch.profileConfig.trueColorBrushes.indexOf(wrapper.config.brush.get());
+			TrueColorBrush brush = GUILaunch.profileConfig.trueColorBrushes.get(index);
+			if (index == GUILaunch.profileConfig.trueColorBrushes.size() - 1)
 				return;
-			GUILaunch.config.trueColorBrushes.remove(index);
-			GUILaunch.config.trueColorBrushes.add(index + 1, brush);
+			GUILaunch.profileConfig.trueColorBrushes.remove(index);
+			GUILaunch.profileConfig.trueColorBrushes.add(index + 1, brush);
 		});
 
 		window.menuChildren.set(this, ImmutableList.of(menuNew, menuDelete, menuLeft, menuRight));
@@ -236,7 +236,7 @@ public class TrueColorImageEditHandle extends EditHandle {
 		brushesBox.setSpacing(3);
 		brushesBox.setAlignment(Pos.CENTER_LEFT);
 		brushesBox.setFillHeight(true);
-		brushesCleanup = Misc.mirror(GUILaunch.config.trueColorBrushes, brushesBox.getChildren(), b -> {
+		brushesCleanup = Misc.mirror(GUILaunch.profileConfig.trueColorBrushes, brushesBox.getChildren(), b -> {
 			return new BrushButton(b.size,
 					new CustomBinding.IndirectHalfBinder<TrueColor>(b.useColor,
 							(Boolean u) -> opt(u ? b.color : context.config.trueColor)
@@ -246,7 +246,7 @@ public class TrueColorImageEditHandle extends EditHandle {
 				@Override
 				public void selectBrush() {
 					wrapper.config.tool.set(TrueColorImageNodeConfig.Tool.BRUSH);
-					wrapper.config.brush.set(GUILaunch.config.trueColorBrushes.indexOf(b));
+					wrapper.config.brush.set(GUILaunch.profileConfig.trueColorBrushes.indexOf(b));
 				}
 			};
 		}, Misc.noopConsumer(), Misc.noopConsumer());
@@ -280,7 +280,7 @@ public class TrueColorImageEditHandle extends EditHandle {
 					brushListener = null;
 				}
 				if (brushesListener != null) {
-					GUILaunch.config.trueColorBrushes.removeListener(brushesListener);
+					GUILaunch.profileConfig.trueColorBrushes.removeListener(brushesListener);
 					brushesListener = null;
 				}
 				if (newValue == TrueColorImageNodeConfig.Tool.MOVE) {
@@ -301,9 +301,9 @@ public class TrueColorImageEditHandle extends EditHandle {
 						@Override
 						public void run() {
 							int i = wrapper.config.brush.get();
-							if (!Range.closedOpen(0, GUILaunch.config.trueColorBrushes.size()).contains(i))
+							if (!Range.closedOpen(0, GUILaunch.profileConfig.trueColorBrushes.size()).contains(i))
 								return;
-							TrueColorBrush brush = GUILaunch.config.trueColorBrushes.get(i);
+							TrueColorBrush brush = GUILaunch.profileConfig.trueColorBrushes.get(i);
 							setTool(context,
 									window,
 									() -> new ToolBrush(context, window, TrueColorImageEditHandle.this, brush)
@@ -311,7 +311,7 @@ public class TrueColorImageEditHandle extends EditHandle {
 						}
 					};
 					wrapper.config.brush.addListener((observable1, oldValue1, newValue1) -> update.run());
-					GUILaunch.config.trueColorBrushes.addListener(brushesListener = c -> update.run());
+					GUILaunch.profileConfig.trueColorBrushes.addListener(brushesListener = c -> update.run());
 					update.run();
 				} else {
 					throw new Assertion();

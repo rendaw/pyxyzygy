@@ -229,7 +229,7 @@ public class PaletteImageEditHandle extends EditHandle {
 					public void run(ProjectContext context, Window window) {
 						if (wrapper.config.tool.get() == PaletteImageNodeConfig.Tool.BRUSH) {
 							if (wrapper.config.lastBrush < 0 ||
-									wrapper.config.lastBrush >= GUILaunch.config.paletteBrushes.size())
+									wrapper.config.lastBrush >= GUILaunch.profileConfig.paletteBrushes.size())
 								return;
 							setBrush(wrapper.config.lastBrush);
 						} else {
@@ -274,7 +274,7 @@ public class PaletteImageEditHandle extends EditHandle {
 		) {
 			@Override
 			public void run(ProjectContext context, Window window) {
-				if (p.first >= GUILaunch.config.paletteBrushes.size())
+				if (p.first >= GUILaunch.profileConfig.paletteBrushes.size())
 					return;
 				setBrush(p.first);
 				wrapper.config.tool.set(PaletteImageNodeConfig.Tool.BRUSH);
@@ -317,8 +317,8 @@ public class PaletteImageEditHandle extends EditHandle {
 			PaletteBrush brush = new PaletteBrush();
 			brush.name.set(uniqueName("New brush"));
 			brush.size.set(20);
-			GUILaunch.config.paletteBrushes.add(brush);
-			if (GUILaunch.config.paletteBrushes.size() == 1) {
+			GUILaunch.profileConfig.paletteBrushes.add(brush);
+			if (GUILaunch.profileConfig.paletteBrushes.size() == 1) {
 				setBrush(0);
 			}
 		});
@@ -326,17 +326,17 @@ public class PaletteImageEditHandle extends EditHandle {
 		BooleanBinding brushSelected =
 				Bindings.createBooleanBinding(() -> wrapper.config.tool.get() == PaletteImageNodeConfig.Tool.BRUSH &&
 								Range
-										.closedOpen(0, GUILaunch.config.paletteBrushes.size())
+										.closedOpen(0, GUILaunch.profileConfig.paletteBrushes.size())
 										.contains(wrapper.config.brush.get()),
-						GUILaunch.config.paletteBrushes,
+						GUILaunch.profileConfig.paletteBrushes,
 						wrapper.config.tool,
 						wrapper.config.brush
 				);
 		menuDelete.disableProperty().bind(brushSelected);
 		menuDelete.setOnAction(e -> {
-			int index = GUILaunch.config.paletteBrushes.indexOf(wrapper.config.brush.get());
-			GUILaunch.config.paletteBrushes.remove(index);
-			if (GUILaunch.config.paletteBrushes.isEmpty()) {
+			int index = GUILaunch.profileConfig.paletteBrushes.indexOf(wrapper.config.brush.get());
+			GUILaunch.profileConfig.paletteBrushes.remove(index);
+			if (GUILaunch.profileConfig.paletteBrushes.isEmpty()) {
 				setBrush(0);
 			} else {
 				setBrush(Math.max(0, index - 1));
@@ -346,28 +346,28 @@ public class PaletteImageEditHandle extends EditHandle {
 		menuLeft.disableProperty().bind(brushSelected);
 		menuLeft.setOnAction(e -> {
 			int index = wrapper.config.brush.get();
-			PaletteBrush brush = GUILaunch.config.paletteBrushes.get(index);
+			PaletteBrush brush = GUILaunch.profileConfig.paletteBrushes.get(index);
 			if (index == 0)
 				return;
-			GUILaunch.config.paletteBrushes.remove(index);
-			GUILaunch.config.paletteBrushes.add(index - 1, brush);
+			GUILaunch.profileConfig.paletteBrushes.remove(index);
+			GUILaunch.profileConfig.paletteBrushes.add(index - 1, brush);
 		});
 		MenuItem menuRight = new MenuItem("Move right");
 		menuRight.disableProperty().bind(brushSelected);
 		menuRight.setOnAction(e -> {
-			int index = GUILaunch.config.paletteBrushes.indexOf(wrapper.config.brush.get());
-			PaletteBrush brush = GUILaunch.config.paletteBrushes.get(index);
-			if (index == GUILaunch.config.paletteBrushes.size() - 1)
+			int index = GUILaunch.profileConfig.paletteBrushes.indexOf(wrapper.config.brush.get());
+			PaletteBrush brush = GUILaunch.profileConfig.paletteBrushes.get(index);
+			if (index == GUILaunch.profileConfig.paletteBrushes.size() - 1)
 				return;
-			GUILaunch.config.paletteBrushes.remove(index);
-			GUILaunch.config.paletteBrushes.add(index + 1, brush);
+			GUILaunch.profileConfig.paletteBrushes.remove(index);
+			GUILaunch.profileConfig.paletteBrushes.add(index + 1, brush);
 		});
 		window.menuChildren.set(this, ImmutableList.of(menuNew, menuDelete, menuLeft, menuRight));
 
 		HBox brushesBox = new HBox();
 		brushesBox.setSpacing(3);
 		brushesBox.setAlignment(Pos.CENTER_LEFT);
-		brushesCleanup = Misc.mirror(GUILaunch.config.paletteBrushes,
+		brushesCleanup = Misc.mirror(GUILaunch.profileConfig.paletteBrushes,
 				brushesBox.getChildren(),
 				b -> new BrushButton(b.size,
 						new CustomBinding.DoubleIndirectHalfBinder<Integer, List<ProjectObject>, TrueColor>(new CustomBinding.IndirectHalfBinder<>(
@@ -392,7 +392,7 @@ public class PaletteImageEditHandle extends EditHandle {
 					@Override
 					public void selectBrush() {
 						wrapper.config.tool.set(PaletteImageNodeConfig.Tool.BRUSH);
-						wrapper.config.brush.set(GUILaunch.config.paletteBrushes.indexOf(b));
+						wrapper.config.brush.set(GUILaunch.profileConfig.paletteBrushes.indexOf(b));
 					}
 				},
 				button -> ((BrushButton) button).destroy(context, window),
@@ -647,7 +647,7 @@ public class PaletteImageEditHandle extends EditHandle {
 					brushListener = null;
 				}
 				if (brushesListener != null) {
-					GUILaunch.config.paletteBrushes.removeListener(brushesListener);
+					GUILaunch.profileConfig.paletteBrushes.removeListener(brushesListener);
 					brushesListener = null;
 				}
 				if (newValue == PaletteImageNodeConfig.Tool.MOVE) {
@@ -667,14 +667,14 @@ public class PaletteImageEditHandle extends EditHandle {
 						@Override
 						public void run() {
 							int i = wrapper.config.brush.get();
-							if (!Range.closedOpen(0, GUILaunch.config.paletteBrushes.size()).contains(i))
+							if (!Range.closedOpen(0, GUILaunch.profileConfig.paletteBrushes.size()).contains(i))
 								return;
-							PaletteBrush brush = GUILaunch.config.paletteBrushes.get(i);
+							PaletteBrush brush = GUILaunch.profileConfig.paletteBrushes.get(i);
 							setTool(context, window, () -> new ToolBrush(window, PaletteImageEditHandle.this, brush));
 						}
 					};
 					wrapper.config.brush.addListener((observable1, oldValue1, newValue1) -> update.run());
-					GUILaunch.config.paletteBrushes.addListener(brushesListener = c -> update.run());
+					GUILaunch.profileConfig.paletteBrushes.addListener(brushesListener = c -> update.run());
 					update.run();
 				} else {
 					throw new Assertion();

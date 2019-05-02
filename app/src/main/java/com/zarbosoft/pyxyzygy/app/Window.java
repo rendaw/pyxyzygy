@@ -262,57 +262,61 @@ public class Window {
 		configLayout.setSpacing(3);
 		configLayout
 				.getChildren()
-				.addAll(new TitledPane("Project", new WidgetFormBuilder().twoLine("Background color", () -> {
-							TrueColorPicker w = new TrueColorPicker();
-							w.colorProxyProperty.set(context.config.backgroundColor.get().toJfx());
-							w.colorProxyProperty.addListener((observable, oldValue, newValue) -> context.config.backgroundColor.set(
-									TrueColor.fromJfx(newValue)));
-							return w;
-						}).twoLine("Onion skin color", () -> {
-							TrueColorPicker w = new TrueColorPicker();
-							w.colorProxyProperty.set(context.config.onionSkinColor.get().toJfx());
-							w.colorProxyProperty.addListener((observable, oldValue, newValue) -> context.config.onionSkinColor.set(
-									TrueColor.fromJfx(newValue)));
-							return w;
-						}).build()),
-						new TitledPane("Global", new WidgetFormBuilder().intSpinner("Max undo", 1, 100000, spinner -> {
-							spinner.getValueFactory().setValue(GUILaunch.config.maxUndo);
+				.addAll(new TitledPane("Profile", new WidgetFormBuilder().twoLine("Background color", () -> {
+					TrueColorPicker w = new TrueColorPicker();
+					w.colorProxyProperty.set(GUILaunch.profileConfig.backgroundColor.get().toJfx());
+					w.colorProxyProperty.addListener((observable, oldValue, newValue) -> GUILaunch.profileConfig.backgroundColor
+							.set(TrueColor.fromJfx(newValue)));
+					return w;
+				}).twoLine("Onion skin color", () -> {
+					TrueColorPicker w = new TrueColorPicker();
+					w.colorProxyProperty.set(GUILaunch.profileConfig.onionSkinColor.get().toJfx());
+					w.colorProxyProperty.addListener((observable, oldValue, newValue) -> GUILaunch.profileConfig.onionSkinColor
+							.set(TrueColor.fromJfx(newValue)));
+					return w;
+				}).intSpinner("Max undo", 1, 100000, spinner -> {
+					spinner.getValueFactory().setValue(GUILaunch.profileConfig.maxUndo);
+					spinner
+							.getValueFactory()
+							.valueProperty()
+							.addListener((observable, oldValue, newValue) -> GUILaunch.profileConfig.maxUndo = newValue);
+				}).button(button -> {
+					button.setText("Clear undo/redo");
+					button.setOnAction(e -> {
+						Alert confirm =
+								new Alert(Alert.AlertType.CONFIRMATION, "Are you sure you wish to clear undo/redo?");
+						confirm.initOwner(stage);
+						confirm.showAndWait().filter(b -> b == ButtonType.OK).ifPresent(x -> {
+							context.history.clearHistory();
+						});
+					});
+				}).check("Show origin", checkBox -> {
+					checkBox.selectedProperty().bindBidirectional(GUILaunch.profileConfig.showOrigin);
+				}).check("Show timeline", checkBox -> {
+					checkBox.selectedProperty().bindBidirectional(GUILaunch.profileConfig.showTimeline);
+				}).build()), new TitledPane("Global", new WidgetFormBuilder().intSpinner("Tile cache (Mb)",0,1024 * 16,spinner -> {
+							spinner.getValueFactory().setValue(GUILaunch.profileConfig.maxUndo);
 							spinner
 									.getValueFactory()
 									.valueProperty()
-									.addListener((observable, oldValue, newValue) -> GUILaunch.config.maxUndo =
-											newValue);
-						}).button(button -> {
-							button.setText("Clear undo/redo");
-							button.setOnAction(e -> {
-								Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
-										"Are you sure you wish to clear undo/redo?"
-								);
-								confirm.initOwner(stage);
-								confirm.showAndWait().filter(b -> b == ButtonType.OK).ifPresent(x -> {
-									context.history.clearHistory();
-								});
-							});
-						}).check("Show origin", checkBox -> {
-							checkBox.selectedProperty().bindBidirectional(GUILaunch.config.showOrigin);
-						}).check("Show timeline", checkBox -> {
-							checkBox.selectedProperty().bindBidirectional(GUILaunch.config.showTimeline);
+									.addListener((observable, oldValue, newValue) -> GUILaunch.profileConfig.maxUndo = newValue);
+						}).intSpinner("Onion skin cache (Mb)",0,1024 * 16,s -> {
+
 						}).build()),
 						new TitledPane("Hotkeys", (
-								(Supplier<Node>) () -> {
-									TableColumn<Hotkeys.Action, String> scope = new TableColumn("Scope");
-									scope.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().scope.name()));
-									TableColumn<Hotkeys.Action, String> description = new TableColumn("Description");
-									description.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().description));
-									TableColumn<Hotkeys.Action, String> key = new TableColumn("Key");
-									key.setCellValueFactory(param -> param.getValue().key.asString());
-									TableView<Hotkeys.Action> table = new TableView<>();
-									table.getColumns().addAll(scope, description, key);
-									table.setItems(context.hotkeys.actions);
-									return table;
-								}
-						).get())
-				);
+						(Supplier<Node>) () -> {
+							TableColumn<Hotkeys.Action, String> scope = new TableColumn("Scope");
+							scope.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().scope.name()));
+							TableColumn<Hotkeys.Action, String> description = new TableColumn("Description");
+							description.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().description));
+							TableColumn<Hotkeys.Action, String> key = new TableColumn("Key");
+							key.setCellValueFactory(param -> param.getValue().key.asString());
+							TableView<Hotkeys.Action> table = new TableView<>();
+							table.getColumns().addAll(scope, description, key);
+							table.setItems(context.hotkeys.actions);
+							return table;
+						}
+				).get()));
 		configTab.setContent(configLayout);
 
 		SplitPane generalLayout = new SplitPane();
@@ -322,9 +326,8 @@ public class Window {
 
 		Scene scene = new Scene(generalLayout, 1200, 800);
 
-		new CustomBinding.DoubleHalfBinder<Boolean, Boolean, Boolean>(
-				new CustomBinding.PropertyHalfBinder<>(context.config.maxCanvas),
-				new CustomBinding.PropertyHalfBinder<>(GUILaunch.config.showTimeline),
+		new CustomBinding.DoubleHalfBinder<Boolean, Boolean, Boolean>(new CustomBinding.PropertyHalfBinder<>(context.config.maxCanvas),
+				new CustomBinding.PropertyHalfBinder<>(GUILaunch.profileConfig.showTimeline),
 				(max, show) -> {
 					return opt(!max && show);
 				}
@@ -336,7 +339,8 @@ public class Window {
 						.getDividers()
 						.get(0)
 						.positionProperty()
-						.addListener((observable, oldValue, newValue) -> context.config.timelineSplit = newValue.doubleValue());
+						.addListener((observable, oldValue, newValue) -> context.config.timelineSplit =
+								newValue.doubleValue());
 			} else {
 				specificLayout.getItems().remove(timeline.getWidget());
 			}
@@ -379,9 +383,9 @@ public class Window {
 				getClass().getResource("widgets/brushbutton/style.css").toExternalForm()
 		);
 
-		primaryStage.setMaximized(GUILaunch.config.maximize);
+		primaryStage.setMaximized(GUILaunch.profileConfig.maximize);
 		primaryStage.maximizedProperty().addListener((observable, oldValue, newValue) -> {
-			GUILaunch.config.maximize = newValue.booleanValue();
+			GUILaunch.profileConfig.maximize = newValue.booleanValue();
 		});
 
 		structure.populate();

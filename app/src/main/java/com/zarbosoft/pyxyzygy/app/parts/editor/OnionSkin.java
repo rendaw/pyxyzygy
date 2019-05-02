@@ -36,9 +36,11 @@ public class OnionSkin {
 		onionSkin.addListener((observable, oldValue, newValue) -> render(context));
 		frameProp.addListener((observable, oldValue, newValue) -> render(context));
 		bounds.addListener((observable, oldValue, newValue) -> render(context));
-		context.config.onionSkinColor.addListener((observable, oldValue, newValue) -> render(context));
+		GUILaunch.profileConfig.onionSkinColor.addListener((observable, oldValue, newValue) -> render(context));
 
 		editHandle.getCanvas().overlay.getChildren().add(widget);
+
+		render(context);
 	}
 
 	public void remove() {
@@ -53,7 +55,7 @@ public class OnionSkin {
 			widget.setImage(null);
 			return;
 		}
-		TrueColor color = context.config.onionSkinColor.get();
+		TrueColor color = GUILaunch.profileConfig.onionSkinColor.get();
 		if (lastOn == onionSkin.get() && frame == lastFrame && (
 				triggerBounds.contains(bounds.get().corner()) &&
 						triggerBounds.contains(bounds.get().corner().plus(bounds.get().span()))

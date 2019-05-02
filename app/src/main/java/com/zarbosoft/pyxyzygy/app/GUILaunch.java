@@ -52,7 +52,8 @@ import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 
 public class GUILaunch extends Application {
-	public static RootGlobalConfig config;
+	public static RootProfileConfig profileConfig;
+	public static RootGlobalConfig globalConfig;
 	public static final List<Image> appIcons =
 			Stream.of("appicon16.png", "appicon32.png", "appicon64.png").map(s -> icon(s)).collect(Collectors.toList());
 
@@ -72,35 +73,35 @@ public class GUILaunch extends Application {
 	}
 
 	public static void shutdown() {
-		config.shutdown();
+		profileConfig.shutdown();
 	}
 
 	public static class ProfileDialog extends Stage {
 		Long profile;
-		private final ListView<RootProfileConfig.Profile> list;
+		private final ListView<RootGlobalConfig.Profile> list;
 
-		ProfileDialog(RootProfileConfig profileConfig) {
+		ProfileDialog(RootGlobalConfig profileConfig) {
 			setTitle(String.format("%s - Choose profile", Global.nameHuman));
 			getIcons().addAll(appIcons);
 
 			list = new ListView<>();
 			HBox.setHgrow(list, Priority.ALWAYS);
 			list.setItems(FXCollections.observableList(profileConfig.profiles));
-			list.setCellFactory(new Callback<ListView<RootProfileConfig.Profile>, ListCell<RootProfileConfig.Profile>>() {
+			list.setCellFactory(new Callback<ListView<RootGlobalConfig.Profile>, ListCell<RootGlobalConfig.Profile>>() {
 				@Override
-				public ListCell<RootProfileConfig.Profile> call(ListView<RootProfileConfig.Profile> param) {
+				public ListCell<RootGlobalConfig.Profile> call(ListView<RootGlobalConfig.Profile> param) {
 					return new ListCell<>() {
 						{
 							setFocusTraversable(false);
 						}
 
 						@Override
-						protected void updateItem(RootProfileConfig.Profile item, boolean empty) {
+						protected void updateItem(RootGlobalConfig.Profile item, boolean empty) {
 							rebind(item);
 							super.updateItem(item, empty);
 						}
 
-						private void rebind(RootProfileConfig.Profile profile1) {
+						private void rebind(RootGlobalConfig.Profile profile1) {
 							if (profile1 == null) {
 								textProperty().unbind();
 								setText(null);
@@ -123,7 +124,7 @@ public class GUILaunch extends Application {
 			Button newProfile = HelperJFX.button("plus.png", "New profile");
 			newProfile.setFocusTraversable(false);
 			newProfile.setOnAction(e -> {
-				RootProfileConfig.Profile profile1 = new RootProfileConfig.Profile();
+				RootGlobalConfig.Profile profile1 = new RootGlobalConfig.Profile();
 				profile1.name.set(uniqueName("New Profile"));
 				profile1.id = profileConfig.nextId++;
 				list.getItems().add(profile1);
@@ -134,7 +135,7 @@ public class GUILaunch extends Application {
 			deleteProfile.setFocusTraversable(false);
 			deleteProfile.disableProperty().bind(list.getSelectionModel().selectedItemProperty().isNull());
 			deleteProfile.setOnAction(e -> {
-				RootProfileConfig.Profile profile1 = list.getSelectionModel().getSelectedItem();
+				RootGlobalConfig.Profile profile1 = list.getSelectionModel().getSelectedItem();
 				Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
 				confirm.setTitle("Delete " + profile1.name);
 				confirm.setHeaderText("Are you sure you want to delete profile " + profile1.name + "?");
@@ -149,7 +150,7 @@ public class GUILaunch extends Application {
 			renameProfile.setFocusTraversable(false);
 			renameProfile.disableProperty().bind(list.getSelectionModel().selectedItemProperty().isNull());
 			renameProfile.setOnAction(e -> {
-				RootProfileConfig.Profile profile1 = list.getSelectionModel().getSelectedItem();
+				RootGlobalConfig.Profile profile1 = list.getSelectionModel().getSelectedItem();
 				TextInputDialog dialog = new TextInputDialog(profile1.name.get());
 				dialog.setTitle("Rename profile");
 				dialog.setHeaderText(String.format("Rename profile %s", profile1.name));
@@ -334,10 +335,10 @@ public class GUILaunch extends Application {
 			ToggleGroup modeGroup = new ToggleGroup();
 			modeGroup
 					.selectedToggleProperty()
-					.addListener((observable, oldValue, newValue) -> config.newProjectNormalMode =
+					.addListener((observable, oldValue, newValue) -> profileConfig.newProjectNormalMode =
 							(CreateMode) newValue.getUserData());
 			modeGroup.getToggles().addAll(newNormal, newPixel);
-			switch (config.newProjectNormalMode) {
+			switch (profileConfig.newProjectNormalMode) {
 				case normal:
 					modeGroup.selectToggle(newNormal);
 					break;
@@ -389,7 +390,7 @@ public class GUILaunch extends Application {
 			});
 
 			cwd.addListener((observableValue, path, t1) -> text.setText(""));
-			cwd.set(Paths.get(GUILaunch.config.lastDir));
+			cwd.set(Paths.get(GUILaunch.profileConfig.lastDir));
 			SimpleObjectProperty<ChooserEntry> listProxy = new SimpleObjectProperty<>();
 			{
 				Common.Mutable<Boolean> suppress = new Common.Mutable<>(false);
@@ -468,11 +469,11 @@ public class GUILaunch extends Application {
 		});
 		new com.zarbosoft.pyxyzygy.core.mynativeJNI();
 
-		RootProfileConfig profileConfig = ConfigBase.deserialize(new TypeInfo(RootProfileConfig.class),
+		globalConfig = ConfigBase.deserialize(new TypeInfo(RootGlobalConfig.class),
 				configDir.resolve("profiles.luxem"),
 				() -> {
-					RootProfileConfig config = new RootProfileConfig();
-					RootProfileConfig.Profile profile = new RootProfileConfig.Profile();
+					RootGlobalConfig config = new RootGlobalConfig();
+					RootGlobalConfig.Profile profile = new RootGlobalConfig.Profile();
 					profile.id = config.nextId++;
 					profile.name.set("Default");
 					config.profiles.add(profile);
@@ -483,22 +484,22 @@ public class GUILaunch extends Application {
 				.ofNullable(getParameters().getNamed().get("profile-id"))
 				.map(s -> Long.parseLong(s))
 				.orElseGet(() -> {
-					ProfileDialog dialog = new ProfileDialog(profileConfig);
+					ProfileDialog dialog = new ProfileDialog(globalConfig);
 					dialog.showAndWait();
 					if (dialog.profile == null)
 						return null;
-					profileConfig.lastId = dialog.profile;
+					globalConfig.lastId = dialog.profile;
 					return dialog.profile;
 				});
 		if (profileId == null)
 			return;
 
-		profileConfig.shutdown();
+		globalConfig.shutdown();
 
-		config = ConfigBase.deserialize(new TypeInfo(RootGlobalConfig.class),
+		profileConfig = ConfigBase.deserialize(new TypeInfo(RootProfileConfig.class),
 				Global.configDir.resolve(String.format("profile_%s.luxem", Long.toString(profileId))),
 				() -> {
-					RootGlobalConfig config = new RootGlobalConfig();
+					RootProfileConfig config = new RootProfileConfig();
 					{
 						TrueColorBrush transparentBrush = new TrueColorBrush();
 						transparentBrush.name.set("Transparent");
@@ -593,7 +594,7 @@ public class GUILaunch extends Application {
 	}
 
 	public void newProject(Stage primaryStage, Path path, CreateMode createMode) {
-		config.lastDir = path.getParent().toString();
+		profileConfig.lastDir = path.getParent().toString();
 		ProjectContext context = Global.create(path, createMode.tileSize());
 		context.config.defaultZoom = createMode.defaultZoom();
 
@@ -664,7 +665,7 @@ public class GUILaunch extends Application {
 	}
 
 	public void openProject(Stage primaryStage, Path path) {
-		config.lastDir = path.getParent().toString();
+		profileConfig.lastDir = path.getParent().toString();
 		com.zarbosoft.pyxyzygy.seed.model.ProjectContext rawContext = Global.deserialize(path);
 		ProjectContext context;
 		if (rawContext.needsMigrate()) {

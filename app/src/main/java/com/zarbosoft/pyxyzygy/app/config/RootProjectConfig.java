@@ -15,14 +15,6 @@ import java.util.List;
 @Configuration
 public class RootProjectConfig extends ConfigBase {
 	@Configuration
-	public final SimpleObjectProperty<TrueColor> backgroundColor =
-			new SimpleObjectProperty<>(TrueColor.fromJfx(Color.WHITE));
-
-	@Configuration(optional = true)
-	public final SimpleObjectProperty<TrueColor> onionSkinColor =
-			new SimpleObjectProperty<>(TrueColor.fromJfx(Color.BLUE));
-
-	@Configuration
 	public final SimpleObjectProperty<TrueColor> trueColor = new SimpleObjectProperty<>(TrueColor.fromJfx(Color.BLACK));
 
 	@Configuration

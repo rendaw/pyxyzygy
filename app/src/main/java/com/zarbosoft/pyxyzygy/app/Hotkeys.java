@@ -87,7 +87,7 @@ public class Hotkeys {
 	ObservableList<Action> actions = FXCollections.observableArrayList();
 
 	public void register(Action action) {
-		Hotkey found = GUILaunch.config.hotkeys.get(action.id());
+		Hotkey found = GUILaunch.profileConfig.hotkeys.get(action.id());
 		if (found != null)
 			action.key.set(found);
 		actions.add(action);
