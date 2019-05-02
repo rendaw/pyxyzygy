@@ -19,12 +19,15 @@ import javafx.collections.ObservableList;
 import javafx.scene.image.Image;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.zarbosoft.pyxyzygy.app.GUILaunch.CACHE_TILE;
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext.uniqueName1;
+import static com.zarbosoft.rendaw.common.Common.uncheck;
 
 public class TrueColorImageNodeWrapper extends BaseImageNodeWrapper<TrueColorImageNode, TrueColorImageFrame, TrueColorTileBase, TrueColorImage> {
 	final TrueColorImageNodeConfig config;
@@ -172,7 +175,9 @@ public class TrueColorImageNodeWrapper extends BaseImageNodeWrapper<TrueColorIma
 		return new WrapTile<TrueColorTileBase>(x, y) {
 			@Override
 			public Image getImage(ProjectContext context, TrueColorTileBase tile) {
-				return HelperJFX.toImage(((TrueColorTile) tile).getData(context));
+				return uncheck(() -> GUILaunch.imageCache.get(
+						Objects.hash(CACHE_TILE, tile.id()),
+						() -> HelperJFX.toImage(((TrueColorTile) tile).getData(context))));
 			}
 		};
 	}

@@ -101,7 +101,7 @@ public class Window {
 		this.stage = primaryStage;
 		primaryStage.getIcons().addAll(GUILaunch.appIcons);
 		primaryStage.setOnCloseRequest(e -> {
-			context.shutdown();
+			Global.shutdown();
 		});
 
 		Stream
@@ -263,60 +263,65 @@ public class Window {
 		configLayout
 				.getChildren()
 				.addAll(new TitledPane("Profile", new WidgetFormBuilder().twoLine("Background color", () -> {
-					TrueColorPicker w = new TrueColorPicker();
-					w.colorProxyProperty.set(GUILaunch.profileConfig.backgroundColor.get().toJfx());
-					w.colorProxyProperty.addListener((observable, oldValue, newValue) -> GUILaunch.profileConfig.backgroundColor
-							.set(TrueColor.fromJfx(newValue)));
-					return w;
-				}).twoLine("Onion skin color", () -> {
-					TrueColorPicker w = new TrueColorPicker();
-					w.colorProxyProperty.set(GUILaunch.profileConfig.onionSkinColor.get().toJfx());
-					w.colorProxyProperty.addListener((observable, oldValue, newValue) -> GUILaunch.profileConfig.onionSkinColor
-							.set(TrueColor.fromJfx(newValue)));
-					return w;
-				}).intSpinner("Max undo", 1, 100000, spinner -> {
-					spinner.getValueFactory().setValue(GUILaunch.profileConfig.maxUndo);
-					spinner
-							.getValueFactory()
-							.valueProperty()
-							.addListener((observable, oldValue, newValue) -> GUILaunch.profileConfig.maxUndo = newValue);
-				}).button(button -> {
-					button.setText("Clear undo/redo");
-					button.setOnAction(e -> {
-						Alert confirm =
-								new Alert(Alert.AlertType.CONFIRMATION, "Are you sure you wish to clear undo/redo?");
-						confirm.initOwner(stage);
-						confirm.showAndWait().filter(b -> b == ButtonType.OK).ifPresent(x -> {
-							context.history.clearHistory();
-						});
-					});
-				}).check("Show origin", checkBox -> {
-					checkBox.selectedProperty().bindBidirectional(GUILaunch.profileConfig.showOrigin);
-				}).check("Show timeline", checkBox -> {
-					checkBox.selectedProperty().bindBidirectional(GUILaunch.profileConfig.showTimeline);
-				}).build()), new TitledPane("Global", new WidgetFormBuilder().intSpinner("Tile cache (Mb)",0,1024 * 16,spinner -> {
+							TrueColorPicker w = new TrueColorPicker();
+							w.colorProxyProperty.set(GUILaunch.profileConfig.backgroundColor.get().toJfx());
+							w.colorProxyProperty.addListener((observable, oldValue, newValue) -> GUILaunch.profileConfig.backgroundColor
+									.set(TrueColor.fromJfx(newValue)));
+							return w;
+						}).twoLine("Onion skin color", () -> {
+							TrueColorPicker w = new TrueColorPicker();
+							w.colorProxyProperty.set(GUILaunch.profileConfig.onionSkinColor.get().toJfx());
+							w.colorProxyProperty.addListener((observable, oldValue, newValue) -> GUILaunch.profileConfig.onionSkinColor
+									.set(TrueColor.fromJfx(newValue)));
+							return w;
+						}).intSpinner("Max undo", 1, 100000, spinner -> {
 							spinner.getValueFactory().setValue(GUILaunch.profileConfig.maxUndo);
 							spinner
 									.getValueFactory()
 									.valueProperty()
-									.addListener((observable, oldValue, newValue) -> GUILaunch.profileConfig.maxUndo = newValue);
-						}).intSpinner("Onion skin cache (Mb)",0,1024 * 16,s -> {
-
+									.addListener((observable, oldValue, newValue) -> GUILaunch.profileConfig.maxUndo =
+											newValue);
+						}).button(button -> {
+							button.setText("Clear undo/redo");
+							button.setOnAction(e -> {
+								Alert confirm =
+										new Alert(Alert.AlertType.CONFIRMATION, "Are you sure you wish to clear undo/redo?");
+								confirm.initOwner(stage);
+								confirm.showAndWait().filter(b -> b == ButtonType.OK).ifPresent(x -> {
+									context.history.clearHistory();
+								});
+							});
+						}).check("Show origin", checkBox -> {
+							checkBox.selectedProperty().bindBidirectional(GUILaunch.profileConfig.showOrigin);
+						}).check("Show timeline", checkBox -> {
+							checkBox.selectedProperty().bindBidirectional(GUILaunch.profileConfig.showTimeline);
 						}).build()),
+						new TitledPane(
+								"Global",
+								new WidgetFormBuilder().intSpinner("Tile cache (Mb)", 0, 1024 * 16, spinner -> {
+									spinner.getValueFactory().setValue(GUILaunch.globalConfig.cacheSize.get());
+									spinner
+											.getValueFactory()
+											.valueProperty()
+											.addListener((observable, oldValue, newValue) ->
+													GUILaunch.globalConfig.cacheSize.set(newValue));
+								}).build()
+						),
 						new TitledPane("Hotkeys", (
-						(Supplier<Node>) () -> {
-							TableColumn<Hotkeys.Action, String> scope = new TableColumn("Scope");
-							scope.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().scope.name()));
-							TableColumn<Hotkeys.Action, String> description = new TableColumn("Description");
-							description.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().description));
-							TableColumn<Hotkeys.Action, String> key = new TableColumn("Key");
-							key.setCellValueFactory(param -> param.getValue().key.asString());
-							TableView<Hotkeys.Action> table = new TableView<>();
-							table.getColumns().addAll(scope, description, key);
-							table.setItems(context.hotkeys.actions);
-							return table;
-						}
-				).get()));
+								(Supplier<Node>) () -> {
+									TableColumn<Hotkeys.Action, String> scope = new TableColumn("Scope");
+									scope.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().scope.name()));
+									TableColumn<Hotkeys.Action, String> description = new TableColumn("Description");
+									description.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().description));
+									TableColumn<Hotkeys.Action, String> key = new TableColumn("Key");
+									key.setCellValueFactory(param -> param.getValue().key.asString());
+									TableView<Hotkeys.Action> table = new TableView<>();
+									table.getColumns().addAll(scope, description, key);
+									table.setItems(context.hotkeys.actions);
+									return table;
+								}
+						).get())
+				);
 		configTab.setContent(configLayout);
 
 		SplitPane generalLayout = new SplitPane();

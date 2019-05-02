@@ -13,6 +13,8 @@ import javafx.scene.input.KeyCode;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext.countUniqueName;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
@@ -37,6 +39,12 @@ public class Global {
 	public final static String paletteName = "Palette";
 	public final static String paletteLayerName = "Palette layer";
 	public final static String groupLayerName = "Group";
+
+	public static List<Runnable> shutdown = new ArrayList<>();
+	public static void shutdown() {
+		for (Runnable s : shutdown) s.run();
+		shutdown.clear();
+	}
 
 	public static ProjectContext create(Path path, int tileSize) {
 		ProjectContext out = new ProjectContext(path);
@@ -78,12 +86,12 @@ public class Global {
 				}).get(0);
 			}
 			context.finishers.forEach(finisher -> finisher.finish(context));
-			context.objectMap
+			out.project = (Project) context.objectMap
 					.values()
 					.stream()
 					.filter(o -> o instanceof Project)
 					.findFirst()
-					.ifPresent(p -> out.project = (Project) p);
+					.get();
 			context.objectMap
 					.values()
 					.stream()

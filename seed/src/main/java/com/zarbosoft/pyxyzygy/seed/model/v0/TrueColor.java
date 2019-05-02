@@ -5,6 +5,8 @@ import com.zarbosoft.luxem.read.StackReader;
 import com.zarbosoft.luxem.write.RawWriter;
 import javafx.scene.paint.Color;
 
+import java.util.Objects;
+
 @Configuration(name = "true-color")
 public class TrueColor {
 	@Configuration
@@ -102,5 +104,10 @@ public class TrueColor {
 		public Object get() {
 			return out;
 		}
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(249032721, r, g, b, a);
 	}
 }

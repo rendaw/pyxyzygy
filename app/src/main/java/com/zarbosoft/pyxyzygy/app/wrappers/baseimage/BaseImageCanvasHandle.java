@@ -1,6 +1,9 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.baseimage;
 
-import com.zarbosoft.pyxyzygy.app.*;
+import com.zarbosoft.pyxyzygy.app.CanvasHandle;
+import com.zarbosoft.pyxyzygy.app.DoubleRectangle;
+import com.zarbosoft.pyxyzygy.app.DoubleVector;
+import com.zarbosoft.pyxyzygy.app.Wrapper;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.wrappers.FrameFinder;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
@@ -9,9 +12,11 @@ import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
 import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
+import com.zarbosoft.rendaw.common.Pair;
 import javafx.beans.property.SimpleIntegerProperty;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.zarbosoft.pyxyzygy.app.Global.opacityMax;
 
@@ -106,7 +111,7 @@ public class BaseImageCanvasHandle<N extends ProjectNode, F, T, L> extends Canva
 				}
 				WrapTile wrapTile =
 						wrapper.createWrapTile(useIndexes.x * context.tileSize, useIndexes.y * context.tileSize);
-				wrapTile.update(context, tile);
+				wrapTile.update(wrapTile.getImage(context,tile)); // Image deserialization must be serial
 				wrapTiles.put(key, wrapTile);
 				inner.getChildren().add(wrapTile.widget);
 			}
@@ -165,14 +170,14 @@ public class BaseImageCanvasHandle<N extends ProjectNode, F, T, L> extends Canva
 					wrapTiles.put(key, wrap);
 					inner.getChildren().add(wrap.widget);
 				}
-				wrap.update(context, value);
+				wrap.update(wrap.getImage(context,value)); // Image deserialization can't be done in parallel :(
 			}
 		});
 		tilesClearListener = wrapper.addFrameTilesClearListener(frame, (target) -> {
 			inner.getChildren().clear();
 			wrapTiles.clear();
 		});
-		offsetListener = wrapper.addFrameOffsetListener(frame, (target, offset )-> {
+		offsetListener = wrapper.addFrameOffsetListener(frame, (target, offset) -> {
 			inner.setLayoutX(offset.x);
 			inner.setLayoutY(offset.y);
 		});

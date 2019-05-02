@@ -1,5 +1,8 @@
 package com.zarbosoft.pyxyzygy.app;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.Weigher;
 import com.google.common.collect.ImmutableList;
 import com.zarbosoft.interface1.TypeInfo;
 import com.zarbosoft.pyxyzygy.app.config.*;
@@ -17,6 +20,8 @@ import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -39,10 +44,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -57,6 +59,16 @@ public class GUILaunch extends Application {
 	public static final List<Image> appIcons =
 			Stream.of("appicon16.png", "appicon32.png", "appicon64.png").map(s -> icon(s)).collect(Collectors.toList());
 
+	public final static int CACHE_TILE;
+	public final static int CACHE_ONION;
+	public static Cache<Integer, Image> imageCache;
+
+	static {
+		int index = 0;
+		CACHE_TILE = index++;
+		CACHE_ONION = index++;
+	}
+
 	public GUILaunch() {
 		try {
 			// Hack because JavaFX was designed by sea sponges
@@ -70,10 +82,6 @@ public class GUILaunch extends Application {
 
 	public static void main(String[] args) {
 		launch(args);
-	}
-
-	public static void shutdown() {
-		profileConfig.shutdown();
 	}
 
 	public static class ProfileDialog extends Stage {
@@ -491,10 +499,44 @@ public class GUILaunch extends Application {
 					globalConfig.lastId = dialog.profile;
 					return dialog.profile;
 				});
-		if (profileId == null)
+		if (profileId == null) {
+			Global.shutdown();
 			return;
+		}
 
-		globalConfig.shutdown();
+		globalConfig.cacheSize.addListener(new ChangeListener<Number>() {
+			{
+				changed(null, null, globalConfig.cacheSize.get());
+			}
+
+			@Override
+			public void changed(
+					ObservableValue<? extends Number> observable, Number oldValue, Number newValue
+			) {
+				imageCache = CacheBuilder
+						.newBuilder()
+						.recordStats()
+						.maximumWeight(newValue.intValue())
+						.weigher((Weigher<Integer, Image>) (key, value) -> (int) (
+								value.getWidth() *
+										value.getHeight() *
+										4 / 1024 / 1024
+						))
+						.build();
+			}
+		});
+		Timer cacheStatsTimer = new Timer();
+		TimerTask cacheStatsTask = new TimerTask() {
+			@Override
+			public void run() {
+				logger.write("Cache stats:\n%s", imageCache.stats());
+			}
+		};
+		cacheStatsTimer.scheduleAtFixedRate(cacheStatsTask, 0, 1000 * 60 * 5);
+		shutdown.add(() -> {
+			cacheStatsTimer.cancel();
+			cacheStatsTask.run();
+		});
 
 		profileConfig = ConfigBase.deserialize(new TypeInfo(RootProfileConfig.class),
 				Global.configDir.resolve(String.format("profile_%s.luxem", Long.toString(profileId))),
@@ -621,8 +663,8 @@ public class GUILaunch extends Application {
 				trueColorImageFrame.initialOffsetSet(context, new Vector(0, 0));
 				trueColorImageNode.initialFramesAdd(context, ImmutableList.of(trueColorImageFrame));
 				groupLayer.initialInnerSet(context, trueColorImageNode);
+				break;
 			}
-			break;
 			case pixel: {
 				Palette palette = Palette.create(context);
 				palette.initialNameSet(context, uniqueName(Global.paletteName));
@@ -645,8 +687,8 @@ public class GUILaunch extends Application {
 				paletteImageFrame.initialOffsetSet(context, new Vector(0, 0));
 				paletteImageNode.initialFramesAdd(context, ImmutableList.of(paletteImageFrame));
 				groupLayer.initialInnerSet(context, paletteImageNode);
+				break;
 			}
-			break;
 			default:
 				throw new Assertion();
 		}

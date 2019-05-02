@@ -2,6 +2,7 @@ package com.zarbosoft.pyxyzygy.app.config;
 
 import com.zarbosoft.interface1.Configuration;
 import com.zarbosoft.pyxyzygy.app.ConfigBase;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 
 import java.util.ArrayList;
@@ -28,8 +29,5 @@ public class RootGlobalConfig extends ConfigBase {
 	public long lastId = 0;
 
 	@Configuration(optional = true)
-	public long tileCacheSize = 1024;
-
-	@Configuration(optional = true)
-	public long onionSkinCacheSize = 1024;
+	public SimpleIntegerProperty cacheSize = new SimpleIntegerProperty(2048);
 }

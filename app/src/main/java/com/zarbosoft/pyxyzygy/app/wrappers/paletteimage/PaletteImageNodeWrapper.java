@@ -22,12 +22,15 @@ import javafx.collections.ObservableList;
 import javafx.scene.image.Image;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.zarbosoft.pyxyzygy.app.GUILaunch.CACHE_TILE;
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext.uniqueName1;
+import static com.zarbosoft.rendaw.common.Common.uncheck;
 
 public class PaletteImageNodeWrapper extends BaseImageNodeWrapper<PaletteImageNode, PaletteImageFrame, PaletteTileBase, PaletteImage> {
 	final PaletteImageNodeConfig config;
@@ -111,7 +114,10 @@ public class PaletteImageNodeWrapper extends BaseImageNodeWrapper<PaletteImageNo
 						{
 							paletteChangeListener = () -> {
 								wrapTiles.forEach((k, t) -> {
-									t.update(context, wrapper.tileGet(frame, k));
+									t.update(t.getImage(
+											context,
+											wrapper.tileGet(frame, k)
+									)); // Image deserialization can't be done in parallel :( (global pixelreader state?)
 								});
 							};
 							palette.listeners.add(paletteChangeListener);
@@ -220,7 +226,9 @@ public class PaletteImageNodeWrapper extends BaseImageNodeWrapper<PaletteImageNo
 			public Image getImage(
 					ProjectContext context, PaletteTileBase tile
 			) {
-				return HelperJFX.toImage(((PaletteTile) tile).getData(context), palette.colors);
+				return uncheck(() -> GUILaunch.imageCache.get(Objects.hash(CACHE_TILE, tile.id()),
+						() -> HelperJFX.toImage(((PaletteTile) tile).getData(context), palette.colors)
+				));
 			}
 		};
 	}

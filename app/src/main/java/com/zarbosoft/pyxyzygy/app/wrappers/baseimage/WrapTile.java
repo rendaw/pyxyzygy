@@ -21,8 +21,8 @@ public abstract class WrapTile<T> {
 		widget.setManaged(false);
 	}
 
-	public void update(ProjectContext context, T tile) {
-		widget.setImage(getImage(context, tile));
+	public void update(Image image) {
+		widget.setImage(image);
 	}
 
 	public abstract Image getImage(ProjectContext context, T tile);

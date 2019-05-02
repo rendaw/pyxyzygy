@@ -1,5 +1,7 @@
 package com.zarbosoft.pyxyzygy.seed.model.v0;
 
+import java.util.Objects;
+
 import static com.zarbosoft.rendaw.common.Common.ceilDiv;
 
 public class Rectangle {
@@ -72,6 +74,11 @@ public class Rectangle {
 	}
 
 	public Vector span() {
-		return new Vector(width,height);
+		return new Vector(width, height);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(239034092, x, y, width, height);
 	}
 }

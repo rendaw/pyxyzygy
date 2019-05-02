@@ -34,6 +34,10 @@ public class ConfigBase {
 
 	public ConfigBase() {
 		configFlushTimer = new Timer(name(), true);
+		Global.shutdown.add(() -> {
+			flushConfig();
+			configFlushTimer.cancel();
+		});
 	}
 
 	private String name() {
@@ -189,11 +193,6 @@ public class ConfigBase {
 					return new TypeInfo(info.field, HashMap.class, info.parameters);
 				}
 			});
-
-	public void shutdown() {
-		flushConfig();
-		configFlushTimer.cancel();
-	}
 
 	public void flushConfig() {
 		atomicWrite(path, stream -> {

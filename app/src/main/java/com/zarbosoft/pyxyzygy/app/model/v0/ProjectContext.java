@@ -220,21 +220,18 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 	public ReadWriteLock lock = new ReentrantReadWriteLock();
 	private Map<Dirtyable, Object> dirty = new ConcurrentHashMap<>();
 
-	public void shutdown() {
-		Timer timer = flushTimer.getAndSet(null);
-		if (timer != null)
-			timer.cancel();
-		flushAll();
-		config.shutdown();
-		GUILaunch.shutdown();
-	}
-
 	public ProjectContext(Path path) {
 		super(path);
 		uncheck(() -> {
 			Files.createDirectories(path);
 			Files.createDirectories(changesDir);
 			Files.createDirectories(tileDir);
+		});
+		Global.shutdown.add(() -> {
+			Timer timer = flushTimer.getAndSet(null);
+			if (timer != null)
+				timer.cancel();
+			flushAll();
 		});
 	}
 
