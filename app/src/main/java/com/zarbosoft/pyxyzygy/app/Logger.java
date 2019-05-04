@@ -17,6 +17,8 @@ import static com.zarbosoft.rendaw.common.Common.sublist;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 
 public abstract class Logger {
+	public abstract void flush();
+
 	public static class File extends Logger {
 		final PrintStream stream;
 
@@ -48,6 +50,11 @@ public abstract class Logger {
 			write(format + "\n%s", args);
 			stream.flush();
 		}
+
+		@Override
+		public void flush() {
+			stream.flush();
+		}
 	}
 
 	public static class TerminalPlusFile extends File {
@@ -69,6 +76,11 @@ public abstract class Logger {
 			System.err.format(format + "\n%s", args);
 			System.err.flush();
 			super.writeException(e, format, args1);
+		}
+
+		@Override
+		public void flush() {
+			System.out.flush();
 		}
 	}
 

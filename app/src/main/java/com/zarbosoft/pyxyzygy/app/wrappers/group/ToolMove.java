@@ -37,8 +37,7 @@ public class ToolMove extends Tool {
 		GroupPositionFrame pos = GroupLayerWrapper.positionFrameFinder.findFrame(wrapper.specificLayer,
 				wrapper.canvasHandle.frameNumber.get()
 		).frame;
-		context.change(
-				new ProjectContext.Tuple(wrapper, "move"),
+		context.change(new ProjectContext.Tuple(wrapper, "move"),
 				c -> c.groupPositionFrame(pos).offsetSet(end.minus(markStart).plus(markStartOffset).toInt())
 		);
 	}

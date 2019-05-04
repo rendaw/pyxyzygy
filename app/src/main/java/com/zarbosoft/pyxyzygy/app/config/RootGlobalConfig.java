@@ -29,5 +29,5 @@ public class RootGlobalConfig extends ConfigBase {
 	public long lastId = 0;
 
 	@Configuration(optional = true)
-	public SimpleIntegerProperty cacheSize = new SimpleIntegerProperty(2048);
+	public SimpleIntegerProperty cacheSize = new SimpleIntegerProperty(1024);
 }

@@ -356,7 +356,7 @@ public class Editor {
 					onionSkin = null;
 				}
 				if (newValue != null) {
-					onionSkin = new OnionSkin(context, newValue);
+					onionSkin = new OnionSkin(context, window.timeline, newValue);
 				}
 			}
 		});

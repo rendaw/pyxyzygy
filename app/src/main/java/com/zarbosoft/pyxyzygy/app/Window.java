@@ -80,6 +80,7 @@ public class Window {
 	public ChildrenReplacer<Node> toolBarChildren;
 	public ChildrenReplacer<MenuItem> menuChildren;
 	public Stage stage;
+	public Timeline timeline;
 
 	public static class Tab extends javafx.scene.control.Tab {
 		ScrollPane scrollPane = new ScrollPane();
@@ -246,7 +247,7 @@ public class Window {
 		toolBar.getItems().addAll(toolbarExtra, menuSpring, zoomBox, resetScroll, menuButton);
 
 		editor = new Editor(context, this);
-		Timeline timeline = new Timeline(context, this);
+		timeline = new Timeline(context, this);
 
 		VBox editorBox = new VBox();
 		editorBox.setFillWidth(true);

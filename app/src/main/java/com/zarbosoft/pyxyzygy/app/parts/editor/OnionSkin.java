@@ -3,6 +3,7 @@ package com.zarbosoft.pyxyzygy.app.parts.editor;
 import com.google.common.base.Objects;
 import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
+import com.zarbosoft.pyxyzygy.app.parts.timeline.Timeline;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.pyxyzygy.nearestneighborimageview.NearestNeighborImageView;
@@ -14,8 +15,7 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
-import static com.zarbosoft.pyxyzygy.app.GUILaunch.CACHE_ONION;
-import static com.zarbosoft.rendaw.common.Common.uncheck;
+import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 
 public class OnionSkin {
 	final ImageView widget = NearestNeighborImageView.create();
@@ -23,8 +23,9 @@ public class OnionSkin {
 
 	// Convenience, from relations
 	private final SimpleIntegerProperty frameProp;
-	private final SimpleBooleanProperty onionSkin;
 	private final SimpleObjectProperty<DoubleRectangle> bounds;
+	private final Runnable onCleanup;
+	private final CustomBinding.DoubleHalfBinder<Boolean, Boolean, Boolean> on;
 
 	// Own
 	private boolean lastOn = false;
@@ -32,12 +33,15 @@ public class OnionSkin {
 	private DoubleRectangle triggerBounds = new DoubleRectangle(0, 0, 0, 0);
 	private TrueColor lastColor = null;
 
-	public OnionSkin(ProjectContext context, EditHandle editHandle) {
+	public OnionSkin(ProjectContext context, Timeline timeline, EditHandle editHandle) {
 		this.editHandle = editHandle;
-		onionSkin = editHandle.getWrapper().getConfig().onionSkin;
 		frameProp = editHandle.getCanvas().previousFrame;
 		bounds = editHandle.getCanvas().bounds;
-		onionSkin.addListener((observable, oldValue, newValue) -> render(context));
+		on = new CustomBinding.DoubleHalfBinder<>(new CustomBinding.PropertyHalfBinder<>(editHandle.getWrapper().getConfig().onionSkin),
+				new CustomBinding.PropertyHalfBinder<>(timeline.playingProperty),
+				(on0, playing) -> opt(on0 && !playing)
+		);
+		onCleanup = on.addListener(v -> render(context));
 		frameProp.addListener((observable, oldValue, newValue) -> render(context));
 		bounds.addListener((observable, oldValue, newValue) -> render(context));
 		GUILaunch.profileConfig.onionSkinColor.addListener((observable, oldValue, newValue) -> render(context));
@@ -48,19 +52,21 @@ public class OnionSkin {
 	}
 
 	public void remove() {
+		onCleanup.run();
 		editHandle.getCanvas().overlay.getChildren().remove(widget);
 	}
 
 	private void render(ProjectContext context) {
 		int frame = frameProp.get();
-		if (frame < 0 || bounds.get() == null || !onionSkin.get()) {
-			if (!onionSkin.get())
+		boolean on = this.on.get().get();
+		if (frame < 0 || bounds.get() == null || !on) {
+			if (!on)
 				lastOn = false;
 			widget.setImage(null);
 			return;
 		}
 		TrueColor color = GUILaunch.profileConfig.onionSkinColor.get();
-		if (lastOn == onionSkin.get() && frame == lastFrame && (
+		if (lastOn == on && frame == lastFrame && (
 				triggerBounds.contains(bounds.get().corner()) &&
 						triggerBounds.contains(bounds.get().corner().plus(bounds.get().span()))
 		) && Objects.equal(color, lastColor))
@@ -80,27 +86,20 @@ public class OnionSkin {
 				.divideContains(1);
 		if (renderBounds.height == 0 || renderBounds.width == 0)
 			return;
-		int hash = Objects.hashCode(CACHE_ONION,
-				editHandle.getWrapper().getValue().id(),
-				frame,
-				color.hashCode(),
-				renderBounds.hashCode()
-		);
-		Image image = uncheck(() -> GUILaunch.imageCache.get(hash, () -> {
-			final TrueColorImage buffer = TrueColorImage.create(renderBounds.width, renderBounds.height);
-			try {
-				Render.render(context,
-						editHandle.getWrapper().getValue(),
-						buffer,
-						frame,
-						renderBounds.divideContains(1),
-						1
-				);
-				return HelperJFX.toImage(buffer, color);
-			} finally {
-				buffer.delete();
-			}
-		}));
+		Image image;
+		final TrueColorImage buffer = TrueColorImage.create(renderBounds.width, renderBounds.height);
+		try {
+			Render.render(context,
+					editHandle.getWrapper().getValue(),
+					buffer,
+					frame,
+					renderBounds.divideContains(1),
+					1
+			);
+			image = HelperJFX.toImage(buffer, color);
+		} finally {
+			buffer.delete();
+		}
 		widget.setImage(image);
 		widget.setOpacity(color.toJfx().getOpacity());
 		widget.setX(renderBounds.x);

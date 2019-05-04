@@ -59,14 +59,12 @@ public class GUILaunch extends Application {
 	public static final List<Image> appIcons =
 			Stream.of("appicon16.png", "appicon32.png", "appicon64.png").map(s -> icon(s)).collect(Collectors.toList());
 
-	public final static int CACHE_TILE;
-	public final static int CACHE_ONION;
+	public final static int CACHE_OBJECT;
 	public static Cache<Integer, Image> imageCache;
 
 	static {
 		int index = 0;
-		CACHE_TILE = index++;
-		CACHE_ONION = index++;
+		CACHE_OBJECT = index++;
 	}
 
 	public GUILaunch() {

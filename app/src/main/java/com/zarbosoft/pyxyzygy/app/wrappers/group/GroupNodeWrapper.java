@@ -30,7 +30,7 @@ public class GroupNodeWrapper extends Wrapper {
 		this.parentIndex = parentIndex;
 		this.parent = parent;
 		this.node = node;
-		config = initConfig(context,node.id());
+		config = initConfig(context, node.id());
 
 		tree.set(new TreeItem<>(this));
 
@@ -74,35 +74,34 @@ public class GroupNodeWrapper extends Wrapper {
 	public CanvasHandle buildCanvas(
 			ProjectContext context, Window window, CanvasHandle parent
 	) {
-		return canvasHandle =new GroupNodeCanvasHandle(context,window, parent, this);
+		return canvasHandle = new GroupNodeCanvasHandle(context, window, parent, this);
 	}
 
 	@Override
 	public EditHandle buildEditControls(
 			ProjectContext context, Window window
 	) {
-		return new GroupNodeEditHandle(context, window,this);
+		return new GroupNodeEditHandle(context, window, this);
 	}
 
 	@Override
 	public boolean addChildren(
 			ProjectContext context, ChangeStepBuilder change, int at, List<ProjectNode> newChildren
 	) {
-	change			.groupNode(node)
-				.layersAdd(at == -1 ? node.layersLength() : at, newChildren.stream().map(child -> {
-					GroupLayer layer = GroupLayer.create(context);
-					layer.initialInnerSet(context, child);
-					GroupPositionFrame positionFrame = GroupPositionFrame.create(context);
-					positionFrame.initialLengthSet(context, -1);
-					positionFrame.initialOffsetSet(context, new Vector(0, 0));
-					layer.initialPositionFramesAdd(context, ImmutableList.of(positionFrame));
-					GroupTimeFrame timeFrame = GroupTimeFrame.create(context);
-					timeFrame.initialLengthSet(context, -1);
-					timeFrame.initialInnerOffsetSet(context, 0);
-					timeFrame.initialInnerLoopSet(context, 0);
-					layer.initialTimeFramesAdd(context, ImmutableList.of(timeFrame));
-					return layer;
-				}).collect(Collectors.toList()));
+		change.groupNode(node).layersAdd(at == -1 ? node.layersLength() : at, newChildren.stream().map(child -> {
+			GroupLayer layer = GroupLayer.create(context);
+			layer.initialInnerSet(context, child);
+			GroupPositionFrame positionFrame = GroupPositionFrame.create(context);
+			positionFrame.initialLengthSet(context, -1);
+			positionFrame.initialOffsetSet(context, new Vector(0, 0));
+			layer.initialPositionFramesAdd(context, ImmutableList.of(positionFrame));
+			GroupTimeFrame timeFrame = GroupTimeFrame.create(context);
+			timeFrame.initialLengthSet(context, -1);
+			timeFrame.initialInnerOffsetSet(context, 0);
+			timeFrame.initialInnerLoopSet(context, 0);
+			layer.initialTimeFramesAdd(context, ImmutableList.of(timeFrame));
+			return layer;
+		}).collect(Collectors.toList()));
 		return true;
 	}
 

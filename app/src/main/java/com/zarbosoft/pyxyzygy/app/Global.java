@@ -41,9 +41,11 @@ public class Global {
 	public final static String groupLayerName = "Group";
 
 	public static List<Runnable> shutdown = new ArrayList<>();
+
 	public static void shutdown() {
 		for (Runnable s : shutdown) s.run();
 		shutdown.clear();
+		logger.flush();
 	}
 
 	public static ProjectContext create(Path path, int tileSize) {

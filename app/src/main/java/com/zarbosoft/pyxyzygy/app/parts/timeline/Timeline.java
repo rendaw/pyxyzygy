@@ -89,7 +89,7 @@ public class Timeline {
 	private final SimpleIntegerProperty calculatedMaxFrame = new SimpleIntegerProperty();
 	private final SimpleIntegerProperty useMaxFrame = new SimpleIntegerProperty();
 	final SimpleIntegerProperty frame = new SimpleIntegerProperty();
-	private final SimpleBooleanProperty playingProperty = new SimpleBooleanProperty(false);
+	public final SimpleBooleanProperty playingProperty = new SimpleBooleanProperty(false);
 	public PlayThread playThread;
 
 	public Node getWidget() {

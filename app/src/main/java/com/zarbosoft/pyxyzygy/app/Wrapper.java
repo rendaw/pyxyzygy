@@ -7,7 +7,6 @@ import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
 import com.zarbosoft.pyxyzygy.core.model.v0.ProjectObject;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.scene.control.TabPane;
 import javafx.scene.control.TreeItem;
 
 import java.util.List;
@@ -20,6 +19,7 @@ public abstract class Wrapper {
 	public final SimpleBooleanProperty tagCopied = new SimpleBooleanProperty(false);
 
 	public abstract Wrapper getParent();
+
 	public void setParentIndex(int index) {
 		parentIndex = index;
 	}
