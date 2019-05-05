@@ -120,6 +120,12 @@ public class HelperJFX {
 		return new MenuButton(null, new ImageView(icon(icon)));
 	}
 
+	public static Label title(String title) {
+		Label out = new Label(title);
+		out.getStyleClass().add("h2");
+		return out;
+	}
+
 	private abstract static class NativeReader implements PixelReader {
 		private final int width;
 		private final int height;

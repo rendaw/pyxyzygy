@@ -22,6 +22,9 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
+import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
@@ -31,10 +34,8 @@ import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
 import java.util.*;
@@ -81,6 +82,7 @@ public class Window {
 	public ChildrenReplacer<MenuItem> menuChildren;
 	public Stage stage;
 	public Timeline timeline;
+	private StackPane stack;
 
 	public static class Tab extends javafx.scene.control.Tab {
 		ScrollPane scrollPane = new ScrollPane();
@@ -297,15 +299,14 @@ public class Window {
 						}).check("Show timeline", checkBox -> {
 							checkBox.selectedProperty().bindBidirectional(GUILaunch.profileConfig.showTimeline);
 						}).build()),
-						new TitledPane(
-								"Global",
+						new TitledPane("Global",
 								new WidgetFormBuilder().intSpinner("Tile cache (Mb)", 0, 1024 * 16, spinner -> {
 									spinner.getValueFactory().setValue(GUILaunch.globalConfig.cacheSize.get());
 									spinner
 											.getValueFactory()
 											.valueProperty()
-											.addListener((observable, oldValue, newValue) ->
-													GUILaunch.globalConfig.cacheSize.set(newValue));
+											.addListener((observable, oldValue, newValue) -> GUILaunch.globalConfig.cacheSize
+													.set(newValue));
 								}).build()
 						),
 						new TitledPane("Hotkeys", (
@@ -330,14 +331,15 @@ public class Window {
 		generalLayout.getItems().addAll(specificLayout);
 		SplitPane.setResizableWithParent(leftTabs, false);
 
-		Scene scene = new Scene(generalLayout, 1200, 800);
+		stack = new StackPane(generalLayout);
+
+		Scene scene = new Scene(stack, 1200, 800);
 
 		new CustomBinding.DoubleHalfBinder<Boolean, Boolean>(new CustomBinding.PropertyHalfBinder<>(context.config.maxCanvas),
-				new CustomBinding.PropertyHalfBinder<>(GUILaunch.profileConfig.showTimeline)).map(
-				(max, show) -> {
-					return opt(!max && show);
-				}
-		).addListener(show -> {
+				new CustomBinding.PropertyHalfBinder<>(GUILaunch.profileConfig.showTimeline)
+		).map((max, show) -> {
+			return opt(!max && show);
+		}).addListener(show -> {
 			if (show) {
 				specificLayout.getItems().add(1, timeline.getWidget());
 				specificLayout.setDividerPositions(context.config.timelineSplit);
@@ -472,5 +474,103 @@ public class Window {
 			return new PaletteImageNodeWrapper(context, parent, parentIndex, (PaletteImageNode) node);
 		} else
 			throw new Assertion();
+	}
+
+	public class DialogBuilder {
+		private final String title;
+		VBox layout = new VBox();
+		HBox buttons = new HBox();
+
+		private Node defaultNode;
+		private Supplier<Boolean> defaultAction;
+
+		private Pane grey;
+		private DialogPane content;
+
+		public DialogBuilder(String title) {
+			this.title = title;
+			layout.setSpacing(3);
+			content = new DialogPane();
+		}
+
+		public DialogBuilder setDefault(Node node) {
+			this.defaultNode = node;
+			return this;
+		}
+
+		public DialogBuilder addContent(Node node) {
+			this.layout.getChildren().add(node);
+			return this;
+		}
+
+		public DialogBuilder addAction(ButtonType type, boolean isDefault, Supplier<Boolean> callback) {
+			content.getButtonTypes().add(type);
+			Button button = (Button) content.lookupButton(type);
+			if (isDefault) {
+				defaultNode = button;
+				defaultAction = callback;
+			}
+			button.addEventHandler(ActionEvent.ACTION, ae -> {
+				if (callback.get()) {
+					close();
+				}
+			});
+			return this;
+		}
+
+		private void close() {
+			stack.getChildren().removeAll(grey);
+		}
+
+		public void go() {
+			buttons.setSpacing(4);
+			buttons.setAlignment(Pos.CENTER_RIGHT);
+
+			layout.getChildren().add(buttons);
+
+			content.setHeaderText(title);
+			content.setBorder(new Border(new BorderStroke(
+					Color.DARKGRAY,
+					BorderStrokeStyle.SOLID,
+					CornerRadii.EMPTY,
+					new BorderWidths(2)
+			)));
+			content.setPadding(new Insets(5));
+			content
+					.layoutXProperty()
+					.bind(stage.widthProperty().divide(2.0).subtract(content.widthProperty().divide(2.0)));
+			content
+					.layoutYProperty()
+					.bind(stage.heightProperty().divide(2.0).subtract(content.heightProperty().divide(2.0)));
+			content.setContent(layout);
+
+			grey = new Pane();
+			grey.setBackground(new Background(new BackgroundFill(new Color(0,0,0,0.4), CornerRadii.EMPTY, Insets.EMPTY)));
+			grey.minWidthProperty().bind(stage.widthProperty());
+			grey.minHeightProperty().bind(stage.heightProperty());
+			grey.getChildren().add(content);
+
+			stack.getChildren().addAll(grey);
+			EventHandler<KeyEvent> keyEventEventHandler = e -> {
+				if (e.getCode() == KeyCode.ESCAPE) {
+					close();
+				} else if (e.getCode() == KeyCode.ENTER) {
+					if (defaultAction.get()) {
+						close();
+					}
+				} else {
+					return;
+				}
+				e.consume();
+			};
+			grey.addEventFilter(KeyEvent.KEY_PRESSED, keyEventEventHandler);
+			content.addEventFilter(KeyEvent.KEY_PRESSED, keyEventEventHandler);
+			if (defaultNode != null)
+				defaultNode.requestFocus();
+		}
+	}
+
+	public DialogBuilder dialog(String title) {
+		return new DialogBuilder(title);
 	}
 }

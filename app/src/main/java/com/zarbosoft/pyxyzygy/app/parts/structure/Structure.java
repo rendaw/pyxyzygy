@@ -18,7 +18,9 @@ import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
+import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
@@ -32,7 +34,6 @@ import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 
 import java.io.File;
-import java.lang.reflect.Field;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -46,7 +47,8 @@ import static com.zarbosoft.pyxyzygy.app.Wrapper.TakesChildren.NONE;
 import static com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext.uniqueName;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.pad;
-import static com.zarbosoft.rendaw.common.Common.*;
+import static com.zarbosoft.rendaw.common.Common.last;
+import static com.zarbosoft.rendaw.common.Common.sublist;
 
 public class Structure {
 	private final ProjectContext context;
@@ -345,66 +347,62 @@ public class Structure {
 		});
 		MenuItem addPalette = new MenuItem("Add palette layer");
 		addPalette.setOnAction(e -> {
-			List<Optional<Palette>> source = new ArrayList<>();
+			ObservableList<Optional<Palette>> source = FXCollections.observableArrayList();
 			for (Palette e1 : context.project.palettes())
 				source.add(Optional.of(e1));
 			source.add(Optional.empty());
-			ChoiceDialog<Optional<Palette>> dialog = new ChoiceDialog<Optional<Palette>>(source.get(0), source);
-			dialog.initOwner(window.stage);
-			{
-				Field cbf = uncheck(() -> dialog.getClass().getDeclaredField("comboBox"));
-				cbf.setAccessible(true);
-				ComboBox<Optional<Palette>> cb = uncheck(() -> (ComboBox<Optional<Palette>>) cbf.get(dialog));
-				cb.setCellFactory(param -> new ListCell<>() {
-					@Override
-					protected void updateItem(Optional<Palette> item, boolean empty) {
-						if (empty || item == null)
-							setText("");
-						else if (!item.isPresent())
-							setText("New palette...");
-						else
-							setText(item.get().name());
-						super.updateItem(item, empty);
-					}
-				});
-				cb.setButtonCell(cb.getCellFactory().call(null));
-			}
-			dialog.setTitle("Choose palette");
-			dialog.setHeaderText("Choose a palette for the new layer");
-			Optional<Optional<Palette>> result = dialog.showAndWait();
-			if (!result.isPresent())
-				return;
-			Optional<Palette> palette0 = result.get();
-			context.change(null, c -> {
-				Palette palette;
-				if (!palette0.isPresent()) {
-					palette = Palette.create(context);
-					palette.initialNameSet(context, uniqueName(Global.paletteName));
-					palette.initialNextIdSet(context, 2);
-					PaletteColor transparent = PaletteColor.create(context);
-					transparent.initialIndexSet(context, 0);
-					transparent.initialColorSet(context, TrueColor.fromJfx(Color.TRANSPARENT));
-					PaletteColor black = PaletteColor.create(context);
-					black.initialIndexSet(context, 1);
-					black.initialColorSet(context, TrueColor.fromJfx(Color.BLACK));
-					palette.initialEntriesAdd(context, ImmutableList.of(transparent, black));
-					Palette finalPalette = palette;
-					c.project(context.project).palettesAdd(finalPalette);
-				} else {
-					palette = palette0.get();
+			ComboBox<Optional<Palette>> cb = new ComboBox(source);
+			cb.getSelectionModel().select(last(source));
+			cb.setMaxWidth(Double.MAX_VALUE);
+			cb.setCellFactory(param -> new ListCell<>() {
+				@Override
+				protected void updateItem(Optional<Palette> item, boolean empty) {
+					if (empty || item == null)
+						setText("");
+					else if (!item.isPresent())
+						setText("New palette...");
+					else
+						setText(item.get().name());
+					super.updateItem(item, empty);
 				}
-				PaletteImageNode image = PaletteImageNode.create(context);
-				image.initialOffsetSet(context, Vector.ZERO);
-				image.initialOpacitySet(context, opacityMax);
-				image.initialNameSet(context, uniqueName(Global.paletteLayerName));
-				image.initialPaletteSet(context, palette);
-				PaletteImageFrame frame = PaletteImageFrame.create(context);
-				frame.initialLengthSet(context, -1);
-				frame.initialOffsetSet(context, new Vector(0, 0));
-				image.initialFramesAdd(context, ImmutableList.of(frame));
-				addNew(image, c);
-				context.addPaletteUser(image);
 			});
+			cb.setButtonCell(cb.getCellFactory().call(null));
+			window.dialog("Choose a palette for the new layer").addContent(cb).addAction(ButtonType.OK, true, () -> {
+				context.change(null, c -> {
+					Optional<Palette> palette0 = cb.getSelectionModel().getSelectedItem();
+					Palette palette;
+					if (!palette0.isPresent()) {
+						palette = Palette.create(context);
+						palette.initialNameSet(context, uniqueName(Global.paletteName));
+						palette.initialNextIdSet(context, 2);
+						PaletteColor transparent = PaletteColor.create(context);
+						transparent.initialIndexSet(context, 0);
+						transparent.initialColorSet(context, TrueColor.fromJfx(Color.TRANSPARENT));
+						PaletteColor black = PaletteColor.create(context);
+						black.initialIndexSet(context, 1);
+						black.initialColorSet(context, TrueColor.fromJfx(Color.BLACK));
+						palette.initialEntriesAdd(context, ImmutableList.of(transparent, black));
+						Palette finalPalette = palette;
+						c.project(context.project).palettesAdd(finalPalette);
+					} else {
+						palette = palette0.get();
+					}
+					PaletteImageNode image = PaletteImageNode.create(context);
+					image.initialOffsetSet(context, Vector.ZERO);
+					image.initialOpacitySet(context, opacityMax);
+					image.initialNameSet(context, uniqueName(Global.paletteLayerName));
+					image.initialPaletteSet(context, palette);
+					PaletteImageFrame frame = PaletteImageFrame.create(context);
+					frame.initialLengthSet(context, -1);
+					frame.initialOffsetSet(context, new Vector(0, 0));
+					image.initialFramesAdd(context, ImmutableList.of(frame));
+					addNew(image, c);
+					context.addPaletteUser(image);
+				});
+				return true;
+			}).addAction(ButtonType.CANCEL, false, () -> {
+				return true;
+			}).go();
 		});
 		MenuItem importImage = new MenuItem("Import PNG");
 		importImage.setOnAction(e -> {
