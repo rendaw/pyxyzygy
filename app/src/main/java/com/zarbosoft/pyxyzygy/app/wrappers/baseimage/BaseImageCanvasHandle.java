@@ -1,26 +1,22 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.baseimage;
 
-import com.zarbosoft.pyxyzygy.app.CanvasHandle;
-import com.zarbosoft.pyxyzygy.app.DoubleRectangle;
-import com.zarbosoft.pyxyzygy.app.DoubleVector;
-import com.zarbosoft.pyxyzygy.app.Wrapper;
+import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.wrappers.FrameFinder;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
 import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
+import com.zarbosoft.pyxyzygy.core.model.v0.ProjectObject;
 import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
-import com.zarbosoft.rendaw.common.Pair;
 import javafx.beans.property.SimpleIntegerProperty;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static com.zarbosoft.pyxyzygy.app.Global.opacityMax;
 
-public class BaseImageCanvasHandle<N extends ProjectNode, F, T, L> extends CanvasHandle {
+public class BaseImageCanvasHandle<N extends ProjectNode, F extends ProjectObject, T, L> extends CanvasHandle {
 	final CanvasHandle parent;
 	private final Listener.ScalarSet<ProjectNode, Integer> opacityListener;
 	private final Runnable mirrorCleanup;
@@ -31,7 +27,7 @@ public class BaseImageCanvasHandle<N extends ProjectNode, F, T, L> extends Canva
 	public SimpleIntegerProperty zoom = new SimpleIntegerProperty(1);
 	private Listener.MapPutAll<F, Long, T> tilesPutListener;
 	private Listener.Clear<F> tilesClearListener;
-	private Listener.ScalarSet<F, Vector> offsetListener;
+	private Runnable offsetCleanup;
 
 	public BaseImageCanvasHandle(
 			ProjectContext context, CanvasHandle parent, BaseImageNodeWrapper<N, F, T, L> wrapper
@@ -111,7 +107,7 @@ public class BaseImageCanvasHandle<N extends ProjectNode, F, T, L> extends Canva
 				}
 				WrapTile wrapTile =
 						wrapper.createWrapTile(useIndexes.x * context.tileSize, useIndexes.y * context.tileSize);
-				wrapTile.update(wrapTile.getImage(context,tile)); // Image deserialization must be serial
+				wrapTile.update(wrapTile.getImage(context, tile)); // Image deserialization must be serial
 				wrapTiles.put(key, wrapTile);
 				inner.getChildren().add(wrapTile.widget);
 			}
@@ -170,23 +166,28 @@ public class BaseImageCanvasHandle<N extends ProjectNode, F, T, L> extends Canva
 					wrapTiles.put(key, wrap);
 					inner.getChildren().add(wrap.widget);
 				}
-				wrap.update(wrap.getImage(context,value)); // Image deserialization can't be done in parallel :(
+				wrap.update(wrap.getImage(context, value)); // Image deserialization can't be done in parallel :(
 			}
 		});
 		tilesClearListener = wrapper.addFrameTilesClearListener(frame, (target) -> {
 			inner.getChildren().clear();
 			wrapTiles.clear();
 		});
-		offsetListener = wrapper.addFrameOffsetListener(frame, (target, offset) -> {
-			inner.setLayoutX(offset.x);
-			inner.setLayoutY(offset.y);
-		});
+		offsetCleanup =
+				new CustomBinding.DoubleHalfBinder<>(new CustomBinding.ScalarHalfBinder<Vector>(wrapper.getValue(),
+						"offset"), new CustomBinding.ScalarHalfBinder<Vector>(frame, "offset")).addListener(p -> {
+					inner.setLayoutX(p.first.x + p.second.x);
+					inner.setLayoutY(p.first.y + p.second.y);
+				});
 	}
 
 	public void detachTiles() {
 		wrapper.removeFrameTilesPutAllListener(frame, tilesPutListener);
 		wrapper.removeFrameTilesClearListener(frame, tilesClearListener);
-		wrapper.removeFrameOffsetListener(frame, offsetListener);
+		if (offsetCleanup != null) {
+			offsetCleanup.run();
+			offsetCleanup = null;
+		}
 		tilesPutListener = null;
 		inner.getChildren().clear();
 		wrapTiles.clear();

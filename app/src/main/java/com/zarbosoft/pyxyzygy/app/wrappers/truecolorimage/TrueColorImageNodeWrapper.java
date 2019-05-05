@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 
 import static com.zarbosoft.pyxyzygy.app.GUILaunch.CACHE_OBJECT;
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
+import static com.zarbosoft.pyxyzygy.app.config.TrueColorImageNodeConfig.TOOL_BRUSH;
 import static com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext.uniqueName1;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 
@@ -57,25 +58,24 @@ public class TrueColorImageNodeWrapper extends BaseImageNodeWrapper<TrueColorIma
 				id -> new TrueColorImageNodeConfig(context)
 		);
 		this.brushBinder =
-				new CustomBinding.DoubleHalfBinder<ObservableList<TrueColorBrush>, Integer, TrueColorBrush>(
-						new CustomBinding.ListPropertyHalfBinder<>(GUILaunch.profileConfig.trueColorBrushes),
-						new CustomBinding.DoubleHalfBinder<>(
-								config.tool,
-								config.brush,
-								(t, index) -> {
-									if (t != TrueColorImageNodeConfig.Tool.BRUSH)
-										return opt(null);
-									return opt(index);
-								}
-						),
-						(brushes, index) -> {
-							if (index == null)
+				new CustomBinding.DoubleHalfBinder<ObservableList<TrueColorBrush>, Integer>(new CustomBinding.ListPropertyHalfBinder<>(
+						GUILaunch.profileConfig.trueColorBrushes),
+						new CustomBinding.DoubleHalfBinder<>(config.tool, config.brush).map(p -> {
+							String t = p.first;
+							Number index = p.second;
+							if (!TOOL_BRUSH.equals(t))
 								return opt(null);
-							if (index >= brushes.size())
-								return opt(null);
-							return opt(brushes.get(index));
-						}
-				);
+							return opt(index.intValue());
+						})
+				).map(p -> {
+					ObservableList<TrueColorBrush> brushes = p.first;
+					Integer index = p.second;
+					if (index == null)
+						return opt(null);
+					if (index >= brushes.size())
+						return opt(null);
+					return opt(brushes.get(index));
+				});
 	}
 
 	@Override
@@ -92,6 +92,7 @@ public class TrueColorImageNodeWrapper extends BaseImageNodeWrapper<TrueColorIma
 	public ProjectNode separateClone(ProjectContext context) {
 		TrueColorImageNode clone = TrueColorImageNode.create(context);
 		clone.initialNameSet(context, uniqueName1(node.name()));
+		clone.initialOffsetSet(context, node.offset());
 		clone.initialOpacitySet(context, node.opacity());
 		clone.initialFramesAdd(context, node.frames().stream().map(frame -> {
 			TrueColorImageFrame newFrame = TrueColorImageFrame.create(context);
@@ -175,9 +176,9 @@ public class TrueColorImageNodeWrapper extends BaseImageNodeWrapper<TrueColorIma
 		return new WrapTile<TrueColorTileBase>(x, y) {
 			@Override
 			public Image getImage(ProjectContext context, TrueColorTileBase tile) {
-				return uncheck(() -> GUILaunch.imageCache.get(
-						Objects.hash(CACHE_OBJECT, tile.id()),
-						() -> HelperJFX.toImage(((TrueColorTile) tile).getData(context))));
+				return uncheck(() -> GUILaunch.imageCache.get(Objects.hash(CACHE_OBJECT, tile.id()),
+						() -> HelperJFX.toImage(((TrueColorTile) tile).getData(context))
+				));
 			}
 		};
 	}
@@ -214,7 +215,8 @@ public class TrueColorImageNodeWrapper extends BaseImageNodeWrapper<TrueColorIma
 				final int y0 = y;
 				TrueColorImage shot =
 						image.copy(x0 * context.tileSize, y0 * context.tileSize, context.tileSize, context.tileSize);
-						change.trueColorImageFrame(frame)
+				change
+						.trueColorImageFrame(frame)
 						.tilesPut(unitBounds.corner().plus(x0, y0).to1D(), TrueColorTile.create(context, shot));
 			}
 		}
@@ -239,13 +241,6 @@ public class TrueColorImageNodeWrapper extends BaseImageNodeWrapper<TrueColorIma
 			ProjectContext context, TrueColorImage image, Vector offset, Vector span
 	) {
 		image.clear(offset.x, offset.y, span.x, span.y);
-	}
-
-	@Override
-	public Listener.ScalarSet<TrueColorImageFrame, Vector> addFrameOffsetListener(
-			TrueColorImageFrame frame, Listener.ScalarSet<TrueColorImageFrame, Vector> listener
-	) {
-		return frame.addOffsetSetListeners(listener);
 	}
 
 	@Override

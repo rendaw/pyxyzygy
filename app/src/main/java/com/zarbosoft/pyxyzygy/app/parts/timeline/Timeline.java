@@ -56,6 +56,7 @@ import java.util.stream.Stream;
 
 import static com.zarbosoft.pyxyzygy.app.Global.logger;
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
+import static com.zarbosoft.pyxyzygy.app.config.NodeConfig.TOOL_FRAME_MOVE;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 import static com.zarbosoft.rendaw.common.Common.sublist;
 
@@ -64,6 +65,7 @@ public class Timeline {
 	private final Window window;
 	public static final int extraFrames = 500;
 	public static final double baseSize = 16;
+	private final HBox toolBox;
 	public double zoom = 16;
 
 	VBox foreground = new VBox();
@@ -279,12 +281,10 @@ public class Timeline {
 		});
 		ToggleButton onion = new ToggleButton(null, new ImageView(icon("onion.png")));
 		onion.setTooltip(new Tooltip("Toggle onion skin"));
-		CustomBinding.bindBidirectional(
-				new CustomBinding.IndirectBinder<Boolean>(window.selectedForEdit,
-						e -> Optional.ofNullable(e).map(e1 -> e1.getWrapper().getConfig().onionSkin)
-				),
-				new CustomBinding.PropertyBinder<Boolean>(onion.selectedProperty())
-		);
+		CustomBinding.bindBidirectional(new CustomBinding.IndirectBinder<Boolean>(window.selectedForEdit,
+				e -> Optional.ofNullable(e).map(e1 -> e1.getWrapper().getConfig().onionSkin)
+		), new CustomBinding.PropertyBinder<Boolean>(onion.selectedProperty()));
+		toolBox = new HBox();
 
 		Region space = new Region();
 		space.setMinWidth(1);
@@ -327,7 +327,9 @@ public class Timeline {
 			playingProperty.set(!playingProperty.get());
 		});
 
-		toolBar.getItems().addAll(add, duplicate, left, right, remove, clear, onion, space, previewRate, previewPlay);
+		toolBar
+				.getItems()
+				.addAll(add, duplicate, left, right, remove, clear, onion, toolBox, space, previewRate, previewPlay);
 		nameColumn.setCellValueFactory(p -> new SimpleObjectProperty<>(p.getValue().getValue()));
 		nameColumn.setCellFactory(param -> new TreeTableCell<RowAdapter, RowAdapter>() {
 			final ImageView showViewing = new ImageView();
@@ -461,47 +463,41 @@ public class Timeline {
 		};
 		frame.addListener(frameListener);
 
-		new CustomBinding.DoubleHalfBinder<Boolean, Pair<CanvasHandle, EditHandle>, Void>(playingProperty,
+		new CustomBinding.DoubleHalfBinder<Boolean, Pair<CanvasHandle, EditHandle>>(playingProperty,
 				new CustomBinding.DoubleHalfBinder<>(window.selectedForView,
-						window.selectedForEdit,
-						(v, e) -> opt(new Pair<>(v, e))
-				),
-				(Boolean playing, Pair<CanvasHandle, EditHandle> sel) -> {
-					((ImageView) previewPlay.getGraphic()).setImage(playing ? icon("stop.png") : icon("play.png"));
-					if (playThread != null)
-						playThread.playing.set(false);
-					playThread = null;
-					if (playing) {
-						Wrapper view = sel.first.getWrapper();
-						Wrapper edit = sel.second.getWrapper();
-						if (edit instanceof CameraWrapper) {
-							playThread = new PlayThread(view) {
-								Camera node = ((CameraWrapper) edit).node;
+						window.selectedForEdit
+				)
+		).addListener((Boolean playing, Pair<CanvasHandle, EditHandle> sel) -> {
+			((ImageView) previewPlay.getGraphic()).setImage(playing ? icon("stop.png") : icon("play.png"));
+			if (playThread != null)
+				playThread.playing.set(false);
+			playThread = null;
+			if (playing) {
+				Wrapper view = sel.first.getWrapper();
+				Wrapper edit = sel.second.getWrapper();
+				if (edit instanceof CameraWrapper) {
+					playThread = new PlayThread(view) {
+						Camera node = ((CameraWrapper) edit).node;
 
-								@Override
-								public PlayState updateState() {
-									return new PlayState(1000 / node.frameRate(),
-											node.frameStart(),
-											node.frameLength()
-									);
-								}
-							};
-						} else {
-							NodeConfig config = edit.getConfig();
-							playThread = new PlayThread(view) {
-								@Override
-								public PlayState updateState() {
-									return new PlayState(1000 / config.previewRate.get(),
-											config.previewStart.get(),
-											config.previewLength.get()
-									);
-								}
-							};
+						@Override
+						public PlayState updateState() {
+							return new PlayState(1000 / node.frameRate(), node.frameStart(), node.frameLength());
 						}
-					}
-					return Optional.empty();
+					};
+				} else {
+					NodeConfig config = edit.getConfig();
+					playThread = new PlayThread(view) {
+						@Override
+						public PlayState updateState() {
+							return new PlayState(1000 / config.previewRate.get(),
+									config.previewStart.get(),
+									config.previewLength.get()
+							);
+						}
+					};
 				}
-		);
+			}
+		});
 	}
 
 	public static abstract class PlayThread extends Thread {
@@ -582,12 +578,17 @@ public class Timeline {
 			outerTimeHandle.remove();
 			outerTimeHandle = null;
 		}
+		toolBox.getChildren().clear();
 
 		if (root1 == null || edit1 == null)
 			return;
 
 		Wrapper root = root1.getWrapper();
 		Wrapper edit = edit1.getWrapper();
+
+		toolBox
+				.getChildren()
+				.add(new Wrapper.ToolToggle(edit, "cursor-move16.png", "Move frame contents", TOOL_FRAME_MOVE));
 
 		// Prepare time translation
 		outerTimeHandle = createTimeMapper(root.getValue());

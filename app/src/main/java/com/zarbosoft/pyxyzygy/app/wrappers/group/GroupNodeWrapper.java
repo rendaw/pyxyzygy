@@ -115,6 +115,7 @@ public class GroupNodeWrapper extends Wrapper {
 
 	public void cloneSet(ProjectContext context, GroupNode clone) {
 		clone.initialNameSet(context, uniqueName1(node.name()));
+		clone.initialOffsetSet(context, node.offset());
 		clone.initialOpacitySet(context, node.opacity());
 		clone.initialLayersAdd(context, node.layers().stream().map(layer -> {
 			GroupLayer newLayer = GroupLayer.create(context);

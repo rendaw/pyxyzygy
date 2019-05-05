@@ -739,14 +739,23 @@ public class GenerateModelV0 extends TaskBase {
 									.add("this.$L = value;\n", fieldName);
 							if (Helper.flattenPoint(field))
 								initialSetCode.add("value.incRef(project);\n");
-							String initialSetName = String.format("initial%sSet", Helper.capFirst(fieldName));
 							clone.addMethod(MethodSpec
-									.methodBuilder(initialSetName)
+									.methodBuilder(String.format("initial%sSet", Helper.capFirst(fieldName)))
 									.addModifiers(PUBLIC)
 									.addParameter(ProjectContextBase.class, "project")
 									.addParameter(toPoet(field), "value")
 									.addCode(initialSetCode.build())
 									.build());
+							if (!Helper.flattenPoint(field)) {
+								clone.addMethod(MethodSpec
+										.methodBuilder(String.format("forceInitial%sSet", Helper.capFirst(fieldName)))
+										.addModifiers(PUBLIC)
+										.addParameter(toPoet(field), "value")
+										.addCode(CodeBlock
+												.builder()
+												.add("this.$L = value;\n", fieldName).build())
+										.build());
+							}
 						}
 					}
 

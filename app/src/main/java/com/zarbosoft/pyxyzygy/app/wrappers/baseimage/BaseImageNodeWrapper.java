@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public abstract class BaseImageNodeWrapper<N extends ProjectNode, F, T, L> extends Wrapper {
+public abstract class BaseImageNodeWrapper<N extends ProjectNode, F extends ProjectObject, T, L> extends Wrapper {
 	public final N node;
 	private final Wrapper parent;
 	public BaseImageCanvasHandle<N, F, T, L> canvasHandle;
@@ -107,10 +107,6 @@ public abstract class BaseImageNodeWrapper<N extends ProjectNode, F, T, L> exten
 
 	public abstract Listener.Clear<F> addFrameTilesClearListener(
 			F frame, Listener.Clear<F> listener
-	);
-
-	public abstract Listener.ScalarSet<F, Vector> addFrameOffsetListener(
-			F frame, Listener.ScalarSet<F, Vector> listener
 	);
 
 	public abstract void removeFrameTilesPutAllListener(F frame, Listener.MapPutAll<F, Long, T> listener);

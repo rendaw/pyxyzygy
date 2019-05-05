@@ -655,10 +655,11 @@ public class GUILaunch extends Application {
 			case normal: {
 				TrueColorImageNode trueColorImageNode = TrueColorImageNode.create(context);
 				trueColorImageNode.initialNameSet(context, uniqueName(Global.trueColorLayerName));
+				trueColorImageNode.initialOffsetSet(context, Vector.ZERO);
 				trueColorImageNode.initialOpacitySet(context, Global.opacityMax);
 				TrueColorImageFrame trueColorImageFrame = TrueColorImageFrame.create(context);
 				trueColorImageFrame.initialLengthSet(context, -1);
-				trueColorImageFrame.initialOffsetSet(context, new Vector(0, 0));
+				trueColorImageFrame.initialOffsetSet(context, Vector.ZERO);
 				trueColorImageNode.initialFramesAdd(context, ImmutableList.of(trueColorImageFrame));
 				groupLayer.initialInnerSet(context, trueColorImageNode);
 				break;
@@ -679,10 +680,11 @@ public class GUILaunch extends Application {
 				PaletteImageNode paletteImageNode = PaletteImageNode.create(context);
 				paletteImageNode.initialPaletteSet(context, palette);
 				paletteImageNode.initialNameSet(context, uniqueName(Global.paletteLayerName));
+				paletteImageNode.initialOffsetSet(context, Vector.ZERO);
 				paletteImageNode.initialOpacitySet(context, Global.opacityMax);
 				PaletteImageFrame paletteImageFrame = PaletteImageFrame.create(context);
 				paletteImageFrame.initialLengthSet(context, -1);
-				paletteImageFrame.initialOffsetSet(context, new Vector(0, 0));
+				paletteImageFrame.initialOffsetSet(context, Vector.ZERO);
 				paletteImageNode.initialFramesAdd(context, ImmutableList.of(paletteImageFrame));
 				groupLayer.initialInnerSet(context, paletteImageNode);
 				break;
@@ -693,6 +695,7 @@ public class GUILaunch extends Application {
 
 		GroupNode groupNode = GroupNode.create(context);
 		groupNode.initialNameSet(context, uniqueName(groupLayerName));
+		groupNode.initialOffsetSet(context, Vector.ZERO);
 		groupNode.initialOpacitySet(context, opacityMax);
 		groupNode.initialLayersAdd(context, ImmutableList.of(groupLayer));
 

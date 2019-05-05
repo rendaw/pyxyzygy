@@ -4,6 +4,7 @@ import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
 import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
+import com.zarbosoft.pyxyzygy.core.model.v0.ProjectObject;
 import com.zarbosoft.pyxyzygy.nearestneighborimageview.NearestNeighborImageView;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
@@ -31,7 +32,7 @@ import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.pad;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 
-public abstract class BaseToolSelect<F, L> extends Tool {
+public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
 	final int handleSize = 25;
 	final int handlePad = 4;
 	final SimpleIntegerProperty zoom;
@@ -477,7 +478,7 @@ public abstract class BaseToolSelect<F, L> extends Tool {
 
 			@Override
 			public void mark(ProjectContext context, DoubleVector __, DoubleVector end) {
-				setInside(startInside.plus(end.minus(start).toInt()));
+				setInside(startInside.shift(end.minus(start).toInt()));
 			}
 		}
 
@@ -670,8 +671,8 @@ public abstract class BaseToolSelect<F, L> extends Tool {
 		Vector size = image0.second;
 		L image = image0.first;
 		Rectangle placeAt = new Rectangle(0, 0, size.x, size.y);
-		placeAt = placeAt.minus(placeAt.span().divide(2));
-		placeAt = placeAt.minus(negViewCenter(window));
+		placeAt = placeAt.unshift(placeAt.span().divide(2));
+		placeAt = placeAt.unshift(negViewCenter(window));
 		setState(context, new StateMove(context, window, null, placeAt, image));
 	}
 

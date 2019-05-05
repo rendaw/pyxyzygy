@@ -4,11 +4,12 @@ import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.config.BaseBrush;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.CircleCursor;
+import com.zarbosoft.pyxyzygy.core.model.v0.ProjectObject;
 import com.zarbosoft.rendaw.common.Assertion;
 import javafx.scene.ImageCursor;
 import javafx.scene.input.KeyCode;
 
-public abstract class BaseToolBrush<F, L> extends Tool {
+public abstract class BaseToolBrush<F extends ProjectObject, L> extends Tool {
 	private final BaseBrush brush;
 	public final BaseImageNodeWrapper<?, F, ?, L> wrapper;
 	private DoubleVector lastEnd;
@@ -64,13 +65,12 @@ public abstract class BaseToolBrush<F, L> extends Tool {
 
 	private void updateCursor(Window window) {
 		double zoom = window.editor.zoomFactor.get();
-		window.editor.outerCanvas.setCursor(cursor = CircleCursor.create(brush.sizeInPixels() * zoom));
+		window.editorCursor.set(this,cursor = CircleCursor.create(brush.sizeInPixels() * zoom));
 	}
 
 	@Override
 	public void remove(ProjectContext context, Window window) {
-		if (window.editor.outerCanvas.getCursor() == cursor)
-			window.editor.outerCanvas.setCursor(null);
+		window.editorCursor.clear(this);
 	}
 
 	@Override

@@ -307,12 +307,14 @@ public class Structure {
 		addCamera.setOnAction(e -> {
 			Camera camera = Camera.create(context);
 			camera.initialNameSet(context, uniqueName("Camera"));
+			camera.initialOffsetSet(context, Vector.ZERO);
 			camera.initialOpacitySet(context, opacityMax);
 			camera.initialFrameStartSet(context, 0);
 			camera.initialFrameLengthSet(context, 12);
 			camera.initialFrameRateSet(context, 120);
-			camera.initialHeightSet(context, 240);
-			camera.initialWidthSet(context, 320);
+			double cameraFactor = context.tileSize / 200.0;
+			camera.initialHeightSet(context, (int) (240 * cameraFactor));
+			camera.initialWidthSet(context, (int) (320 * cameraFactor));
 			context.change(null, c -> {
 				c.project(context.project).topAdd(camera);
 			});
@@ -320,6 +322,7 @@ public class Structure {
 		MenuItem addGroup = new MenuItem("Add group");
 		addGroup.setOnAction(e -> {
 			GroupNode group = GroupNode.create(context);
+			group.initialOffsetSet(context, Vector.ZERO);
 			group.initialOpacitySet(context, opacityMax);
 			group.initialNameSet(context, uniqueName(Global.groupLayerName));
 			context.change(null, c -> {
@@ -329,6 +332,7 @@ public class Structure {
 		MenuItem addImage = new MenuItem("Add true color layer");
 		addImage.setOnAction(e -> {
 			TrueColorImageNode image = TrueColorImageNode.create(context);
+			image.initialOffsetSet(context, Vector.ZERO);
 			image.initialOpacitySet(context, opacityMax);
 			image.initialNameSet(context, uniqueName(Global.trueColorLayerName));
 			TrueColorImageFrame frame = TrueColorImageFrame.create(context);
@@ -390,6 +394,7 @@ public class Structure {
 					palette = palette0.get();
 				}
 				PaletteImageNode image = PaletteImageNode.create(context);
+				image.initialOffsetSet(context, Vector.ZERO);
 				image.initialOpacitySet(context, opacityMax);
 				image.initialNameSet(context, uniqueName(Global.paletteLayerName));
 				image.initialPaletteSet(context, palette);
@@ -409,15 +414,16 @@ public class Structure {
 			Optional.ofNullable(fileChooser.showOpenDialog(window.stage)).map(f -> f.toPath()).ifPresent(p -> {
 				TrueColorImage data = TrueColorImage.deserialize(p.toString());
 				TrueColorImageNode image = TrueColorImageNode.create(context);
+				image.initialOffsetSet(context, Vector.ZERO);
 				image.initialOpacitySet(context, opacityMax);
 				image.initialNameSet(context, uniqueName(p.getFileName().toString()));
 				TrueColorImageFrame frame = TrueColorImageFrame.create(context);
 				frame.initialLengthSet(context, -1);
-				frame.initialOffsetSet(context, new Vector(0, 0));
+				frame.initialOffsetSet(context, Vector.ZERO);
 				image.initialFramesAdd(context, ImmutableList.of(frame));
 				Rectangle base = new Rectangle(0, 0, data.getWidth(), data.getHeight());
 
-				Rectangle offset = base.plus(base.span().divide(2));
+				Rectangle offset = base.shift(base.span().divide(2));
 				Rectangle unitBounds = offset.divideContains(context.tileSize);
 				Vector localOffset = offset.corner().minus(unitBounds.corner().multiply(context.tileSize));
 				for (int x = 0; x < unitBounds.width; ++x) {

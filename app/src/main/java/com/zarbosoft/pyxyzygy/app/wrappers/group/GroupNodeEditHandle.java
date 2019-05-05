@@ -5,11 +5,10 @@ import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.config.GroupNodeConfig;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.ContentReplacer;
-import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.app.widgets.TitledPane;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
+import com.zarbosoft.pyxyzygy.app.wrappers.ToolMove;
 import com.zarbosoft.rendaw.common.Assertion;
-import javafx.beans.binding.Bindings;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.Group;
@@ -31,23 +30,6 @@ public class GroupNodeEditHandle extends EditHandle {
 
 	public GroupNodeWrapper wrapper;
 
-	protected class ToolToggle extends HelperJFX.IconToggleButton {
-		private final String value;
-
-		public ToolToggle(String icon, String hint, String value) {
-			super(icon, hint);
-			this.value = value;
-			selectedProperty().bind(Bindings.createBooleanBinding(() -> {
-				return value.equals(wrapper.config.tool.get());
-			}, wrapper.config.tool));
-		}
-
-		@Override
-		public void fire() {
-			wrapper.config.tool.set(value);
-		}
-	}
-
 	public GroupNodeEditHandle(
 			ProjectContext context, Window window, final GroupNodeWrapper wrapper
 	) {
@@ -57,7 +39,7 @@ public class GroupNodeEditHandle extends EditHandle {
 		overlay = new Group();
 		wrapper.canvasHandle.overlay.getChildren().add(overlay);
 
-		TitledPane toolProps = new TitledPane("Tool",null);
+		TitledPane toolProps = new TitledPane("Tool", null);
 		this.toolPropReplacer = new ContentReplacer<Node>() {
 			@Override
 			protected void innerSet(Node content) {
@@ -70,7 +52,7 @@ public class GroupNodeEditHandle extends EditHandle {
 			}
 		};
 
-		window.layerTabContent.set(this, pad(buildTab(context, window,toolProps)));
+		window.layerTabContent.set(this, pad(buildTab(context, window, toolProps)));
 
 		// Toolbar
 		window.toolBarChildren.set(this, createToolButtons());
@@ -101,27 +83,31 @@ public class GroupNodeEditHandle extends EditHandle {
 
 	public VBox buildTab(ProjectContext context, Window window, TitledPane toolProps) {
 		VBox tabBox = new VBox();
-		tabBox.getChildren().addAll(
-				new TitledPane("Layer",
-						new WidgetFormBuilder().apply(b -> cleanup.add(nodeFormFields(context, b, wrapper))).build()
-				),
-				toolProps
-		);
+		tabBox.getChildren().addAll(new TitledPane("Layer",
+				new WidgetFormBuilder().apply(b -> cleanup.add(nodeFormFields(context, b, wrapper))).build()
+		), toolProps);
 		return tabBox;
 	}
 
 	protected Tool createTool(ProjectContext context, Window window, String newValue) {
-		if (GroupNodeConfig.toolMove.equals(newValue)) {
+		if (GroupNodeConfig.TOOL_MOVE.equals(newValue)) {
 			return new ToolMove(window, wrapper);
-		} else if (GroupNodeConfig.toolStamp.equals(newValue)) {
+		} else if (GroupNodeConfig.TOOL_FRAME_MOVE.equals(newValue)) {
+				return new ToolFrameMove(window, wrapper);
+		} else if (GroupNodeConfig.TOOL_STAMP.equals(newValue)) {
 			return new ToolStamp(context, window, wrapper, GroupNodeEditHandle.this);
 		} else
 			throw new Assertion();
 	}
 
 	protected List<Node> createToolButtons() {
-		return ImmutableList.of(new ToolToggle("cursor-move16.png", "Move", GroupNodeConfig.toolMove),
-				new ToolToggle("stamper16.png", "Stamp", GroupNodeConfig.toolStamp)
+		return ImmutableList.of(new Wrapper.ToolToggle(
+						wrapper,
+						"cursor-move16.png",
+						"Move layer",
+						GroupNodeConfig.TOOL_MOVE
+				),
+				new Wrapper.ToolToggle(wrapper, "stamper16.png", "Stamp", GroupNodeConfig.TOOL_STAMP)
 		);
 	}
 

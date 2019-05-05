@@ -1,4 +1,4 @@
-package com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage;
+package com.zarbosoft.pyxyzygy.app.wrappers.paletteimage;
 
 import com.zarbosoft.pyxyzygy.app.DoubleVector;
 import com.zarbosoft.pyxyzygy.app.Tool;
@@ -10,31 +10,35 @@ import javafx.scene.ImageCursor;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.centerCursor;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 
-public class ToolMove extends Tool {
+public class ToolFrameMove extends Tool {
 	protected DoubleVector markStart;
 	private Vector markStartOffset;
-	private TrueColorImageNodeWrapper wrapper;
+	private PaletteImageNodeWrapper wrapper;
 
-	public ToolMove(Window window, TrueColorImageNodeWrapper wrapper) {
+	public ToolFrameMove(Window window, PaletteImageNodeWrapper wrapper) {
 		this.wrapper = wrapper;
 		window.editorCursor.set(this, centerCursor("cursor-move32.png"));
 	}
 
+	private Vector offset() {
+		return wrapper.node.offset().plus(wrapper.canvasHandle.frame.offset());
+	}
+
 	@Override
 	public void markStart(ProjectContext context, Window window, DoubleVector start) {
-		Vector offset = wrapper.canvasHandle.frame.offset();
+		Vector offset = offset();
 		this.markStart = start.plus(offset);
 		this.markStartOffset = offset;
 	}
 
 	@Override
 	public void mark(ProjectContext context, Window window, DoubleVector start, DoubleVector end0) {
-		Vector offset = wrapper.canvasHandle.frame.offset();
-		DoubleVector end = end0.plus(offset);
+		DoubleVector end = end0.plus(offset());
 		context.change(new ProjectContext.Tuple(wrapper, "move"),
 				c -> c
-						.trueColorImageFrame(wrapper.canvasHandle.frame)
-						.offsetSet(end.minus(markStart).plus(markStartOffset).toInt()));
+						.paletteImageFrame(wrapper.canvasHandle.frame)
+						.offsetSet(end.minus(markStart).plus(markStartOffset).toInt())
+		);
 	}
 
 	@Override

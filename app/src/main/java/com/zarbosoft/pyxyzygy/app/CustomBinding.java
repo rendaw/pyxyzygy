@@ -3,6 +3,7 @@ package com.zarbosoft.pyxyzygy.app;
 import com.zarbosoft.pyxyzygy.core.model.v0.ProjectObject;
 import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.rendaw.common.Assertion;
+import com.zarbosoft.rendaw.common.Pair;
 import javafx.beans.InvalidationListener;
 import javafx.beans.binding.Binding;
 import javafx.beans.binding.Bindings;
@@ -16,12 +17,8 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
+import java.util.function.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.pyxyzygy.app.Misc.unopt;
@@ -490,8 +487,8 @@ public class CustomBinding {
 		}
 	}
 
-	public static class DoubleHalfBinder<X, Y, T> implements HalfBinder<T> {
-		private Optional<T> last = Optional.empty();
+	public static class DoubleHalfBinder<X, Y> implements HalfBinder<Pair<X, Y>> {
+		private Optional<Pair<X, Y>> last = Optional.empty();
 		Runnable sourceCleanup;
 		Runnable baseCleanup;
 
@@ -501,37 +498,32 @@ public class CustomBinding {
 
 		private final Value value1 = new Value();
 		private final Value value2 = new Value();
-		private List<Consumer<T>> listeners = new ArrayList<>();
-		private final BiFunction<X, Y, Optional> function;
+		private List<Consumer<Pair<X, Y>>> listeners = new ArrayList<>();
 
 		public DoubleHalfBinder(
-				ReadOnlyProperty<X> source1, ReadOnlyProperty<Y> source2, BiFunction<X, Y, Optional> function
+				ReadOnlyProperty<X> source1, ReadOnlyProperty<Y> source2
 		) {
-			this.function = function;
 			setSource(value1, source1);
 			setSource(value2, source2);
 		}
 
 		public DoubleHalfBinder(
-				ReadOnlyProperty<X> source1, HalfBinder<Y> source2, BiFunction<X, Y, Optional> function
+				ReadOnlyProperty<X> source1, HalfBinder<Y> source2
 		) {
-			this.function = function;
 			setSource(value1, source1);
 			setSource(value2, source2);
 		}
 
 		public DoubleHalfBinder(
-				HalfBinder<X> source1, ReadOnlyProperty<Y> source2, BiFunction<X, Y, Optional> function
+				HalfBinder<X> source1, ReadOnlyProperty<Y> source2
 		) {
-			this.function = function;
 			setSource(value1, source1);
 			setSource(value2, source2);
 		}
 
 		public DoubleHalfBinder(
-				HalfBinder<X> source1, HalfBinder<Y> source2, BiFunction<X, Y, Optional> function
+				HalfBinder<X> source1, HalfBinder<Y> source2
 		) {
-			this.function = function;
 			setSource(value1, source1);
 			setSource(value2, source2);
 		}
@@ -568,24 +560,30 @@ public class CustomBinding {
 			value.last = opt(newValue);
 			if (!value1.last.isPresent() || !value2.last.isPresent())
 				return;
-			last = function.apply((X) unopt(value1.last), (Y) unopt(value2.last));
-			if (!last.isPresent())
-				return;
-			for (Consumer<T> c : new ArrayList<>(listeners))
+			last = Optional.of(new Pair<X, Y>((X) unopt(value1.last), (Y) unopt(value2.last)));
+			for (Consumer<Pair<X, Y>> c : new ArrayList<>(listeners))
 				c.accept(unopt(last));
 		}
 
 		@Override
-		public Runnable addListener(Consumer<T> listener) {
+		public Runnable addListener(Consumer<Pair<X, Y>> listener) {
 			listeners.add(listener);
 			if (last.isPresent())
 				listener.accept(unopt(last));
 			return () -> listeners.remove(listener);
 		}
 
+		public Runnable addListener(BiConsumer<X, Y> listener) {
+			return addListener(p -> listener.accept(p.first, p.second));
+		}
+
 		@Override
-		public Optional<T> get() {
+		public Optional<Pair<X, Y>> get() {
 			return last;
+		}
+
+		public <U> HalfBinder<U> map(BiFunction<X, Y, Optional<U>> function) {
+			return map(p -> function.apply(p.first, p.second));
 		}
 	}
 
@@ -738,11 +736,14 @@ public class CustomBinding {
 		Optional<T> at = Optional.empty();
 		final List<Runnable> cleanup;
 
-		public <G> ListElementsHalfBinder(List<HalfBinder<G>> list, Function<List<HalfBinder<G>>, Optional<T>> function) {
+		public <G> ListElementsHalfBinder(
+				List<HalfBinder<G>> list,
+				Function<List<HalfBinder<G>>, Optional<T>> function
+		) {
 			Consumer<G> listener = u0 -> {
 				at = function.apply(list);
 				if (at.isPresent())
-				listeners.forEach(l -> l.accept(at.get()));
+					listeners.forEach(l -> l.accept(at.get()));
 			};
 			cleanup = list.stream().map(t -> t.addListener(listener)).collect(Collectors.toList());
 			listener.accept(null);
@@ -751,7 +752,8 @@ public class CustomBinding {
 		@Override
 		public Runnable addListener(Consumer<T> listener) {
 			listeners.add(listener);
-			if (at.isPresent()) listener.accept(at.get());
+			if (at.isPresent())
+				listener.accept(at.get());
 			return () -> listeners.remove(listener);
 		}
 

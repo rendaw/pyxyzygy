@@ -8,10 +8,7 @@ import javafx.beans.property.SimpleStringProperty;
 
 @Configuration(name = "group")
 public class GroupNodeConfig extends NodeConfig {
-	public static String toolMove = "move";
-	public static String toolStamp = "stamp";
-	@Configuration
-	public final SimpleStringProperty tool = new SimpleStringProperty(toolMove);
+	public static String TOOL_STAMP = "stamp";
 
 	@Configuration
 	public final SimpleLongProperty stampSource = new SimpleLongProperty(-1);

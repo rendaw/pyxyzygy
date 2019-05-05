@@ -4,18 +4,19 @@ import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.config.CameraNodeConfig;
 import com.zarbosoft.pyxyzygy.app.config.GroupNodeConfig;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
-import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeCanvasHandle;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeWrapper;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.pyxyzygy.core.model.v0.Camera;
 import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
+import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.effect.BlendMode;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.StrokeType;
@@ -69,35 +70,41 @@ public class CameraWrapper extends GroupNodeWrapper {
 	public CanvasHandle buildCanvas(
 			ProjectContext context, Window window, CanvasHandle parent
 	) {
-		return new GroupNodeCanvasHandle(context, window,parent, this) {
+		class CameraCanvasHandle extends GroupNodeCanvasHandle {
 			Rectangle cameraBorder;
-			CanvasHandle groupHandle = CameraWrapper.super.buildCanvas(context, window, parent);
 
-			{
+			public CameraCanvasHandle(
+					ProjectContext context, Window window, CanvasHandle parent, GroupNodeWrapper wrapper
+			) {
+				super(context, window, parent, wrapper);
 				cameraBorder = new Rectangle();
 				cameraBorder.strokeWidthProperty().bind(Bindings.divide(1.0, window.editor.zoomFactor));
+				cameraBorder.setOpacity(0.8);
+				cameraBorder.setBlendMode(BlendMode.DIFFERENCE);
 				cameraBorder.setStrokeType(StrokeType.OUTSIDE);
 				cameraBorder.setFill(Color.TRANSPARENT);
-				cameraBorder.setStroke(HelperJFX.c(new java.awt.Color(128, 128, 128)));
+				cameraBorder.setStroke(Color.GRAY);
 				cameraBorder.widthProperty().bind(width);
 				cameraBorder.heightProperty().bind(height);
 				cameraBorder.layoutXProperty().bind(width.divide(2).negate());
 				cameraBorder.layoutYProperty().bind(height.divide(2).negate());
-				inner.getChildren().addAll(groupHandle.getWidget(), cameraBorder);
+				overlay.getChildren().addAll(cameraBorder);
 			}
 
 			@Override
 			public void remove(ProjectContext context) {
-				groupHandle.remove(context);
 				cameraBorder = null;
+				super.remove(context);
 			}
-		};
+		}
+		return canvasHandle = new CameraCanvasHandle(context, window,parent, this);
 	}
 
 	@Override
 	public ProjectNode separateClone(ProjectContext context) {
 		Camera clone = Camera.create(context);
 		cloneSet(context, clone);
+		clone.initialOffsetSet(context, node.offset());
 		clone.initialWidthSet(context, node.width());
 		clone.initialHeightSet(context, node.height());
 		clone.initialFrameRateSet(context, node.frameRate());

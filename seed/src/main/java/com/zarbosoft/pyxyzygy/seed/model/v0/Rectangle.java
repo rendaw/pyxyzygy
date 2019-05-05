@@ -41,11 +41,11 @@ public class Rectangle {
 		return new Rectangle(newX, newY, ceilDiv(this.x + width, step) - newX, ceilDiv(this.y + height, step) - newY);
 	}
 
-	public Rectangle plus(Vector offset) {
+	public Rectangle shift(Vector offset) {
 		return new Rectangle(x + offset.x, y + offset.y, width, height);
 	}
 
-	public Rectangle minus(Vector offset) {
+	public Rectangle unshift(Vector offset) {
 		return new Rectangle(x - offset.x, y - offset.y, width, height);
 	}
 

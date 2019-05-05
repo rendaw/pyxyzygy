@@ -7,7 +7,9 @@ import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.core.model.v0.PaletteImageNode;
 import com.zarbosoft.pyxyzygy.core.model.v0.Project;
 import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
+import com.zarbosoft.pyxyzygy.core.model.v0.ProjectObject;
 import com.zarbosoft.pyxyzygy.seed.deserialize.ModelDeserializationContext;
+import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import javafx.scene.input.KeyCode;
 
 import java.io.InputStream;
@@ -99,6 +101,12 @@ public class Global {
 					.stream()
 					.filter(o -> o instanceof ProjectNode)
 					.forEach(o -> countUniqueName(((ProjectNode) o).name()));
+			for (Object o : context.objectMap.values()) {
+				// Default values in new fields
+				if (o instanceof ProjectNode && ((ProjectNode) o).offset() == null) {
+					((ProjectNode) o).forceInitialOffsetSet(Vector.ZERO);
+				}
+			}
 			out.history = new History(out, context.undoHistory, context.redoHistory, context.activeChange);
 			out.hotkeys = new Hotkeys();
 			out.initConfig();

@@ -23,7 +23,7 @@ public class ColorSwatch extends StackPane {
 	private Node createClip() {
 		Rectangle clip = new Rectangle();
 		CustomBinding.HalfBinder<CornerRadii> radiiBinder =
-				new CustomBinding.DoubleHalfBinder<>(backgroundProperty(), borderProperty(), (bg, border) -> {
+				new CustomBinding.DoubleHalfBinder<>(backgroundProperty(), borderProperty()).map((bg, border) -> {
 					if (bg != null)
 						return opt(bg.getFills().get(0).getRadii());
 					if (border != null)

@@ -9,7 +9,6 @@ import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.pyxyzygy.nearestneighborimageview.NearestNeighborImageView;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
 import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
-import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.image.Image;
@@ -25,7 +24,7 @@ public class OnionSkin {
 	private final SimpleIntegerProperty frameProp;
 	private final SimpleObjectProperty<DoubleRectangle> bounds;
 	private final Runnable onCleanup;
-	private final CustomBinding.DoubleHalfBinder<Boolean, Boolean, Boolean> on;
+	private final CustomBinding.HalfBinder<Boolean> on;
 
 	// Own
 	private boolean lastOn = false;
@@ -37,10 +36,10 @@ public class OnionSkin {
 		this.editHandle = editHandle;
 		frameProp = editHandle.getCanvas().previousFrame;
 		bounds = editHandle.getCanvas().bounds;
-		on = new CustomBinding.DoubleHalfBinder<>(new CustomBinding.PropertyHalfBinder<>(editHandle.getWrapper().getConfig().onionSkin),
-				new CustomBinding.PropertyHalfBinder<>(timeline.playingProperty),
-				(on0, playing) -> opt(on0 && !playing)
-		);
+		on = new CustomBinding.DoubleHalfBinder<>(
+				new CustomBinding.PropertyHalfBinder<>(editHandle.getWrapper().getConfig().onionSkin),
+				new CustomBinding.PropertyHalfBinder<>(timeline.playingProperty)
+		).map((on0, playing) -> opt(on0 && !playing));
 		onCleanup = on.addListener(v -> render(context));
 		frameProp.addListener((observable, oldValue, newValue) -> render(context));
 		bounds.addListener((observable, oldValue, newValue) -> render(context));

@@ -332,8 +332,8 @@ public class Window {
 
 		Scene scene = new Scene(generalLayout, 1200, 800);
 
-		new CustomBinding.DoubleHalfBinder<Boolean, Boolean, Boolean>(new CustomBinding.PropertyHalfBinder<>(context.config.maxCanvas),
-				new CustomBinding.PropertyHalfBinder<>(GUILaunch.profileConfig.showTimeline),
+		new CustomBinding.DoubleHalfBinder<Boolean, Boolean>(new CustomBinding.PropertyHalfBinder<>(context.config.maxCanvas),
+				new CustomBinding.PropertyHalfBinder<>(GUILaunch.profileConfig.showTimeline)).map(
 				(max, show) -> {
 					return opt(!max && show);
 				}

@@ -7,10 +7,11 @@ import javafx.scene.layout.Region;
 public abstract class ContentReplacer<T> {
 	private Object key;
 
-	public void set(Object key, T content) {
+	public T set(Object key, T content) {
 		if (key != this.key) innerClear();
 		this.key = key;
 		innerSet(content);
+		return content;
 	}
 
 	protected abstract void innerSet(T content);

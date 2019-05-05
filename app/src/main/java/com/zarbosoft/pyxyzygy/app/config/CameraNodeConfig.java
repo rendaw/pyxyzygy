@@ -7,7 +7,7 @@ import javafx.beans.property.SimpleIntegerProperty;
 
 @Configuration(name = "camera")
 public class CameraNodeConfig extends GroupNodeConfig {
-	public static String toolViewport = "viewport";
+	public static String TOOL_VIEWPORT = "viewport";
 
 	public CameraNodeConfig() {
 		super();

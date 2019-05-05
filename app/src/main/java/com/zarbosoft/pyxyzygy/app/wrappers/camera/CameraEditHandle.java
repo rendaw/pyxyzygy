@@ -8,6 +8,7 @@ import com.squareup.gifencoder.ImageOptions;
 import com.zarbosoft.pyxyzygy.app.CustomBinding;
 import com.zarbosoft.pyxyzygy.app.Tool;
 import com.zarbosoft.pyxyzygy.app.Window;
+import com.zarbosoft.pyxyzygy.app.Wrapper;
 import com.zarbosoft.pyxyzygy.app.config.CameraNodeConfig;
 import com.zarbosoft.pyxyzygy.app.config.GroupNodeConfig;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
@@ -51,7 +52,6 @@ public class CameraEditHandle extends GroupNodeEditHandle {
 				new WidgetFormBuilder().apply(b -> cleanup.add(nodeFormFields(context, b, wrapper))).build()
 		), new TitledPane("Camera",
 				new WidgetFormBuilder()
-						.apply(b -> cleanup.add(nodeFormFields(context, b, wrapper)))
 						.intSpinner("Width", 1, 99999, s -> {
 							cleanup.add(CustomBinding.bindBidirectional(new CustomBinding.PropertyBinder<Integer>(
 											wrapper.width.asObject()),
@@ -70,10 +70,7 @@ public class CameraEditHandle extends GroupNodeEditHandle {
 						})
 						.build()
 		), new TitledPane("Render",
-				new WidgetFormBuilder().apply(b -> cleanup.add(nodeFormFields(context,
-						b,
-						wrapper
-				))).<CameraNodeConfig.RenderMode>dropDown("Render type", d -> {
+				new WidgetFormBuilder().<CameraNodeConfig.RenderMode>dropDown("Render type", d -> {
 					Supplier<ListCell<CameraNodeConfig.RenderMode>> cellSupplier = () -> new ListCell<>() {
 						@Override
 						protected void updateItem(
@@ -224,15 +221,15 @@ public class CameraEditHandle extends GroupNodeEditHandle {
 
 	@Override
 	protected List<Node> createToolButtons() {
-		return ImmutableList.of(new ToolToggle("cursor-move16.png", "Move", GroupNodeConfig.toolMove),
-				new ToolToggle("resize.png", "Resize viewport", CameraNodeConfig.toolViewport),
-				new ToolToggle("stamper16.png", "Stamp", GroupNodeConfig.toolStamp)
+		return ImmutableList.of(new Wrapper.ToolToggle(wrapper, "cursor-move16.png", "Move layer", GroupNodeConfig.TOOL_MOVE),
+				new Wrapper.ToolToggle(wrapper, "resize.png", "Resize viewport", CameraNodeConfig.TOOL_VIEWPORT),
+				new Wrapper.ToolToggle(wrapper, "stamper16.png", "Stamp", GroupNodeConfig.TOOL_STAMP)
 		);
 	}
 
 	@Override
 	protected Tool createTool(ProjectContext context, Window window, String newValue) {
-		if (CameraNodeConfig.toolViewport.equals(newValue)) {
+		if (CameraNodeConfig.TOOL_VIEWPORT.equals(newValue)) {
 			return new ToolViewport((CameraWrapper) wrapper);
 		} else
 			return super.createTool(context, window, newValue);

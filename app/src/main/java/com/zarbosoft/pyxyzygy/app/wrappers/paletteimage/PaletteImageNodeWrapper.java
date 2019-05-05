@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 
 import static com.zarbosoft.pyxyzygy.app.GUILaunch.CACHE_OBJECT;
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
+import static com.zarbosoft.pyxyzygy.app.config.PaletteImageNodeConfig.TOOL_BRUSH;
 import static com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext.uniqueName1;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 
@@ -65,21 +66,20 @@ public class PaletteImageNodeWrapper extends BaseImageNodeWrapper<PaletteImageNo
 				k -> new PaletteImageNodeConfig(context)
 		);
 		this.brushBinder =
-				new CustomBinding.DoubleHalfBinder<ObservableList<PaletteBrush>, Integer, PaletteBrush>(new CustomBinding.ListPropertyHalfBinder<>(
+				new CustomBinding.DoubleHalfBinder<ObservableList<PaletteBrush>, Integer>(new CustomBinding.ListPropertyHalfBinder<>(
 						GUILaunch.profileConfig.paletteBrushes),
-						new CustomBinding.DoubleHalfBinder<>(config.tool, config.brush, (t, index) -> {
-							if (t != PaletteImageNodeConfig.Tool.BRUSH)
+						new CustomBinding.DoubleHalfBinder<>(config.tool, config.brush).map((t, index) -> {
+							if (!TOOL_BRUSH.equals(t))
 								return opt(null);
 							return opt(index);
-						}),
-						(brushes, index) -> {
-							if (index == null)
-								return opt(null);
-							if (index >= brushes.size())
-								return opt(null);
-							return opt(brushes.get(index));
-						}
-				);
+						})
+				).map((brushes, index) -> {
+					if (index == null)
+						return opt(null);
+					if (index >= brushes.size())
+						return opt(null);
+					return opt(brushes.get(index));
+				});
 		paletteSelOffsetBinder =
 				new CustomBinding.IndirectBinder<Integer>(new CustomBinding.IndirectHalfBinder<Boolean>(brushBinder,
 						b -> b == null ? opt(null) : opt(b.useColor)
@@ -87,14 +87,13 @@ public class PaletteImageNodeWrapper extends BaseImageNodeWrapper<PaletteImageNo
 						b -> opt((Boolean) b ? brushBinder.get().get().paletteOffset : config.paletteOffset)
 				);
 		paletteSelectionBinder = new CustomBinding.DoubleHalfBinder<>(paletteSelOffsetBinder,
-				new CustomBinding.ListHalfBinder<ProjectObject>(node.palette(), "entries"),
-				(offset, entries) -> {
-					if (entries.size() <= offset)
-						return opt(null);
-					else
-						return opt(entries.get(offset));
-				}
-		);
+				new CustomBinding.ListHalfBinder<ProjectObject>(node.palette(), "entries")
+		).map((offset, entries) -> {
+			if (entries.size() <= offset)
+				return opt(null);
+			else
+				return opt(entries.get(offset));
+		});
 		this.palette = context.getPaletteWrapper(node.palette());
 	}
 
@@ -114,8 +113,7 @@ public class PaletteImageNodeWrapper extends BaseImageNodeWrapper<PaletteImageNo
 						{
 							paletteChangeListener = () -> {
 								wrapTiles.forEach((k, t) -> {
-									t.update(t.getImage(
-											context,
+									t.update(t.getImage(context,
 											wrapper.tileGet(frame, k)
 									)); // Image deserialization can't be done in parallel :( (global pixelreader state?)
 								});
@@ -192,13 +190,6 @@ public class PaletteImageNodeWrapper extends BaseImageNodeWrapper<PaletteImageNo
 	}
 
 	@Override
-	public Listener.ScalarSet<PaletteImageFrame, Vector> addFrameOffsetListener(
-			PaletteImageFrame frame, Listener.ScalarSet<PaletteImageFrame, Vector> listener
-	) {
-		return frame.addOffsetSetListeners(listener);
-	}
-
-	@Override
 	public void removeFrameOffsetListener(
 			PaletteImageFrame frame, Listener.ScalarSet<PaletteImageFrame, Vector> listener
 	) {
@@ -226,8 +217,7 @@ public class PaletteImageNodeWrapper extends BaseImageNodeWrapper<PaletteImageNo
 			public Image getImage(
 					ProjectContext context, PaletteTileBase tile
 			) {
-				return uncheck(() -> GUILaunch.imageCache.get(
-						Objects.hash(CACHE_OBJECT, tile.id(), palette.updatedAt),
+				return uncheck(() -> GUILaunch.imageCache.get(Objects.hash(CACHE_OBJECT, tile.id(), palette.updatedAt),
 						() -> HelperJFX.toImage(((PaletteTile) tile).getData(context), palette.colors)
 				));
 			}
@@ -303,6 +293,7 @@ public class PaletteImageNodeWrapper extends BaseImageNodeWrapper<PaletteImageNo
 	public ProjectNode separateClone(ProjectContext context) {
 		PaletteImageNode clone = PaletteImageNode.create(context);
 		clone.initialNameSet(context, uniqueName1(node.name()));
+		clone.initialOffsetSet(context, node.offset());
 		clone.initialOpacitySet(context, node.opacity());
 		clone.initialPaletteSet(context, node.palette());
 		clone.initialFramesAdd(context, node.frames().stream().map(frame -> {

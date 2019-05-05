@@ -25,7 +25,7 @@ public class Render {
 		} else if (node1 instanceof GroupNode) {
 			GroupNode node = (GroupNode) node1;
 			for (GroupLayer layer : node.layers()) {
-				Rectangle childBounds = findBounds(context,frame,layer);
+				Rectangle childBounds = findBounds(context, frame, layer);
 				out.point(childBounds.corner());
 				out.point(childBounds.corner().plus(childBounds.span()));
 			}
@@ -34,7 +34,7 @@ public class Render {
 			GroupPositionFrame pos = GroupLayerWrapper.positionFrameFinder.findFrame(node, frame).frame;
 			int frame1 = GroupLayerWrapper.findInnerFrame(node, frame);
 			if (node.inner() != null) {
-				Rectangle childBounds = findBounds(context,frame1,node.inner());
+				Rectangle childBounds = findBounds(context, frame1, node.inner());
 				out.point(childBounds.corner().plus(pos.offset()));
 				out.point(childBounds.corner().plus(childBounds.span()).plus(pos.offset()));
 			}
@@ -53,9 +53,14 @@ public class Render {
 	}
 
 	public static Rectangle render(
-			ProjectContext context, TrueColorImage gc, TrueColorImageFrame frame, Rectangle crop, double opacity
+			ProjectContext context,
+			TrueColorImage gc,
+			TrueColorImageNode node,
+			TrueColorImageFrame frame,
+			Rectangle crop,
+			double opacity
 	) {
-		crop = crop.minus(frame.offset());
+		crop = crop.unshift(node.offset()).unshift(frame.offset());
 		Rectangle tileBounds = crop.divideContains(context.tileSize);
 		for (int x = 0; x < tileBounds.width; ++x) {
 			for (int y = 0; y < tileBounds.height; ++y) {
@@ -72,9 +77,14 @@ public class Render {
 	}
 
 	public static Rectangle render(
-			ProjectContext context, TrueColorImage gc, PaletteImageNode node, PaletteImageFrame frame, Rectangle crop, double opacity
+			ProjectContext context,
+			TrueColorImage gc,
+			PaletteImageNode node,
+			PaletteImageFrame frame,
+			Rectangle crop,
+			double opacity
 	) {
-		crop = crop.minus(frame.offset());
+		crop = crop.unshift(node.offset()).unshift(frame.offset());
 		PaletteColors colors = context.getPaletteColors(node.palette());
 		Rectangle tileBounds = crop.divideContains(context.tileSize);
 		for (int x = 0; x < tileBounds.width; ++x) {
@@ -94,7 +104,7 @@ public class Render {
 	/**
 	 * @param context
 	 * @param node1   subtree to render
-	 * @param out      for canvas with w/h = crop w/h
+	 * @param out     for canvas with w/h = crop w/h
 	 * @param frame   frame to render
 	 * @param crop    viewport of render
 	 * @param opacity opacity of this subtree
@@ -108,18 +118,19 @@ public class Render {
 			GroupNode node = (GroupNode) node1;
 			double useOpacity = opacity * ((double) node.opacity() / opacityMax);
 			for (GroupLayer layer : node.layers())
-				render(context, layer, out, frame, crop, useOpacity);
+				render(context, layer, out, frame, crop.unshift(node.offset()), useOpacity);
 		} else if (node1 instanceof GroupLayer) {
 			GroupLayer node = (GroupLayer) node1;
 			GroupPositionFrame pos = GroupLayerWrapper.positionFrameFinder.findFrame(node, frame).frame;
 			int frame1 = GroupLayerWrapper.findInnerFrame(node, frame);
 			if (node.inner() != null)
-				render(context, node.inner(), out, frame1, crop.minus(pos.offset()), opacity);
+				render(context, node.inner(), out, frame1, crop.unshift(pos.offset()), opacity);
 		} else if (node1 instanceof TrueColorImageNode) {
 			TrueColorImageNode node = (TrueColorImageNode) node1;
 			render(
 					context,
 					out,
+					node,
 					TrueColorImageNodeWrapper.frameFinder.findFrame(node, frame).frame,
 					crop,
 					opacity * ((double) node.opacity() / opacityMax)
@@ -146,7 +157,7 @@ public class Render {
 		} else if (node1 instanceof GroupNode) {
 			GroupNode node = (GroupNode) node1;
 			for (GroupLayer layer : node.layers())
-				out = out.expand(bounds(context, layer, frame));
+				out = out.expand(bounds(context, layer, frame)).shift(node.offset());
 		} else if (node1 instanceof GroupLayer) {
 			GroupLayer node = (GroupLayer) node1;
 			int frame1 = GroupLayerWrapper.findInnerFrame(node, frame);
@@ -157,14 +168,18 @@ public class Render {
 			TrueColorImageFrame frame1 = TrueColorImageNodeWrapper.frameFinder.findFrame(node, frame).frame;
 			for (Long address : frame1.tiles().keySet()) {
 				Vector v = Vector.from1D(address).multiply(context.tileSize);
-				out = out.expand(new Rectangle(v.x, v.y, context.tileSize, context.tileSize).plus(frame1.offset()));
+				out = out.expand(new Rectangle(v.x, v.y, context.tileSize, context.tileSize)
+						.shift(node.offset())
+						.shift(frame1.offset()));
 			}
 		} else if (node1 instanceof PaletteImageNode) {
 			PaletteImageNode node = (PaletteImageNode) node1;
 			PaletteImageFrame frame1 = PaletteImageNodeWrapper.frameFinder.findFrame(node, frame).frame;
 			for (Long address : frame1.tiles().keySet()) {
 				Vector v = Vector.from1D(address).multiply(context.tileSize);
-				out = out.expand(new Rectangle(v.x, v.y, context.tileSize, context.tileSize).plus(frame1.offset()));
+				out = out.expand(new Rectangle(v.x, v.y, context.tileSize, context.tileSize)
+						.shift(node.offset())
+						.shift(frame1.offset()));
 			}
 		} else {
 			throw new Assertion();

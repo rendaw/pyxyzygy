@@ -4,6 +4,7 @@ import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
 import com.zarbosoft.pyxyzygy.seed.model.Listener;
+import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -19,6 +20,7 @@ public class GroupNodeCanvasHandle extends CanvasHandle {
 	private final CanvasHandle parent;
 	final SimpleIntegerProperty positiveZoom = new SimpleIntegerProperty(0);
 	private final Listener.ScalarSet<ProjectNode, Integer> opacityListener;
+	private final Listener.ScalarSet<ProjectNode, Vector> offsetListener;
 
 	ToolBar toolBar = new ToolBar();
 	private GroupNodeWrapper wrapper;
@@ -37,6 +39,10 @@ public class GroupNodeCanvasHandle extends CanvasHandle {
 		}, noopConsumer(), noopConsumer());
 		opacityListener = wrapper.node.addOpacitySetListeners((target, value) -> {
 			inner.setOpacity((double) value / opacityMax);
+		});
+		offsetListener = wrapper.node.addOffsetSetListeners((target, offset) -> {
+			inner.setLayoutX(offset.x);
+			inner.setLayoutY(offset.y);
 		});
 		this.wrapper = wrapper;
 	}
@@ -78,6 +84,7 @@ public class GroupNodeCanvasHandle extends CanvasHandle {
 		wrapper.canvasHandle = null;
 		childHandles.forEach(c -> c.remove(context));
 		wrapper.node.removeOpacitySetListeners(opacityListener);
+		wrapper.node.removeOffsetSetListeners(offsetListener);
 		layerListenCleanup.run();
 	}
 
@@ -93,6 +100,6 @@ public class GroupNodeCanvasHandle extends CanvasHandle {
 
 	@Override
 	public DoubleVector toInner(DoubleVector vector) {
-		return vector;
+		return vector.minus(wrapper.node.offset());
 	}
 }
