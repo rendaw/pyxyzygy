@@ -22,12 +22,18 @@ public class ToolMove extends Tool {
 
 	@Override
 	public void markStart(ProjectContext context, Window window, DoubleVector start) {
-		this.markStart = start;
-		this.markStartOffset = ((ProjectNode) wrapper.getValue()).offset();
+		Vector offset = offset();
+		this.markStart = start.plus(offset);
+		this.markStartOffset = offset;
+	}
+
+	private Vector offset() {
+		return ((ProjectNode) wrapper.getValue()).offset();
 	}
 
 	@Override
-	public void mark(ProjectContext context, Window window, DoubleVector start, DoubleVector end) {
+	public void mark(ProjectContext context, Window window, DoubleVector start, DoubleVector end0) {
+		DoubleVector end = end0.plus(offset());
 		context.change(
 				new ProjectContext.Tuple(wrapper, "move"),
 				c -> c
