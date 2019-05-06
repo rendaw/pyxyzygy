@@ -52,6 +52,7 @@ public class HelperJFX {
 		Image image = icon(res);
 		return new ImageCursor(image, image.getWidth() / 2, image.getHeight() / 2);
 	}
+
 	public static Cursor topCenterCursor(String res) {
 		Image image = icon(res);
 		return new ImageCursor(image, image.getWidth() / 2, 0);
@@ -372,7 +373,8 @@ public class HelperJFX {
 
 	public static void exceptionPopup(Stage stage, Throwable e, String message, String shortDescription) {
 		Alert alert = new Alert(Alert.AlertType.ERROR);
-		alert.initOwner(stage);
+		if (stage != null)
+			alert.initOwner(stage);
 		alert.setTitle(String.format("%s - error", Global.nameHuman));
 		alert.setHeaderText(message);
 		alert.setContentText(shortDescription);

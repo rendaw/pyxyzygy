@@ -7,7 +7,6 @@ import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.core.model.v0.PaletteImageNode;
 import com.zarbosoft.pyxyzygy.core.model.v0.Project;
 import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
-import com.zarbosoft.pyxyzygy.core.model.v0.ProjectObject;
 import com.zarbosoft.pyxyzygy.seed.deserialize.ModelDeserializationContext;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import javafx.scene.input.KeyCode;
@@ -110,7 +109,7 @@ public class Global {
 			out.history = new History(out, context.undoHistory, context.redoHistory, context.activeChange);
 			out.hotkeys = new Hotkeys();
 			out.initConfig();
-			out.debugCheckRefCounts();
+			out.debugCheckRefs();
 			context.objectMap.values().forEach(n -> {
 				if (n instanceof PaletteImageNode) {
 					out.addPaletteUser((PaletteImageNode) n);

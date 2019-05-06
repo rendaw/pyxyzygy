@@ -577,11 +577,13 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
 		private void cut(
 				ProjectContext context, ChangeStepBuilder change, Window window
 		) {
+			if (inside.get().empty()) return;
 			copy(context);
 			clear(context, change, window);
 		}
 
 		private void copy(ProjectContext context) {
+			if (inside.get().empty()) return;
 			ClipboardContent content = new ClipboardContent();
 			BaseToolSelect.this.copy(content, wrapper.grab(context, inside.get()));
 			Clipboard.getSystemClipboard().setContent(content);
@@ -590,11 +592,13 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
 		private void clear(
 				ProjectContext context, ChangeStepBuilder change, Window window
 		) {
+			if (inside.get().empty()) return;
 			BaseToolSelect.this.clear(context, change, inside.get());
 			cancel(context, window);
 		}
 
 		private void lift(ProjectContext context, Window window) {
+			if (inside.get().empty()) return;
 			setState(
 					context,
 					new StateMove(context, window, inside.get(), inside.get(), wrapper.grab(context, inside.get()))
@@ -669,6 +673,7 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
 		if (image0 == null)
 			return;
 		Vector size = image0.second;
+		if (size.equals(Vector.ZERO)) return;
 		L image = image0.first;
 		Rectangle placeAt = new Rectangle(0, 0, size.x, size.y);
 		placeAt = placeAt.unshift(placeAt.span().divide(2));

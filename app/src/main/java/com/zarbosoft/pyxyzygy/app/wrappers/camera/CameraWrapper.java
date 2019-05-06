@@ -9,19 +9,15 @@ import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeWrapper;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.pyxyzygy.core.model.v0.Camera;
 import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
-import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleIntegerProperty;
-import javafx.geometry.Insets;
-import javafx.scene.Scene;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.effect.BlendMode;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.StrokeType;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
@@ -34,23 +30,27 @@ public class CameraWrapper extends GroupNodeWrapper {
 	private final Runnable cleanupHeight;
 	public boolean adjustViewport = false;
 	private ProjectContext.Tuple actionWidthChange = new ProjectContext.Tuple(this, "width");
-	private ProjectContext.Tuple actionHeightChange = new ProjectContext.Tuple(this,"height");
+	private ProjectContext.Tuple actionHeightChange = new ProjectContext.Tuple(this, "height");
 
 	public CameraNodeConfig config;
 
 	public CameraWrapper(ProjectContext context, Wrapper parent, int parentIndex, Camera node) {
 		super(context, parent, parentIndex, node);
 		this.node = node;
-		cleanupWidth = CustomBinding.bindBidirectional(new CustomBinding.ScalarBinder<Integer>(
-				node,
-				"width",
-				v -> context.change(actionWidthChange, c -> c.camera(node).widthSet(v))
-		), new CustomBinding.PropertyBinder<>(width.asObject()));
-		cleanupHeight = CustomBinding.bindBidirectional(new CustomBinding.ScalarBinder<Integer>(
-				node,
-				"height",
-				v -> context.change(actionHeightChange, c -> c.camera(node).heightSet(v))
-		), new CustomBinding.PropertyBinder<>(height.asObject()));
+		cleanupWidth = CustomBinding.bindBidirectional(
+				new CustomBinding.ScalarBinder<Integer>(node,
+						"width",
+						v -> context.change(actionWidthChange, c -> c.camera(node).widthSet(v))
+				),
+				new CustomBinding.PropertyBinder<>(width.asObject())
+		);
+		cleanupHeight = CustomBinding.bindBidirectional(
+				new CustomBinding.ScalarBinder<Integer>(node,
+						"height",
+						v -> context.change(actionHeightChange, c -> c.camera(node).heightSet(v))
+				),
+				new CustomBinding.PropertyBinder<>(height.asObject())
+		);
 	}
 
 	@Override
@@ -97,7 +97,7 @@ public class CameraWrapper extends GroupNodeWrapper {
 				super.remove(context);
 			}
 		}
-		return canvasHandle = new CameraCanvasHandle(context, window,parent, this);
+		return canvasHandle = new CameraCanvasHandle(context, window, parent, this);
 	}
 
 	@Override
@@ -108,8 +108,8 @@ public class CameraWrapper extends GroupNodeWrapper {
 		clone.initialWidthSet(context, node.width());
 		clone.initialHeightSet(context, node.height());
 		clone.initialFrameRateSet(context, node.frameRate());
-		clone.initialFrameStartSet(context,node.frameStart());
-		clone.initialFrameLengthSet(context,node.frameLength());
+		clone.initialFrameStartSet(context, node.frameStart());
+		clone.initialFrameLengthSet(context, node.frameLength());
 		return clone;
 	}
 
@@ -134,13 +134,8 @@ public class CameraWrapper extends GroupNodeWrapper {
 			int end,
 			int scale
 	) {
+		Window.DialogBuilder builder = window.dialog("Rendering");
 		ProgressBar progress = new ProgressBar();
-		progress.setPadding(new Insets(3));
-		Stage dialog = new Stage();
-		dialog.setTitle("Rendering");
-		dialog.initOwner(window.stage);
-		dialog.initModality(Modality.APPLICATION_MODAL);
-		dialog.setScene(new Scene(progress));
 		AtomicBoolean cancel = new AtomicBoolean(false);
 		new Thread(() -> {
 			try {
@@ -173,14 +168,13 @@ public class CameraWrapper extends GroupNodeWrapper {
 					Platform.runLater(() -> progress.setProgress(percent));
 				}
 			} finally {
-				Platform.runLater(() -> dialog.hide());
+				Platform.runLater(() -> builder.close());
 			}
 		}).start();
-		dialog.setOnCloseRequest(e -> {
+		builder.addContent(progress).addAction(ButtonType.CANCEL, true, () -> {
 			cancel.set(true);
-			e.consume();
-		});
-		dialog.showAndWait();
+			return true;
+		}).go();
 	}
 
 }

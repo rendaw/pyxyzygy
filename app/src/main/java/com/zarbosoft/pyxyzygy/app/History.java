@@ -3,13 +3,13 @@ package com.zarbosoft.pyxyzygy.app;
 import com.zarbosoft.luxem.read.StackReader;
 import com.zarbosoft.luxem.write.RawWriter;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
-import com.zarbosoft.rendaw.common.Assertion;
-import com.zarbosoft.rendaw.common.WeakCache;
+import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
+import com.zarbosoft.pyxyzygy.core.model.v0.DeserializeHelper;
 import com.zarbosoft.pyxyzygy.seed.deserialize.ChangeDeserializationContext;
 import com.zarbosoft.pyxyzygy.seed.model.Change;
 import com.zarbosoft.pyxyzygy.seed.model.ChangeStep;
-import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
-import com.zarbosoft.pyxyzygy.core.model.v0.DeserializeHelper;
+import com.zarbosoft.rendaw.common.Assertion;
+import com.zarbosoft.rendaw.common.WeakCache;
 
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -26,17 +26,14 @@ public class History {
 	private final WeakCache<ChangeStep.CacheId, ChangeStep> stepLookup = new WeakCache<>(c -> c.cacheId);
 	public final List<ChangeStep.CacheId> undoHistory;
 	public final List<ChangeStep.CacheId> redoHistory;
-	public ChangeStepBuilder change;
+	public ChangeStep changeStep;
 	private boolean inChange = false;
 
 	public History(ProjectContext context, List<Long> undoHistory, List<Long> redoHistory, Long activeChange) {
 		this.context = context;
-		change = new ChangeStepBuilder(
-				context,
-				activeChange == null ?
-						new ChangeStep(new ChangeStep.CacheId(context.nextId++)) :
-						get(new ChangeStep.CacheId(activeChange))
-		);
+		changeStep = activeChange == null ?
+				new ChangeStep(new ChangeStep.CacheId(context.nextId++)) :
+				get(new ChangeStep.CacheId(activeChange));
 		this.undoHistory = undoHistory
 				.stream()
 				.map(i -> new ChangeStep.CacheId(i))
@@ -45,39 +42,52 @@ public class History {
 				.stream()
 				.map(i -> new ChangeStep.CacheId(i))
 				.collect(Collectors.toCollection(ArrayList::new));
-		if (activeChange == null) context.setDirty(change.changeStep);
+		if (activeChange == null)
+			context.setDirty(changeStep);
 	}
 
-	public void change(Consumer<ChangeStepBuilder> cb) {
+	public static class InChangeError extends Exception {
+
+	}
+
+	public void change(Consumer<ChangeStepBuilder> cb) throws InChangeError {
 		if (inChange)
-			throw new Assertion();
+			throw new InChangeError();
 		clearRedo();
 		inChange = true;
 		context.lock.writeLock().lock();
+		ChangeStepBuilder partial = new ChangeStepBuilder(context, new ChangeStep(changeStep.cacheId));
 		try {
-			cb.accept(change);
+			cb.accept(partial);
+		} catch (RuntimeException e) {
+			partial.changeStep.apply(context).remove(context); // Undo partial change
+			context.debugCheckRefs();
+			throw e;
 		} finally {
 			context.lock.writeLock().unlock();
+			inChange = false;
 		}
-		context.setDirty(change.changeStep);
+		for (Change change1 : partial.changeStep.changes)
+			changeStep.add(context, change1);
+		context.debugCheckRefs();
+		context.setDirty(changeStep);
 		context.setDirty(context);
-		context.debugCheckRefCounts();
-		inChange = false;
 	}
 
-	public void finishChange() {
-		if (change.changeStep.changes.isEmpty())
+	public void finishChange() throws InChangeError {
+		if (inChange)
+			throw new InChangeError();
+		if (changeStep.changes.isEmpty())
 			return;
-		stepLookup.add(change.changeStep);
-		undoHistory.add(change.changeStep.cacheId);
+		stepLookup.add(changeStep);
+		undoHistory.add(changeStep.cacheId);
 		clearRedo();
-		List<ChangeStep.CacheId> excessUndo = undoHistory.subList(0,
-				Math.max(0, undoHistory.size() - GUILaunch.profileConfig.maxUndo)
-		);
+		List<ChangeStep.CacheId> excessUndo =
+				undoHistory.subList(0, Math.max(0, undoHistory.size() - GUILaunch.profileConfig.maxUndo));
 		excessUndo.forEach(c -> get(c).remove(context));
 		excessUndo.clear();
-		change = new ChangeStepBuilder(context, new ChangeStep(new ChangeStep.CacheId(context.nextId++)));
-		context.setDirty(change.changeStep);
+		changeStep = new ChangeStep(new ChangeStep.CacheId(context.nextId++));
+		context.setDirty(changeStep);
 	}
 
 	public ChangeStep get(ChangeStep.CacheId id) {
@@ -111,7 +121,7 @@ public class History {
 		redoHistory.clear();
 	}
 
-	public void clearHistory() {
+	public void clearHistory() throws InChangeError {
 		finishChange();
 		for (ChangeStep.CacheId c : undoHistory)
 			get(c).remove(context);
@@ -119,7 +129,7 @@ public class History {
 		clearRedo();
 	}
 
-	public void undo() {
+	public void undo() throws InChangeError {
 		finishChange();
 		if (undoHistory.isEmpty())
 			return;
@@ -130,10 +140,10 @@ public class History {
 		context.setDirty(redo);
 		context.setDirty(context);
 		stepLookup.add(redo);
-		context.debugCheckRefCounts();
+		context.debugCheckRefs();
 	}
 
-	public void redo() {
+	public void redo() throws InChangeError {
 		finishChange();
 		if (redoHistory.isEmpty())
 			return;
@@ -144,7 +154,7 @@ public class History {
 		context.setDirty(context);
 		undoHistory.add(undo.cacheId);
 		stepLookup.add(undo);
-		context.debugCheckRefCounts();
+		context.debugCheckRefs();
 	}
 
 	public void serialize(RawWriter writer) {

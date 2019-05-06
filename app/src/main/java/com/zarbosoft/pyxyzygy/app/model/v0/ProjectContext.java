@@ -3,7 +3,10 @@ package com.zarbosoft.pyxyzygy.app.model.v0;
 import com.zarbosoft.interface1.TypeInfo;
 import com.zarbosoft.luxem.read.StackReader;
 import com.zarbosoft.luxem.write.RawWriter;
-import com.zarbosoft.pyxyzygy.app.*;
+import com.zarbosoft.pyxyzygy.app.ConfigBase;
+import com.zarbosoft.pyxyzygy.app.Global;
+import com.zarbosoft.pyxyzygy.app.History;
+import com.zarbosoft.pyxyzygy.app.Hotkeys;
 import com.zarbosoft.pyxyzygy.app.config.RootProjectConfig;
 import com.zarbosoft.pyxyzygy.core.PaletteColors;
 import com.zarbosoft.pyxyzygy.core.model.v0.*;
@@ -14,6 +17,7 @@ import com.zarbosoft.pyxyzygy.seed.model.v0.ProjectContextBase;
 import com.zarbosoft.pyxyzygy.seed.model.v0.ProjectObjectInterface;
 import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
 import com.zarbosoft.rendaw.common.Assertion;
+import com.zarbosoft.rendaw.common.Common;
 import com.zarbosoft.rendaw.common.DeadCode;
 import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
@@ -27,6 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -45,6 +50,27 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 
 	public History history;
 	public Hotkeys hotkeys;
+
+	public void undo() {
+		wrapHistory(() -> {
+			lastChangeUnique = null;
+			history.undo();
+		});
+	}
+
+	public void redo() {
+		wrapHistory(() -> {
+			lastChangeUnique = null;
+			history.redo();
+		});
+	}
+
+	public void finishChange() {
+		wrapHistory(() -> {
+			lastChangeUnique = null;
+			history.finishChange();
+		});
+	}
 
 	public static class PaletteWrapper {
 		public Instant updatedAt;
@@ -80,7 +106,8 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 						((PaletteColor) v).removeColorSetListeners(colorChangeListener);
 					};
 				} else if (v instanceof PaletteSeparator) {
-					return () -> {};
+					return () -> {
+					};
 				} else
 					throw new Assertion();
 			}, r -> {
@@ -119,17 +146,34 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 	private Instant lastChangeTime = Instant.EPOCH;
 	private Tuple lastChangeUnique = null;
 
-	public void change(Tuple unique, Consumer<ChangeStepBuilder> consumer) {
-		Instant now = Instant.now();
-		if (unique == null ||
-				lastChangeUnique == null ||
-				!unique.equals(lastChangeUnique) ||
-				now.isAfter(lastChangeTime.plusSeconds(1))) {
-			history.finishChange();
+	private void wrapHistory(Common.UncheckedRunnable inner) {
+		Tuple historicUnique = lastChangeUnique;
+		try {
+			inner.run();
+		} catch (History.InChangeError e) {
+			throw new Assertion(String.format("Attempting concurrent changes! In %s, new change is %s.\n",
+					historicUnique,
+					lastChangeUnique
+			));
+		} catch (Exception e) {
+			throw uncheck(e);
 		}
-		lastChangeTime = now;
-		lastChangeUnique = unique;
-		history.change(consumer);
+	}
+
+	public void change(Tuple unique, Consumer<ChangeStepBuilder> consumer) {
+		wrapHistory(() -> {
+			Instant now = Instant.now();
+			if (unique == null ||
+					lastChangeUnique == null ||
+					!unique.equals(lastChangeUnique) ||
+					now.isAfter(lastChangeTime.plusSeconds(1))) {
+				lastChangeUnique = null;
+				history.finishChange();
+			}
+			lastChangeTime = now;
+			lastChangeUnique = unique;
+			history.change(consumer);
+		});
 	}
 
 	public static void countUniqueName(String name) {
@@ -160,53 +204,56 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 		return count == 1 ? name : String.format("%s (%s)", name, count);
 	}
 
-	public void debugCheckRefCounts() {
-		Map<Long, Long> counts = new HashMap<>();
-		Consumer<ProjectObjectInterface> incCount =
-				o1 -> counts.compute(o1.id(), (i, count) -> count == null ? 1 : count + 1);
-		objectMap.values().forEach(o -> {
+	public void debugCheckRefs() {
+		BiConsumer<ProjectObjectInterface, Consumer<ProjectObjectInterface>> dispatchRefs = (o, consumer) -> {
 			if (false) {
 				throw new Assertion();
 			} else if (o instanceof Project) {
-				((Project) o).palettes().forEach(incCount);
-				((Project) o).top().forEach(incCount);
+				((Project) o).palettes().forEach(consumer);
+				((Project) o).top().forEach(consumer);
 			} else if (o instanceof GroupLayer) {
 				if (((GroupLayer) o).inner() != null) {
-					incCount.accept(((GroupLayer) o).inner());
+					consumer.accept(((GroupLayer) o).inner());
 				}
-				((GroupLayer) o).timeFrames().forEach(incCount);
-				((GroupLayer) o).positionFrames().forEach(incCount);
+				((GroupLayer) o).timeFrames().forEach(consumer);
+				((GroupLayer) o).positionFrames().forEach(consumer);
 			} else if (o instanceof GroupNode) {
-				((GroupNode) o).layers().forEach(incCount);
+				((GroupNode) o).layers().forEach(consumer);
 			} else if (o instanceof GroupPositionFrame) {
 			} else if (o instanceof GroupTimeFrame) {
 			} else if (o instanceof TrueColorImageFrame) {
-				((TrueColorImageFrame) o).tiles().values().forEach(incCount);
+				((TrueColorImageFrame) o).tiles().values().forEach(consumer);
 			} else if (o instanceof TrueColorImageNode) {
-				((TrueColorImageNode) o).frames().forEach(incCount);
+				((TrueColorImageNode) o).frames().forEach(consumer);
 			} else if (o instanceof TrueColorTileBase) {
 			} else if (o instanceof PaletteImageFrame) {
-				((PaletteImageFrame) o).tiles().values().forEach(incCount);
+				((PaletteImageFrame) o).tiles().values().forEach(consumer);
 			} else if (o instanceof PaletteImageNode) {
-				incCount.accept(((PaletteImageNode) o).palette());
-				((PaletteImageNode) o).frames().forEach(incCount);
+				consumer.accept(((PaletteImageNode) o).palette());
+				((PaletteImageNode) o).frames().forEach(consumer);
 			} else if (o instanceof PaletteTileBase) {
 			} else if (o instanceof Palette) {
-				((Palette) o).entries().forEach(incCount);
+				((Palette) o).entries().forEach(consumer);
 			} else if (o instanceof PaletteColor) {
 			} else if (o instanceof PaletteSeparator) {
 			} else {
-				throw new Assertion(String.format("Unhandled type %s\n", o.getClass()));
+				throw new Assertion(String.format("Unhandled type %s", o.getClass()));
 			}
-		});
-		history.change.changeStep.changes.forEach(change -> change.debugRefCounts(incCount));
+		};
+
+		// Check reference counts
+		Map<Long, Long> counts = new HashMap<>();
+		Consumer<ProjectObjectInterface> incCount =
+				o -> counts.compute(o.id(), (i, count) -> count == null ? 1 : count + 1);
+		objectMap.values().forEach(o -> dispatchRefs.accept(o, incCount));
+		history.changeStep.changes.forEach(change -> change.debugRefCounts(incCount));
 		history.undoHistory.forEach(id -> history.get(id).changes.forEach(change -> change.debugRefCounts(incCount)));
 		history.redoHistory.forEach(id -> history.get(id).changes.forEach(change -> change.debugRefCounts(incCount)));
 		objectMap.values().forEach(o -> {
 			long got = ((ProjectObject) o).refCount();
 			long expected = counts.getOrDefault(o.id(), 0L);
 			if (got != expected) {
-				throw new Assertion(String.format("Ref count for %s id %s : %s should be %s\n",
+				throw new Assertion(String.format("Ref count for %s id %s : %s should be %s",
 						o,
 						o.id(),
 						got,
@@ -214,6 +261,17 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 				));
 			}
 		});
+
+		// Check rootedness
+		Consumer<ProjectObjectInterface> walk = new Consumer<ProjectObjectInterface>() {
+			@Override
+			public void accept(ProjectObjectInterface o) {
+				if (!objectMap.containsKey(o.id()))
+					throw new Assertion(String.format("%s (id %s) missing from object map", o, o.id()));
+				dispatchRefs.accept(o, this);
+			}
+		};
+		walk.accept(project);
 	}
 
 	// Config flushing
@@ -291,6 +349,7 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 
 	@Override
 	public void dirtyFlush(ProjectContextBase context) {
+		debugCheckRefs();
 		atomicWrite(projectPath(), dest -> {
 			RawWriter writer = new RawWriter(dest, (byte) ' ', 4);
 			writer.type(version);
@@ -302,7 +361,7 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 				object.serialize(writer);
 			writer.arrayEnd();
 			history.serialize(writer);
-			writer.key("activeChange").primitive(Long.toString(history.change.changeStep.cacheId.id));
+			writer.key("activeChange").primitive(Long.toString(history.changeStep.cacheId.id));
 			writer.recordEnd();
 		});
 	}
@@ -314,7 +373,10 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 
 	@Override
 	public void clearHistory() {
-		history.clearHistory();
+		wrapHistory(() -> {
+			lastChangeUnique = null;
+			history.clearHistory();
+		});
 	}
 
 	@Override

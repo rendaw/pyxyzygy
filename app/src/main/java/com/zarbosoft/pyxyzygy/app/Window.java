@@ -1,5 +1,6 @@
 package com.zarbosoft.pyxyzygy.app;
 
+import com.google.common.base.Throwables;
 import com.zarbosoft.pyxyzygy.app.config.NodeConfig;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.parts.editor.Editor;
@@ -43,6 +44,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.zarbosoft.pyxyzygy.app.Global.logger;
 import static com.zarbosoft.pyxyzygy.app.Global.nameHuman;
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
@@ -102,6 +104,17 @@ public class Window {
 
 	public void start(ProjectContext context, Stage primaryStage, boolean main) {
 		this.stage = primaryStage;
+		Thread.currentThread().setUncaughtExceptionHandler((thread, e) -> {
+			logger.writeException(e, "Uncaught error");
+			TextArea textArea = new TextArea(Throwables.getStackTraceAsString(e));
+			textArea.setEditable(false);
+			textArea.setWrapText(true);
+			textArea.setMaxWidth(Double.MAX_VALUE);
+			textArea.setMaxHeight(Double.MAX_VALUE);
+			dialog("An unexpected error occurred")
+					.addContent(new TitledPane("Trace", textArea))
+					.addAction(ButtonType.OK, true, () -> true).go();
+		});
 		primaryStage.getIcons().addAll(GUILaunch.appIcons);
 		primaryStage.setOnCloseRequest(e -> {
 			Global.shutdown();
@@ -115,7 +128,7 @@ public class Window {
 					) {
 						@Override
 						public void run(ProjectContext context, Window window) {
-							context.history.undo();
+							context.undo();
 						}
 					},
 						new Hotkeys.Action(Hotkeys.Scope.GLOBAL,
@@ -126,7 +139,7 @@ public class Window {
 
 							@Override
 							public void run(ProjectContext context, Window window) {
-								context.history.redo();
+								context.redo();
 							}
 						}
 				)
@@ -287,12 +300,10 @@ public class Window {
 						}).button(button -> {
 							button.setText("Clear undo/redo");
 							button.setOnAction(e -> {
-								Alert confirm =
-										new Alert(Alert.AlertType.CONFIRMATION, "Are you sure you wish to clear undo/redo?");
-								confirm.initOwner(stage);
-								confirm.showAndWait().filter(b -> b == ButtonType.OK).ifPresent(x -> {
-									context.history.clearHistory();
-								});
+								dialog("Are you sure you wish to clear undo/redo?").addAction(ButtonType.OK, false, () -> {
+									context.clearHistory();
+									return true;
+								}).addAction(ButtonType.CANCEL, true, () -> true).go();
 							});
 						}).check("Show origin", checkBox -> {
 							checkBox.selectedProperty().bindBidirectional(GUILaunch.profileConfig.showOrigin);
@@ -518,7 +529,7 @@ public class Window {
 			return this;
 		}
 
-		private void close() {
+		public void close() {
 			stack.getChildren().removeAll(grey);
 		}
 
@@ -529,8 +540,7 @@ public class Window {
 			layout.getChildren().add(buttons);
 
 			content.setHeaderText(title);
-			content.setBorder(new Border(new BorderStroke(
-					Color.DARKGRAY,
+			content.setBorder(new Border(new BorderStroke(Color.DARKGRAY,
 					BorderStrokeStyle.SOLID,
 					CornerRadii.EMPTY,
 					new BorderWidths(2)
@@ -545,7 +555,10 @@ public class Window {
 			content.setContent(layout);
 
 			grey = new Pane();
-			grey.setBackground(new Background(new BackgroundFill(new Color(0,0,0,0.4), CornerRadii.EMPTY, Insets.EMPTY)));
+			grey.setBackground(new Background(new BackgroundFill(new Color(0, 0, 0, 0.4),
+					CornerRadii.EMPTY,
+					Insets.EMPTY
+			)));
 			grey.minWidthProperty().bind(stage.widthProperty());
 			grey.minHeightProperty().bind(stage.heightProperty());
 			grey.getChildren().add(content);

@@ -81,4 +81,8 @@ public class Rectangle {
 	public int hashCode() {
 		return Objects.hash(239034092, x, y, width, height);
 	}
+
+	public boolean empty() {
+		return width == 0 && height == 0;
+	}
 }

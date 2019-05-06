@@ -586,7 +586,7 @@ public class GUILaunch extends Application {
 							newProject(primaryStage, dialog.resultPath, dialog.resultCreateMode);
 						} catch (Exception e) {
 							logger.writeException(e, "Error creating new project");
-							HelperJFX.exceptionPopup(primaryStage,
+							HelperJFX.exceptionPopup(null,
 									e,
 									"Error creating new project",
 									"An error occurred while trying to create the project.\n" +
@@ -602,7 +602,7 @@ public class GUILaunch extends Application {
 							openProject(primaryStage, dialog.resultPath);
 						} catch (Exception e) {
 							logger.writeException(e, "Error opening project");
-							HelperJFX.exceptionPopup(primaryStage,
+							HelperJFX.exceptionPopup(null,
 									e,
 									"Error opening project",
 									"An error occurred while trying to open the project.\n" +

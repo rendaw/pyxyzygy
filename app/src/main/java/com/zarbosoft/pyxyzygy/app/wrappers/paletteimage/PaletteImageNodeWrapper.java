@@ -239,7 +239,7 @@ public class PaletteImageNodeWrapper extends BaseImageNodeWrapper<PaletteImageNo
 
 	@Override
 	public void imageCompose(PaletteImage image, PaletteImage other, int x, int y) {
-		image.replace(other, x, y);
+		image.compose(other, x, y);
 	}
 
 	@Override
