@@ -164,7 +164,14 @@ public class ToolBrush extends BaseToolBrush<TrueColorImageFrame, TrueColorImage
 	}
 
 	@Override
-	public void mark(ProjectContext context, Window window, DoubleVector start, DoubleVector end) {
+	public void mark(
+			ProjectContext context,
+			Window window,
+			DoubleVector start,
+			DoubleVector end,
+			DoubleVector globalStart,
+			DoubleVector globalEnd
+	) {
 		if (false) {
 			throw new Assertion();
 		} else if (window.pressed.contains(KeyCode.CONTROL) && window.pressed.contains(KeyCode.SHIFT)) {
@@ -196,6 +203,6 @@ public class ToolBrush extends BaseToolBrush<TrueColorImageFrame, TrueColorImage
 				);
 			}
 		} else
-			super.mark(context, window, start, end);
+			super.mark(context, window, start, end, globalStart, globalEnd);
 	}
 }

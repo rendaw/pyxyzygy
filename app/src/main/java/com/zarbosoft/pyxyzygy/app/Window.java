@@ -85,6 +85,7 @@ public class Window {
 	public Stage stage;
 	public Timeline timeline;
 	private StackPane stack;
+	public Structure structure;
 
 	public static class Tab extends javafx.scene.control.Tab {
 		ScrollPane scrollPane = new ScrollPane();
@@ -198,7 +199,7 @@ public class Window {
 			);
 		}
 
-		Structure structure = new Structure(context, this, main);
+		structure = new Structure(context, this, main);
 		structureTab.setContent(structure.getWidget());
 
 		Region menuSpring = new Region();

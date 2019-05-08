@@ -1,6 +1,5 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.paletteimage;
 
-import com.zarbosoft.pyxyzygy.app.CustomBinding;
 import com.zarbosoft.pyxyzygy.app.DoubleVector;
 import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.config.PaletteBrush;
@@ -13,7 +12,6 @@ import com.zarbosoft.pyxyzygy.core.PaletteImage;
 import com.zarbosoft.pyxyzygy.core.model.v0.PaletteColor;
 import com.zarbosoft.pyxyzygy.core.model.v0.PaletteImageFrame;
 import com.zarbosoft.pyxyzygy.core.model.v0.PaletteSeparator;
-import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.Common;
@@ -21,8 +19,6 @@ import com.zarbosoft.rendaw.common.Pair;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.DoubleBinding;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.scene.Node;
 import javafx.scene.effect.BlendMode;
 import javafx.scene.input.KeyCode;
@@ -82,7 +78,9 @@ public class ToolBrush extends BaseToolBrush<PaletteImageFrame, PaletteImage> {
 	}
 
 	@Override
-	public void markStart(ProjectContext context, Window window, DoubleVector start) {
+	public void markStart(
+			ProjectContext context, Window window, DoubleVector start, DoubleVector globalStart
+	) {
 
 	}
 
@@ -118,7 +116,14 @@ public class ToolBrush extends BaseToolBrush<PaletteImageFrame, PaletteImage> {
 	}
 
 	@Override
-	public void mark(ProjectContext context, Window window, DoubleVector start, DoubleVector end) {
+	public void mark(
+			ProjectContext context,
+			Window window,
+			DoubleVector start,
+			DoubleVector end,
+			DoubleVector globalStart,
+			DoubleVector globalEnd
+	) {
 		if (false) {
 			throw new Assertion();
 		} else if (window.pressed.contains(KeyCode.CONTROL)) {
@@ -132,7 +137,7 @@ public class ToolBrush extends BaseToolBrush<PaletteImageFrame, PaletteImage> {
 				setColor(tile.getData(context).getPixel(intEnd.x - tileCorner.x, intEnd.y - tileCorner.y));
 			}
 		} else
-			super.mark(context, window, start, end);
+			super.mark(context, window, start, end, globalStart, globalEnd);
 	}
 
 	@Override

@@ -6,32 +6,44 @@ import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.CircleCursor;
 import com.zarbosoft.pyxyzygy.core.model.v0.ProjectObject;
 import com.zarbosoft.rendaw.common.Assertion;
-import javafx.scene.ImageCursor;
+import javafx.beans.value.ChangeListener;
 import javafx.scene.input.KeyCode;
 
 public abstract class BaseToolBrush<F extends ProjectObject, L> extends Tool {
 	private final BaseBrush brush;
 	public final BaseImageNodeWrapper<?, F, ?, L> wrapper;
+	private final ChangeListener<Integer> brushSizeListener;
+	private final ChangeListener<Number> zoomListener;
 	private DoubleVector lastEnd;
-	private ImageCursor cursor = null;
 
 	public BaseToolBrush(
 			Window window, BaseImageNodeWrapper<?, F, ?, L> wrapper, BaseBrush brush
 	) {
 		this.wrapper = wrapper;
 		this.brush = brush;
-		brush.size.addListener((observable, oldValue, newValue) -> updateCursor(window));
-		window.editor.zoomFactor.addListener((observable, oldValue, newValue) -> updateCursor(window));
+		brushSizeListener = (observable, oldValue, newValue) -> updateCursor(window);
+		zoomListener = (observable, oldValue, newValue) -> updateCursor(window);
+		brush.size.addListener(brushSizeListener);
+		window.editor.zoomFactor.addListener(zoomListener);
 		updateCursor(window);
 	}
 
 	@Override
-	public void markStart(ProjectContext context, Window window, DoubleVector start) {
+	public void markStart(
+			ProjectContext context, Window window, DoubleVector start, DoubleVector globalStart
+	) {
 
 	}
 
 	@Override
-	public void mark(ProjectContext context, Window window, DoubleVector start, DoubleVector end) {
+	public void mark(
+			ProjectContext context,
+			Window window,
+			DoubleVector start,
+			DoubleVector end,
+			DoubleVector globalStart,
+			DoubleVector globalEnd
+	) {
 		if (false) {
 			throw new Assertion();
 		} else if (window.pressed.contains(KeyCode.SHIFT)) {
@@ -43,10 +55,7 @@ public abstract class BaseToolBrush<F extends ProjectObject, L> extends Tool {
 	}
 
 	private void strokeInner(
-			ProjectContext context,
-			ProjectContext.Tuple changeUnique,
-			DoubleVector start,
-			DoubleVector end
+			ProjectContext context, ProjectContext.Tuple changeUnique, DoubleVector start, DoubleVector end
 	) {
 		final double startRadius = brush.size.get() / 20.0;
 		final double endRadius = brush.size.get() / 20.0;
@@ -65,11 +74,13 @@ public abstract class BaseToolBrush<F extends ProjectObject, L> extends Tool {
 
 	private void updateCursor(Window window) {
 		double zoom = window.editor.zoomFactor.get();
-		window.editorCursor.set(this,cursor = CircleCursor.create(brush.sizeInPixels() * zoom));
+		window.editorCursor.set(this, CircleCursor.create(brush.sizeInPixels() * zoom));
 	}
 
 	@Override
 	public void remove(ProjectContext context, Window window) {
+		brush.size.removeListener(brushSizeListener);
+		window.editor.zoomFactor.removeListener(zoomListener);
 		window.editorCursor.clear(this);
 	}
 

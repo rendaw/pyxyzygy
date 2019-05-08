@@ -52,7 +52,6 @@ import java.util.stream.Stream;
 import static com.zarbosoft.pyxyzygy.app.Global.pasteHotkey;
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.pyxyzygy.app.config.NodeConfig.TOOL_MOVE;
-import static com.zarbosoft.pyxyzygy.app.config.PaletteImageNodeConfig.TOOL_FRAME_MOVE;
 import static com.zarbosoft.pyxyzygy.app.config.PaletteImageNodeConfig.TOOL_SELECT;
 import static com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext.uniqueName;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.*;
@@ -731,8 +730,7 @@ public class PaletteImageEditHandle extends EditHandle {
 	public void markStart(ProjectContext context, Window window, DoubleVector start) {
 		if (tool == null)
 			return;
-		start = Window.toLocal(wrapper.canvasHandle, start).minus(offset());
-		tool.markStart(context, window, start);
+		tool.markStart(context, window, Window.toLocal(wrapper.canvasHandle, start).minus(offset()), start);
 	}
 
 	@Override
@@ -745,8 +743,9 @@ public class PaletteImageEditHandle extends EditHandle {
 		if (tool == null)
 			return;
 		Vector offset = offset();
-		start = Window.toLocal(wrapper.canvasHandle, start).minus(offset);
-		end = Window.toLocal(wrapper.canvasHandle, end).minus(offset);
-		tool.mark(context, window, start, end);
+		tool.mark(context, window,
+				Window.toLocal(wrapper.canvasHandle, start).minus(offset),
+				Window.toLocal(wrapper.canvasHandle, end).minus(offset),
+				start, end);
 	}
 }

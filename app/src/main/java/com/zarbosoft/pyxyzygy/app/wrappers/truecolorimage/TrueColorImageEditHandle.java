@@ -83,55 +83,62 @@ public class TrueColorImageEditHandle extends EditHandle {
 		positiveZoom.bind(wrapper.canvasHandle.zoom);
 
 		actions = Streams.concat(Stream.of(new Hotkeys.Action(Hotkeys.Scope.CANVAS, "paste", "Paste", pasteHotkey) {
-			@Override
-			public void run(ProjectContext context, Window window) {
-				wrapper.config.tool.set(TOOL_SELECT);
-				((ToolSelect) tool).paste(context, window);
-			}
-		}, new Hotkeys.Action(Hotkeys.Scope.CANVAS,
-				"last-brush",
-				"Last brush",
-				Hotkeys.Hotkey.create(KeyCode.SPACE, false, false, false)
-		) {
-			@Override
-			public void run(ProjectContext context, Window window) {
-				if (wrapper.config.tool.get() == TrueColorImageNodeConfig.TOOL_BRUSH) {
-					if (wrapper.config.lastBrush < 0 ||
-							wrapper.config.lastBrush >= GUILaunch.profileConfig.trueColorBrushes.size())
-						return;
-					setBrush(wrapper.config.lastBrush);
-				} else {
-					wrapper.config.tool.set(TrueColorImageNodeConfig.TOOL_BRUSH);
-				}
-			}
-		}, new Hotkeys.Action(Hotkeys.Scope.CANVAS,
-				"select",
-				"Select",
-				Hotkeys.Hotkey.create(KeyCode.S, false, false, false)
-		) {
-			@Override
-			public void run(ProjectContext context, Window window) {
-				wrapper.config.tool.set(TOOL_SELECT);
-			}
-		}, new Hotkeys.Action(Hotkeys.Scope.CANVAS,
-				"move",
-				"Move layer",
-				Hotkeys.Hotkey.create(KeyCode.M, false, false, false)
-		) {
-			@Override
-			public void run(ProjectContext context, Window window) {
-				wrapper.config.tool.set(TrueColorImageNodeConfig.TOOL_MOVE);
-			}
-		}, new Hotkeys.Action(Hotkeys.Scope.CANVAS,
-				"move-frame",
-				"Move frame contents",
-				Hotkeys.Hotkey.create(KeyCode.F, false, false, false)
-		) {
-			@Override
-			public void run(ProjectContext context, Window window) {
-				wrapper.config.tool.set(TOOL_FRAME_MOVE);
-			}
-		}), enumerate(Stream.of(KeyCode.DIGIT1,
+											   @Override
+											   public void run(ProjectContext context, Window window) {
+												   wrapper.config.tool.set(TOOL_SELECT);
+												   ((ToolSelect) tool).paste(context, window);
+											   }
+										   },
+										   new Hotkeys.Action(Hotkeys.Scope.CANVAS,
+												   "last-brush",
+												   "Last brush",
+												   Hotkeys.Hotkey.create(KeyCode.SPACE, false, false, false)
+										   ) {
+											   @Override
+											   public void run(ProjectContext context, Window window) {
+												   if (wrapper.config.tool.get() ==
+														   TrueColorImageNodeConfig.TOOL_BRUSH) {
+													   if (wrapper.config.lastBrush < 0 ||
+															   wrapper.config.lastBrush >=
+																	   GUILaunch.profileConfig.trueColorBrushes.size())
+														   return;
+													   setBrush(wrapper.config.lastBrush);
+												   } else {
+													   wrapper.config.tool.set(TrueColorImageNodeConfig.TOOL_BRUSH);
+												   }
+											   }
+										   },
+										   new Hotkeys.Action(Hotkeys.Scope.CANVAS,
+												   "select",
+												   "Select",
+												   Hotkeys.Hotkey.create(KeyCode.S, false, false, false)
+										   ) {
+											   @Override
+											   public void run(ProjectContext context, Window window) {
+												   wrapper.config.tool.set(TOOL_SELECT);
+											   }
+										   },
+										   new Hotkeys.Action(Hotkeys.Scope.CANVAS,
+												   "move",
+												   "Move layer",
+												   Hotkeys.Hotkey.create(KeyCode.M, false, false, false)
+										   ) {
+											   @Override
+											   public void run(ProjectContext context, Window window) {
+												   wrapper.config.tool.set(TrueColorImageNodeConfig.TOOL_MOVE);
+											   }
+										   },
+										   new Hotkeys.Action(Hotkeys.Scope.CANVAS,
+												   "move-frame",
+												   "Move frame contents",
+												   Hotkeys.Hotkey.create(KeyCode.F, false, false, false)
+										   ) {
+											   @Override
+											   public void run(ProjectContext context, Window window) {
+												   wrapper.config.tool.set(TOOL_FRAME_MOVE);
+											   }
+										   }
+		), enumerate(Stream.of(KeyCode.DIGIT1,
 				KeyCode.DIGIT2,
 				KeyCode.DIGIT3,
 				KeyCode.DIGIT4,
@@ -357,8 +364,7 @@ public class TrueColorImageEditHandle extends EditHandle {
 	public void markStart(ProjectContext context, Window window, DoubleVector start) {
 		if (tool == null)
 			return;
-		start = Window.toLocal(wrapper.canvasHandle, start).minus(offset());
-		tool.markStart(context, window, start);
+		tool.markStart(context, window, Window.toLocal(wrapper.canvasHandle, start).minus(offset()), start);
 	}
 
 	@Override
@@ -371,8 +377,13 @@ public class TrueColorImageEditHandle extends EditHandle {
 		if (tool == null)
 			return;
 		Vector offset = offset();
-		start = Window.toLocal(wrapper.canvasHandle, start).minus(offset);
-		end = Window.toLocal(wrapper.canvasHandle, end).minus(offset);
-		tool.mark(context, window, start, end);
+		tool.mark(
+				context,
+				window,
+				Window.toLocal(wrapper.canvasHandle, start).minus(offset),
+				Window.toLocal(wrapper.canvasHandle, end).minus(offset),
+				start,
+				end
+		);
 	}
 }

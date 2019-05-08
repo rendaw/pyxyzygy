@@ -64,7 +64,7 @@ public abstract class Logger {
 
 		@Override
 		public void write(String format, Object... args) {
-			System.out.format(format, args);
+			System.out.format(format + "\n", args);
 			super.write(format, args);
 		}
 
@@ -73,7 +73,7 @@ public abstract class Logger {
 			System.out.flush();
 			Object[] args = Arrays.copyOf(args1, args1.length + 1);
 			args[args.length - 1] = Throwables.getStackTraceAsString(e);
-			System.err.format(format + "\n%s", args);
+			System.err.format(format + "\n%s\n", args);
 			System.err.flush();
 			super.writeException(e, format, args1);
 		}

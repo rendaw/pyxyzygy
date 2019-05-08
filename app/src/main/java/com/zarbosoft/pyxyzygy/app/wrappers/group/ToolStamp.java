@@ -147,7 +147,9 @@ public class ToolStamp extends Tool {
 	}
 
 	@Override
-	public void markStart(ProjectContext context, Window window, DoubleVector start) {
+	public void markStart(
+			ProjectContext context, Window window, DoubleVector start, DoubleVector globalStart
+	) {
 		if (stampSource == null)
 			return;
 		GroupLayer layer = GroupLayer.create(context);
@@ -161,11 +163,23 @@ public class ToolStamp extends Tool {
 		timeFrame.initialInnerOffsetSet(context, 0);
 		timeFrame.initialInnerLoopSet(context, 0);
 		layer.initialTimeFramesAdd(context, ImmutableList.of(timeFrame));
-		context.change(null, c -> c.groupNode(wrapper.node).layersAdd(layer));
+		window.structure.suppressSelect = true;
+		try {
+			context.change(null, c -> c.groupNode(wrapper.node).layersAdd(layer));
+		} finally {
+			window.structure.suppressSelect = false;
+		}
 	}
 
 	@Override
-	public void mark(ProjectContext context, Window window, DoubleVector start, DoubleVector end) {
+	public void mark(
+			ProjectContext context,
+			Window window,
+			DoubleVector start,
+			DoubleVector end,
+			DoubleVector globalStart,
+			DoubleVector globalEnd
+	) {
 
 	}
 

@@ -8,6 +8,7 @@ import com.zarbosoft.pyxyzygy.app.widgets.ContentReplacer;
 import com.zarbosoft.pyxyzygy.app.widgets.TitledPane;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
 import com.zarbosoft.pyxyzygy.app.wrappers.ToolMove;
+import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import com.zarbosoft.rendaw.common.Assertion;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -129,12 +130,15 @@ public class GroupNodeEditHandle extends EditHandle {
 		return wrapper;
 	}
 
+	private Vector offset() {
+		return wrapper.node.offset();
+	}
+
 	@Override
 	public void markStart(ProjectContext context, Window window, DoubleVector start) {
 		if (tool == null)
 			return;
-		start = Window.toLocal(wrapper.canvasHandle, start);
-		tool.markStart(context, window, start);
+		tool.markStart(context, window, Window.toLocal(wrapper.canvasHandle, start).minus(offset()), start);
 	}
 
 	@Override
@@ -146,9 +150,11 @@ public class GroupNodeEditHandle extends EditHandle {
 	public void mark(ProjectContext context, Window window, DoubleVector start, DoubleVector end) {
 		if (tool == null)
 			return;
-		start = Window.toLocal(wrapper.canvasHandle, start);
-		end = Window.toLocal(wrapper.canvasHandle, end);
-		tool.mark(context, window, start, end);
+		Vector offset = offset();
+		tool.mark(context, window,
+				Window.toLocal(wrapper.canvasHandle, start).minus(offset),
+				Window.toLocal(wrapper.canvasHandle, end).minus(offset),
+				start, end);
 	}
 
 	@Override

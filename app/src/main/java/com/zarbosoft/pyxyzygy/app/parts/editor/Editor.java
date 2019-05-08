@@ -83,25 +83,27 @@ public class Editor {
 	};
 	private OnionSkin onionSkin;
 
-	/**
-	 * Returns a vector from a JavaFX canvas point relative to the image origin in image pixels
-	 *
-	 * @param x
-	 * @param y
-	 * @return
-	 */
-	private DoubleVector getStandardVector(CanvasHandle view, double x, double y) {
-		DoubleVector scroll = window.selectedForView.get().getWrapper().getConfig().scroll.get();
-		DoubleVector coordCentered =
-				new DoubleVector((x - sizeProperty.get().getWidth() / 2), (y - sizeProperty.get().getHeight() / 2));
-		DoubleVector viewTransform = computeViewTransform(view.getWrapper());
-		DoubleVector out = coordCentered.divide(viewTransform).minus(scroll);
-		return out;
-	}
+	public class MouseCoords {
+		final DoubleVector global;
+		final DoubleVector local;
 
-	private DoubleVector normalizeEventCoordinates(CanvasHandle view, MouseEvent e) {
-		Point2D canvasCorner = outerCanvas.getLocalToSceneTransform().transform(0, 0);
-		return getStandardVector(view, e.getSceneX() - canvasCorner.getX(), e.getSceneY() - canvasCorner.getY());
+		public MouseCoords(CanvasHandle view, MouseEvent e) {
+			DoubleVector eVect = new DoubleVector(e.getSceneX(), e.getSceneY());
+			DoubleVector transform = computeViewTransform(view.getWrapper());
+
+			global = eVect.divide(transform);
+
+			Point2D canvasCorner = outerCanvas.getLocalToSceneTransform().transform(0, 0);
+			local = eVect
+					/* relative to canvas viewport */
+					.minus(new DoubleVector(canvasCorner.getX(), canvasCorner.getY()))
+					/* relative to canvas center */
+					.minus(new DoubleVector(sizeProperty.get().getWidth() / 2, sizeProperty.get().getHeight() / 2))
+					/* scaled, flipped */
+					.divide(transform)
+					/* scrolled */
+					.minus(window.selectedForView.get().getWrapper().getConfig().scroll.get());
+		}
 	}
 
 	public void updateScroll(ProjectContext context, DoubleVector scroll) {
@@ -119,11 +121,12 @@ public class Editor {
 		DoubleVector scroll = viewHandle.getWrapper().getConfig().scroll.get();
 		canvasInner.setLayoutX(scroll.x + outerCanvas.widthProperty().get() / 2);
 		canvasInner.setLayoutY(scroll.y + outerCanvas.heightProperty().get() / 2);
-		DoubleRectangle newBounds = new BoundsBuilder()
-				.circle(getStandardVector(viewHandle, 0, 0), 0)
-				.circle(getStandardVector(viewHandle, sizeProperty.get().getWidth(), sizeProperty.get().getHeight()), 0)
-				.build();
-		viewHandle.setViewport(context, newBounds, positiveZoom.get());
+		double width = sizeProperty.get().getWidth() / zoomFactor.get();
+		double height = sizeProperty.get().getHeight() / zoomFactor.get();
+		viewHandle.setViewport(context,
+				new DoubleRectangle(scroll.x - width / 2, scroll.y - height / 2, width, height),
+				positiveZoom.get()
+		);
 	}
 
 	public DoubleVector computeViewTransform(Wrapper view) {
@@ -148,13 +151,13 @@ public class Editor {
 
 		outerCanvas = new StackPane();
 		VBox.setVgrow(outerCanvas, Priority.ALWAYS);
-		outerCanvas
-				.backgroundProperty()
-				.bind(Bindings.createObjectBinding(() -> new Background(new BackgroundFill(GUILaunch.profileConfig.backgroundColor
-								.get()
-								.toJfx(), CornerRadii.EMPTY, Insets.EMPTY)),
-						GUILaunch.profileConfig.backgroundColor
-				));
+		outerCanvas.backgroundProperty().bind(Bindings.createObjectBinding(
+				() -> new Background(new BackgroundFill(GUILaunch.profileConfig.backgroundColor.get().toJfx(),
+						CornerRadii.EMPTY,
+						Insets.EMPTY
+				)),
+				GUILaunch.profileConfig.backgroundColor
+		));
 		outerCanvas.setMouseTransparent(false);
 		outerCanvas.setFocusTraversable(true);
 		Rectangle clip = new Rectangle();
@@ -225,9 +228,9 @@ public class Editor {
 			EditHandle edit;
 			boolean dragged = false;
 			MouseButton button;
-			DoubleVector previous;
+			MouseCoords previous;
 			DoubleVector startScroll;
-			DoubleVector startScrollClick;
+			MouseCoords startScrollClick;
 		}
 		PointerEventState pointerEventState = new PointerEventState();
 		outerCanvas.addEventFilter(MouseEvent.MOUSE_PRESSED, e -> {
@@ -236,14 +239,15 @@ public class Editor {
 				return;
 			outerCanvas.requestFocus();
 			pointerEventState.button = e.getButton();
-			pointerEventState.previous = normalizeEventCoordinates(pointerEventState.view, e);
+			MouseCoords coords = new MouseCoords(pointerEventState.view, e);
+			pointerEventState.previous = coords;
 			pointerEventState.startScroll = pointerEventState.view.getWrapper().getConfig().scroll.get();
-			pointerEventState.startScrollClick = new DoubleVector(e.getSceneX(), e.getSceneY());
+			pointerEventState.startScrollClick = coords;
 			pointerEventState.edit = window.selectedForEdit.get();
 			pointerEventState.dragged = false;
 			if (e.getButton() == MouseButton.PRIMARY) {
 				if (pointerEventState.edit != null) {
-					pointerEventState.edit.markStart(context, window, pointerEventState.previous);
+					pointerEventState.edit.markStart(context, window, pointerEventState.previous.local);
 				}
 			}
 		});
@@ -254,8 +258,8 @@ public class Editor {
 				if (!pointerEventState.dragged) {
 					pointerEventState.edit.mark(context,
 							window,
-							pointerEventState.previous,
-							pointerEventState.previous
+							pointerEventState.previous.local,
+							pointerEventState.previous.local
 					);
 				}
 				context.finishChange();
@@ -263,16 +267,16 @@ public class Editor {
 		});
 		outerCanvas.addEventFilter(MouseEvent.MOUSE_DRAGGED, e -> {
 			pointerEventState.dragged = true;
-			DoubleVector end = normalizeEventCoordinates(pointerEventState.view, e);
+			MouseCoords end = new MouseCoords(pointerEventState.view, e);
 			if (pointerEventState.button == MouseButton.PRIMARY) {
 				if (pointerEventState.edit != null) {
-					pointerEventState.edit.mark(context, window, pointerEventState.previous, end);
+					pointerEventState.edit.mark(context, window, pointerEventState.previous.local, end.local);
 				}
 			} else if (pointerEventState.button == MouseButton.MIDDLE) {
 				updateScroll(context,
-						pointerEventState.startScroll.plus(new DoubleVector(e.getSceneX(), e.getSceneY())
-								.minus(pointerEventState.startScrollClick)
-								.divide(computeViewTransform(pointerEventState.view.getWrapper())))
+						pointerEventState.startScroll.plus(end.global
+								.minus(pointerEventState.startScrollClick.global)
+								)
 				);
 			}
 			pointerEventState.previous = end;
@@ -285,7 +289,7 @@ public class Editor {
 			CanvasHandle view = window.selectedForView.get();
 			if (view == null)
 				return;
-			edit.cursorMoved(context, window, normalizeEventCoordinates(view, e));
+			edit.cursorMoved(context, window, new MouseCoords(view, e).local);
 		});
 		outerCanvas.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
 			if (context.hotkeys.event(context, window, Hotkeys.Scope.CANVAS, e))

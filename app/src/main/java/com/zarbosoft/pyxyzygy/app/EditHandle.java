@@ -7,6 +7,12 @@ import javafx.scene.Node;
 import java.util.Optional;
 
 public abstract class EditHandle {
+	/**
+	 *
+	 * @param context
+	 * @param window
+	 * @param vector In flipped/zoomed coordinates relative to canvas global origin
+	 */
 	public abstract void cursorMoved(
 			ProjectContext context, Window window, DoubleVector vector
 	);
@@ -15,10 +21,23 @@ public abstract class EditHandle {
 
 	public abstract void remove(ProjectContext context, Window window);
 
+	/**
+	 *
+	 * @param context
+	 * @param window
+	 * @param start In flipped/zoomed coordinates relative to canvas global origin
+	 * @param end In flipped/zoomed coordinates relative to canvas global origin
+	 */
 	public abstract void mark(
 			ProjectContext context, Window window, DoubleVector start, DoubleVector end
 	);
 
+	/**
+	 *
+	 * @param context
+	 * @param window
+	 * @param start In flipped/zoomed coordinates relative to canvas global origin
+	 */
 	public abstract void markStart(ProjectContext context, Window window, DoubleVector start);
 
 	public abstract CanvasHandle getCanvas();

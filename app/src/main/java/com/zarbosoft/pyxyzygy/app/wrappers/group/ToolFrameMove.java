@@ -20,29 +20,32 @@ public class ToolFrameMove extends Tool {
 		window.editorCursor.set(this, centerCursor("cursor-move32.png"));
 	}
 
-	private Vector offset() {
-		return wrapper.node.offset().plus(pos.offset());
-	}
-
 	@Override
-	public void markStart(ProjectContext context, Window window, DoubleVector start) {
+	public void markStart(
+			ProjectContext context, Window window, DoubleVector start, DoubleVector globalStart
+	) {
 		if (wrapper.specificLayer == null)
 			return;
 		pos = GroupLayerWrapper.positionFrameFinder.findFrame(wrapper.specificLayer,
 				wrapper.canvasHandle.frameNumber.get()
 		).frame;
-		Vector offset = offset();
-		this.markStart = start.plus(offset);
-		this.markStartOffset = offset;
+		this.markStart = globalStart;
+		this.markStartOffset = pos.offset();
 	}
 
 	@Override
-	public void mark(ProjectContext context, Window window, DoubleVector start, DoubleVector end0) {
+	public void mark(
+			ProjectContext context,
+			Window window,
+			DoubleVector start,
+			DoubleVector end,
+			DoubleVector globalStart,
+			DoubleVector globalEnd
+	) {
 		if (wrapper.specificLayer == null)
 			return;
-		DoubleVector end = end0.plus(offset());
-		context.change(new ProjectContext.Tuple(wrapper, "move"),
-				c -> c.groupPositionFrame(pos).offsetSet(end.minus(markStart).plus(markStartOffset).toInt())
+		context.change(new ProjectContext.Tuple(wrapper, "move-frame"),
+				c -> c.groupPositionFrame(pos).offsetSet(globalEnd.minus(markStart).plus(markStartOffset).toInt())
 		);
 	}
 

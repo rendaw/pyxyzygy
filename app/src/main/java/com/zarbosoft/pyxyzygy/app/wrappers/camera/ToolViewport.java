@@ -43,8 +43,11 @@ public class ToolViewport extends Tool {
 	}
 
 	@Override
-	public void markStart(ProjectContext context, Window window, DoubleVector start) {
-		Quadrant quadrant = calculateQuadrant(start);
+	public void markStart(
+			ProjectContext context, Window window, DoubleVector start, DoubleVector globalStart
+	) {
+		markStart = start;
+		Quadrant quadrant = calculateQuadrant(markStart);
 		adjustHorizontal = quadrant.horizontal;
 		adjustPositive = quadrant.positive;
 		if (adjustHorizontal) {
@@ -52,11 +55,17 @@ public class ToolViewport extends Tool {
 		} else {
 			startValue = wrapper.node.height();
 		}
-		markStart = start;
 	}
 
 	@Override
-	public void mark(ProjectContext context, Window window, DoubleVector start, DoubleVector end) {
+	public void mark(
+			ProjectContext context,
+			Window window,
+			DoubleVector start,
+			DoubleVector end,
+			DoubleVector globalStart,
+			DoubleVector globalEnd
+	) {
 		double negative = adjustPositive ? 2 : -2;
 		if (adjustHorizontal) {
 			wrapper.width.set((int) (startValue + (end.x - markStart.x) * negative));
