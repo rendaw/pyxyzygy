@@ -772,9 +772,8 @@ public class Structure {
 	) {
 		List<ProjectNode> nodes = new ArrayList<>();
 		Consumer<Wrapper> check = wrapper -> {
-			// Can't place relative to copied element
 			if (wrapper == reference) {
-				logger.write("Warning: Can't paste relative to copied element; dropping element.");
+				logger.write("Warning: Can't place relative to copied element; dropping element.");
 				return;
 			}
 

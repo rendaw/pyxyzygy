@@ -311,6 +311,8 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
 
 	protected abstract void propertiesSet(Node node);
 
+	protected abstract void propertiesClear();
+
 	protected abstract void overlayAdd(Node... nodes);
 
 	protected abstract void overlayRemove(Node... nodes);
@@ -678,6 +680,7 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
 	@Override
 	public void remove(ProjectContext context, Window window) {
 		state.remove(context);
+		propertiesClear();
 	}
 
 	public void paste(ProjectContext context, Window window) {

@@ -5,12 +5,10 @@ import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.BaseToolSelect;
 import com.zarbosoft.pyxyzygy.core.PaletteImage;
-import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
 import com.zarbosoft.pyxyzygy.core.model.v0.PaletteImageFrame;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
-import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.Pair;
 import javafx.scene.Node;
 import javafx.scene.image.Image;
@@ -32,7 +30,7 @@ public class ToolSelect extends BaseToolSelect<PaletteImageFrame, PaletteImage> 
 	final PaletteImageEditHandle editHandle;
 
 	public ToolSelect(PaletteImageEditHandle editHandle) {
-		super(editHandle.wrapper,editHandle.wrapper.canvasHandle.zoom);
+		super(editHandle.wrapper, editHandle.wrapper.canvasHandle.zoom);
 		this.editHandle = editHandle;
 	}
 
@@ -60,7 +58,12 @@ public class ToolSelect extends BaseToolSelect<PaletteImageFrame, PaletteImage> 
 
 	@Override
 	protected void propertiesSet(Node node) {
-		editHandle.toolProperties.set(this,node);
+		editHandle.toolProperties.set(this, node);
+	}
+
+	@Override
+	protected void propertiesClear() {
+		editHandle.toolProperties.clear(this);
 	}
 
 	@Override

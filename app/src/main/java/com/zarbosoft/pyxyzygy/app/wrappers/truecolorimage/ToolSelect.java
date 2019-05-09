@@ -24,11 +24,11 @@ import java.nio.file.Path;
 import static com.zarbosoft.pyxyzygy.app.Global.nameSymbol;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 
-public class ToolSelect extends BaseToolSelect<TrueColorImageFrame,TrueColorImage> {
+public class ToolSelect extends BaseToolSelect<TrueColorImageFrame, TrueColorImage> {
 	public final TrueColorImageEditHandle editHandle;
 
 	public ToolSelect(TrueColorImageEditHandle editHandle) {
-		super(editHandle.wrapper,editHandle.wrapper.canvasHandle.zoom);
+		super(editHandle.wrapper, editHandle.wrapper.canvasHandle.zoom);
 		this.editHandle = editHandle;
 	}
 
@@ -44,7 +44,12 @@ public class ToolSelect extends BaseToolSelect<TrueColorImageFrame,TrueColorImag
 
 	@Override
 	protected void propertiesSet(Node node) {
-		editHandle.toolProperties.set(this,node);
+		editHandle.toolProperties.set(this, node);
+	}
+
+	@Override
+	protected void propertiesClear() {
+		editHandle.toolProperties.clear(this);
 	}
 
 	@Override

@@ -205,4 +205,10 @@ public class ToolBrush extends BaseToolBrush<TrueColorImageFrame, TrueColorImage
 		} else
 			super.mark(context, window, start, end, globalStart, globalEnd);
 	}
+
+	@Override
+	public void remove(ProjectContext context, Window window) {
+		super.remove(context, window);
+		editHandle.toolProperties.clear(this);
+	}
 }

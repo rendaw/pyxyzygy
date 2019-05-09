@@ -52,6 +52,7 @@ import java.util.stream.Stream;
 import static com.zarbosoft.pyxyzygy.app.Global.pasteHotkey;
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.pyxyzygy.app.config.NodeConfig.TOOL_MOVE;
+import static com.zarbosoft.pyxyzygy.app.config.PaletteImageNodeConfig.TOOL_BRUSH;
 import static com.zarbosoft.pyxyzygy.app.config.PaletteImageNodeConfig.TOOL_SELECT;
 import static com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext.uniqueName;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.*;
@@ -475,6 +476,7 @@ public class PaletteImageEditHandle extends EditHandle {
 								.forEach(f -> new ArrayList<>(f.tiles().keySet()).forEach(t -> {
 									PaletteImage oldTile = ((PaletteTile) f.tilesGet(t)).getData(context);
 									PaletteImage newTile = oldTile.copy(0, 0, oldTile.getWidth(), oldTile.getHeight());
+									System.out.format("merge col %s %s\n", old, ne);
 									newTile.mergeColor(old, ne);
 									c.paletteImageFrame(f).tilesPut(t, PaletteTile.create(context, newTile));
 								})));
@@ -499,10 +501,11 @@ public class PaletteImageEditHandle extends EditHandle {
 		}).span(() -> {
 			TrueColorPicker colorPicker = new TrueColorPicker();
 			colorPickerDisableCleanup = CustomBinding.bind(colorPicker.disableProperty(),
+					new CustomBinding.DoubleHalfBinder<>(wrapper.config.tool,
 					new CustomBinding.DoubleHalfBinder<>(wrapper.paletteSelOffsetBinder,
 							wrapper.paletteSelectionBinder).map(p ->
 							opt(p.first == null || p.first == 0 || p.second instanceof PaletteSeparator)
-					)
+					)).map((tool, second) -> opt(second || !TOOL_BRUSH.equals(tool)))
 			);
 			GridPane.setHalignment(colorPicker, HPos.CENTER);
 			colorPickerCleanup =

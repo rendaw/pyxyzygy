@@ -111,7 +111,8 @@ public class ToolBrush extends BaseToolBrush<PaletteImageFrame, PaletteImage> {
 			double endRadius
 	) {
 		PaletteColor color = (PaletteColor) unopt(editHandle.wrapper.paletteSelectionBinder.get());
-		if (color == null) return;
+		if (color == null)
+			return;
 		canvas.stroke(color.index(), start.x, start.y, startRadius, end.x, end.y, endRadius);
 	}
 
@@ -143,6 +144,7 @@ public class ToolBrush extends BaseToolBrush<PaletteImageFrame, PaletteImage> {
 	@Override
 	public void remove(ProjectContext context, Window window) {
 		editHandle.overlay.getChildren().removeAll(alignedCursor);
+		editHandle.toolProperties.clear(this);
 		super.remove(context, window);
 	}
 }

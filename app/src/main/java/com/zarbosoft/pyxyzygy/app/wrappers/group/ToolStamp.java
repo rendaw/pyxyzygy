@@ -188,6 +188,7 @@ public class ToolStamp extends Tool {
 		editHandle.overlay.getChildren().remove(overlayGroup);
 		mirror.remove(context);
 		window.editorCursor.clear(this);
+		editHandle.toolPropReplacer.clear(this);
 	}
 
 	@Override
