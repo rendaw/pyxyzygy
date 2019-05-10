@@ -116,7 +116,7 @@ public class GroupNodeWrapper extends Wrapper {
 	}
 
 	@Override
-	public void removeChild(
+	public void deleteChild(
 			ProjectContext context, ChangeStepBuilder change, int index
 	) {
 		change.groupNode(node).layersRemove(index, 1);
@@ -130,7 +130,6 @@ public class GroupNodeWrapper extends Wrapper {
 	@Override
 	public void remove(ProjectContext context) {
 		layerListenCleanup.run();
-		context.config.nodes.remove(node.id());
 	}
 
 	public void setSpecificLayer(GroupLayer layer) {

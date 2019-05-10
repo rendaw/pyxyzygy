@@ -11,8 +11,6 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.control.TreeItem;
 
-import java.util.List;
-
 public abstract class Wrapper {
 	public int parentIndex;
 	public final SimpleObjectProperty<TreeItem<Wrapper>> tree = new SimpleObjectProperty<>();
@@ -42,14 +40,14 @@ public abstract class Wrapper {
 
 	public void delete(ProjectContext context, ChangeStepBuilder change) {
 		if (getParent() != null)
-			getParent().removeChild(context, change, parentIndex);
+			getParent().deleteChild(context, change, parentIndex);
 		else
 			change.project(context.project).topRemove(parentIndex, 1);
 	}
 
 	public abstract ProjectNode separateClone(ProjectContext context);
 
-	public abstract void removeChild(
+	public abstract void deleteChild(
 			ProjectContext context, ChangeStepBuilder change, int index
 	);
 

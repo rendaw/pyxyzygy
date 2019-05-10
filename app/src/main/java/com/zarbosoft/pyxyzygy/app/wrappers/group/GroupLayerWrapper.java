@@ -12,8 +12,6 @@ import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.rendaw.common.Assertion;
 import javafx.beans.property.SimpleObjectProperty;
 
-import java.util.List;
-
 public class GroupLayerWrapper extends Wrapper {
 	private final Wrapper parent;
 	public final GroupLayer node;
@@ -113,10 +111,10 @@ public class GroupLayerWrapper extends Wrapper {
 	}
 
 	@Override
-	public void removeChild(
+	public void deleteChild(
 			ProjectContext context, ChangeStepBuilder change, int index
 	) {
-		parent.removeChild(context, change, parentIndex);
+		parent.deleteChild(context, change, parentIndex);
 	}
 
 	@Override

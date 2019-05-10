@@ -67,11 +67,10 @@ public abstract class BaseImageNodeWrapper<N extends ProjectNode, F extends Proj
 
 	@Override
 	public void remove(ProjectContext context) {
-		context.config.nodes.remove(node.id());
 	}
 
 	@Override
-	public void removeChild(
+	public void deleteChild(
 			ProjectContext context, ChangeStepBuilder change, int index
 	) {
 		throw new Assertion();

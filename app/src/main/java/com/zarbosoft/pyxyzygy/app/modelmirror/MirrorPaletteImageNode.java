@@ -28,6 +28,5 @@ public class MirrorPaletteImageNode extends ObjectMirror {
 
 	@Override
 	public void remove(ProjectContext context) {
-		context.config.nodes.remove(node.id());
 	}
 }
