@@ -66,21 +66,6 @@ public abstract class BaseImageNodeWrapper<N extends ProjectNode, F extends Proj
 	}
 
 	@Override
-	public boolean addChildren(
-			ProjectContext context, ChangeStepBuilder change, int at, List<ProjectNode> child
-	) {
-		return false;
-	}
-
-	@Override
-	public void delete(ProjectContext context, ChangeStepBuilder change) {
-		if (parent != null)
-			parent.removeChild(context, change, parentIndex);
-		else
-			change.project(context.project).topRemove(parentIndex, 1);
-	}
-
-	@Override
 	public void remove(ProjectContext context) {
 		context.config.nodes.remove(node.id());
 	}

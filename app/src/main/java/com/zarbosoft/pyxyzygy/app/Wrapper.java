@@ -40,20 +40,12 @@ public abstract class Wrapper {
 
 	public abstract void remove(ProjectContext context);
 
-	/**
-	 * Used in ProjectNode wrappers only
-	 *
-	 * @param context
-	 * @param change
-	 * @param at
-	 * @param child
-	 * @return List containing placed children
-	 */
-	public abstract boolean addChildren(
-			ProjectContext context, ChangeStepBuilder change, int at, List<ProjectNode> child
-	);
-
-	public abstract void delete(ProjectContext context, ChangeStepBuilder change);
+	public void delete(ProjectContext context, ChangeStepBuilder change) {
+		if (getParent() != null)
+			getParent().removeChild(context, change, parentIndex);
+		else
+			change.project(context.project).topRemove(parentIndex, 1);
+	}
 
 	public abstract ProjectNode separateClone(ProjectContext context);
 

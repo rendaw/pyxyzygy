@@ -108,20 +108,6 @@ public class GroupLayerWrapper extends Wrapper {
 	}
 
 	@Override
-	public boolean addChildren(
-			ProjectContext context, ChangeStepBuilder change, int at, List<ProjectNode> child
-	) {
-		GroupNodeWrapper parent = (GroupNodeWrapper) this.parent;
-		parent.addChildren(context, change, parentIndex + 1, child);
-		return true;
-	}
-
-	@Override
-	public void delete(ProjectContext context, ChangeStepBuilder change) {
-		throw new Assertion();
-	}
-
-	@Override
 	public ProjectNode separateClone(ProjectContext context) {
 		throw new Assertion();
 	}

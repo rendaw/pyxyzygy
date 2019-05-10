@@ -84,35 +84,6 @@ public class GroupNodeWrapper extends Wrapper {
 		return new GroupNodeEditHandle(context, window, this);
 	}
 
-	@Override
-	public boolean addChildren(
-			ProjectContext context, ChangeStepBuilder change, int at, List<ProjectNode> newChildren
-	) {
-		change.groupNode(node).layersAdd(at == -1 ? node.layersLength() : at, newChildren.stream().map(child -> {
-			GroupLayer layer = GroupLayer.create(context);
-			layer.initialInnerSet(context, child);
-			GroupPositionFrame positionFrame = GroupPositionFrame.create(context);
-			positionFrame.initialLengthSet(context, -1);
-			positionFrame.initialOffsetSet(context, new Vector(0, 0));
-			layer.initialPositionFramesAdd(context, ImmutableList.of(positionFrame));
-			GroupTimeFrame timeFrame = GroupTimeFrame.create(context);
-			timeFrame.initialLengthSet(context, -1);
-			timeFrame.initialInnerOffsetSet(context, 0);
-			timeFrame.initialInnerLoopSet(context, 0);
-			layer.initialTimeFramesAdd(context, ImmutableList.of(timeFrame));
-			return layer;
-		}).collect(Collectors.toList()));
-		return true;
-	}
-
-	@Override
-	public void delete(ProjectContext context, ChangeStepBuilder change) {
-		if (parent != null)
-			parent.removeChild(context, change, parentIndex);
-		else
-			change.project(context.project).topRemove(parentIndex, 1);
-	}
-
 	public void cloneSet(ProjectContext context, GroupNode clone) {
 		clone.initialNameSet(context, uniqueName1(node.name()));
 		clone.initialOffsetSet(context, node.offset());

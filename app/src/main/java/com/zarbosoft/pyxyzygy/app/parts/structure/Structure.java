@@ -6,14 +6,13 @@ import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.model.v0.TrueColorTile;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
+import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeWrapper;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.pyxyzygy.core.model.v0.*;
 import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
 import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
-import com.zarbosoft.rendaw.common.Assertion;
-import com.zarbosoft.rendaw.common.ChainComparator;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleObjectProperty;
@@ -467,82 +466,81 @@ public class Structure {
 		Button moveUpButton = HelperJFX.button("arrow-up.png", "Move up");
 		moveUpButton.disableProperty().bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedItems()));
 		moveUpButton.setOnAction(e -> {
-			List<TreeItem<Wrapper>> selected = tree.getSelectionModel().getSelectedItems();
-			if (selected.isEmpty())
-				throw new Assertion();
-			TreeItem<Wrapper> firstParent = selected.get(0).getParent();
-			List<TreeItem<Wrapper>> removeOrder = selected
-					.stream()
-					.filter(s -> s.getParent() == firstParent)
-					.sorted(new ChainComparator<TreeItem<Wrapper>>()
-							.greaterFirst(s -> s.getValue().parentIndex)
-							.build())
-					.collect(Collectors.toList());
-			int dest = last(removeOrder).getValue().parentIndex - 1;
+			Wrapper selected = tree.getSelectionModel().getSelectedItem().getValue();
+			int index = selected.parentIndex;
+			int dest = index - 1;
 			if (dest < 0)
 				return;
-			List<ProjectNode> add =
-					removeOrder.stream().map(s -> (ProjectNode) s.getValue().getValue()).collect(Collectors.toList());
+			Wrapper parent;
+			if (selected.getParent() != null) { // In group layer - get layer instead
+				selected = selected.getParent();
+				parent = selected.getParent();
+			} else
+				parent = null;
 
+			Wrapper selected1 = selected;
 			context.change(new ProjectContext.Tuple("struct_move"), c -> {
-				removeOrder.forEach(s -> s.getValue().delete(context, c));
-				if (firstParent.getValue() != null) {
-					firstParent.getValue().addChildren(context, c, dest, add);
+				if (parent.getValue() != null) {
+					GroupNode realParent = (GroupNode) parent.getValue();
+					GroupLayer realChild = (GroupLayer) selected1.getValue();
+					c.groupNode(realParent).layersRemove(index, 1);
+					c.groupNode(realParent).layersAdd(dest, realChild);
 				} else {
-					c.project(context.project).topAdd(dest, add);
+					c.project(context.project).topRemove(index, 1);
+					c.project(context.project).topAdd(dest, (ProjectNode) selected1.getValue());
 				}
 			});
 		});
 		Button moveDownButton = HelperJFX.button("arrow-down.png", "Move down");
 		moveDownButton.disableProperty().bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedItems()));
 		moveDownButton.setOnAction(e -> {
-			List<TreeItem<Wrapper>> selected = tree.getSelectionModel().getSelectedItems();
-			if (selected.isEmpty())
-				throw new Assertion();
-			TreeItem<Wrapper> firstParent = selected.get(0).getParent();
-			List<TreeItem<Wrapper>> removeOrder = selected
-					.stream()
-					.filter(s -> s.getParent() == firstParent)
-					.sorted(new ChainComparator<TreeItem<Wrapper>>()
-							.greaterFirst(s -> s.getValue().parentIndex)
-							.build())
-					.collect(Collectors.toList());
-			int dest = last(removeOrder).getValue().parentIndex + 1;
-			if (dest > firstParent.getChildren().size() - removeOrder.size())
+			TreeItem<Wrapper> item = tree.getSelectionModel().getSelectedItem();
+			Wrapper selected = item.getValue();
+			int index = selected.parentIndex;
+			int dest = index + 1;
+			if (dest > item.getParent().getChildren().size() - 1)
 				return;
-			List<ProjectNode> add =
-					removeOrder.stream().map(s -> (ProjectNode) s.getValue().getValue()).collect(Collectors.toList());
+			Wrapper parent;
+			if (selected.getParent() != null) { // In group layer - get layer instead
+				selected = selected.getParent();
+				parent = selected.getParent();
+			} else
+				parent = null;
 
+			Wrapper selected1 = selected;
 			context.change(new ProjectContext.Tuple("struct_move"), c -> {
-				removeOrder.forEach(s -> s.getValue().delete(context, c));
-				if (firstParent.getValue() != null) {
-					firstParent.getValue().addChildren(context, c, dest, add);
+				if (parent.getValue() != null) {
+					GroupNode realParent = (GroupNode) parent.getValue();
+					GroupLayer realChild = (GroupLayer) selected1.getValue();
+					c.groupNode(realParent).layersRemove(index, 1);
+					c.groupNode(realParent).layersAdd(dest, realChild);
 				} else {
-					c.project(context.project).topAdd(dest, add);
+					c.project(context.project).topRemove(index, 1);
+					c.project(context.project).topAdd(dest, (ProjectNode) selected1.getValue());
 				}
 			});
 		});
-		MenuItem cutButton = new MenuItem("Cut");
+		MenuItem cutButton = new MenuItem("Lift");
 		cutButton.setOnAction(e -> {
 			lift();
 		});
-		MenuItem copyButton = new MenuItem("Copy");
+		MenuItem copyButton = new MenuItem("Link");
 		copyButton.setOnAction(e -> {
 			link();
 		});
-		MenuItem linkBeforeButton = new MenuItem("Paste before");
+		MenuItem linkBeforeButton = new MenuItem("Place before");
 		linkBeforeButton.setOnAction(e -> {
 			context.change(null, c -> {
 				placeBefore(c);
 			});
 		});
-		MenuItem linkInButton = new MenuItem("Paste in");
+		MenuItem linkInButton = new MenuItem("Place in");
 		linkInButton.setOnAction(e -> {
 			context.change(null, c -> {
 				placeIn(c);
 			});
 		});
-		MenuItem linkAfterButton = new MenuItem("Paste after");
+		MenuItem linkAfterButton = new MenuItem("Place after");
 		linkAfterButton.setOnAction(e -> {
 			context.change(null, c -> {
 				placeAfter(c);
@@ -751,8 +749,10 @@ public class Structure {
 		Wrapper placeAt = edit;
 		int index = 0;
 		while (placeAt != null) {
-			if (placeAt.addChildren(context, change, index, ImmutableList.of(node)))
+			if (placeAt instanceof GroupNodeWrapper) {
+				change.groupNode((GroupNode) placeAt.getValue()).layersAdd(index, createLayer(node));
 				return;
+			}
 			index = placeAt.parentIndex + 1;
 			placeAt = placeAt.getParent();
 		}
@@ -770,10 +770,10 @@ public class Structure {
 	private void place(
 			ChangeStepBuilder change, Wrapper pasteParent, boolean before, Wrapper reference
 	) {
-		List<ProjectNode> nodes = new ArrayList<>();
+		List<Wrapper> placable = new ArrayList<>();
 		Consumer<Wrapper> check = wrapper -> {
 			if (wrapper == reference) {
-				logger.write("Warning: Can't place relative to copied element; dropping element.");
+				logger.write("Warning: Can't place relative to copied element; skipping element.");
 				return;
 			}
 
@@ -783,7 +783,7 @@ public class Structure {
 				while (parent != null) {
 					if (parent == wrapper) {
 						logger.write(
-								"Warning: Can't paste relative to copied element - destination is a child of element; dropping element.");
+								"Warning: Can't place relative to copied element - destination is a child of element; skipping element.");
 						return;
 					}
 					parent = parent.getParent();
@@ -791,38 +791,65 @@ public class Structure {
 			}
 
 			// Register for placing
-			nodes.add((ProjectNode) wrapper.getValue());
+			placable.add(wrapper);
 		};
 		taggedLifted.forEach(check);
 		taggedCopied.forEach(check);
-		if (nodes.isEmpty()) {
+		if (placable.isEmpty()) {
 			logger.write("Warning: No nodes left to place!");
 		}
 		if (pasteParent != null) {
-			if (reference != null) {
-				if (!pasteParent.addChildren(context, change, reference.parentIndex + (before ? -1 : 1), nodes)) {
-					logger.write("Warning: Parent refused to place nodes.");
-					return;
-				}
-			} else {
-				if (!pasteParent.addChildren(context, change, before ? 0 : -1, nodes)) {
-					logger.write("Warning: Parent refused to place nodes.");
-					return;
+			List<GroupLayer> children = new ArrayList<>();
+			for (Wrapper wrapper : placable) {
+				if (wrapper.getParent() != null) {
+					Wrapper childParent = wrapper.getParent();
+					children.add((GroupLayer) childParent.getValue());
+				} else {
+					GroupLayer layer = createLayer((ProjectNode) wrapper.getValue());
+					children.add(layer);
 				}
 			}
-		} else {
+			int dest;
 			if (reference != null) {
-				change.project(context.project).topAdd(reference.parentIndex + (before ? -1 : 1), nodes);
+				dest = reference.parentIndex + (before ? -1 : 1);
+			} else {
+				dest = before ? 0 : -1;
+			}
+			change.groupNode((GroupNode) pasteParent.getValue()).layersAdd(dest, children);
+		} else {
+			List<ProjectNode> children = new ArrayList<>();
+			for (Wrapper wrapper : placable) {
+				children.add((ProjectNode) wrapper.getValue());
+			}
+			int dest;
+			if (reference != null) {
+				dest = reference.parentIndex + (before ? -1 : 1);
 			} else {
 				if (before)
-					change.project(context.project).topAdd(0, nodes);
+					dest = 0;
 				else
-					change.project(context.project).topAdd(context.project.topLength(), nodes);
+					dest = context.project.topLength();
 			}
+			change.project(context.project).topAdd(dest, children);
 		}
 		taggedLifted.forEach(c -> c.delete(context, change));
 		clearTagCopied();
 		clearTagLifted();
+	}
+
+	private GroupLayer createLayer(ProjectNode node) {
+		GroupLayer layer = GroupLayer.create(context);
+		layer.initialInnerSet(context, node);
+		GroupPositionFrame positionFrame = GroupPositionFrame.create(context);
+		positionFrame.initialLengthSet(context, -1);
+		positionFrame.initialOffsetSet(context, new Vector(0, 0));
+		layer.initialPositionFramesAdd(context, ImmutableList.of(positionFrame));
+		GroupTimeFrame timeFrame = GroupTimeFrame.create(context);
+		timeFrame.initialLengthSet(context, -1);
+		timeFrame.initialInnerOffsetSet(context, 0);
+		timeFrame.initialInnerLoopSet(context, 0);
+		layer.initialTimeFramesAdd(context, ImmutableList.of(timeFrame));
+		return layer;
 	}
 
 	public Node getWidget() {
