@@ -56,7 +56,7 @@ public class TrueColorImageEditHandle extends EditHandle {
 	ContentReplacer<Node> toolProperties = new ContentReplacer<Node>() {
 
 		@Override
-		protected void innerSet(Node content) {
+		protected void innerSet(String title, Node content) {
 			toolPane.setContent(content);
 		}
 
@@ -170,6 +170,13 @@ public class TrueColorImageEditHandle extends EditHandle {
 
 		Wrapper.ToolToggle move = new Wrapper.ToolToggle(wrapper, "cursor-move16.png", "Move layer", TOOL_MOVE);
 		Wrapper.ToolToggle select = new Wrapper.ToolToggle(wrapper, "select.png", "Select", TOOL_SELECT);
+
+		window.timeline.toolBoxContents.set(this,
+				ImmutableList.of(new Wrapper.ToolToggle(wrapper,
+						"cursor-frame-move.png",
+						"Move frame contents",
+						TOOL_FRAME_MOVE
+				)));
 
 		// Brushes
 		MenuItem menuNew = new MenuItem("New");
@@ -342,6 +349,7 @@ public class TrueColorImageEditHandle extends EditHandle {
 			context.hotkeys.unregister(action);
 		window.menuChildren.clear(this);
 		window.toolBarChildren.clear(this);
+		window.timeline.toolBoxContents.clear(this);
 	}
 
 	@Override

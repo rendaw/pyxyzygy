@@ -59,7 +59,7 @@ public class Window {
 	public final ContentReplacer<Node> layerTabContent = new ContentReplacer<Node>() {
 
 		@Override
-		protected void innerSet(Node content) {
+		protected void innerSet(String title, Node content) {
 			layerTab.setContent(content);
 		}
 
@@ -70,7 +70,7 @@ public class Window {
 	};
 	public final ContentReplacer<Cursor> editorCursor = new ContentReplacer<Cursor>() {
 		@Override
-		protected void innerSet(Cursor content) {
+		protected void innerSet(String title, Cursor content) {
 			editor.outerCanvas.setCursor(content);
 		}
 
@@ -233,7 +233,7 @@ public class Window {
 		menuButton.disableProperty().bind(Bindings.isEmpty(menuButton.getItems()));
 		menuChildren = new ChildrenReplacer<MenuItem>() {
 			@Override
-			protected void innerSet(List<MenuItem> content) {
+			protected void innerSet(String title, List<MenuItem> content) {
 				menuButton.getItems().addAll(content);
 			}
 
@@ -249,7 +249,7 @@ public class Window {
 		toolbarExtra.setAlignment(Pos.CENTER_LEFT);
 		toolBarChildren = new ChildrenReplacer<Node>() {
 			@Override
-			protected void innerSet(List<Node> content) {
+			protected void innerSet(String title, List<Node> content) {
 				toolbarExtra.getChildren().addAll(content);
 			}
 

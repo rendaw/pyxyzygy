@@ -16,6 +16,7 @@ public class PaletteImageNodeConfig extends NodeConfig {
 
 	}
 
+	public static final String TOOL_FRAME_MOVE = "frame_move";
 	public static final String TOOL_SELECT = "select";
 	public static final String TOOL_BRUSH = "brush";
 

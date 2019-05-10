@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.config.NodeConfig;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
+import com.zarbosoft.pyxyzygy.app.widgets.ChildrenReplacer;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.app.wrappers.camera.CameraWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeWrapper;
@@ -56,7 +57,6 @@ import java.util.stream.Stream;
 
 import static com.zarbosoft.pyxyzygy.app.Global.logger;
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
-import static com.zarbosoft.pyxyzygy.app.config.NodeConfig.TOOL_FRAME_MOVE;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 import static com.zarbosoft.rendaw.common.Common.sublist;
 
@@ -66,6 +66,17 @@ public class Timeline {
 	public static final int extraFrames = 500;
 	public static final double baseSize = 16;
 	private final HBox toolBox;
+	public final ChildrenReplacer<Node> toolBoxContents = new ChildrenReplacer<Node>() {
+		@Override
+		protected void innerSet(String title, List<Node> content) {
+			toolBox.getChildren().addAll(content);
+		}
+
+		@Override
+		protected void innerClear() {
+			toolBox.getChildren().clear();
+		}
+	};
 	public double zoom = 16;
 
 	VBox foreground = new VBox();
@@ -281,9 +292,12 @@ public class Timeline {
 		});
 		ToggleButton onion = new ToggleButton(null, new ImageView(icon("onion.png")));
 		onion.setTooltip(new Tooltip("Toggle onion skin"));
-		CustomBinding.bindBidirectional(new CustomBinding.IndirectBinder<Boolean>(window.selectedForEdit,
-				e -> Optional.ofNullable(e).map(e1 -> e1.getWrapper().getConfig().onionSkin)
-		), new CustomBinding.PropertyBinder<Boolean>(onion.selectedProperty()));
+		CustomBinding.bindBidirectional(
+				new CustomBinding.IndirectBinder<Boolean>(window.selectedForEdit,
+						e -> Optional.ofNullable(e).map(e1 -> e1.getWrapper().getConfig().onionSkin)
+				),
+				new CustomBinding.PropertyBinder<Boolean>(onion.selectedProperty())
+		);
 		toolBox = new HBox();
 
 		Region space = new Region();
@@ -578,17 +592,12 @@ public class Timeline {
 			outerTimeHandle.remove();
 			outerTimeHandle = null;
 		}
-		toolBox.getChildren().clear();
 
 		if (root1 == null || edit1 == null)
 			return;
 
 		Wrapper root = root1.getWrapper();
 		Wrapper edit = edit1.getWrapper();
-
-		toolBox
-				.getChildren()
-				.add(new Wrapper.ToolToggle(edit, "cursor-move16.png", "Move frame contents", TOOL_FRAME_MOVE));
 
 		// Prepare time translation
 		outerTimeHandle = createTimeMapper(root.getValue());

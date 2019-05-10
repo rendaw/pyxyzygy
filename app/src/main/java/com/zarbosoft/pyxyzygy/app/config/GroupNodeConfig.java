@@ -8,6 +8,7 @@ import javafx.beans.property.SimpleStringProperty;
 
 @Configuration(name = "group")
 public class GroupNodeConfig extends NodeConfig {
+	public static final String TOOL_LAYER_MOVE = "layer_move";
 	public static String TOOL_STAMP = "stamp";
 
 	@Configuration

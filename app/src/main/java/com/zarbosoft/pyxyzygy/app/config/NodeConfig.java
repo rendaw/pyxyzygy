@@ -48,7 +48,6 @@ public abstract class NodeConfig {
 	public final SimpleBooleanProperty selectedSomewhere = new SimpleBooleanProperty(false);
 
 	public static final String TOOL_MOVE = "move";
-	public static final String TOOL_FRAME_MOVE = "frame_move";
 
 	@Configuration
 	public final SimpleStringProperty tool = new SimpleStringProperty(TOOL_MOVE);

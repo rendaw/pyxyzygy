@@ -40,10 +40,12 @@ public class GroupNodeEditHandle extends EditHandle {
 		overlay = new Group();
 		wrapper.canvasHandle.overlay.getChildren().add(overlay);
 
-		TitledPane toolProps = new TitledPane("Tool", null);
+		TitledPane toolProps = new TitledPane(null, null);
+		toolProps.visibleProperty().bind(toolProps.contentProperty().isNotNull());
 		this.toolPropReplacer = new ContentReplacer<Node>() {
 			@Override
-			protected void innerSet(Node content) {
+			protected void innerSet(String title, Node content) {
+				toolProps.setText(title);
 				toolProps.setContent(content);
 			}
 
@@ -93,8 +95,8 @@ public class GroupNodeEditHandle extends EditHandle {
 	protected Tool createTool(ProjectContext context, Window window, String newValue) {
 		if (GroupNodeConfig.TOOL_MOVE.equals(newValue)) {
 			return new ToolMove(window, wrapper);
-		} else if (GroupNodeConfig.TOOL_FRAME_MOVE.equals(newValue)) {
-				return new ToolFrameMove(window, wrapper);
+		} else if (GroupNodeConfig.TOOL_LAYER_MOVE.equals(newValue)) {
+				return new ToolLayerMove(window, wrapper, this);
 		} else if (GroupNodeConfig.TOOL_STAMP.equals(newValue)) {
 			return new ToolStamp(context, window, wrapper, GroupNodeEditHandle.this);
 		} else
@@ -102,11 +104,18 @@ public class GroupNodeEditHandle extends EditHandle {
 	}
 
 	protected List<Node> createToolButtons() {
-		return ImmutableList.of(new Wrapper.ToolToggle(
+		return ImmutableList.of(
+				new Wrapper.ToolToggle(
 						wrapper,
 						"cursor-move16.png",
-						"Move layer",
+						"Move",
 						GroupNodeConfig.TOOL_MOVE
+				),
+				new Wrapper.ToolToggle(
+						wrapper,
+						"cursor-layer-move.png",
+						"Move layer",
+						GroupNodeConfig.TOOL_LAYER_MOVE
 				),
 				new Wrapper.ToolToggle(wrapper, "stamper16.png", "Stamp", GroupNodeConfig.TOOL_STAMP)
 		);

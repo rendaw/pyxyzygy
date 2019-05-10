@@ -118,9 +118,9 @@ public class Misc {
 		};
 	}
 
+	public static Consumer noopConsumer = t -> {};
 	public static <T> Consumer<T> noopConsumer() {
-		return t -> {
-		};
+		return noopConsumer;
 	}
 
 	private static Object notReallyNull = new Object();

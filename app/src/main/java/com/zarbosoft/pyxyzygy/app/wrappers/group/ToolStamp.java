@@ -139,7 +139,7 @@ public class ToolStamp extends Tool {
 				.selectedItemProperty()
 				.addListener((observable, oldValue, newValue) -> updateStampImage.run());
 		wrapper.canvasHandle.positiveZoom.addListener((observable, oldValue, newValue) -> updateStampImage.run());
-		editHandle.toolPropReplacer.set(this, new WidgetFormBuilder().span(() -> {
+		editHandle.toolPropReplacer.set(this, "Stamp", new WidgetFormBuilder().span(() -> {
 			return tree;
 		}).build());
 		this.wrapper = wrapper;
