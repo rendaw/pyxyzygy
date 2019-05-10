@@ -5,20 +5,7 @@ import com.zarbosoft.interface1.Configuration;
 import java.util.List;
 
 @Configuration
-public class GroupLayer extends ProjectObject {
+public class GroupLayer extends ProjectLayer {
 	@Configuration
-	public List<GroupTimeFrame> timeFrames;
-	@Configuration
-	public List<GroupPositionFrame> positionFrames;
-	@Configuration
-	public ProjectNode inner;
-
-	/**
-	 * 0-100000
-	 */
-	@Configuration
-	public int opacity;
-
-	@Configuration
-	public boolean enabled;
+	public List<GroupChild> children;
 }

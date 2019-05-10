@@ -9,10 +9,11 @@ import javafx.beans.property.SimpleObjectProperty;
 public class TrueColorImageNodeConfig extends NodeConfig {
 	public TrueColorImageNodeConfig(ProjectContext context) {
 		super(context);
+		tool.set(TOOL_BRUSH);
 	}
 
 	public TrueColorImageNodeConfig() {
-
+		tool.set(TOOL_BRUSH);
 	}
 
 	public static final String TOOL_FRAME_MOVE = "frame_move";

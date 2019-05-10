@@ -10,10 +10,11 @@ import javafx.beans.property.SimpleObjectProperty;
 public class PaletteImageNodeConfig extends NodeConfig {
 	public PaletteImageNodeConfig(ProjectContext context) {
 		super(context);
+		tool.set(TOOL_BRUSH);
 	}
 
 	public PaletteImageNodeConfig() {
-
+		tool.set(TOOL_BRUSH);
 	}
 
 	public static final String TOOL_FRAME_MOVE = "frame_move";

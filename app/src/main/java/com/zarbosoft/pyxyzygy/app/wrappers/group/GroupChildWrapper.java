@@ -12,20 +12,20 @@ import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.rendaw.common.Assertion;
 import javafx.beans.property.SimpleObjectProperty;
 
-public class GroupLayerWrapper extends Wrapper {
+public class GroupChildWrapper extends Wrapper {
 	private final Wrapper parent;
-	public final GroupLayer node;
+	public final GroupChild node;
 	public final SimpleObjectProperty<Wrapper> child = new SimpleObjectProperty<>();
-	private final Listener.ScalarSet<GroupLayer, ProjectNode> innerSetListener;
-	public static final FrameFinder<GroupLayer, GroupPositionFrame> positionFrameFinder =
-			new FrameFinder<GroupLayer, GroupPositionFrame>() {
+	private final Listener.ScalarSet<GroupChild, ProjectLayer> innerSetListener;
+	public static final FrameFinder<GroupChild, GroupPositionFrame> positionFrameFinder =
+			new FrameFinder<GroupChild, GroupPositionFrame>() {
 				@Override
-				public GroupPositionFrame frameGet(GroupLayer node, int i) {
+				public GroupPositionFrame frameGet(GroupChild node, int i) {
 					return node.positionFramesGet(i);
 				}
 
 				@Override
-				public int frameCount(GroupLayer node) {
+				public int frameCount(GroupChild node) {
 					return node.positionFramesLength();
 				}
 
@@ -34,15 +34,15 @@ public class GroupLayerWrapper extends Wrapper {
 					return frame.length();
 				}
 			};
-	public static final FrameFinder<GroupLayer, GroupTimeFrame> timeFrameFinder =
-			new FrameFinder<GroupLayer, GroupTimeFrame>() {
+	public static final FrameFinder<GroupChild, GroupTimeFrame> timeFrameFinder =
+			new FrameFinder<GroupChild, GroupTimeFrame>() {
 				@Override
-				public GroupTimeFrame frameGet(GroupLayer node, int i) {
+				public GroupTimeFrame frameGet(GroupChild node, int i) {
 					return node.timeFramesGet(i);
 				}
 
 				@Override
-				public int frameCount(GroupLayer node) {
+				public int frameCount(GroupChild node) {
 					return node.timeFramesLength();
 				}
 
@@ -51,9 +51,9 @@ public class GroupLayerWrapper extends Wrapper {
 					return frame.length();
 				}
 			};
-	protected GroupLayerCanvasHandle canvasHandle;
+	protected GroupChildCanvasHandle canvasHandle;
 
-	public GroupLayerWrapper(ProjectContext context, Wrapper parent, int parentIndex, GroupLayer node) {
+	public GroupChildWrapper(ProjectContext context, Wrapper parent, int parentIndex, GroupChild node) {
 		this.parent = parent;
 		this.parentIndex = parentIndex;
 		this.node = node;
@@ -65,13 +65,13 @@ public class GroupLayerWrapper extends Wrapper {
 				child.set(null);
 			}
 			if (value != null) {
-				child.set(Window.createNode(context, GroupLayerWrapper.this, parentIndex, value));
+				child.set(Window.createNode(context, GroupChildWrapper.this, parentIndex, value));
 				tree.bind(child.get().tree);
 			}
 		});
 	}
 
-	public static int findInnerFrame(GroupLayer node, int frame) {
+	public static int findInnerFrame(GroupChild node, int frame) {
 		FrameFinder.Result<GroupTimeFrame> result = timeFrameFinder.findFrame(node, frame);
 		int offset = (frame - result.at);
 		if (result.frame.innerLoop() != 0)
@@ -104,12 +104,12 @@ public class GroupLayerWrapper extends Wrapper {
 			ProjectContext context, Window window
 	) {
 		if (canvasHandle == null)
-			canvasHandle = new GroupLayerCanvasHandle(context, window, this, canvasParent);
+			canvasHandle = new GroupChildCanvasHandle(context, window, this, canvasParent);
 		return canvasHandle;
 	}
 
 	@Override
-	public ProjectNode separateClone(ProjectContext context) {
+	public ProjectLayer separateClone(ProjectContext context) {
 		throw new Assertion();
 	}
 

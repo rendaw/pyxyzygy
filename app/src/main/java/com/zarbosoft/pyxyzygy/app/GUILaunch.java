@@ -638,31 +638,31 @@ public class GUILaunch extends Application {
 		ProjectContext context = Global.create(path, createMode.tileSize());
 		context.config.defaultZoom = createMode.defaultZoom();
 
-		GroupLayer groupLayer = GroupLayer.create(context);
-		groupLayer.initialOpacitySet(context, opacityMax);
-		groupLayer.initialEnabledSet(context, true);
+		GroupChild groupChild = GroupChild.create(context);
+		groupChild.initialOpacitySet(context, opacityMax);
+		groupChild.initialEnabledSet(context, true);
 
 		GroupPositionFrame groupPositionFrame = GroupPositionFrame.create(context);
 		groupPositionFrame.initialLengthSet(context, NO_LENGTH);
 		groupPositionFrame.initialOffsetSet(context, Vector.ZERO);
-		groupLayer.initialPositionFramesAdd(context, ImmutableList.of(groupPositionFrame));
+		groupChild.initialPositionFramesAdd(context, ImmutableList.of(groupPositionFrame));
 
 		GroupTimeFrame groupTimeFrame = GroupTimeFrame.create(context);
 		groupTimeFrame.initialLengthSet(context, NO_LENGTH);
 		groupTimeFrame.initialInnerOffsetSet(context, 0);
 		groupTimeFrame.initialInnerLoopSet(context, NO_LOOP);
-		groupLayer.initialTimeFramesAdd(context, ImmutableList.of(groupTimeFrame));
+		groupChild.initialTimeFramesAdd(context, ImmutableList.of(groupTimeFrame));
 
 		switch (createMode) {
 			case normal: {
-				TrueColorImageNode trueColorImageNode = TrueColorImageNode.create(context);
+				TrueColorImageLayer trueColorImageNode = TrueColorImageLayer.create(context);
 				trueColorImageNode.initialNameSet(context, uniqueName(Global.trueColorLayerName));
 				trueColorImageNode.initialOffsetSet(context, Vector.ZERO);
 				TrueColorImageFrame trueColorImageFrame = TrueColorImageFrame.create(context);
 				trueColorImageFrame.initialLengthSet(context, -1);
 				trueColorImageFrame.initialOffsetSet(context, Vector.ZERO);
 				trueColorImageNode.initialFramesAdd(context, ImmutableList.of(trueColorImageFrame));
-				groupLayer.initialInnerSet(context, trueColorImageNode);
+				groupChild.initialInnerSet(context, trueColorImageNode);
 				break;
 			}
 			case pixel: {
@@ -678,7 +678,7 @@ public class GUILaunch extends Application {
 				palette.initialEntriesAdd(context, ImmutableList.of(transparent, black));
 				context.project.initialPalettesAdd(context, ImmutableList.of(palette));
 
-				PaletteImageNode paletteImageNode = PaletteImageNode.create(context);
+				PaletteImageLayer paletteImageNode = PaletteImageLayer.create(context);
 				paletteImageNode.initialPaletteSet(context, palette);
 				paletteImageNode.initialNameSet(context, uniqueName(Global.paletteLayerName));
 				paletteImageNode.initialOffsetSet(context, Vector.ZERO);
@@ -686,17 +686,17 @@ public class GUILaunch extends Application {
 				paletteImageFrame.initialLengthSet(context, -1);
 				paletteImageFrame.initialOffsetSet(context, Vector.ZERO);
 				paletteImageNode.initialFramesAdd(context, ImmutableList.of(paletteImageFrame));
-				groupLayer.initialInnerSet(context, paletteImageNode);
+				groupChild.initialInnerSet(context, paletteImageNode);
 				break;
 			}
 			default:
 				throw new Assertion();
 		}
 
-		GroupNode groupNode = GroupNode.create(context);
+		GroupLayer groupNode = GroupLayer.create(context);
 		groupNode.initialNameSet(context, uniqueName(groupLayerName));
 		groupNode.initialOffsetSet(context, Vector.ZERO);
-		groupNode.initialLayersAdd(context, ImmutableList.of(groupLayer));
+		groupNode.initialChildrenAdd(context, ImmutableList.of(groupChild));
 
 		context.change(null, c -> c.project(context.project).topAdd(groupNode));
 

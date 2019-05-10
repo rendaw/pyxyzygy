@@ -7,7 +7,7 @@ import com.zarbosoft.pyxyzygy.app.wrappers.FrameFinder;
 import com.zarbosoft.pyxyzygy.app.wrappers.paletteimage.PaletteImageNodeWrapper;
 import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
 import com.zarbosoft.pyxyzygy.core.model.v0.PaletteImageFrame;
-import com.zarbosoft.pyxyzygy.core.model.v0.PaletteImageNode;
+import com.zarbosoft.pyxyzygy.core.model.v0.PaletteImageLayer;
 import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import javafx.beans.property.SimpleStringProperty;
@@ -21,10 +21,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-class RowAdapterPaletteImageNode extends BaseFrameRowAdapter<PaletteImageNode, PaletteImageFrame> {
-	private final PaletteImageNode node;
+class RowAdapterPaletteImageNode extends BaseFrameRowAdapter<PaletteImageLayer, PaletteImageFrame> {
+	private final PaletteImageLayer node;
 
-	public RowAdapterPaletteImageNode(Timeline timeline, PaletteImageNode node) {
+	public RowAdapterPaletteImageNode(Timeline timeline, PaletteImageLayer node) {
 		super(timeline);
 		this.node = node;
 	}
@@ -130,7 +130,7 @@ class RowAdapterPaletteImageNode extends BaseFrameRowAdapter<PaletteImageNode, P
 	}
 
 	@Override
-	public FrameFinder<PaletteImageNode, PaletteImageFrame> getFrameFinder() {
+	public FrameFinder<PaletteImageLayer, PaletteImageFrame> getFrameFinder() {
 		return PaletteImageNodeWrapper.frameFinder;
 	}
 
@@ -145,7 +145,7 @@ class RowAdapterPaletteImageNode extends BaseFrameRowAdapter<PaletteImageNode, P
 	}
 
 	@Override
-	protected PaletteImageNode getNode() {
+	protected PaletteImageLayer getNode() {
 		return node;
 	}
 

@@ -5,7 +5,7 @@ import com.zarbosoft.interface1.Configuration;
 import java.util.List;
 
 @Configuration
-public class PaletteImageNode extends ProjectNode {
+public class PaletteImageLayer extends ProjectLayer {
 	@Configuration
 	public List<PaletteImageFrame> frames;
 

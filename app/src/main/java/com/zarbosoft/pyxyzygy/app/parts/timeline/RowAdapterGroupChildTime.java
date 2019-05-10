@@ -4,9 +4,9 @@ import com.zarbosoft.pyxyzygy.app.WidgetHandle;
 import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.wrappers.FrameFinder;
-import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupLayerWrapper;
+import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupChildWrapper;
 import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
-import com.zarbosoft.pyxyzygy.core.model.v0.GroupLayer;
+import com.zarbosoft.pyxyzygy.core.model.v0.GroupChild;
 import com.zarbosoft.pyxyzygy.core.model.v0.GroupTimeFrame;
 import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import javafx.beans.value.ChangeListener;
@@ -23,18 +23,18 @@ import java.util.Optional;
 
 import static com.zarbosoft.pyxyzygy.app.Global.NO_LOOP;
 
-public class RowAdapterGroupLayerTime extends BaseFrameRowAdapter<GroupLayer, GroupTimeFrame> {
+public class RowAdapterGroupChildTime extends BaseFrameRowAdapter<GroupChild, GroupTimeFrame> {
 	// TODO setup listeners for inner subtree to keep track of the max inner frame (?)
-	final GroupLayer layer;
-	final RowAdapterGroupLayer layerRowAdapter;
+	final GroupChild child;
+	final RowAdapterGroupChild childRowAdapter;
 	Optional<RowTimeMapRangeWidget> rowInnerRange = Optional.empty();
 
-	public RowAdapterGroupLayerTime(
-			Timeline timeline, GroupLayer layer, RowAdapterGroupLayer layerRowAdapter
+	public RowAdapterGroupChildTime(
+			Timeline timeline, GroupChild child, RowAdapterGroupChild childRowAdapter
 	) {
 		super(timeline);
-		this.layer = layer;
-		this.layerRowAdapter = layerRowAdapter;
+		this.child = child;
+		this.childRowAdapter = childRowAdapter;
 	}
 
 	@Override
@@ -59,7 +59,7 @@ public class RowAdapterGroupLayerTime extends BaseFrameRowAdapter<GroupLayer, Gr
 
 	@Override
 	protected void addFrame(ChangeStepBuilder change, int at, GroupTimeFrame frame) {
-		change.groupLayer(layer).timeFramesAdd(at, frame);
+		change.groupChild(child).timeFramesAdd(at, frame);
 	}
 
 	@Override
@@ -78,8 +78,8 @@ public class RowAdapterGroupLayerTime extends BaseFrameRowAdapter<GroupLayer, Gr
 	}
 
 	@Override
-	public FrameFinder<GroupLayer, GroupTimeFrame> getFrameFinder() {
-		return GroupLayerWrapper.timeFrameFinder;
+	public FrameFinder<GroupChild, GroupTimeFrame> getFrameFinder() {
+		return GroupChildWrapper.timeFrameFinder;
 	}
 
 	@Override
@@ -93,8 +93,8 @@ public class RowAdapterGroupLayerTime extends BaseFrameRowAdapter<GroupLayer, Gr
 	}
 
 	@Override
-	protected GroupLayer getNode() {
-		return layer;
+	protected GroupChild getNode() {
+		return child;
 	}
 
 	@Override
@@ -104,12 +104,12 @@ public class RowAdapterGroupLayerTime extends BaseFrameRowAdapter<GroupLayer, Gr
 
 	@Override
 	public void deselected() {
-		layerRowAdapter.treeDeselected();
+		childRowAdapter.treeDeselected();
 	}
 
 	@Override
 	public void selected() {
-		layerRowAdapter.treeSelected();
+		childRowAdapter.treeSelected();
 	}
 
 	@Override
@@ -120,17 +120,17 @@ public class RowAdapterGroupLayerTime extends BaseFrameRowAdapter<GroupLayer, Gr
 
 	@Override
 	protected int frameCount() {
-		return layer.timeFramesLength();
+		return child.timeFramesLength();
 	}
 
 	@Override
 	protected void removeFrame(ChangeStepBuilder change, int at, int count) {
-		change.groupLayer(layer).timeFramesRemove(at, count);
+		change.groupChild(child).timeFramesRemove(at, count);
 	}
 
 	@Override
 	protected void moveFramesTo(ChangeStepBuilder change, int source, int count, int dest) {
-		change.groupLayer(layer).timeFramesMoveTo(source, count, dest);
+		change.groupChild(child).timeFramesMoveTo(source, count, dest);
 	}
 
 	@Override
@@ -144,7 +144,7 @@ public class RowAdapterGroupLayerTime extends BaseFrameRowAdapter<GroupLayer, Gr
 			Runnable selectedFrameCleanup;
 
 			{
-				framesCleanup = layer.mirrorTimeFrames(frameCleanup, f -> {
+				framesCleanup = child.mirrorTimeFrames(frameCleanup, f -> {
 					Listener.ScalarSet<GroupTimeFrame, Integer> lengthListener =
 							f.addLengthSetListeners((target, value) -> {
 								updateTime(context, window);
@@ -162,7 +162,7 @@ public class RowAdapterGroupLayerTime extends BaseFrameRowAdapter<GroupLayer, Gr
 					}
 					if (newValue == null ||
 							!(newValue.frame instanceof BaseFrameRowAdapter.AdapterFrame) ||
-							newValue.row.adapter != RowAdapterGroupLayerTime.this) {
+							newValue.row.adapter != RowAdapterGroupChildTime.this) {
 						rowInnerRange.ifPresent(w -> {
 							layout.getChildren().remove(w.base);
 							rowInnerRange = Optional.empty();
@@ -206,7 +206,7 @@ public class RowAdapterGroupLayerTime extends BaseFrameRowAdapter<GroupLayer, Gr
 
 								@Override
 								public Object getData() {
-									return layer;
+									return child;
 								}
 							});
 						};
@@ -222,7 +222,7 @@ public class RowAdapterGroupLayerTime extends BaseFrameRowAdapter<GroupLayer, Gr
 				};
 				timeline.selectedFrame.addListener(selectedFrameListener);
 				selectedFrameListener.changed(null, null, timeline.selectedFrame.getValue());
-				row = Optional.of(new RowFramesWidget(window, timeline, RowAdapterGroupLayerTime.this));
+				row = Optional.of(new RowFramesWidget(window, timeline, RowAdapterGroupChildTime.this));
 				layout.getChildren().addAll(row.get());
 			}
 

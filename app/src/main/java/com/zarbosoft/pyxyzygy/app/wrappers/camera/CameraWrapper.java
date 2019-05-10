@@ -8,7 +8,7 @@ import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeCanvasHandle;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeWrapper;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.pyxyzygy.core.model.v0.Camera;
-import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
+import com.zarbosoft.pyxyzygy.core.model.v0.ProjectLayer;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleIntegerProperty;
@@ -102,7 +102,7 @@ public class CameraWrapper extends GroupNodeWrapper {
 	}
 
 	@Override
-	public ProjectNode separateClone(ProjectContext context) {
+	public ProjectLayer separateClone(ProjectContext context) {
 		Camera clone = Camera.create(context);
 		cloneSet(context, clone);
 		clone.initialOffsetSet(context, node.offset());

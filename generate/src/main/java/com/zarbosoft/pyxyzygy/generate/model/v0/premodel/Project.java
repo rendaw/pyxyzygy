@@ -7,7 +7,7 @@ import java.util.List;
 @Configuration
 public class Project extends ProjectObject {
 	@Configuration
-	public List<ProjectNode> top;
+	public List<ProjectLayer> top;
 
 	@Configuration
 	public List<Palette> palettes;

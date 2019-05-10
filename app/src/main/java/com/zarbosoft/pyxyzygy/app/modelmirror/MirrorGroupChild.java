@@ -1,18 +1,18 @@
 package com.zarbosoft.pyxyzygy.app.modelmirror;
 
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
-import com.zarbosoft.pyxyzygy.core.model.v0.GroupLayer;
-import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
+import com.zarbosoft.pyxyzygy.core.model.v0.GroupChild;
+import com.zarbosoft.pyxyzygy.core.model.v0.ProjectLayer;
 import com.zarbosoft.pyxyzygy.core.model.v0.ProjectObject;
 import com.zarbosoft.pyxyzygy.seed.model.Listener;
 
-public class MirrorGroupLayer extends ObjectMirror {
+public class MirrorGroupChild extends ObjectMirror {
 	private final ObjectMirror parent;
-	private final GroupLayer node;
-	private final Listener.ScalarSet<GroupLayer, ProjectNode> innerSetListener;
+	private final GroupChild node;
+	private final Listener.ScalarSet<GroupChild, ProjectLayer> innerSetListener;
 	private ObjectMirror child;
 
-	public MirrorGroupLayer(ProjectContext context, ObjectMirror.Context mirrorContext, ObjectMirror parent, GroupLayer node) {
+	public MirrorGroupChild(ProjectContext context, ObjectMirror.Context mirrorContext, ObjectMirror parent, GroupChild node) {
 		this.parent = parent;
 		this.parentIndex = -1;
 		this.node = node;
@@ -23,7 +23,7 @@ public class MirrorGroupLayer extends ObjectMirror {
 				child.remove(context);
 			}
 			if (value != null) {
-				child = mirrorContext.create(context, MirrorGroupLayer.this, value);
+				child = mirrorContext.create(context, MirrorGroupChild.this, value);
 				child.setParentIndex(parentIndex);
 				tree.bind(child.tree);
 			}

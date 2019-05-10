@@ -2,7 +2,7 @@ package com.zarbosoft.pyxyzygy.app.wrappers.group;
 
 import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
-import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
+import com.zarbosoft.pyxyzygy.core.model.v0.ProjectLayer;
 import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import javafx.beans.property.SimpleIntegerProperty;
@@ -18,7 +18,7 @@ public class GroupNodeCanvasHandle extends CanvasHandle {
 	private final ObservableList<CanvasHandle> childHandles = FXCollections.observableArrayList();
 	private final CanvasHandle parent;
 	final SimpleIntegerProperty positiveZoom = new SimpleIntegerProperty(0);
-	private final Listener.ScalarSet<ProjectNode, Vector> offsetListener;
+	private final Listener.ScalarSet<ProjectLayer, Vector> offsetListener;
 
 	ToolBar toolBar = new ToolBar();
 	private GroupNodeWrapper wrapper;
@@ -56,20 +56,20 @@ public class GroupNodeCanvasHandle extends CanvasHandle {
 		childHandles.forEach(c -> c.setFrame(context, frameNumber));
 
 		do {
-			if (wrapper.specificLayer == null) {
+			if (wrapper.specificChild == null) {
 				previousFrame.set(-1);
 				break;
 			}
-			if (wrapper.specificLayer.positionFramesLength() == 1) {
+			if (wrapper.specificChild.positionFramesLength() == 1) {
 				previousFrame.set(-1);
 				break;
 			}
-			int frameIndex = GroupLayerWrapper.positionFrameFinder.findFrame(wrapper.specificLayer, frameNumber).frameIndex - 1;
+			int frameIndex = GroupChildWrapper.positionFrameFinder.findFrame(wrapper.specificChild, frameNumber).frameIndex - 1;
 			if (frameIndex == -1)
-				frameIndex = wrapper.specificLayer.positionFramesLength() - 1;
+				frameIndex = wrapper.specificChild.positionFramesLength() - 1;
 			int outFrame = 0;
 			for (int i = 0; i < frameIndex; ++i) {
-				outFrame += wrapper.specificLayer.positionFramesGet(i).length();
+				outFrame += wrapper.specificChild.positionFramesGet(i).length();
 			}
 			previousFrame.set(outFrame);
 		} while (false);

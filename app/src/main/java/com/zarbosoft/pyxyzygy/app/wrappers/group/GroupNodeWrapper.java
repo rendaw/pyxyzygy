@@ -15,15 +15,15 @@ import static com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext.uniqueName1;
 
 public class GroupNodeWrapper extends Wrapper {
 	private final Wrapper parent;
-	final GroupNode node;
+	final GroupLayer node;
 	final GroupNodeConfig config;
 	final ObservableList<Wrapper> children = FXCollections.observableArrayList();
-	private final Runnable layerListenCleanup;
+	private final Runnable childrenListenCleanup;
 
-	GroupLayer specificLayer;
+	GroupChild specificChild;
 	public GroupNodeCanvasHandle canvasHandle;
 
-	public GroupNodeWrapper(ProjectContext context, Wrapper parent, int parentIndex, GroupNode node) {
+	public GroupNodeWrapper(ProjectContext context, Wrapper parent, int parentIndex, GroupLayer node) {
 		this.parentIndex = parentIndex;
 		this.parent = parent;
 		this.node = node;
@@ -31,8 +31,8 @@ public class GroupNodeWrapper extends Wrapper {
 
 		tree.set(new TreeItem<>(this));
 
-		layerListenCleanup = node.mirrorLayers(children, layer -> {
-			return Window.createNode(context, this, -1, layer);
+		childrenListenCleanup = node.mirrorChildren(children, child -> {
+			return Window.createNode(context, this, -1, child);
 		}, child -> {
 			child.remove(context);
 		}, at -> {
@@ -83,21 +83,21 @@ public class GroupNodeWrapper extends Wrapper {
 		return new GroupNodeEditHandle(context, window, this);
 	}
 
-	public void cloneSet(ProjectContext context, GroupNode clone) {
+	public void cloneSet(ProjectContext context, GroupLayer clone) {
 		clone.initialNameSet(context, uniqueName1(node.name()));
 		clone.initialOffsetSet(context, node.offset());
-		clone.initialLayersAdd(context, node.layers().stream().map(layer -> {
-			GroupLayer newLayer = GroupLayer.create(context);
-			newLayer.initialOpacitySet(context, layer.opacity());
+		clone.initialChildrenAdd(context, node.children().stream().map(child -> {
+			GroupChild newLayer = GroupChild.create(context);
+			newLayer.initialOpacitySet(context, child.opacity());
 			newLayer.initialEnabledSet(context, true);
-			newLayer.initialInnerSet(context, layer.inner());
-			newLayer.initialPositionFramesAdd(context, layer.positionFrames().stream().map(frame -> {
+			newLayer.initialInnerSet(context, child.inner());
+			newLayer.initialPositionFramesAdd(context, child.positionFrames().stream().map(frame -> {
 				GroupPositionFrame newFrame = GroupPositionFrame.create(context);
 				newFrame.initialLengthSet(context, frame.length());
 				newFrame.initialOffsetSet(context, frame.offset());
 				return newFrame;
 			}).collect(Collectors.toList()));
-			newLayer.initialTimeFramesAdd(context, layer.timeFrames().stream().map(frame -> {
+			newLayer.initialTimeFramesAdd(context, child.timeFrames().stream().map(frame -> {
 				GroupTimeFrame newFrame = GroupTimeFrame.create(context);
 				newFrame.initialLengthSet(context, frame.length());
 				newFrame.initialInnerOffsetSet(context, frame.innerOffset());
@@ -109,8 +109,8 @@ public class GroupNodeWrapper extends Wrapper {
 	}
 
 	@Override
-	public ProjectNode separateClone(ProjectContext context) {
-		GroupNode clone = GroupNode.create(context);
+	public ProjectLayer separateClone(ProjectContext context) {
+		GroupLayer clone = GroupLayer.create(context);
 		cloneSet(context, clone);
 		return clone;
 	}
@@ -119,7 +119,7 @@ public class GroupNodeWrapper extends Wrapper {
 	public void deleteChild(
 			ProjectContext context, ChangeStepBuilder change, int index
 	) {
-		change.groupNode(node).layersRemove(index, 1);
+		change.groupNode(node).childrenRemove(index, 1);
 	}
 
 	@Override
@@ -129,10 +129,10 @@ public class GroupNodeWrapper extends Wrapper {
 
 	@Override
 	public void remove(ProjectContext context) {
-		layerListenCleanup.run();
+		childrenListenCleanup.run();
 	}
 
-	public void setSpecificLayer(GroupLayer layer) {
-		this.specificLayer = layer;
+	public void setSpecificChild(GroupChild child) {
+		this.specificChild = child;
 	}
 }

@@ -6,7 +6,7 @@ import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.model.v0.TrueColorTile;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
-import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupLayerWrapper;
+import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupChildWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeWrapper;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.pyxyzygy.core.model.v0.*;
@@ -230,7 +230,7 @@ public class Structure {
 					else
 						showGrabState.setImage(null);
 				};
-				Listener.ScalarSet<ProjectNode, String> nameSetListener = (target, value) -> {
+				Listener.ScalarSet<ProjectLayer, String> nameSetListener = (target, value) -> {
 					setText(value);
 				};
 				final HBox graphic = new HBox();
@@ -254,7 +254,7 @@ public class Structure {
 							viewingCleanup.run();
 							oldValue.tagLifted.removeListener(copyStateListener);
 							oldValue.tagCopied.removeListener(copyStateListener);
-							((ProjectNode) oldValue.getValue()).removeNameSetListeners(nameSetListener);
+							((ProjectLayer) oldValue.getValue()).removeNameSetListeners(nameSetListener);
 						}
 						if (newValue != null) {
 							viewingCleanup = CustomBinding.bind(showViewing.imageProperty(),
@@ -282,7 +282,7 @@ public class Structure {
 										if (wrapper.get().getParent() == null)
 											return opt(null);
 										return opt(new CustomBinding.ScalarHalfBinder<Boolean>((
-												(GroupLayerWrapper) wrapper
+												(GroupChildWrapper) wrapper
 														.get()
 														.getParent()
 										).node, "enabled").map(e -> opt(!e)));
@@ -291,7 +291,7 @@ public class Structure {
 							newValue.tagCopied.addListener(copyStateListener);
 							newValue.tagLifted.addListener(copyStateListener);
 							copyStateListener.changed(null, null, null);
-							((ProjectNode) newValue.getValue()).addNameSetListeners(nameSetListener);
+							((ProjectLayer) newValue.getValue()).addNameSetListeners(nameSetListener);
 						} else {
 							setText("");
 							showViewing.setImage(null);
@@ -342,7 +342,7 @@ public class Structure {
 		});
 		MenuItem addGroup = new MenuItem("Add group");
 		addGroup.setOnAction(e -> {
-			GroupNode group = GroupNode.create(context);
+			GroupLayer group = GroupLayer.create(context);
 			group.initialOffsetSet(context, Vector.ZERO);
 			group.initialNameSet(context, uniqueName(Global.groupLayerName));
 			context.change(null, c -> {
@@ -351,7 +351,7 @@ public class Structure {
 		});
 		MenuItem addImage = new MenuItem("Add true color layer");
 		addImage.setOnAction(e -> {
-			TrueColorImageNode image = TrueColorImageNode.create(context);
+			TrueColorImageLayer image = TrueColorImageLayer.create(context);
 			image.initialOffsetSet(context, Vector.ZERO);
 			image.initialNameSet(context, uniqueName(Global.trueColorLayerName));
 			TrueColorImageFrame frame = TrueColorImageFrame.create(context);
@@ -404,7 +404,7 @@ public class Structure {
 					} else {
 						palette = palette0.get();
 					}
-					PaletteImageNode image = PaletteImageNode.create(context);
+					PaletteImageLayer image = PaletteImageLayer.create(context);
 					image.initialOffsetSet(context, Vector.ZERO);
 					image.initialNameSet(context, uniqueName(Global.paletteLayerName));
 					image.initialPaletteSet(context, palette);
@@ -427,7 +427,7 @@ public class Structure {
 			fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PNG Image", "*.png"));
 			Optional.ofNullable(fileChooser.showOpenDialog(window.stage)).map(f -> f.toPath()).ifPresent(p -> {
 				TrueColorImage data = TrueColorImage.deserialize(p.toString());
-				TrueColorImageNode image = TrueColorImageNode.create(context);
+				TrueColorImageLayer image = TrueColorImageLayer.create(context);
 				image.initialOffsetSet(context, Vector.ZERO);
 				image.initialNameSet(context, uniqueName(p.getFileName().toString()));
 				TrueColorImageFrame frame = TrueColorImageFrame.create(context);
@@ -494,13 +494,13 @@ public class Structure {
 			Wrapper selected1 = selected;
 			context.change(new ProjectContext.Tuple("struct_move"), c -> {
 				if (parent.getValue() != null) {
-					GroupNode realParent = (GroupNode) parent.getValue();
-					GroupLayer realChild = (GroupLayer) selected1.getValue();
-					c.groupNode(realParent).layersRemove(index, 1);
-					c.groupNode(realParent).layersAdd(dest, realChild);
+					GroupLayer realParent = (GroupLayer) parent.getValue();
+					GroupChild realChild = (GroupChild) selected1.getValue();
+					c.groupNode(realParent).childrenRemove(index, 1);
+					c.groupNode(realParent).childrenAdd(dest, realChild);
 				} else {
 					c.project(context.project).topRemove(index, 1);
-					c.project(context.project).topAdd(dest, (ProjectNode) selected1.getValue());
+					c.project(context.project).topAdd(dest, (ProjectLayer) selected1.getValue());
 				}
 			});
 		});
@@ -523,13 +523,13 @@ public class Structure {
 			Wrapper selected1 = selected;
 			context.change(new ProjectContext.Tuple("struct_move"), c -> {
 				if (parent.getValue() != null) {
-					GroupNode realParent = (GroupNode) parent.getValue();
-					GroupLayer realChild = (GroupLayer) selected1.getValue();
-					c.groupNode(realParent).layersRemove(index, 1);
-					c.groupNode(realParent).layersAdd(dest, realChild);
+					GroupLayer realParent = (GroupLayer) parent.getValue();
+					GroupChild realChild = (GroupChild) selected1.getValue();
+					c.groupNode(realParent).childrenRemove(index, 1);
+					c.groupNode(realParent).childrenAdd(dest, realChild);
 				} else {
 					c.project(context.project).topRemove(index, 1);
-					c.project(context.project).topAdd(dest, (ProjectNode) selected1.getValue());
+					c.project(context.project).topAdd(dest, (ProjectLayer) selected1.getValue());
 				}
 			});
 		});
@@ -576,27 +576,27 @@ public class Structure {
 			opacityBox.setSpacing(3);
 			opacityBox.setAlignment(Pos.CENTER_LEFT);
 
-			CustomBinding.HalfBinder<GroupLayerWrapper> layerBinder =
+			CustomBinding.HalfBinder<GroupChildWrapper> groupChildBinder =
 					new CustomBinding.PropertyHalfBinder<>(window.selectedForEdit).map(e -> {
 						if (e == null || e.getWrapper().getParent() == null)
 							return opt(null);
-						return opt((GroupLayerWrapper) e.getWrapper().getParent());
+						return opt((GroupChildWrapper) e.getWrapper().getParent());
 					});
 
-			CustomBinding.bind(opacityBox.disableProperty(), layerBinder.map(e -> opt(e == null)));
+			CustomBinding.bind(opacityBox.disableProperty(), groupChildBinder.map(e -> opt(e == null)));
 
 			ToggleButton enabled = HelperJFX.toggleButton("eye.png", "Enabled");
 			CustomBinding.bind(enabled.getGraphic().opacityProperty(),
 					new CustomBinding.PropertyHalfBinder<>(enabled.selectedProperty()).map(b -> opt(b ? 1 : 0.5))
 			);
-			CustomBinding.bindBidirectional(new CustomBinding.IndirectBinder<Boolean>(layerBinder, layerWrapper -> {
-				if (layerWrapper == null)
+			CustomBinding.bindBidirectional(new CustomBinding.IndirectBinder<Boolean>(groupChildBinder, childWrapper -> {
+				if (childWrapper == null)
 					return opt(null);
-				GroupLayer layerNode = layerWrapper.node;
+				GroupChild layerNode = childWrapper.node;
 				return opt(new CustomBinding.ScalarBinder<Boolean>(layerNode,
 						"enabled",
-						v -> context.change(new ProjectContext.Tuple(layerWrapper, "enabled"),
-								c -> c.groupLayer(layerNode).enabledSet(v)
+						v -> context.change(new ProjectContext.Tuple(childWrapper, "enabled"),
+								c -> c.groupChild(layerNode).enabledSet(v)
 						)
 				));
 			}), new CustomBinding.PropertyBinder<>(enabled.selectedProperty()));
@@ -604,14 +604,14 @@ public class Structure {
 			Slider opacity = new Slider();
 			opacity.setMin(0);
 			opacity.setMax(opacityMax);
-			CustomBinding.bindBidirectional(new CustomBinding.IndirectBinder<Integer>(layerBinder, layerWrapper -> {
-						if (layerWrapper == null)
+			CustomBinding.bindBidirectional(new CustomBinding.IndirectBinder<Integer>(groupChildBinder, childWrapper -> {
+						if (childWrapper == null)
 							return opt(null);
-						GroupLayer layerNode = layerWrapper.node;
+						GroupChild layerNode = childWrapper.node;
 						return opt(new CustomBinding.ScalarBinder<Integer>(layerNode,
 								"opacity",
-								v -> context.change(new ProjectContext.Tuple(layerWrapper, "opacity"),
-										c -> c.groupLayer(layerNode).opacitySet(v)
+								v -> context.change(new ProjectContext.Tuple(childWrapper, "opacity"),
+										c -> c.groupChild(layerNode).opacitySet(v)
 								)
 						));
 					}),
@@ -638,7 +638,7 @@ public class Structure {
 		context.project.addTopAddListeners((target, at, value) -> {
 			List<TreeItem<Wrapper>> newItems = new ArrayList<>();
 			for (int i = 0; i < value.size(); ++i) {
-				ProjectNode v = value.get(i);
+				ProjectLayer v = value.get(i);
 				Wrapper child = Window.createNode(context, null, at + i, v);
 				child.tree.addListener((observable, oldValue, newValue) -> {
 					tree.getRoot().getChildren().set(child.parentIndex, newValue);
@@ -761,7 +761,7 @@ public class Structure {
 
 	private void duplicate(ChangeStepBuilder change) {
 		Wrapper destination = window.selectedForEdit.get().getWrapper();
-		ProjectNode clone = destination.separateClone(context);
+		ProjectLayer clone = destination.separateClone(context);
 		addNew(clone, change);
 	}
 
@@ -769,7 +769,7 @@ public class Structure {
 		Wrapper edit = window.selectedForEdit.get().getWrapper();
 		if (edit == null)
 			return;
-		ProjectNode clone = edit.separateClone(context);
+		ProjectLayer clone = edit.separateClone(context);
 		addNew(clone, change);
 		edit.delete(context, change);
 	}
@@ -783,13 +783,13 @@ public class Structure {
 	 *
 	 * @param node
 	 */
-	private void addNew(ProjectNode node, ChangeStepBuilder change) {
+	private void addNew(ProjectLayer node, ChangeStepBuilder change) {
 		Wrapper edit = getSelection();
 		Wrapper placeAt = edit;
 		int index = 0;
 		while (placeAt != null) {
 			if (placeAt instanceof GroupNodeWrapper) {
-				change.groupNode((GroupNode) placeAt.getValue()).layersAdd(index, createLayer(node));
+				change.groupNode((GroupLayer) placeAt.getValue()).childrenAdd(index, createGroupChild(node));
 				return;
 			}
 			index = placeAt.parentIndex + 1;
@@ -838,13 +838,13 @@ public class Structure {
 			logger.write("Warning: No nodes left to place!");
 		}
 		if (pasteParent != null) {
-			List<GroupLayer> children = new ArrayList<>();
+			List<GroupChild> children = new ArrayList<>();
 			for (Wrapper wrapper : placable) {
 				if (wrapper.getParent() != null) {
 					Wrapper childParent = wrapper.getParent();
-					children.add((GroupLayer) childParent.getValue());
+					children.add((GroupChild) childParent.getValue());
 				} else {
-					GroupLayer layer = createLayer((ProjectNode) wrapper.getValue());
+					GroupChild layer = createGroupChild((ProjectLayer) wrapper.getValue());
 					children.add(layer);
 				}
 			}
@@ -854,11 +854,11 @@ public class Structure {
 			} else {
 				dest = before ? 0 : -1;
 			}
-			change.groupNode((GroupNode) pasteParent.getValue()).layersAdd(dest, children);
+			change.groupNode((GroupLayer) pasteParent.getValue()).childrenAdd(dest, children);
 		} else {
-			List<ProjectNode> children = new ArrayList<>();
+			List<ProjectLayer> children = new ArrayList<>();
 			for (Wrapper wrapper : placable) {
-				children.add((ProjectNode) wrapper.getValue());
+				children.add((ProjectLayer) wrapper.getValue());
 			}
 			int dest;
 			if (reference != null) {
@@ -876,21 +876,21 @@ public class Structure {
 		clearTagLifted();
 	}
 
-	private GroupLayer createLayer(ProjectNode node) {
-		GroupLayer layer = GroupLayer.create(context);
-		layer.initialInnerSet(context, node);
-		layer.initialOpacitySet(context, opacityMax);
-		layer.initialEnabledSet(context, true);
+	private GroupChild createGroupChild(ProjectLayer node) {
+		GroupChild child = GroupChild.create(context);
+		child.initialInnerSet(context, node);
+		child.initialOpacitySet(context, opacityMax);
+		child.initialEnabledSet(context, true);
 		GroupPositionFrame positionFrame = GroupPositionFrame.create(context);
 		positionFrame.initialLengthSet(context, -1);
 		positionFrame.initialOffsetSet(context, new Vector(0, 0));
-		layer.initialPositionFramesAdd(context, ImmutableList.of(positionFrame));
+		child.initialPositionFramesAdd(context, ImmutableList.of(positionFrame));
 		GroupTimeFrame timeFrame = GroupTimeFrame.create(context);
 		timeFrame.initialLengthSet(context, -1);
 		timeFrame.initialInnerOffsetSet(context, 0);
 		timeFrame.initialInnerLoopSet(context, 0);
-		layer.initialTimeFramesAdd(context, ImmutableList.of(timeFrame));
-		return layer;
+		child.initialTimeFramesAdd(context, ImmutableList.of(timeFrame));
+		return child;
 	}
 
 	public Node getWidget() {

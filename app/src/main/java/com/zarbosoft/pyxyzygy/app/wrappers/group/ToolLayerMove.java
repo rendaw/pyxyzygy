@@ -5,7 +5,7 @@ import com.zarbosoft.pyxyzygy.app.Tool;
 import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
-import com.zarbosoft.pyxyzygy.core.model.v0.GroupLayer;
+import com.zarbosoft.pyxyzygy.core.model.v0.GroupChild;
 import com.zarbosoft.pyxyzygy.core.model.v0.GroupPositionFrame;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import javafx.scene.control.ListCell;
@@ -22,7 +22,7 @@ public class ToolLayerMove extends Tool {
 	private Vector markStartOffset;
 	private GroupNodeWrapper wrapper;
 	private GroupPositionFrame pos;
-	private final ListView<GroupLayer> layerList;
+	private final ListView<GroupChild> layerList;
 
 	public ToolLayerMove(Window window, GroupNodeWrapper wrapper, GroupNodeEditHandle editHandle) {
 		this.wrapper = wrapper;
@@ -30,12 +30,12 @@ public class ToolLayerMove extends Tool {
 		window.editorCursor.set(this, centerCursor("cursor-move32.png"));
 		layerList = new ListView<>();
 		layerList.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
-		layerList.setCellFactory(new Callback<ListView<GroupLayer>, ListCell<GroupLayer>>() {
+		layerList.setCellFactory(new Callback<ListView<GroupChild>, ListCell<GroupChild>>() {
 			@Override
-			public ListCell<GroupLayer> call(ListView<GroupLayer> param) {
+			public ListCell<GroupChild> call(ListView<GroupChild> param) {
 				return new ListCell<>() {
 					@Override
-					protected void updateItem(GroupLayer item, boolean empty) {
+					protected void updateItem(GroupChild item, boolean empty) {
 						if (item != null && !empty) {
 							setText(item.inner().name());
 						} else {
@@ -46,7 +46,7 @@ public class ToolLayerMove extends Tool {
 				};
 			}
 		});
-		wrapper.node.mirrorLayers(layerList.getItems(), l -> l, noopConsumer, noopConsumer);
+		wrapper.node.mirrorChildren(layerList.getItems(), l -> l, noopConsumer, noopConsumer);
 		if (!layerList.getItems().isEmpty())
 			layerList.getSelectionModel().select(0);
 		editHandle.toolPropReplacer.set(this, "Move layer", new WidgetFormBuilder().span(() -> {
@@ -58,10 +58,10 @@ public class ToolLayerMove extends Tool {
 	public void markStart(
 			ProjectContext context, Window window, DoubleVector start, DoubleVector globalStart
 	) {
-		GroupLayer specificLayer = layerList.getSelectionModel().getSelectedItem();
+		GroupChild specificLayer = layerList.getSelectionModel().getSelectedItem();
 		if (specificLayer == null)
 			return;
-		pos = GroupLayerWrapper.positionFrameFinder.findFrame(specificLayer,
+		pos = GroupChildWrapper.positionFrameFinder.findFrame(specificLayer,
 				wrapper.canvasHandle.frameNumber.get()
 		).frame;
 		this.markStart = globalStart;

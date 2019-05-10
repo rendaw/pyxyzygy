@@ -3,13 +3,11 @@ package com.zarbosoft.pyxyzygy.app;
 import com.zarbosoft.pyxyzygy.app.config.NodeConfig;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
-import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupLayerCanvasHandle;
 import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
-import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
+import com.zarbosoft.pyxyzygy.core.model.v0.ProjectLayer;
 import com.zarbosoft.pyxyzygy.core.model.v0.ProjectObject;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.control.TreeItem;
 
@@ -47,7 +45,7 @@ public abstract class Wrapper {
 			change.project(context.project).topRemove(parentIndex, 1);
 	}
 
-	public abstract ProjectNode separateClone(ProjectContext context);
+	public abstract ProjectLayer separateClone(ProjectContext context);
 
 	public abstract void deleteChild(
 			ProjectContext context, ChangeStepBuilder change, int index

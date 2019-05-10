@@ -607,7 +607,7 @@ public class Timeline {
 
 		// Prepare rows
 		if (edit instanceof GroupNodeWrapper) {
-			TreeItem layersRoot = new TreeItem(new RowAdapter() {
+			TreeItem childrenRoot = new TreeItem(new RowAdapter() {
 
 				@Override
 				public ObservableValue<String> getName() {
@@ -683,14 +683,14 @@ public class Timeline {
 					return null;
 				}
 			});
-			editCleanup.add(((GroupNode) edit.getValue()).mirrorLayers(layersRoot.getChildren(), layer -> {
-				RowAdapterGroupLayer layerRowAdapter = new RowAdapterGroupLayer((GroupNodeWrapper) edit, layer);
-				TreeItem<RowAdapter> layerItem = new TreeItem(layerRowAdapter);
-				layerItem.setExpanded(true);
-				layerItem.getChildren().addAll(new TreeItem(new RowAdapterGroupLayerTime(this, layer, layerRowAdapter)),
-						new TreeItem(new RowAdapterGroupLayerPosition(this, layer, layerRowAdapter))
+			editCleanup.add(((GroupLayer) edit.getValue()).mirrorChildren(childrenRoot.getChildren(), child -> {
+				RowAdapterGroupChild childRowAdapter = new RowAdapterGroupChild((GroupNodeWrapper) edit, child);
+				TreeItem<RowAdapter> childItem = new TreeItem(childRowAdapter);
+				childItem.setExpanded(true);
+				childItem.getChildren().addAll(new TreeItem(new RowAdapterGroupChildTime(this, child, childRowAdapter)),
+						new TreeItem(new RowAdapterGroupChildPosition(this, child, childRowAdapter))
 				);
-				return layerItem;
+				return childItem;
 			}, this::cleanItemSubtree, Misc.noopConsumer()));
 			TreeItem loop;
 			if (edit instanceof CameraWrapper) {
@@ -699,14 +699,14 @@ public class Timeline {
 				loop = new TreeItem(new RowAdapterPreview(this, edit));
 			} else
 				throw new Assertion();
-			tree.getRoot().getChildren().addAll(loop, layersRoot);
+			tree.getRoot().getChildren().addAll(loop, childrenRoot);
 		} else if (edit instanceof TrueColorImageNodeWrapper) {
 			tree.getRoot().getChildren().addAll(new TreeItem(new RowAdapterPreview(this, edit)),
-					new TreeItem(new RowAdapterTrueColorImageNode(this, (TrueColorImageNode) edit.getValue()))
+					new TreeItem(new RowAdapterTrueColorImageNode(this, (TrueColorImageLayer) edit.getValue()))
 			);
 		} else if (edit instanceof PaletteImageNodeWrapper) {
 			tree.getRoot().getChildren().addAll(new TreeItem(new RowAdapterPreview(this, edit)),
-					new TreeItem<>(new RowAdapterPaletteImageNode(this, (PaletteImageNode) edit.getValue()))
+					new TreeItem<>(new RowAdapterPaletteImageNode(this, (PaletteImageLayer) edit.getValue()))
 			);
 		}
 
@@ -905,21 +905,21 @@ public class Timeline {
 			return createEndTimeHandle();
 		if (false) {
 			throw new Assertion();
-		} else if (object instanceof GroupNode) {
+		} else if (object instanceof GroupLayer) {
 			return new TimeMapper() {
-				private final Listener.Clear<GroupNode> layersClearListener;
-				private final Listener.ListMoveTo<GroupNode> layersMoveToListener;
-				private final Listener.ListRemove<GroupNode> layersRemoveListener;
-				private final Listener.ListAdd<GroupNode, GroupLayer> layersAddListener;
+				private final Listener.Clear<GroupLayer> childrenClearListener;
+				private final Listener.ListMoveTo<GroupLayer> childrenMoveToListener;
+				private final Listener.ListRemove<GroupLayer> childrenRemoveListener;
+				private final Listener.ListAdd<GroupLayer, GroupChild> childrenAddListener;
 				TimeMapper child;
 
 				{
-					layersAddListener = ((GroupNode) object).addLayersAddListeners((target, at, value) -> relocate());
-					layersRemoveListener =
-							((GroupNode) object).addLayersRemoveListeners((target, at, count) -> relocate());
-					layersMoveToListener =
-							((GroupNode) object).addLayersMoveToListeners((target, source, count, dest) -> relocate());
-					layersClearListener = ((GroupNode) object).addLayersClearListeners(target -> relocate());
+					childrenAddListener = ((GroupLayer) object).addChildrenAddListeners((target, at, value) -> relocate());
+					childrenRemoveListener =
+							((GroupLayer) object).addChildrenRemoveListeners((target, at, count) -> relocate());
+					childrenMoveToListener =
+							((GroupLayer) object).addChildrenMoveToListeners((target, source, count, dest) -> relocate());
+					childrenClearListener = ((GroupLayer) object).addChildrenClearListeners(target -> relocate());
 				}
 
 				public void relocate() {
@@ -947,10 +947,10 @@ public class Timeline {
 					if (child != null) {
 						child.remove();
 					}
-					((GroupNode) object).removeLayersAddListeners(layersAddListener);
-					((GroupNode) object).removeLayersRemoveListeners(layersRemoveListener);
-					((GroupNode) object).removeLayersMoveToListeners(layersMoveToListener);
-					((GroupNode) object).removeLayersClearListeners(layersClearListener);
+					((GroupLayer) object).removeChildrenAddListeners(childrenAddListener);
+					((GroupLayer) object).removeChildrenRemoveListeners(childrenRemoveListener);
+					((GroupLayer) object).removeChildrenMoveToListeners(childrenMoveToListener);
+					((GroupLayer) object).removeChildrenClearListeners(childrenClearListener);
 				}
 
 				@Override
@@ -959,19 +959,19 @@ public class Timeline {
 					child.updateTime(timeMap);
 				}
 			};
-		} else if (object instanceof GroupLayer) {
+		} else if (object instanceof GroupChild) {
 			return new TimeMapper() {
-				private final Listener.ScalarSet<GroupLayer, ProjectNode> innerSetListener;
+				private final Listener.ScalarSet<GroupChild, ProjectLayer> innerSetListener;
 				Runnable framesCleanup;
 				private List<Runnable> frameCleanup = new ArrayList<>();
 				private TimeMapper child;
 				int suppressRecalc = 0;
 
 				{
-					child = createTimeMapper(((GroupLayer) object).inner());
+					child = createTimeMapper(((GroupChild) object).inner());
 
 					innerSetListener =
-							((GroupLayer) object).addInnerSetListeners((GroupLayer target, ProjectNode value) -> {
+							((GroupChild) object).addInnerSetListeners((GroupChild target, ProjectLayer value) -> {
 								if (child != null)
 									child.remove();
 								if (value ==
@@ -986,7 +986,7 @@ public class Timeline {
 							});
 
 					suppressRecalc += 1;
-					framesCleanup = ((GroupLayer) object).mirrorTimeFrames(frameCleanup, frame -> {
+					framesCleanup = ((GroupChild) object).mirrorTimeFrames(frameCleanup, frame -> {
 						suppressRecalc += 1;
 						Listener.ScalarSet<GroupTimeFrame, Integer> innerOffsetSetListener =
 								frame.addInnerOffsetSetListeners((target, value) -> recalcTimes());
@@ -1011,7 +1011,7 @@ public class Timeline {
 						return;
 					if (suppressRecalc != 0)
 						return;
-					child.updateTime(computeSubMap(timeMap, ((GroupLayer) object).timeFrames()));
+					child.updateTime(computeSubMap(timeMap, ((GroupChild) object).timeFrames()));
 				}
 
 				@Override
@@ -1020,7 +1020,7 @@ public class Timeline {
 						child.remove();
 					framesCleanup.run();
 					frameCleanup.forEach(c -> c.run());
-					((GroupLayer) object).removeInnerSetListeners(innerSetListener);
+					((GroupChild) object).removeInnerSetListeners(innerSetListener);
 				}
 
 				@Override
@@ -1029,13 +1029,13 @@ public class Timeline {
 					recalcTimes();
 				}
 			};
-		} else if (object instanceof TrueColorImageNode) {
+		} else if (object instanceof TrueColorImageLayer) {
 			// Should be == edit node, or one of it's parents should == edit node
 			// and this should never be reached
 			throw new Assertion();
 		} else if (object instanceof TrueColorImageFrame) {
 			throw new Assertion();
-		} else if (object instanceof PaletteImageNode) {
+		} else if (object instanceof PaletteImageLayer) {
 			// Should be == edit node, or one of it's parents should == edit node
 			// and this should never be reached
 			throw new Assertion();

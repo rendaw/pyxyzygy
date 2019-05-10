@@ -76,13 +76,13 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 		public Instant updatedAt;
 		public PaletteColors colors;
 		public List<Runnable> cleanup = new ArrayList<>();
-		public List<PaletteImageNode> users = new ArrayList<>();
+		public List<PaletteImageLayer> users = new ArrayList<>();
 		public List<Runnable> listeners = new ArrayList<>();
 	}
 
 	private Map<Palette, PaletteWrapper> colors = new HashMap<>();
 
-	public void addPaletteUser(PaletteImageNode image) {
+	public void addPaletteUser(PaletteImageLayer image) {
 		getPaletteWrapper(image.palette()).users.add(image);
 	}
 
@@ -211,26 +211,26 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 			} else if (o instanceof Project) {
 				((Project) o).palettes().forEach(consumer);
 				((Project) o).top().forEach(consumer);
-			} else if (o instanceof GroupLayer) {
-				if (((GroupLayer) o).inner() != null) {
-					consumer.accept(((GroupLayer) o).inner());
+			} else if (o instanceof GroupChild) {
+				if (((GroupChild) o).inner() != null) {
+					consumer.accept(((GroupChild) o).inner());
 				}
-				((GroupLayer) o).timeFrames().forEach(consumer);
-				((GroupLayer) o).positionFrames().forEach(consumer);
-			} else if (o instanceof GroupNode) {
-				((GroupNode) o).layers().forEach(consumer);
+				((GroupChild) o).timeFrames().forEach(consumer);
+				((GroupChild) o).positionFrames().forEach(consumer);
+			} else if (o instanceof GroupLayer) {
+				((GroupLayer) o).children().forEach(consumer);
 			} else if (o instanceof GroupPositionFrame) {
 			} else if (o instanceof GroupTimeFrame) {
 			} else if (o instanceof TrueColorImageFrame) {
 				((TrueColorImageFrame) o).tiles().values().forEach(consumer);
-			} else if (o instanceof TrueColorImageNode) {
-				((TrueColorImageNode) o).frames().forEach(consumer);
+			} else if (o instanceof TrueColorImageLayer) {
+				((TrueColorImageLayer) o).frames().forEach(consumer);
 			} else if (o instanceof TrueColorTileBase) {
 			} else if (o instanceof PaletteImageFrame) {
 				((PaletteImageFrame) o).tiles().values().forEach(consumer);
-			} else if (o instanceof PaletteImageNode) {
-				consumer.accept(((PaletteImageNode) o).palette());
-				((PaletteImageNode) o).frames().forEach(consumer);
+			} else if (o instanceof PaletteImageLayer) {
+				consumer.accept(((PaletteImageLayer) o).palette());
+				((PaletteImageLayer) o).frames().forEach(consumer);
 			} else if (o instanceof PaletteTileBase) {
 			} else if (o instanceof Palette) {
 				((Palette) o).entries().forEach(consumer);

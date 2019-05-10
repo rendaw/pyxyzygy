@@ -9,7 +9,7 @@ import com.zarbosoft.pyxyzygy.app.parts.timeline.Timeline;
 import com.zarbosoft.pyxyzygy.app.widgets.TitledPane;
 import com.zarbosoft.pyxyzygy.app.widgets.*;
 import com.zarbosoft.pyxyzygy.app.wrappers.camera.CameraWrapper;
-import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupLayerWrapper;
+import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupChildWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.paletteimage.PaletteImageNodeWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage.TrueColorImageNodeWrapper;
@@ -476,14 +476,14 @@ public class Window {
 			throw new Assertion();
 		} else if (node instanceof Camera) {
 			return new CameraWrapper(context, parent, parentIndex, (Camera) node);
-		} else if (node instanceof GroupNode) {
-			return new GroupNodeWrapper(context, parent, parentIndex, (GroupNode) node);
 		} else if (node instanceof GroupLayer) {
-			return new GroupLayerWrapper(context, parent, parentIndex, (GroupLayer) node);
-		} else if (node instanceof TrueColorImageNode) {
-			return new TrueColorImageNodeWrapper(context, parent, parentIndex, (TrueColorImageNode) node);
-		} else if (node instanceof PaletteImageNode) {
-			return new PaletteImageNodeWrapper(context, parent, parentIndex, (PaletteImageNode) node);
+			return new GroupNodeWrapper(context, parent, parentIndex, (GroupLayer) node);
+		} else if (node instanceof GroupChild) {
+			return new GroupChildWrapper(context, parent, parentIndex, (GroupChild) node);
+		} else if (node instanceof TrueColorImageLayer) {
+			return new TrueColorImageNodeWrapper(context, parent, parentIndex, (TrueColorImageLayer) node);
+		} else if (node instanceof PaletteImageLayer) {
+			return new PaletteImageNodeWrapper(context, parent, parentIndex, (PaletteImageLayer) node);
 		} else
 			throw new Assertion();
 	}

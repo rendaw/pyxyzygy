@@ -947,7 +947,7 @@ public class GenerateModelV0 extends TaskBase {
 								.addCode("target.$L.addAll(dest, readd);\n", fieldName);
 						moveToBuilder.finish();
 						typeChangeStepBuilder.addMethod(MethodSpec
-								.methodBuilder(String.format("%sMoveUp", Helper.capFirst(fieldName)))
+								.methodBuilder(String.format("%sMoveUp", fieldName))
 								.returns(changeStepBuilderName)
 								.addParameter(int.class, "at")
 								.addParameter(int.class, "count")
@@ -955,7 +955,7 @@ public class GenerateModelV0 extends TaskBase {
 								.addCode("return $LMoveTo(at, count, at - 1);\n", fieldName)
 								.build());
 						typeChangeStepBuilder.addMethod(MethodSpec
-								.methodBuilder(String.format("%sMoveDown", Helper.capFirst(fieldName)))
+								.methodBuilder(String.format("%sMoveDown", fieldName))
 								.returns(changeStepBuilderName)
 								.addParameter(int.class, "at")
 								.addParameter(int.class, "count")

@@ -72,17 +72,17 @@ public class CLIMain {
 					w.key(Integer.toString(i));
 					walk(w, ((Project) o).topGet(i));
 				}
-			} else if (o instanceof GroupNode) {
-				for (int i = 0; i < ((GroupNode) o).layersLength(); ++i) {
+			} else if (o instanceof GroupLayer) {
+				for (int i = 0; i < ((GroupLayer) o).childrenLength(); ++i) {
 					w.key(Integer.toString(i));
-					ProjectObject inner = ((GroupNode) o).layersGet(i).inner();
+					ProjectObject inner = ((GroupLayer) o).childrenGet(i).inner();
 					if (inner == null)
 						w.primitive("null".getBytes(StandardCharsets.UTF_8));
 					else
 						walk(w, inner);
 				}
-			} else if (o instanceof TrueColorImageNode) {
-				w.primitive(((TrueColorImageNode) o).name().getBytes(StandardCharsets.UTF_8));
+			} else if (o instanceof TrueColorImageLayer) {
+				w.primitive(((TrueColorImageLayer) o).name().getBytes(StandardCharsets.UTF_8));
 			} else
 				throw new Assertion();
 		}
@@ -105,7 +105,7 @@ public class CLIMain {
 
 		@Override
 		public void runImpl(ProjectContext context) {
-			ProjectNode found = find(context.project, selector);
+			ProjectLayer found = find(context.project, selector);
 			Rectangle bounds;
 			if (found instanceof Camera) {
 				bounds = new Rectangle(-((Camera) found).width() / 2,
@@ -123,19 +123,19 @@ public class CLIMain {
 			System.out.flush();
 		}
 
-		private ProjectNode find(ProjectObject o, List<Integer> selector) {
+		private ProjectLayer find(ProjectObject o, List<Integer> selector) {
 			if (selector.isEmpty())
-				return (ProjectNode) o;
+				return (ProjectLayer) o;
 			int next = selector.get(0);
 			List<Integer> remaining = sublist(selector, 1);
 			if (false) {
 				throw new Assertion();
 			} else if (o instanceof Project) {
 				return find(((Project) o).topGet(next), remaining);
-			} else if (o instanceof GroupNode) {
-				return find(((GroupNode) o).layersGet(next).inner(), remaining);
-			} else if (o instanceof TrueColorImageNode) {
-				return (ProjectNode) o;
+			} else if (o instanceof GroupLayer) {
+				return find(((GroupLayer) o).childrenGet(next).inner(), remaining);
+			} else if (o instanceof TrueColorImageLayer) {
+				return (ProjectLayer) o;
 			} else
 				throw new Assertion();
 		}
@@ -154,7 +154,7 @@ public class CLIMain {
 
 		@Override
 		public void runImpl(ProjectContext context) {
-			ProjectNode found = find(context.project, selector);
+			ProjectLayer found = find(context.project, selector);
 			if (!(found instanceof Camera))
 				throw new RuntimeException("Selected node is not a camera");
 			Camera node = (Camera) found;
@@ -171,19 +171,19 @@ public class CLIMain {
 			System.out.flush();
 		}
 
-		private ProjectNode find(ProjectObject o, List<Integer> selector) {
+		private ProjectLayer find(ProjectObject o, List<Integer> selector) {
 			if (selector.isEmpty())
-				return (ProjectNode) o;
+				return (ProjectLayer) o;
 			int next = selector.get(0);
 			List<Integer> remaining = sublist(selector, 1);
 			if (false) {
 				throw new Assertion();
 			} else if (o instanceof Project) {
 				return find(((Project) o).topGet(next), remaining);
-			} else if (o instanceof GroupNode) {
-				return find(((GroupNode) o).layersGet(next).inner(), remaining);
-			} else if (o instanceof TrueColorImageNode) {
-				return (ProjectNode) o;
+			} else if (o instanceof GroupLayer) {
+				return find(((GroupLayer) o).childrenGet(next).inner(), remaining);
+			} else if (o instanceof TrueColorImageLayer) {
+				return (ProjectLayer) o;
 			} else
 				throw new Assertion();
 		}

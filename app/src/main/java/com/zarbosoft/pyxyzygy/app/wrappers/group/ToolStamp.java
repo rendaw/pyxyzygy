@@ -31,7 +31,7 @@ import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.centerCursor;
 public class ToolStamp extends Tool {
 	private final MirrorProject mirror;
 	private final GroupNodeEditHandle editHandle;
-	private ProjectNode stampSource;
+	private ProjectLayer stampSource;
 	private final SimpleObjectProperty<Rectangle> stampOverlayBounds =
 			new SimpleObjectProperty<>(new Rectangle(0, 0, 0, 0));
 	private final GroupNodeWrapper wrapper;
@@ -66,12 +66,12 @@ public class ToolStamp extends Tool {
 					setText("");
 				} else {
 					setDisable(parents.contains(item.getValue()));
-					Listener.ScalarSet<ProjectNode, String> nameListener = (target, value) -> {
+					Listener.ScalarSet<ProjectLayer, String> nameListener = (target, value) -> {
 						setText(value);
 					};
-					((ProjectNode) item.getValue()).addNameSetListeners(nameListener);
+					((ProjectLayer) item.getValue()).addNameSetListeners(nameListener);
 					cleanup = () -> {
-						((ProjectNode) item.getValue()).removeNameSetListeners(nameListener);
+						((ProjectLayer) item.getValue()).removeNameSetListeners(nameListener);
 					};
 				}
 				super.updateItem(item, empty);
@@ -86,14 +86,14 @@ public class ToolStamp extends Tool {
 				ObjectMirror out;
 				if (false) {
 					throw new Assertion();
-				} else if (object instanceof GroupNode) {
-					out = new MirrorGroupNode(context, this, parent, (GroupNode) object);
 				} else if (object instanceof GroupLayer) {
-					out = new MirrorGroupLayer(context, this, parent, (GroupLayer) object);
-				} else if (object instanceof TrueColorImageNode) {
-					out = new MirrorTrueColorImageNode(parent, (TrueColorImageNode) object);
-				} else if (object instanceof PaletteImageNode) {
-					out = new MirrorPaletteImageNode(parent, (PaletteImageNode) object);
+					out = new MirrorGroupNode(context, this, parent, (GroupLayer) object);
+				} else if (object instanceof GroupChild) {
+					out = new MirrorGroupChild(context, this, parent, (GroupChild) object);
+				} else if (object instanceof TrueColorImageLayer) {
+					out = new MirrorTrueColorImageNode(parent, (TrueColorImageLayer) object);
+				} else if (object instanceof PaletteImageLayer) {
+					out = new MirrorPaletteImageNode(parent, (PaletteImageLayer) object);
 				} else
 					throw new Assertion();
 				if (!parents.contains(object))
@@ -124,7 +124,7 @@ public class ToolStamp extends Tool {
 			if (parents.contains(item.getValue().getValue()))
 				return;
 			wrapper.config.stampSource.set(item.getValue().getValue().id());
-			stampSource = (ProjectNode) item.getValue().getValue();
+			stampSource = (ProjectLayer) item.getValue().getValue();
 			stampOverlayBounds.set(Render.bounds(context, stampSource, 0));
 			if (stampOverlayBounds.get().width == 0 || stampOverlayBounds.get().height == 0)
 				return;
@@ -152,7 +152,7 @@ public class ToolStamp extends Tool {
 	) {
 		if (stampSource == null)
 			return;
-		GroupLayer layer = GroupLayer.create(context);
+		GroupChild layer = GroupChild.create(context);
 		layer.initialInnerSet(context, stampSource);
 		layer.initialEnabledSet(context, true);
 		layer.initialOpacitySet(context, Global.opacityMax);
@@ -167,7 +167,7 @@ public class ToolStamp extends Tool {
 		layer.initialTimeFramesAdd(context, ImmutableList.of(timeFrame));
 		window.structure.suppressSelect = true;
 		try {
-			context.change(null, c -> c.groupNode(wrapper.node).layersAdd(layer));
+			context.change(null, c -> c.groupNode(wrapper.node).childrenAdd(layer));
 		} finally {
 			window.structure.suppressSelect = false;
 		}

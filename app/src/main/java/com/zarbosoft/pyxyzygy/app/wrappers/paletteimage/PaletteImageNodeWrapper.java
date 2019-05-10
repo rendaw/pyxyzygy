@@ -33,19 +33,19 @@ import static com.zarbosoft.pyxyzygy.app.config.PaletteImageNodeConfig.TOOL_BRUS
 import static com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext.uniqueName1;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 
-public class PaletteImageNodeWrapper extends BaseImageNodeWrapper<PaletteImageNode, PaletteImageFrame, PaletteTileBase, PaletteImage> {
+public class PaletteImageNodeWrapper extends BaseImageNodeWrapper<PaletteImageLayer, PaletteImageFrame, PaletteTileBase, PaletteImage> {
 	final PaletteImageNodeConfig config;
 	public final ProjectContext.PaletteWrapper palette;
 
-	public static FrameFinder<PaletteImageNode, PaletteImageFrame> frameFinder =
-			new FrameFinder<PaletteImageNode, PaletteImageFrame>() {
+	public static FrameFinder<PaletteImageLayer, PaletteImageFrame> frameFinder =
+			new FrameFinder<PaletteImageLayer, PaletteImageFrame>() {
 				@Override
-				public PaletteImageFrame frameGet(PaletteImageNode node, int i) {
+				public PaletteImageFrame frameGet(PaletteImageLayer node, int i) {
 					return node.framesGet(i);
 				}
 
 				@Override
-				public int frameCount(PaletteImageNode node) {
+				public int frameCount(PaletteImageLayer node) {
 					return node.framesLength();
 				}
 
@@ -59,7 +59,7 @@ public class PaletteImageNodeWrapper extends BaseImageNodeWrapper<PaletteImageNo
 	public final CustomBinding.HalfBinder<ProjectObject> paletteSelectionBinder;
 
 	public PaletteImageNodeWrapper(
-			ProjectContext context, Wrapper parent, int parentIndex, PaletteImageNode node
+			ProjectContext context, Wrapper parent, int parentIndex, PaletteImageLayer node
 	) {
 		super(parent, parentIndex, node, frameFinder);
 		config = (PaletteImageNodeConfig) context.config.nodes.computeIfAbsent(node.id(),
@@ -103,7 +103,7 @@ public class PaletteImageNodeWrapper extends BaseImageNodeWrapper<PaletteImageNo
 	) {
 		if (canvasHandle == null)
 			canvasHandle =
-					new BaseImageCanvasHandle<PaletteImageNode, PaletteImageFrame, PaletteTileBase, PaletteImage>(
+					new BaseImageCanvasHandle<PaletteImageLayer, PaletteImageFrame, PaletteTileBase, PaletteImage>(
 							context,
 							canvasParent,
 							this
@@ -138,7 +138,7 @@ public class PaletteImageNodeWrapper extends BaseImageNodeWrapper<PaletteImageNo
 
 	@Override
 	public <I> Runnable mirrorFrames(
-			PaletteImageNode node,
+			PaletteImageLayer node,
 			List<I> list,
 			Function<PaletteImageFrame, I> create,
 			Consumer<I> remove,
@@ -290,8 +290,8 @@ public class PaletteImageNodeWrapper extends BaseImageNodeWrapper<PaletteImageNo
 	}
 
 	@Override
-	public ProjectNode separateClone(ProjectContext context) {
-		PaletteImageNode clone = PaletteImageNode.create(context);
+	public ProjectLayer separateClone(ProjectContext context) {
+		PaletteImageLayer clone = PaletteImageLayer.create(context);
 		clone.initialNameSet(context, uniqueName1(node.name()));
 		clone.initialOffsetSet(context, node.offset());
 		clone.initialPaletteSet(context, node.palette());

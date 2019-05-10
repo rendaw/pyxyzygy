@@ -4,9 +4,9 @@ import com.zarbosoft.pyxyzygy.app.WidgetHandle;
 import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.wrappers.FrameFinder;
-import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupLayerWrapper;
+import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupChildWrapper;
 import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
-import com.zarbosoft.pyxyzygy.core.model.v0.GroupLayer;
+import com.zarbosoft.pyxyzygy.core.model.v0.GroupChild;
 import com.zarbosoft.pyxyzygy.core.model.v0.GroupPositionFrame;
 import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
@@ -23,16 +23,16 @@ import java.util.Optional;
 
 import static com.zarbosoft.pyxyzygy.app.parts.timeline.Timeline.emptyStateImage;
 
-public class RowAdapterGroupLayerPosition extends BaseFrameRowAdapter<GroupLayer, GroupPositionFrame> {
-	private final GroupLayer layer;
-	private final RowAdapterGroupLayer layerRowAdapter;
+public class RowAdapterGroupChildPosition extends BaseFrameRowAdapter<GroupChild, GroupPositionFrame> {
+	private final GroupChild child;
+	private final RowAdapterGroupChild childRowAdapter;
 
-	public RowAdapterGroupLayerPosition(
-			Timeline timeline, GroupLayer layer, RowAdapterGroupLayer layerRowAdapter
+	public RowAdapterGroupChildPosition(
+			Timeline timeline, GroupChild child, RowAdapterGroupChild childRowAdapter
 	) {
 		super(timeline);
-		this.layer = layer;
-		this.layerRowAdapter = layerRowAdapter;
+		this.child = child;
+		this.childRowAdapter = childRowAdapter;
 	}
 
 	@Override
@@ -43,7 +43,7 @@ public class RowAdapterGroupLayerPosition extends BaseFrameRowAdapter<GroupLayer
 			private List<Runnable> frameCleanup = new ArrayList<>();
 
 			{
-				framesCleanup = layer.mirrorPositionFrames(frameCleanup, f -> {
+				framesCleanup = child.mirrorPositionFrames(frameCleanup, f -> {
 					Listener.ScalarSet<GroupPositionFrame, Integer> lengthListener =
 							f.addLengthSetListeners((target, value) -> {
 								updateTime(context, window);
@@ -57,7 +57,7 @@ public class RowAdapterGroupLayerPosition extends BaseFrameRowAdapter<GroupLayer
 					updateTime(context, window);
 				});
 				layout = new VBox();
-				row = Optional.of(new RowFramesWidget(window, timeline, RowAdapterGroupLayerPosition.this));
+				row = Optional.of(new RowFramesWidget(window, timeline, RowAdapterGroupChildPosition.this));
 				layout.getChildren().add(row.get());
 			}
 
@@ -91,12 +91,12 @@ public class RowAdapterGroupLayerPosition extends BaseFrameRowAdapter<GroupLayer
 
 	@Override
 	public void deselected() {
-		layerRowAdapter.treeDeselected();
+		childRowAdapter.treeDeselected();
 	}
 
 	@Override
 	public void selected() {
-		layerRowAdapter.treeSelected();
+		childRowAdapter.treeSelected();
 	}
 
 	@Override
@@ -107,7 +107,7 @@ public class RowAdapterGroupLayerPosition extends BaseFrameRowAdapter<GroupLayer
 	protected void addFrame(
 			ChangeStepBuilder change, int index, GroupPositionFrame frame
 	) {
-		change.groupLayer(layer).positionFramesAdd(index, frame);
+		change.groupChild(child).positionFramesAdd(index, frame);
 	}
 
 	@Override
@@ -137,13 +137,13 @@ public class RowAdapterGroupLayerPosition extends BaseFrameRowAdapter<GroupLayer
 	}
 
 	@Override
-	protected GroupLayer getNode() {
-		return layer;
+	protected GroupChild getNode() {
+		return child;
 	}
 
 	@Override
-	public FrameFinder<GroupLayer, GroupPositionFrame> getFrameFinder() {
-		return GroupLayerWrapper.positionFrameFinder;
+	public FrameFinder<GroupChild, GroupPositionFrame> getFrameFinder() {
+		return GroupChildWrapper.positionFrameFinder;
 	}
 
 	@Override
@@ -164,16 +164,16 @@ public class RowAdapterGroupLayerPosition extends BaseFrameRowAdapter<GroupLayer
 
 	@Override
 	protected int frameCount() {
-		return layer.positionFramesLength();
+		return child.positionFramesLength();
 	}
 
 	@Override
 	protected void removeFrame(ChangeStepBuilder change, int at, int count) {
-		change.groupLayer(layer).positionFramesRemove(at, count);
+		change.groupChild(child).positionFramesRemove(at, count);
 	}
 
 	@Override
 	protected void moveFramesTo(ChangeStepBuilder change, int source, int count, int dest) {
-		change.groupLayer(layer).positionFramesMoveTo(source, count, dest);
+		change.groupChild(child).positionFramesMoveTo(source, count, dest);
 	}
 }

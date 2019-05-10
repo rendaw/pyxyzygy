@@ -2,7 +2,7 @@ package com.zarbosoft.pyxyzygy.app.wrappers.group;
 
 import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
-import com.zarbosoft.pyxyzygy.core.model.v0.GroupLayer;
+import com.zarbosoft.pyxyzygy.core.model.v0.GroupChild;
 import com.zarbosoft.pyxyzygy.core.model.v0.GroupPositionFrame;
 import com.zarbosoft.pyxyzygy.core.model.v0.GroupTimeFrame;
 import com.zarbosoft.pyxyzygy.seed.model.Listener;
@@ -17,25 +17,25 @@ import static com.zarbosoft.pyxyzygy.app.Global.opacityMax;
 import static com.zarbosoft.pyxyzygy.app.Misc.moveTo;
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 
-public class GroupLayerCanvasHandle extends CanvasHandle {
+public class GroupChildCanvasHandle extends CanvasHandle {
 	private final CanvasHandle parent;
-	private final Listener.ListAdd<GroupLayer, GroupPositionFrame> positionAddListener;
-	private final Listener.ListRemove<GroupLayer> positionRemoveListener;
-	private final Listener.ListMoveTo<GroupLayer> positionMoveListener;
-	private final Listener.ListAdd<GroupLayer, GroupTimeFrame> timeAddListener;
-	private final Listener.ListRemove<GroupLayer> timeRemoveListener;
-	private final Listener.ListMoveTo<GroupLayer> timeMoveListener;
-	private final Listener.ScalarSet<GroupLayer, Integer> opacityListener;
+	private final Listener.ListAdd<GroupChild, GroupPositionFrame> positionAddListener;
+	private final Listener.ListRemove<GroupChild> positionRemoveListener;
+	private final Listener.ListMoveTo<GroupChild> positionMoveListener;
+	private final Listener.ListAdd<GroupChild, GroupTimeFrame> timeAddListener;
+	private final Listener.ListRemove<GroupChild> timeRemoveListener;
+	private final Listener.ListMoveTo<GroupChild> timeMoveListener;
+	private final Listener.ScalarSet<GroupChild, Integer> opacityListener;
 	private final Runnable enabledListener;
 	private int zoom;
 	private CanvasHandle childCanvas;
 	private final List<Runnable> positionCleanup;
 	private final List<Runnable> timeCleanup;
-	private GroupLayerWrapper wrapper;
+	private GroupChildWrapper wrapper;
 	private final ChangeListener<Wrapper> childListener;
 
-	public GroupLayerCanvasHandle(
-			ProjectContext context, Window window, GroupLayerWrapper wrapper, CanvasHandle parent
+	public GroupChildCanvasHandle(
+			ProjectContext context, Window window, GroupChildWrapper wrapper, CanvasHandle parent
 	) {
 		this.wrapper = wrapper;
 		this.parent = parent;
@@ -71,7 +71,7 @@ public class GroupLayerCanvasHandle extends CanvasHandle {
 				childCanvas = child.getCanvas(context, window);
 				childCanvas.setViewport(context, bounds.get(), zoom);
 				inner.getChildren().add(childCanvas.getWidget());
-				GroupLayerCanvasHandle.this.updateChildCanvasPosition(null);
+				GroupChildCanvasHandle.this.updateChildCanvasPosition(null);
 			}
 		});
 
@@ -204,7 +204,7 @@ public class GroupLayerCanvasHandle extends CanvasHandle {
 	}
 
 	@Override
-	public GroupLayerWrapper getWrapper() {
+	public GroupChildWrapper getWrapper() {
 		return wrapper;
 	}
 

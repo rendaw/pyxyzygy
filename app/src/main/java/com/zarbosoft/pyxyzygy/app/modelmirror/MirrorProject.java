@@ -3,17 +3,10 @@ package com.zarbosoft.pyxyzygy.app.modelmirror;
 import com.zarbosoft.pyxyzygy.app.Misc;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.core.model.v0.Project;
-import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
 import com.zarbosoft.pyxyzygy.core.model.v0.ProjectObject;
-import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.TreeItem;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static com.zarbosoft.pyxyzygy.app.Misc.moveTo;
 
 public class MirrorProject extends ObjectMirror {
 	private final ObjectMirror parent;

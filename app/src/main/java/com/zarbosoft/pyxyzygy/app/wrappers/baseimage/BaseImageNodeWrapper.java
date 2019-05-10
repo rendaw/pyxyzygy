@@ -5,7 +5,7 @@ import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.wrappers.FrameFinder;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
-import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
+import com.zarbosoft.pyxyzygy.core.model.v0.ProjectLayer;
 import com.zarbosoft.pyxyzygy.core.model.v0.ProjectObject;
 import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public abstract class BaseImageNodeWrapper<N extends ProjectNode, F extends ProjectObject, T, L> extends Wrapper {
+public abstract class BaseImageNodeWrapper<N extends ProjectLayer, F extends ProjectObject, T, L> extends Wrapper {
 	public final N node;
 	private final Wrapper parent;
 	public BaseImageCanvasHandle<N, F, T, L> canvasHandle;

@@ -1,7 +1,5 @@
 package com.zarbosoft.pyxyzygy.app.wrappers;
 
-import com.zarbosoft.pyxyzygy.core.model.v0.TrueColorImageFrame;
-import com.zarbosoft.pyxyzygy.core.model.v0.TrueColorImageNode;
 import com.zarbosoft.rendaw.common.Assertion;
 
 public abstract class FrameFinder<N, L> {

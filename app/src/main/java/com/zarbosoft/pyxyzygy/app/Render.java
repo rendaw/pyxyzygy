@@ -3,7 +3,7 @@ package com.zarbosoft.pyxyzygy.app;
 import com.zarbosoft.pyxyzygy.app.model.v0.PaletteTile;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.model.v0.TrueColorTile;
-import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupLayerWrapper;
+import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupChildWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.paletteimage.PaletteImageNodeWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage.TrueColorImageNodeWrapper;
 import com.zarbosoft.pyxyzygy.core.PaletteColors;
@@ -22,24 +22,24 @@ public class Render {
 		BoundsBuilder out = new BoundsBuilder();
 		if (false) {
 			throw new Assertion();
-		} else if (node1 instanceof GroupNode) {
-			GroupNode node = (GroupNode) node1;
-			for (GroupLayer layer : node.layers()) {
+		} else if (node1 instanceof GroupLayer) {
+			GroupLayer node = (GroupLayer) node1;
+			for (GroupChild layer : node.children()) {
 				Rectangle childBounds = findBounds(context, frame, layer);
 				out.point(childBounds.corner());
 				out.point(childBounds.corner().plus(childBounds.span()));
 			}
-		} else if (node1 instanceof GroupLayer) {
-			GroupLayer node = (GroupLayer) node1;
-			GroupPositionFrame pos = GroupLayerWrapper.positionFrameFinder.findFrame(node, frame).frame;
-			int frame1 = GroupLayerWrapper.findInnerFrame(node, frame);
+		} else if (node1 instanceof GroupChild) {
+			GroupChild node = (GroupChild) node1;
+			GroupPositionFrame pos = GroupChildWrapper.positionFrameFinder.findFrame(node, frame).frame;
+			int frame1 = GroupChildWrapper.findInnerFrame(node, frame);
 			if (node.inner() != null) {
 				Rectangle childBounds = findBounds(context, frame1, node.inner());
 				out.point(childBounds.corner().plus(pos.offset()));
 				out.point(childBounds.corner().plus(childBounds.span()).plus(pos.offset()));
 			}
-		} else if (node1 instanceof TrueColorImageNode) {
-			TrueColorImageNode node = (TrueColorImageNode) node1;
+		} else if (node1 instanceof TrueColorImageLayer) {
+			TrueColorImageLayer node = (TrueColorImageLayer) node1;
 			TrueColorImageFrame frame1 = TrueColorImageNodeWrapper.frameFinder.findFrame(node, frame).frame;
 			frame1.tiles().forEach((key, tile) -> {
 				Vector corner = Vector.from1D(key);
@@ -55,7 +55,7 @@ public class Render {
 	public static Rectangle render(
 			ProjectContext context,
 			TrueColorImage gc,
-			TrueColorImageNode node,
+			TrueColorImageLayer node,
 			TrueColorImageFrame frame,
 			Rectangle crop,
 			double opacity
@@ -79,7 +79,7 @@ public class Render {
 	public static Rectangle render(
 			ProjectContext context,
 			TrueColorImage gc,
-			PaletteImageNode node,
+			PaletteImageLayer node,
 			PaletteImageFrame frame,
 			Rectangle crop,
 			double opacity
@@ -114,20 +114,20 @@ public class Render {
 	) {
 		if (false) {
 			throw new Assertion();
-		} else if (node1 instanceof GroupNode) {
-			GroupNode node = (GroupNode) node1;
-			for (GroupLayer layer : node.layers())
-				render(context, layer, out, frame, crop.unshift(node.offset()), opacity);
 		} else if (node1 instanceof GroupLayer) {
 			GroupLayer node = (GroupLayer) node1;
+			for (GroupChild layer : node.children())
+				render(context, layer, out, frame, crop.unshift(node.offset()), opacity);
+		} else if (node1 instanceof GroupChild) {
+			GroupChild node = (GroupChild) node1;
 			if (node.enabled() && node.inner() != null) {
-				GroupPositionFrame pos = GroupLayerWrapper.positionFrameFinder.findFrame(node, frame).frame;
-				int frame1 = GroupLayerWrapper.findInnerFrame(node, frame);
+				GroupPositionFrame pos = GroupChildWrapper.positionFrameFinder.findFrame(node, frame).frame;
+				int frame1 = GroupChildWrapper.findInnerFrame(node, frame);
 				double useOpacity = opacity * ((double) node.opacity() / opacityMax);
 				render(context, node.inner(), out, frame1, crop.unshift(pos.offset()), useOpacity);
 			}
-		} else if (node1 instanceof TrueColorImageNode) {
-			TrueColorImageNode node = (TrueColorImageNode) node1;
+		} else if (node1 instanceof TrueColorImageLayer) {
+			TrueColorImageLayer node = (TrueColorImageLayer) node1;
 			render(
 					context,
 					out,
@@ -136,8 +136,8 @@ public class Render {
 					crop,
 					opacity
 			);
-		} else if (node1 instanceof PaletteImageNode) {
-			PaletteImageNode node = (PaletteImageNode) node1;
+		} else if (node1 instanceof PaletteImageLayer) {
+			PaletteImageLayer node = (PaletteImageLayer) node1;
 			render(
 					context,
 					out,
@@ -155,17 +155,17 @@ public class Render {
 		Rectangle out = new Rectangle(0, 0, 0, 0);
 		if (false) {
 			throw new Assertion();
-		} else if (node1 instanceof GroupNode) {
-			GroupNode node = (GroupNode) node1;
-			for (GroupLayer layer : node.layers())
-				out = out.expand(bounds(context, layer, frame)).shift(node.offset());
 		} else if (node1 instanceof GroupLayer) {
 			GroupLayer node = (GroupLayer) node1;
-			int frame1 = GroupLayerWrapper.findInnerFrame(node, frame);
+			for (GroupChild layer : node.children())
+				out = out.expand(bounds(context, layer, frame)).shift(node.offset());
+		} else if (node1 instanceof GroupChild) {
+			GroupChild node = (GroupChild) node1;
+			int frame1 = GroupChildWrapper.findInnerFrame(node, frame);
 			if (node.inner() != null)
 				out = out.expand(bounds(context, node.inner(), frame1));
-		} else if (node1 instanceof TrueColorImageNode) {
-			TrueColorImageNode node = (TrueColorImageNode) node1;
+		} else if (node1 instanceof TrueColorImageLayer) {
+			TrueColorImageLayer node = (TrueColorImageLayer) node1;
 			TrueColorImageFrame frame1 = TrueColorImageNodeWrapper.frameFinder.findFrame(node, frame).frame;
 			for (Long address : frame1.tiles().keySet()) {
 				Vector v = Vector.from1D(address).multiply(context.tileSize);
@@ -173,8 +173,8 @@ public class Render {
 						.shift(node.offset())
 						.shift(frame1.offset()));
 			}
-		} else if (node1 instanceof PaletteImageNode) {
-			PaletteImageNode node = (PaletteImageNode) node1;
+		} else if (node1 instanceof PaletteImageLayer) {
+			PaletteImageLayer node = (PaletteImageLayer) node1;
 			PaletteImageFrame frame1 = PaletteImageNodeWrapper.frameFinder.findFrame(node, frame).frame;
 			for (Long address : frame1.tiles().keySet()) {
 				Vector v = Vector.from1D(address).multiply(context.tileSize);

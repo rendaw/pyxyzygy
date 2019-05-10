@@ -5,7 +5,7 @@ import com.zarbosoft.pyxyzygy.app.Tool;
 import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.Wrapper;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
-import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
+import com.zarbosoft.pyxyzygy.core.model.v0.ProjectLayer;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.centerCursor;
@@ -25,7 +25,7 @@ public class ToolMove extends Tool {
 			ProjectContext context, Window window, DoubleVector start, DoubleVector globalStart
 	) {
 		this.markStart = globalStart;
-		this.markStartOffset = ((ProjectNode) wrapper.getValue()).offset();
+		this.markStartOffset = ((ProjectLayer) wrapper.getValue()).offset();
 	}
 
 	@Override
@@ -40,7 +40,7 @@ public class ToolMove extends Tool {
 		context.change(
 				new ProjectContext.Tuple(wrapper, "move"),
 				c -> c
-						.projectNode((ProjectNode) wrapper.getValue())
+						.projectNode((ProjectLayer) wrapper.getValue())
 						.offsetSet(globalEnd.minus(markStart).plus(markStartOffset).toInt())
 		);
 	}

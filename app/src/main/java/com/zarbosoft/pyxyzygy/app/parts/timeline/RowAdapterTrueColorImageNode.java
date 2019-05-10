@@ -7,7 +7,7 @@ import com.zarbosoft.pyxyzygy.app.wrappers.FrameFinder;
 import com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage.TrueColorImageNodeWrapper;
 import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
 import com.zarbosoft.pyxyzygy.core.model.v0.TrueColorImageFrame;
-import com.zarbosoft.pyxyzygy.core.model.v0.TrueColorImageNode;
+import com.zarbosoft.pyxyzygy.core.model.v0.TrueColorImageLayer;
 import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import javafx.beans.property.SimpleStringProperty;
@@ -21,10 +21,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-class RowAdapterTrueColorImageNode extends BaseFrameRowAdapter<TrueColorImageNode, TrueColorImageFrame> {
-	private final TrueColorImageNode node;
+class RowAdapterTrueColorImageNode extends BaseFrameRowAdapter<TrueColorImageLayer, TrueColorImageFrame> {
+	private final TrueColorImageLayer node;
 
-	public RowAdapterTrueColorImageNode(Timeline timeline, TrueColorImageNode node) {
+	public RowAdapterTrueColorImageNode(Timeline timeline, TrueColorImageLayer node) {
 		super(timeline);
 		this.node = node;
 	}
@@ -132,7 +132,7 @@ class RowAdapterTrueColorImageNode extends BaseFrameRowAdapter<TrueColorImageNod
 	}
 
 	@Override
-	public FrameFinder<TrueColorImageNode, TrueColorImageFrame> getFrameFinder() {
+	public FrameFinder<TrueColorImageLayer, TrueColorImageFrame> getFrameFinder() {
 		return TrueColorImageNodeWrapper.frameFinder;
 	}
 
@@ -147,7 +147,7 @@ class RowAdapterTrueColorImageNode extends BaseFrameRowAdapter<TrueColorImageNod
 	}
 
 	@Override
-	protected TrueColorImageNode getNode() {
+	protected TrueColorImageLayer getNode() {
 		return node;
 	}
 

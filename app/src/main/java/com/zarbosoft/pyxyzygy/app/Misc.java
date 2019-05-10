@@ -2,8 +2,8 @@ package com.zarbosoft.pyxyzygy.app;
 
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
-import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupLayerWrapper;
-import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
+import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupChildWrapper;
+import com.zarbosoft.pyxyzygy.core.model.v0.ProjectLayer;
 import com.zarbosoft.rendaw.common.Assertion;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -44,13 +44,13 @@ public class Misc {
 			private Runnable nameCleanup;
 
 			{
-				ProjectNode node = (ProjectNode) wrapper.getValue();
+				ProjectLayer node = (ProjectLayer) wrapper.getValue();
 
-				GroupLayerWrapper layerWrapper;
+				GroupChildWrapper groupChildWrapper;
 				if (wrapper.getParent() == null)
-					layerWrapper = null;
+					groupChildWrapper = null;
 				else {
-					layerWrapper = (GroupLayerWrapper) wrapper.getParent();
+					groupChildWrapper = (GroupChildWrapper) wrapper.getParent();
 				}
 
 				builder.text("Name", t -> {
@@ -65,23 +65,23 @@ public class Misc {
 					);
 				});
 
-				if (layerWrapper != null) {
+				if (groupChildWrapper != null) {
 					builder.check("Enabled", cb -> {
 						enabledCleanup = CustomBinding.bindBidirectional(new CustomBinding.ScalarBinder<Boolean>(
-								layerWrapper.node,
+								groupChildWrapper.node,
 								"enabled",
-								v -> context.change(new ProjectContext.Tuple(layerWrapper, "enabled"),
-										c -> c.groupLayer(layerWrapper.node).enabledSet(v)
+								v -> context.change(new ProjectContext.Tuple(groupChildWrapper, "enabled"),
+										c -> c.groupChild(groupChildWrapper.node).enabledSet(v)
 								)
 						), new CustomBinding.PropertyBinder<>(cb.selectedProperty()));
 					});
 					builder.slider("Opacity", 0, Global.opacityMax, slider -> {
-						slider.setValue(layerWrapper.node.opacity());
+						slider.setValue(groupChildWrapper.node.opacity());
 						opacityCleanup = CustomBinding.bindBidirectional(new CustomBinding.ScalarBinder<Integer>(
-										layerWrapper.node,
+										groupChildWrapper.node,
 										"opacity",
 										v -> context.change(new ProjectContext.Tuple(wrapper, "opacity"),
-												c -> c.groupLayer(layerWrapper.node).opacitySet(v)
+												c -> c.groupChild(groupChildWrapper.node).opacitySet(v)
 										)
 								),
 								new CustomBinding.PropertyBinder<>(slider.valueProperty()).bimap(d -> Optional.of((int) (double) d),

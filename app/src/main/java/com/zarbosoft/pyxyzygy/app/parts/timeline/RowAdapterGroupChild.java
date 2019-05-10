@@ -5,8 +5,8 @@ import com.zarbosoft.pyxyzygy.app.WidgetHandle;
 import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeWrapper;
 import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
-import com.zarbosoft.pyxyzygy.core.model.v0.GroupLayer;
-import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
+import com.zarbosoft.pyxyzygy.core.model.v0.GroupChild;
+import com.zarbosoft.pyxyzygy.core.model.v0.ProjectLayer;
 import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.rendaw.common.Assertion;
 import javafx.beans.property.SimpleObjectProperty;
@@ -17,28 +17,28 @@ import javafx.scene.image.Image;
 
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 
-public class RowAdapterGroupLayer extends RowAdapter {
+public class RowAdapterGroupChild extends RowAdapter {
 	private final GroupNodeWrapper wrapper;
-	private final GroupLayer layer;
+	private final GroupChild child;
 	SimpleObjectProperty<Image> stateImage = new SimpleObjectProperty<>(null);
 	Runnable nameCleanup;
-	private Listener.ScalarSet<GroupLayer, ProjectNode> innerListener;
+	private Listener.ScalarSet<GroupChild, ProjectLayer> innerListener;
 
-	RowAdapterGroupLayer(GroupNodeWrapper wrapper, GroupLayer layer) {
+	RowAdapterGroupChild(GroupNodeWrapper wrapper, GroupChild child) {
 		this.wrapper = wrapper;
-		this.layer = layer;
+		this.child = child;
 	}
 
 	@Override
 	public ObservableValue<String> getName() {
 		SimpleStringProperty out = new SimpleStringProperty();
-		innerListener = layer.addInnerSetListeners((target, inner) -> {
+		innerListener = child.addInnerSetListeners((target, inner) -> {
 			if (nameCleanup != null) {
 				nameCleanup.run();
 				nameCleanup = null;
 			};
 			if (inner != null) {
-				Listener.ScalarSet<ProjectNode, String> nameListener =
+				Listener.ScalarSet<ProjectLayer, String> nameListener =
 						inner.addNameSetListeners((target1, name) -> out.setValue(name));
 				nameCleanup = () -> {
 					inner.removeNameSetListeners(nameListener);
@@ -50,7 +50,7 @@ public class RowAdapterGroupLayer extends RowAdapter {
 
 	@Override
 	public void remove(ProjectContext context) {
-		layer.removeInnerSetListeners(innerListener);
+		child.removeInnerSetListeners(innerListener);
 		if (nameCleanup != null) {
 			nameCleanup.run();
 		}
@@ -63,7 +63,7 @@ public class RowAdapterGroupLayer extends RowAdapter {
 
 	@Override
 	public Object getData() {
-		return layer;
+		return child;
 	}
 
 	@Override
@@ -121,12 +121,12 @@ public class RowAdapterGroupLayer extends RowAdapter {
 	}
 
 	public void treeDeselected() {
-		wrapper.setSpecificLayer(null);
+		wrapper.setSpecificChild(null);
 		stateImage.set(null);
 	}
 
 	public void treeSelected() {
-		wrapper.setSpecificLayer(layer);
+		wrapper.setSpecificChild(child);
 		stateImage.set(icon("cursor-move16.png"));
 	}
 }

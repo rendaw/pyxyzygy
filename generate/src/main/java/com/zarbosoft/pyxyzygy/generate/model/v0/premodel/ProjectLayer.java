@@ -9,7 +9,7 @@ import java.util.Map;
  * Shared, mutable
  */
 @Configuration
-public abstract class ProjectNode extends ProjectObject {
+public abstract class ProjectLayer extends ProjectObject {
 
 	@Configuration
 	String name;

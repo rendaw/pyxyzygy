@@ -5,7 +5,7 @@ import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.wrappers.FrameFinder;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
-import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
+import com.zarbosoft.pyxyzygy.core.model.v0.ProjectLayer;
 import com.zarbosoft.pyxyzygy.core.model.v0.ProjectObject;
 import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
@@ -14,9 +14,7 @@ import javafx.beans.property.SimpleIntegerProperty;
 
 import java.util.*;
 
-import static com.zarbosoft.pyxyzygy.app.Global.opacityMax;
-
-public class BaseImageCanvasHandle<N extends ProjectNode, F extends ProjectObject, T, L> extends CanvasHandle {
+public class BaseImageCanvasHandle<N extends ProjectLayer, F extends ProjectObject, T, L> extends CanvasHandle {
 	final CanvasHandle parent;
 	private final Runnable mirrorCleanup;
 	public final BaseImageNodeWrapper<N, F, T, L> wrapper;
