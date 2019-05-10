@@ -639,6 +639,8 @@ public class GUILaunch extends Application {
 		context.config.defaultZoom = createMode.defaultZoom();
 
 		GroupLayer groupLayer = GroupLayer.create(context);
+		groupLayer.initialOpacitySet(context, opacityMax);
+		groupLayer.initialEnabledSet(context, true);
 
 		GroupPositionFrame groupPositionFrame = GroupPositionFrame.create(context);
 		groupPositionFrame.initialLengthSet(context, NO_LENGTH);
@@ -656,7 +658,6 @@ public class GUILaunch extends Application {
 				TrueColorImageNode trueColorImageNode = TrueColorImageNode.create(context);
 				trueColorImageNode.initialNameSet(context, uniqueName(Global.trueColorLayerName));
 				trueColorImageNode.initialOffsetSet(context, Vector.ZERO);
-				trueColorImageNode.initialOpacitySet(context, Global.opacityMax);
 				TrueColorImageFrame trueColorImageFrame = TrueColorImageFrame.create(context);
 				trueColorImageFrame.initialLengthSet(context, -1);
 				trueColorImageFrame.initialOffsetSet(context, Vector.ZERO);
@@ -681,7 +682,6 @@ public class GUILaunch extends Application {
 				paletteImageNode.initialPaletteSet(context, palette);
 				paletteImageNode.initialNameSet(context, uniqueName(Global.paletteLayerName));
 				paletteImageNode.initialOffsetSet(context, Vector.ZERO);
-				paletteImageNode.initialOpacitySet(context, Global.opacityMax);
 				PaletteImageFrame paletteImageFrame = PaletteImageFrame.create(context);
 				paletteImageFrame.initialLengthSet(context, -1);
 				paletteImageFrame.initialOffsetSet(context, Vector.ZERO);
@@ -696,7 +696,6 @@ public class GUILaunch extends Application {
 		GroupNode groupNode = GroupNode.create(context);
 		groupNode.initialNameSet(context, uniqueName(groupLayerName));
 		groupNode.initialOffsetSet(context, Vector.ZERO);
-		groupNode.initialOpacitySet(context, opacityMax);
 		groupNode.initialLayersAdd(context, ImmutableList.of(groupLayer));
 
 		context.change(null, c -> c.project(context.project).topAdd(groupNode));

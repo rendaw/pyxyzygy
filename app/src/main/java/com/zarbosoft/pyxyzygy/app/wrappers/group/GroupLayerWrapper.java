@@ -51,6 +51,7 @@ public class GroupLayerWrapper extends Wrapper {
 					return frame.length();
 				}
 			};
+	protected GroupLayerCanvasHandle canvasHandle;
 
 	public GroupLayerWrapper(ProjectContext context, Wrapper parent, int parentIndex, GroupLayer node) {
 		this.parent = parent;
@@ -99,10 +100,12 @@ public class GroupLayerWrapper extends Wrapper {
 	}
 
 	@Override
-	public CanvasHandle buildCanvas(
-			ProjectContext context, Window window, CanvasHandle parent
+	public CanvasHandle getCanvas(
+			ProjectContext context, Window window
 	) {
-		return new GroupLayerCanvasHandle(context, window, this, parent);
+		if (canvasHandle == null)
+			canvasHandle = new GroupLayerCanvasHandle(context, window, this, canvasParent);
+		return canvasHandle;
 	}
 
 	@Override

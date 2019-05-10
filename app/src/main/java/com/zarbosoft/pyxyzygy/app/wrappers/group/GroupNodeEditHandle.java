@@ -35,6 +35,7 @@ public class GroupNodeEditHandle extends EditHandle {
 			ProjectContext context, Window window, final GroupNodeWrapper wrapper
 	) {
 		this.wrapper = wrapper;
+		wrapper.getCanvas(context, window);
 
 		// Canvas overlay
 		overlay = new Group();

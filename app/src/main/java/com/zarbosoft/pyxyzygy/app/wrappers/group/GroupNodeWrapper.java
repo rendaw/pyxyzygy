@@ -1,17 +1,14 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.group;
 
-import com.google.common.collect.ImmutableList;
 import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.config.GroupNodeConfig;
 import com.zarbosoft.pyxyzygy.app.config.NodeConfig;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.core.model.v0.*;
-import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.TreeItem;
 
-import java.util.List;
 import java.util.stream.Collectors;
 
 import static com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext.uniqueName1;
@@ -71,10 +68,12 @@ public class GroupNodeWrapper extends Wrapper {
 	}
 
 	@Override
-	public CanvasHandle buildCanvas(
-			ProjectContext context, Window window, CanvasHandle parent
+	public CanvasHandle getCanvas(
+			ProjectContext context, Window window
 	) {
-		return canvasHandle = new GroupNodeCanvasHandle(context, window, parent, this);
+		if (canvasHandle == null)
+			canvasHandle = new GroupNodeCanvasHandle(context, window, canvasParent, this);
+		return canvasHandle;
 	}
 
 	@Override
@@ -87,9 +86,10 @@ public class GroupNodeWrapper extends Wrapper {
 	public void cloneSet(ProjectContext context, GroupNode clone) {
 		clone.initialNameSet(context, uniqueName1(node.name()));
 		clone.initialOffsetSet(context, node.offset());
-		clone.initialOpacitySet(context, node.opacity());
 		clone.initialLayersAdd(context, node.layers().stream().map(layer -> {
 			GroupLayer newLayer = GroupLayer.create(context);
+			newLayer.initialOpacitySet(context, layer.opacity());
+			newLayer.initialEnabledSet(context, true);
 			newLayer.initialInnerSet(context, layer.inner());
 			newLayer.initialPositionFramesAdd(context, layer.positionFrames().stream().map(frame -> {
 				GroupPositionFrame newFrame = GroupPositionFrame.create(context);

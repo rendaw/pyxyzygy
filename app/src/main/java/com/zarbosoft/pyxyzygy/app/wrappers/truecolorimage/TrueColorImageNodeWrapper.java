@@ -93,7 +93,6 @@ public class TrueColorImageNodeWrapper extends BaseImageNodeWrapper<TrueColorIma
 		TrueColorImageNode clone = TrueColorImageNode.create(context);
 		clone.initialNameSet(context, uniqueName1(node.name()));
 		clone.initialOffsetSet(context, node.offset());
-		clone.initialOpacitySet(context, node.opacity());
 		clone.initialFramesAdd(context, node.frames().stream().map(frame -> {
 			TrueColorImageFrame newFrame = TrueColorImageFrame.create(context);
 			newFrame.initialOffsetSet(context, frame.offset());

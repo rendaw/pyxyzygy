@@ -79,6 +79,7 @@ public class TrueColorImageEditHandle extends EditHandle {
 			ProjectContext context, Window window, final TrueColorImageNodeWrapper wrapper
 	) {
 		this.wrapper = wrapper;
+		wrapper.getCanvas(context, window);
 
 		positiveZoom.bind(wrapper.canvasHandle.zoom);
 

@@ -8,13 +8,14 @@ import com.zarbosoft.pyxyzygy.core.model.v0.GroupTimeFrame;
 import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.zarbosoft.pyxyzygy.app.Global.opacityMax;
 import static com.zarbosoft.pyxyzygy.app.Misc.moveTo;
+import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 
 public class GroupLayerCanvasHandle extends CanvasHandle {
 	private final CanvasHandle parent;
@@ -24,11 +25,14 @@ public class GroupLayerCanvasHandle extends CanvasHandle {
 	private final Listener.ListAdd<GroupLayer, GroupTimeFrame> timeAddListener;
 	private final Listener.ListRemove<GroupLayer> timeRemoveListener;
 	private final Listener.ListMoveTo<GroupLayer> timeMoveListener;
+	private final Listener.ScalarSet<GroupLayer, Integer> opacityListener;
+	private final Runnable enabledListener;
 	private int zoom;
 	private CanvasHandle childCanvas;
 	private final List<Runnable> positionCleanup;
 	private final List<Runnable> timeCleanup;
 	private GroupLayerWrapper wrapper;
+	private final ChangeListener<Wrapper> childListener;
 
 	public GroupLayerCanvasHandle(
 			ProjectContext context, Window window, GroupLayerWrapper wrapper, CanvasHandle parent
@@ -38,29 +42,39 @@ public class GroupLayerCanvasHandle extends CanvasHandle {
 		positionCleanup = new ArrayList<>();
 		timeCleanup = new ArrayList<>();
 
-		wrapper.child.addListener(new ChangeListener<Wrapper>() {
-			{
-				changed(null, null, wrapper.child.get());
-			}
-
-			@Override
-			public void changed(
-					ObservableValue<? extends Wrapper> observable, Wrapper oldValue, Wrapper newValue
-			) {
-				if (oldValue != null) {
-					if (childCanvas != null) {
-						inner.getChildren().clear();
-						childCanvas.remove(context);
+		childListener = (observable, oldValue, newValue) -> {
+			newValue.setCanvasParent(this);
+		};
+		wrapper.child.addListener(childListener);
+		enabledListener = new CustomBinding.DoubleHalfBinder<>(new CustomBinding.PropertyHalfBinder<>(wrapper.child),
+				new CustomBinding.DoubleHalfBinder<>(new CustomBinding.PropertyHalfBinder<>(window.selectedForEdit),
+						new CustomBinding.ScalarHalfBinder<Boolean>(wrapper.node, "enabled")
+				).map((edit, enabled) -> {
+					if (enabled)
+						return opt(true);
+					if (edit != null) {
+						Wrapper at = edit.getWrapper();
+						while (at != null) {
+							if (at == wrapper)
+								return opt(true);
+							at = at.getParent();
+						}
 					}
-				}
-				if (newValue != null) {
-					childCanvas = newValue.buildCanvas(context, window, GroupLayerCanvasHandle.this);
-					childCanvas.setViewport(context,bounds.get(),zoom);
-					inner.getChildren().add(childCanvas.getWidget());
-					GroupLayerCanvasHandle.this.updateChildCanvasPosition(null);
-				}
+					return opt(false);
+				})
+		).addListener((child, enabled) -> {
+			if (childCanvas != null) {
+				inner.getChildren().clear();
+				childCanvas.remove(context);
+			}
+			if (child != null && enabled) {
+				childCanvas = child.getCanvas(context, window);
+				childCanvas.setViewport(context, bounds.get(), zoom);
+				inner.getChildren().add(childCanvas.getWidget());
+				GroupLayerCanvasHandle.this.updateChildCanvasPosition(null);
 			}
 		});
+
 		// Don't need clear listeners because clear should never happen (1 frame must always be left)
 		positionAddListener = wrapper.node.addPositionFramesAddListeners((target, at, value) -> {
 			updatePosition(context);
@@ -112,6 +126,9 @@ public class GroupLayerCanvasHandle extends CanvasHandle {
 			updateTime(context);
 			moveTo(timeCleanup, source, count, dest);
 		});
+		opacityListener = wrapper.node.addOpacitySetListeners((target, value) -> {
+			inner.setOpacity((double) value / opacityMax);
+		});
 	}
 
 	private GroupPositionFrame findPosition() {
@@ -139,8 +156,12 @@ public class GroupLayerCanvasHandle extends CanvasHandle {
 		wrapper.node.removeTimeFramesAddListeners(timeAddListener);
 		wrapper.node.removeTimeFramesRemoveListeners(timeRemoveListener);
 		wrapper.node.removeTimeFramesMoveToListeners(timeMoveListener);
+		wrapper.node.removeOpacitySetListeners(opacityListener);
+		wrapper.child.removeListener(childListener);
+		enabledListener.run();
 		positionCleanup.forEach(r -> r.run());
 		timeCleanup.forEach(r -> r.run());
+		wrapper.canvasHandle = null;
 	}
 
 	@Override

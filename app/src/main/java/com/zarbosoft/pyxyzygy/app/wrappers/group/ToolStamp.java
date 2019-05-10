@@ -154,6 +154,8 @@ public class ToolStamp extends Tool {
 			return;
 		GroupLayer layer = GroupLayer.create(context);
 		layer.initialInnerSet(context, stampSource);
+		layer.initialEnabledSet(context, true);
+		layer.initialOpacitySet(context, Global.opacityMax);
 		GroupPositionFrame positionFrame = GroupPositionFrame.create(context);
 		positionFrame.initialLengthSet(context, -1);
 		positionFrame.initialOffsetSet(context, new Vector((int) Math.floor(start.x), (int) Math.floor(start.y)));

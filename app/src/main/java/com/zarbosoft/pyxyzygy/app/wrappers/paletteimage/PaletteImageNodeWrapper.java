@@ -98,14 +98,14 @@ public class PaletteImageNodeWrapper extends BaseImageNodeWrapper<PaletteImageNo
 	}
 
 	@Override
-	public CanvasHandle buildCanvas(
-			ProjectContext context, Window window, CanvasHandle parent
+	public CanvasHandle getCanvas(
+			ProjectContext context, Window window
 	) {
 		if (canvasHandle == null)
 			canvasHandle =
 					new BaseImageCanvasHandle<PaletteImageNode, PaletteImageFrame, PaletteTileBase, PaletteImage>(
 							context,
-							parent,
+							canvasParent,
 							this
 					) {
 						private Runnable paletteChangeListener;
@@ -294,7 +294,6 @@ public class PaletteImageNodeWrapper extends BaseImageNodeWrapper<PaletteImageNo
 		PaletteImageNode clone = PaletteImageNode.create(context);
 		clone.initialNameSet(context, uniqueName1(node.name()));
 		clone.initialOffsetSet(context, node.offset());
-		clone.initialOpacitySet(context, node.opacity());
 		clone.initialPaletteSet(context, node.palette());
 		clone.initialFramesAdd(context, node.frames().stream().map(frame -> {
 			PaletteImageFrame newFrame = PaletteImageFrame.create(context);

@@ -256,6 +256,12 @@ public class HelperJFX {
 		return out;
 	}
 
+	public static ToggleButton toggleButton(String icon, String hint) {
+		ToggleButton out = new ToggleButton(null, new ImageView(icon(icon)));
+		Tooltip.install(out, new Tooltip(hint));
+		return out;
+	}
+
 	public static WritableImage toImage(TrueColorImage image) {
 		final int width = image.getWidth();
 		final int height = image.getHeight();

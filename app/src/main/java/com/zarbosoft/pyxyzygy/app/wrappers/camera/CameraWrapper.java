@@ -37,15 +37,13 @@ public class CameraWrapper extends GroupNodeWrapper {
 	public CameraWrapper(ProjectContext context, Wrapper parent, int parentIndex, Camera node) {
 		super(context, parent, parentIndex, node);
 		this.node = node;
-		cleanupWidth = CustomBinding.bindBidirectional(
-				new CustomBinding.ScalarBinder<Integer>(node,
+		cleanupWidth = CustomBinding.bindBidirectional(new CustomBinding.ScalarBinder<Integer>(node,
 						"width",
 						v -> context.change(actionWidthChange, c -> c.camera(node).widthSet(v))
 				),
 				new CustomBinding.PropertyBinder<>(width.asObject())
 		);
-		cleanupHeight = CustomBinding.bindBidirectional(
-				new CustomBinding.ScalarBinder<Integer>(node,
+		cleanupHeight = CustomBinding.bindBidirectional(new CustomBinding.ScalarBinder<Integer>(node,
 						"height",
 						v -> context.change(actionHeightChange, c -> c.camera(node).heightSet(v))
 				),
@@ -67,37 +65,40 @@ public class CameraWrapper extends GroupNodeWrapper {
 	}
 
 	@Override
-	public CanvasHandle buildCanvas(
-			ProjectContext context, Window window, CanvasHandle parent
+	public CanvasHandle getCanvas(
+			ProjectContext context, Window window
 	) {
-		class CameraCanvasHandle extends GroupNodeCanvasHandle {
-			Rectangle cameraBorder;
+		if (canvasHandle == null) {
+			class CameraCanvasHandle extends GroupNodeCanvasHandle {
+				Rectangle cameraBorder;
 
-			public CameraCanvasHandle(
-					ProjectContext context, Window window, CanvasHandle parent, GroupNodeWrapper wrapper
-			) {
-				super(context, window, parent, wrapper);
-				cameraBorder = new Rectangle();
-				cameraBorder.strokeWidthProperty().bind(Bindings.divide(1.0, window.editor.zoomFactor));
-				cameraBorder.setOpacity(0.8);
-				cameraBorder.setBlendMode(BlendMode.DIFFERENCE);
-				cameraBorder.setStrokeType(StrokeType.OUTSIDE);
-				cameraBorder.setFill(Color.TRANSPARENT);
-				cameraBorder.setStroke(Color.GRAY);
-				cameraBorder.widthProperty().bind(width);
-				cameraBorder.heightProperty().bind(height);
-				cameraBorder.layoutXProperty().bind(width.divide(2).negate());
-				cameraBorder.layoutYProperty().bind(height.divide(2).negate());
-				overlay.getChildren().addAll(cameraBorder);
-			}
+				public CameraCanvasHandle(
+						ProjectContext context, Window window, CanvasHandle parent, GroupNodeWrapper wrapper
+				) {
+					super(context, window, parent, wrapper);
+					cameraBorder = new Rectangle();
+					cameraBorder.strokeWidthProperty().bind(Bindings.divide(1.0, window.editor.zoomFactor));
+					cameraBorder.setOpacity(0.8);
+					cameraBorder.setBlendMode(BlendMode.DIFFERENCE);
+					cameraBorder.setStrokeType(StrokeType.OUTSIDE);
+					cameraBorder.setFill(Color.TRANSPARENT);
+					cameraBorder.setStroke(Color.GRAY);
+					cameraBorder.widthProperty().bind(width);
+					cameraBorder.heightProperty().bind(height);
+					cameraBorder.layoutXProperty().bind(width.divide(2).negate());
+					cameraBorder.layoutYProperty().bind(height.divide(2).negate());
+					overlay.getChildren().addAll(cameraBorder);
+				}
 
-			@Override
-			public void remove(ProjectContext context) {
-				cameraBorder = null;
-				super.remove(context);
+				@Override
+				public void remove(ProjectContext context) {
+					cameraBorder = null;
+					super.remove(context);
+				}
 			}
+			canvasHandle = new CameraCanvasHandle(context, window, canvasHandle, this);
 		}
-		return canvasHandle = new CameraCanvasHandle(context, window, parent, this);
+		return canvasHandle;
 	}
 
 	@Override

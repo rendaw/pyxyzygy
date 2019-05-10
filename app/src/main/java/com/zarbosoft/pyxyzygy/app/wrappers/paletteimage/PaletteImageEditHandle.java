@@ -213,65 +213,59 @@ public class PaletteImageEditHandle extends EditHandle {
 			ProjectContext context, Window window, final PaletteImageNodeWrapper wrapper
 	) {
 		this.wrapper = wrapper;
-
+		wrapper.getCanvas(context, window);
 		positiveZoom.bind(wrapper.canvasHandle.zoom);
 
 		actions = Streams.concat(Stream.of(new Hotkeys.Action(Hotkeys.Scope.CANVAS, "paste", "Paste", pasteHotkey) {
-											   @Override
-											   public void run(ProjectContext context, Window window) {
-												   wrapper.config.tool.set(PaletteImageNodeConfig.TOOL_SELECT);
-												   ((ToolSelect) tool).paste(context, window);
-											   }
-										   },
-										   new Hotkeys.Action(Hotkeys.Scope.CANVAS,
-												   "last-brush",
-												   "Last brush",
-												   Hotkeys.Hotkey.create(KeyCode.SPACE, false, false, false)
-										   ) {
-											   @Override
-											   public void run(ProjectContext context, Window window) {
-												   if (wrapper.config.tool.get() == PaletteImageNodeConfig.TOOL_BRUSH) {
-													   if (wrapper.config.lastBrush < 0 ||
-															   wrapper.config.lastBrush >=
-																	   GUILaunch.profileConfig.paletteBrushes.size())
-														   return;
-													   setBrush(wrapper.config.lastBrush);
-												   } else {
-													   wrapper.config.tool.set(PaletteImageNodeConfig.TOOL_BRUSH);
-												   }
-											   }
-										   },
-										   new Hotkeys.Action(Hotkeys.Scope.CANVAS,
-												   "select",
-												   "Select",
-												   Hotkeys.Hotkey.create(KeyCode.S, false, false, false)
-										   ) {
-											   @Override
-											   public void run(ProjectContext context, Window window) {
-												   wrapper.config.tool.set(PaletteImageNodeConfig.TOOL_SELECT);
-											   }
-										   },
-										   new Hotkeys.Action(Hotkeys.Scope.CANVAS,
-												   "move",
-												   "Move layer",
-												   Hotkeys.Hotkey.create(KeyCode.M, false, false, false)
-										   ) {
-											   @Override
-											   public void run(ProjectContext context, Window window) {
-												   wrapper.config.tool.set(PaletteImageNodeConfig.TOOL_MOVE);
-											   }
-										   },
-										   new Hotkeys.Action(Hotkeys.Scope.CANVAS,
-												   "move-frame",
-												   "Move frame contents",
-												   Hotkeys.Hotkey.create(KeyCode.F, false, false, false)
-										   ) {
-											   @Override
-											   public void run(ProjectContext context, Window window) {
-												   wrapper.config.tool.set(TOOL_FRAME_MOVE);
-											   }
-										   }
-		), enumerate(Stream.of(KeyCode.DIGIT1,
+			@Override
+			public void run(ProjectContext context, Window window) {
+				wrapper.config.tool.set(PaletteImageNodeConfig.TOOL_SELECT);
+				((ToolSelect) tool).paste(context, window);
+			}
+		}, new Hotkeys.Action(Hotkeys.Scope.CANVAS,
+				"last-brush",
+				"Last brush",
+				Hotkeys.Hotkey.create(KeyCode.SPACE, false, false, false)
+		) {
+			@Override
+			public void run(ProjectContext context, Window window) {
+				if (wrapper.config.tool.get() == PaletteImageNodeConfig.TOOL_BRUSH) {
+					if (wrapper.config.lastBrush < 0 ||
+							wrapper.config.lastBrush >= GUILaunch.profileConfig.paletteBrushes.size())
+						return;
+					setBrush(wrapper.config.lastBrush);
+				} else {
+					wrapper.config.tool.set(PaletteImageNodeConfig.TOOL_BRUSH);
+				}
+			}
+		}, new Hotkeys.Action(Hotkeys.Scope.CANVAS,
+				"select",
+				"Select",
+				Hotkeys.Hotkey.create(KeyCode.S, false, false, false)
+		) {
+			@Override
+			public void run(ProjectContext context, Window window) {
+				wrapper.config.tool.set(PaletteImageNodeConfig.TOOL_SELECT);
+			}
+		}, new Hotkeys.Action(Hotkeys.Scope.CANVAS,
+				"move",
+				"Move layer",
+				Hotkeys.Hotkey.create(KeyCode.M, false, false, false)
+		) {
+			@Override
+			public void run(ProjectContext context, Window window) {
+				wrapper.config.tool.set(PaletteImageNodeConfig.TOOL_MOVE);
+			}
+		}, new Hotkeys.Action(Hotkeys.Scope.CANVAS,
+				"move-frame",
+				"Move frame contents",
+				Hotkeys.Hotkey.create(KeyCode.F, false, false, false)
+		) {
+			@Override
+			public void run(ProjectContext context, Window window) {
+				wrapper.config.tool.set(TOOL_FRAME_MOVE);
+			}
+		}), enumerate(Stream.of(KeyCode.DIGIT1,
 				KeyCode.DIGIT2,
 				KeyCode.DIGIT3,
 				KeyCode.DIGIT4,

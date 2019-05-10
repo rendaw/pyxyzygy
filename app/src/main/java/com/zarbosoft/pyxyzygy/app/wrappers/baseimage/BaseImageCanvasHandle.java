@@ -18,7 +18,6 @@ import static com.zarbosoft.pyxyzygy.app.Global.opacityMax;
 
 public class BaseImageCanvasHandle<N extends ProjectNode, F extends ProjectObject, T, L> extends CanvasHandle {
 	final CanvasHandle parent;
-	private final Listener.ScalarSet<ProjectNode, Integer> opacityListener;
 	private final Runnable mirrorCleanup;
 	public final BaseImageNodeWrapper<N, F, T, L> wrapper;
 	public Map<Long, WrapTile> wrapTiles = new HashMap<>();
@@ -34,9 +33,6 @@ public class BaseImageCanvasHandle<N extends ProjectNode, F extends ProjectObjec
 	) {
 		this.parent = parent;
 		this.wrapper = wrapper;
-		this.opacityListener = wrapper.node.addOpacitySetListeners((target, value) -> {
-			inner.setOpacity((double) value / opacityMax);
-		});
 
 		mirrorCleanup = wrapper.mirrorFrames(wrapper.node, frameCleanup, frame -> {
 			Listener.ScalarSet<F, Vector> offsetListener =
@@ -57,7 +53,6 @@ public class BaseImageCanvasHandle<N extends ProjectNode, F extends ProjectObjec
 	@Override
 	public void remove(ProjectContext context) {
 		wrapper.canvasHandle = null;
-		wrapper.node.removeOpacitySetListeners(opacityListener);
 		mirrorCleanup.run();
 		detachTiles();
 	}

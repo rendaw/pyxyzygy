@@ -116,15 +116,16 @@ public class Render {
 			throw new Assertion();
 		} else if (node1 instanceof GroupNode) {
 			GroupNode node = (GroupNode) node1;
-			double useOpacity = opacity * ((double) node.opacity() / opacityMax);
 			for (GroupLayer layer : node.layers())
-				render(context, layer, out, frame, crop.unshift(node.offset()), useOpacity);
+				render(context, layer, out, frame, crop.unshift(node.offset()), opacity);
 		} else if (node1 instanceof GroupLayer) {
 			GroupLayer node = (GroupLayer) node1;
-			GroupPositionFrame pos = GroupLayerWrapper.positionFrameFinder.findFrame(node, frame).frame;
-			int frame1 = GroupLayerWrapper.findInnerFrame(node, frame);
-			if (node.inner() != null)
-				render(context, node.inner(), out, frame1, crop.unshift(pos.offset()), opacity);
+			if (node.enabled() && node.inner() != null) {
+				GroupPositionFrame pos = GroupLayerWrapper.positionFrameFinder.findFrame(node, frame).frame;
+				int frame1 = GroupLayerWrapper.findInnerFrame(node, frame);
+				double useOpacity = opacity * ((double) node.opacity() / opacityMax);
+				render(context, node.inner(), out, frame1, crop.unshift(pos.offset()), useOpacity);
+			}
 		} else if (node1 instanceof TrueColorImageNode) {
 			TrueColorImageNode node = (TrueColorImageNode) node1;
 			render(
@@ -133,7 +134,7 @@ public class Render {
 					node,
 					TrueColorImageNodeWrapper.frameFinder.findFrame(node, frame).frame,
 					crop,
-					opacity * ((double) node.opacity() / opacityMax)
+					opacity
 			);
 		} else if (node1 instanceof PaletteImageNode) {
 			PaletteImageNode node = (PaletteImageNode) node1;
@@ -143,7 +144,7 @@ public class Render {
 					node,
 					PaletteImageNodeWrapper.frameFinder.findFrame(node, frame).frame,
 					crop,
-					opacity * ((double) node.opacity() / opacityMax)
+					opacity
 			);
 		} else {
 			throw new Assertion();

@@ -17,12 +17,6 @@ public abstract class ProjectNode extends ProjectObject {
 	@Configuration
 	Map<String, String> metadata;
 
-	/**
-	 * 0-100000
-	 */
-	@Configuration
-	int opacity;
-
 	@Configuration
 	public Vector offset;
 }

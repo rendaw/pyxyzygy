@@ -3,6 +3,7 @@ package com.zarbosoft.pyxyzygy.app;
 import com.zarbosoft.pyxyzygy.app.config.NodeConfig;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
+import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupLayerCanvasHandle;
 import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
 import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
 import com.zarbosoft.pyxyzygy.core.model.v0.ProjectObject;
@@ -17,6 +18,7 @@ public abstract class Wrapper {
 	public final SimpleObjectProperty<TreeItem<Wrapper>> tree = new SimpleObjectProperty<>();
 	public final SimpleBooleanProperty tagLifted = new SimpleBooleanProperty(false);
 	public final SimpleBooleanProperty tagCopied = new SimpleBooleanProperty(false);
+	public CanvasHandle canvasParent;
 
 	public abstract Wrapper getParent();
 
@@ -28,8 +30,8 @@ public abstract class Wrapper {
 
 	public abstract NodeConfig getConfig();
 
-	public abstract CanvasHandle buildCanvas(
-			ProjectContext context, Window window, CanvasHandle parent
+	public abstract CanvasHandle getCanvas(
+			ProjectContext context, Window window
 	);
 
 	public abstract EditHandle buildEditControls(
@@ -50,6 +52,10 @@ public abstract class Wrapper {
 	public abstract void deleteChild(
 			ProjectContext context, ChangeStepBuilder change, int index
 	);
+
+	public void setCanvasParent(CanvasHandle canvasHandle) {
+		this.canvasParent = canvasHandle;
+	}
 
 	public static enum TakesChildren {
 		NONE,

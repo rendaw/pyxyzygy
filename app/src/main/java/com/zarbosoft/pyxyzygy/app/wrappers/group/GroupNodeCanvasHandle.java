@@ -10,7 +10,6 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.ToolBar;
 
-import static com.zarbosoft.pyxyzygy.app.Global.opacityMax;
 import static com.zarbosoft.pyxyzygy.app.Misc.mirror;
 import static com.zarbosoft.pyxyzygy.app.Misc.noopConsumer;
 
@@ -19,7 +18,6 @@ public class GroupNodeCanvasHandle extends CanvasHandle {
 	private final ObservableList<CanvasHandle> childHandles = FXCollections.observableArrayList();
 	private final CanvasHandle parent;
 	final SimpleIntegerProperty positiveZoom = new SimpleIntegerProperty(0);
-	private final Listener.ScalarSet<ProjectNode, Integer> opacityListener;
 	private final Listener.ScalarSet<ProjectNode, Vector> offsetListener;
 
 	ToolBar toolBar = new ToolBar();
@@ -30,16 +28,14 @@ public class GroupNodeCanvasHandle extends CanvasHandle {
 	) {
 		this.parent = parent;
 		layerListenCleanup = mirror(wrapper.children, childHandles, c -> {
-			final CanvasHandle canvasHandle = c.buildCanvas(context, window, this);
+			c.setCanvasParent(this);
+			final CanvasHandle canvasHandle = c.getCanvas(context, window);
 			canvasHandle.setViewport(context,bounds.get(),positiveZoom.get());
 			return canvasHandle;
 		}, h -> h.remove(context), noopConsumer());
 		mirror(childHandles, inner.getChildren(), h -> {
 			return h.getWidget();
 		}, noopConsumer(), noopConsumer());
-		opacityListener = wrapper.node.addOpacitySetListeners((target, value) -> {
-			inner.setOpacity((double) value / opacityMax);
-		});
 		offsetListener = wrapper.node.addOffsetSetListeners((target, offset) -> {
 			inner.setLayoutX(offset.x);
 			inner.setLayoutY(offset.y);
@@ -83,7 +79,6 @@ public class GroupNodeCanvasHandle extends CanvasHandle {
 	public void remove(ProjectContext context) {
 		wrapper.canvasHandle = null;
 		childHandles.forEach(c -> c.remove(context));
-		wrapper.node.removeOpacitySetListeners(opacityListener);
 		wrapper.node.removeOffsetSetListeners(offsetListener);
 		layerListenCleanup.run();
 	}

@@ -2,14 +2,11 @@ package com.zarbosoft.pyxyzygy.app;
 
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
-import com.zarbosoft.pyxyzygy.core.model.v0.PaletteColor;
+import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupLayerWrapper;
 import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
-import com.zarbosoft.pyxyzygy.core.model.v0.ProjectObject;
-import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
 import com.zarbosoft.rendaw.common.Assertion;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
-import javafx.scene.paint.Color;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,37 +38,67 @@ public class Misc {
 	public static Runnable nodeFormFields(
 			ProjectContext context, WidgetFormBuilder builder, Wrapper wrapper
 	) {
-		ProjectNode node = (ProjectNode) wrapper.getValue();
 		return new Runnable() {
+			private Runnable enabledCleanup;
 			private Runnable opacityCleanup;
 			private Runnable nameCleanup;
 
 			{
+				ProjectNode node = (ProjectNode) wrapper.getValue();
+
+				GroupLayerWrapper layerWrapper;
+				if (wrapper.getParent() == null)
+					layerWrapper = null;
+				else {
+					layerWrapper = (GroupLayerWrapper) wrapper.getParent();
+				}
+
 				builder.text("Name", t -> {
-					this.nameCleanup =
-							CustomBinding.bindBidirectional(new CustomBinding.ScalarBinder<>(node::addNameSetListeners,
+					this.nameCleanup = CustomBinding.bindBidirectional(
+							new CustomBinding.ScalarBinder<>(node::addNameSetListeners,
 									node::removeNameSetListeners,
-									v -> context.change(new ProjectContext.Tuple(wrapper, "name"), c -> c.projectNode(node).nameSet(v))
-							), new CustomBinding.PropertyBinder<>(t.textProperty()));
-				});
-				builder.slider("Opacity", 0, Global.opacityMax, slider -> {
-					slider.setValue(node.opacity());
-					opacityCleanup = CustomBinding.bindBidirectional(
-							new CustomBinding.ScalarBinder<Integer>(
-									node,
-									"opacity",
-									v -> context.change(new ProjectContext.Tuple(wrapper, "opacity"), c -> c.projectNode(node).opacitySet(v))
+									v -> context.change(new ProjectContext.Tuple(wrapper, "name"),
+											c -> c.projectNode(node).nameSet(v)
+									)
 							),
-							new CustomBinding.PropertyBinder<>(slider.valueProperty()).bimap(
-									d -> Optional.of((int) (double) d), i -> (double) (int) i
-					));
+							new CustomBinding.PropertyBinder<>(t.textProperty())
+					);
 				});
+
+				if (layerWrapper != null) {
+					builder.check("Enabled", cb -> {
+						enabledCleanup = CustomBinding.bindBidirectional(new CustomBinding.ScalarBinder<Boolean>(
+								layerWrapper.node,
+								"enabled",
+								v -> context.change(new ProjectContext.Tuple(layerWrapper, "enabled"),
+										c -> c.groupLayer(layerWrapper.node).enabledSet(v)
+								)
+						), new CustomBinding.PropertyBinder<>(cb.selectedProperty()));
+					});
+					builder.slider("Opacity", 0, Global.opacityMax, slider -> {
+						slider.setValue(layerWrapper.node.opacity());
+						opacityCleanup = CustomBinding.bindBidirectional(new CustomBinding.ScalarBinder<Integer>(
+										layerWrapper.node,
+										"opacity",
+										v -> context.change(new ProjectContext.Tuple(wrapper, "opacity"),
+												c -> c.groupLayer(layerWrapper.node).opacitySet(v)
+										)
+								),
+								new CustomBinding.PropertyBinder<>(slider.valueProperty()).bimap(d -> Optional.of((int) (double) d),
+										i -> (double) (int) i
+								)
+						);
+					});
+				}
 			}
 
 			@Override
 			public void run() {
 				nameCleanup.run();
-				opacityCleanup.run();
+				if (enabledCleanup != null)
+					enabledCleanup.run();
+				if (opacityCleanup != null)
+					opacityCleanup.run();
 			}
 		};
 	}
@@ -118,7 +145,9 @@ public class Misc {
 		};
 	}
 
-	public static Consumer noopConsumer = t -> {};
+	public static Consumer noopConsumer = t -> {
+	};
+
 	public static <T> Consumer<T> noopConsumer() {
 		return noopConsumer;
 	}

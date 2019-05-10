@@ -12,4 +12,13 @@ public class GroupLayer extends ProjectObject {
 	public List<GroupPositionFrame> positionFrames;
 	@Configuration
 	public ProjectNode inner;
+
+	/**
+	 * 0-100000
+	 */
+	@Configuration
+	public int opacity;
+
+	@Configuration
+	public boolean enabled;
 }
