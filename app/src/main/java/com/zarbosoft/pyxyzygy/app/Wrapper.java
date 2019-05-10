@@ -8,13 +8,13 @@ import com.zarbosoft.pyxyzygy.core.model.v0.ProjectNode;
 import com.zarbosoft.pyxyzygy.core.model.v0.ProjectObject;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.control.TreeItem;
 
 public abstract class Wrapper {
 	public int parentIndex;
 	public final SimpleObjectProperty<TreeItem<Wrapper>> tree = new SimpleObjectProperty<>();
-	public final SimpleBooleanProperty tagViewing = new SimpleBooleanProperty(false);
 	public final SimpleBooleanProperty tagLifted = new SimpleBooleanProperty(false);
 	public final SimpleBooleanProperty tagCopied = new SimpleBooleanProperty(false);
 

@@ -56,7 +56,6 @@ public class Structure {
 	VBox layout = new VBox();
 	TreeView<Wrapper> tree;
 	ToolBar toolbar;
-	Set<Wrapper> taggedViewing = new HashSet<>();
 	Set<Wrapper> taggedLifted = new HashSet<>();
 	Set<Wrapper> taggedCopied = new HashSet<>();
 	Hotkeys.Action[] actions = new Hotkeys.Action[] {
@@ -141,12 +140,7 @@ public class Structure {
 	}
 
 	public void selectForView(Wrapper wrapper) {
-		for (Wrapper w : taggedViewing)
-			w.tagViewing.set(false);
-		taggedViewing.clear();
 		if (wrapper != null) {
-			wrapper.tagViewing.set(true);
-			taggedViewing.add(wrapper);
 			window.selectedForView.set(wrapper.buildCanvas(context, window, null));
 			if (main)
 				context.config.viewPath = getPath(wrapper.tree.get()).collect(Collectors.toList());
@@ -173,8 +167,6 @@ public class Structure {
 				taggedCopied.remove(wrapper);
 			if (wrapper.tagLifted.get())
 				taggedLifted.remove(wrapper);
-			if (wrapper.tagViewing.get())
-				taggedViewing.remove(wrapper);
 		}
 	}
 
@@ -205,7 +197,7 @@ public class Structure {
 		tree = new TreeView();
 		tree.getStyleClass().addAll("part-structure");
 		tree.setShowRoot(false);
-		tree.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+		tree.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
 		tree.setMinHeight(0);
 		tree.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
 			if (context.hotkeys.event(context, window, Hotkeys.Scope.STRUCTURE, e))
@@ -224,15 +216,10 @@ public class Structure {
 		});
 		tree.setCellFactory((TreeView<Wrapper> param) -> {
 			return new TreeCell<Wrapper>() {
+				private Runnable viewingCleanup;
 				final ImageView showViewing = new ImageView();
 				final ImageView showGrabState = new ImageView();
 				final SimpleObjectProperty<Wrapper> wrapper = new SimpleObjectProperty<>(null);
-				ChangeListener<Boolean> viewingListener = (observable, oldValue, newValue) -> {
-					if (newValue)
-						showViewing.setImage(icon("eye.png"));
-					else
-						showViewing.setImage(null);
-				};
 				ChangeListener<Boolean> copyStateListener = (observable, oldValue, newValue) -> {
 					if (wrapper.get().tagCopied.get())
 						showGrabState.setImage(icon("content-copy.png"));
@@ -262,14 +249,27 @@ public class Structure {
 					});
 					wrapper.addListener((observable, oldValue, newValue) -> {
 						if (oldValue != null) {
-							oldValue.tagViewing.removeListener(viewingListener);
+							viewingCleanup.run();
 							oldValue.tagLifted.removeListener(copyStateListener);
 							oldValue.tagCopied.removeListener(copyStateListener);
 							((ProjectNode) oldValue.getValue()).removeNameSetListeners(nameSetListener);
 						}
 						if (newValue != null) {
-							newValue.tagViewing.addListener(viewingListener);
-							viewingListener.changed(null, null, newValue.tagViewing.get());
+							viewingCleanup = CustomBinding.bind(showViewing.imageProperty(),
+									new CustomBinding.DoubleHalfBinder<EditHandle, CanvasHandle>(
+											new CustomBinding.PropertyHalfBinder<>(window.selectedForEdit),
+											new CustomBinding.PropertyHalfBinder<>(window.selectedForView)
+									).map((edit, view) -> {
+										boolean isEdit = edit != null && edit.getWrapper() == wrapper.get();
+										boolean isView = view != null && view.getWrapper() == wrapper.get();
+										if (isEdit && isView)
+											return opt(icon("viewing-editing.png"));
+										if (isView)
+											return opt(icon("viewing.png"));
+										if (isEdit)
+											return opt(icon("editing.png"));
+										return opt(null);
+									}));
 							newValue.tagCopied.addListener(copyStateListener);
 							newValue.tagLifted.addListener(copyStateListener);
 							copyStateListener.changed(null, null, null);
