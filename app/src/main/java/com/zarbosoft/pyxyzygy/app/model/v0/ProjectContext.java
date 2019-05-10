@@ -176,10 +176,14 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 		});
 	}
 
+	public static Pattern nameCountPattern = Pattern.compile("(.*) \\([0-9]+\\)$");
+
+	public static String splitName(String name) {
+		return nameCountPattern.matcher(name).replaceAll(r -> r.group(1));
+	}
+
 	public static void countUniqueName(String name) {
-		Pattern re = Pattern.compile("(.*) [0-9]+");
-		name = re.matcher(name).replaceAll(r -> r.group(1));
-		uniqueName(name);
+		uniqueName(splitName(name));
 	}
 
 	/**
@@ -189,6 +193,7 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 	 * @return
 	 */
 	public static String uniqueName(String name) {
+		name = splitName(name);
 		int count = names.compute(name, (n, i) -> i == null ? 1 : i + 1);
 		return count == 1 ? name : String.format("%s (%s)", name, count);
 	}
@@ -200,6 +205,7 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 	 * @return
 	 */
 	public static String uniqueName1(String name) {
+		name = splitName(name);
 		int count = names.compute(name, (n, i) -> i == null ? 2 : i + 1);
 		return count == 1 ? name : String.format("%s (%s)", name, count);
 	}
