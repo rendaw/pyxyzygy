@@ -43,12 +43,12 @@ class RowAdapterPaletteImageNode extends BaseFrameRowAdapter<PaletteImageLayer, 
 
 	@Override
 	protected void removeFrame(ChangeStepBuilder change, int at, int count) {
-		change.paletteImageNode(node).framesRemove(at, count);
+		change.paletteImageLayer(node).framesRemove(at, count);
 	}
 
 	@Override
 	protected void moveFramesTo(ChangeStepBuilder change, int source, int count, int dest) {
-		change.paletteImageNode(node).framesMoveTo(source, count, dest);
+		change.paletteImageLayer(node).framesMoveTo(source, count, dest);
 	}
 
 	@Override
@@ -109,7 +109,7 @@ class RowAdapterPaletteImageNode extends BaseFrameRowAdapter<PaletteImageLayer, 
 
 	@Override
 	protected void addFrame(ChangeStepBuilder change, int at, PaletteImageFrame frame) {
-		change.paletteImageNode(node).framesAdd(at, frame);
+		change.paletteImageLayer(node).framesAdd(at, frame);
 	}
 
 	@Override

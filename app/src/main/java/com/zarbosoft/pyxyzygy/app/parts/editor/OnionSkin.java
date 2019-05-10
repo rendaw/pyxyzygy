@@ -11,6 +11,7 @@ import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
 import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.scene.Group;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
@@ -25,6 +26,7 @@ public class OnionSkin {
 	private final SimpleObjectProperty<DoubleRectangle> bounds;
 	private final Runnable onCleanup;
 	private final CustomBinding.HalfBinder<Boolean> on;
+	private final Group overlay;
 
 	// Own
 	private boolean lastOn = false;
@@ -45,14 +47,15 @@ public class OnionSkin {
 		bounds.addListener((observable, oldValue, newValue) -> render(context));
 		GUILaunch.profileConfig.onionSkinColor.addListener((observable, oldValue, newValue) -> render(context));
 
-		editHandle.getCanvas().overlay.getChildren().add(widget);
+		this.overlay = editHandle.getCanvas().overlay;
+		overlay.getChildren().add(widget);
 
 		render(context);
 	}
 
 	public void remove() {
 		onCleanup.run();
-		editHandle.getCanvas().overlay.getChildren().remove(widget);
+		overlay.getChildren().remove(widget);
 	}
 
 	private void render(ProjectContext context) {

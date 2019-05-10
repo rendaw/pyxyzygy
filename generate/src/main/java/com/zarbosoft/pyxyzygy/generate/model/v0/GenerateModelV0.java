@@ -519,7 +519,7 @@ public class GenerateModelV0 extends TaskBase {
 						return this;
 					}
 
-					public ChangeBuilder addParameter(TypeInfo type, String name, boolean inc) {
+					public ChangeBuilder addParameter(TypeInfo type, String name) {
 						change.addField(FieldSpec.builder(toPoet(type), name).addModifiers(PUBLIC).build());
 						changeConstructor
 								.addParameter(toPoet(type), name)
@@ -534,7 +534,6 @@ public class GenerateModelV0 extends TaskBase {
 								return out.unindent().build();
 							};
 							changeConstructor.addCode(incDecBuilder.apply(true));
-							changeApply2.add(incDecBuilder.apply(inc));
 							changeDelete.addCode(incDecBuilder.apply(false));
 							changeDebugCounts.add("if ($L != null) increment.accept($L);\n", name, name);
 						}
@@ -722,14 +721,20 @@ public class GenerateModelV0 extends TaskBase {
 								changeMerge.add("value.incRef(context);\n");
 							changeMerge.add("return true;\n");
 							setBuilder
-									.addParameter(field, "value", false)
+									.addParameter(field, "value")
 									.addCode("if ($T.equals(value, target.$L)) return;\n", Objects.class, fieldName)
 									.addCode(
 											"changeStep.add(project, new $T(project, target, target.$L));\n",
 											CHANGE_TOKEN_NAME,
 											fieldName
-									)
-									.addCode("target.$L = value;\n", fieldName)
+									);
+							if (Helper.flattenPoint(field))
+									setBuilder.addCode("if (target.$L != null) target.$L.decRef(project);\n", fieldName, fieldName);
+							setBuilder
+									.addCode("target.$L = value;\n", fieldName);
+							if (Helper.flattenPoint(field))
+									setBuilder.addCode("if (value != null) value.incRef(project);\n");
+							setBuilder
 									.listenersAdd("listener.accept(this, $L);\n", fieldName)
 									.mergeAdd(changeMerge.build())
 									.finish();
@@ -864,7 +869,7 @@ public class GenerateModelV0 extends TaskBase {
 								ParameterizedTypeName.get(ClassName.get(Listener.ListRemove.class), cloneName);
 						ChangeBuilder removeBuilder = new ChangeBuilder(fieldName, "remove", removeListener);
 						addBuilder
-								.addParameter(new TypeInfo(int.class), "at", false)
+								.addParameter(new TypeInfo(int.class), "at")
 								.addListParameter(elementType, "value", true)
 								.addCode("target.$L.addAll(at, value);\n", fieldName)
 								.addCode(
@@ -875,8 +880,8 @@ public class GenerateModelV0 extends TaskBase {
 								.finish();
 						TypeName listType = ParameterizedTypeName.get(ClassName.get(List.class), toPoet(elementType));
 						removeBuilder
-								.addParameter(new TypeInfo(int.class), "at", false)
-								.addParameter(new TypeInfo(int.class), "count", false)
+								.addParameter(new TypeInfo(int.class), "at")
+								.addParameter(new TypeInfo(int.class), "count")
 								.addCode("final $T sublist = target.$L.subList(at, at + count);\n", listType, fieldName)
 								.addCode(
 										"changeStep.add(project, new $T(project, target, at, new $T(sublist)));\n",
@@ -924,9 +929,9 @@ public class GenerateModelV0 extends TaskBase {
 						final ParameterizedTypeName moveToListener =
 								ParameterizedTypeName.get(ClassName.get(Listener.ListMoveTo.class), cloneName);
 						ChangeBuilder moveToBuilder = new ChangeBuilder(fieldName, "moveTo", moveToListener)
-								.addParameter(new TypeInfo(int.class), "source", false)
-								.addParameter(new TypeInfo(int.class), "count", false)
-								.addParameter(new TypeInfo(int.class), "dest", false)
+								.addParameter(new TypeInfo(int.class), "source")
+								.addParameter(new TypeInfo(int.class), "count")
+								.addParameter(new TypeInfo(int.class), "dest")
 								.addCode("if (source == dest) return;\n")
 								.addCode(
 										"if (count >= target.$L.size()) throw new $T(\"Count is greater than size.\");\n",

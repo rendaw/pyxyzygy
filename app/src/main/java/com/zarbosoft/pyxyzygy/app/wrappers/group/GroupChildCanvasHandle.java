@@ -43,7 +43,8 @@ public class GroupChildCanvasHandle extends CanvasHandle {
 		timeCleanup = new ArrayList<>();
 
 		childListener = (observable, oldValue, newValue) -> {
-			newValue.setCanvasParent(this);
+			if (newValue != null)
+				newValue.setCanvasParent(this);
 		};
 		wrapper.child.addListener(childListener);
 		enabledListener = new CustomBinding.DoubleHalfBinder<>(new CustomBinding.PropertyHalfBinder<>(wrapper.child),

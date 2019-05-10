@@ -167,7 +167,7 @@ public class ToolStamp extends Tool {
 		layer.initialTimeFramesAdd(context, ImmutableList.of(timeFrame));
 		window.structure.suppressSelect = true;
 		try {
-			context.change(null, c -> c.groupNode(wrapper.node).childrenAdd(layer));
+			context.change(null, c -> c.groupLayer(wrapper.node).childrenAdd(layer));
 		} finally {
 			window.structure.suppressSelect = false;
 		}

@@ -40,7 +40,7 @@ public class ToolMove extends Tool {
 		context.change(
 				new ProjectContext.Tuple(wrapper, "move"),
 				c -> c
-						.projectNode((ProjectLayer) wrapper.getValue())
+						.projectLayer((ProjectLayer) wrapper.getValue())
 						.offsetSet(globalEnd.minus(markStart).plus(markStartOffset).toInt())
 		);
 	}

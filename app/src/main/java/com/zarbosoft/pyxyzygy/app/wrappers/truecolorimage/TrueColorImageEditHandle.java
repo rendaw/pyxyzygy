@@ -37,6 +37,7 @@ import java.util.stream.Stream;
 
 import static com.zarbosoft.pyxyzygy.app.Global.pasteHotkey;
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
+import static com.zarbosoft.pyxyzygy.app.Misc.separateFormField;
 import static com.zarbosoft.pyxyzygy.app.config.NodeConfig.TOOL_MOVE;
 import static com.zarbosoft.pyxyzygy.app.config.TrueColorImageNodeConfig.TOOL_FRAME_MOVE;
 import static com.zarbosoft.pyxyzygy.app.config.TrueColorImageNodeConfig.TOOL_SELECT;
@@ -260,7 +261,9 @@ public class TrueColorImageEditHandle extends EditHandle {
 		// Tab
 		VBox tabBox = new VBox();
 		tabBox.getChildren().addAll(new TitledPane("Layer",
-				new WidgetFormBuilder().apply(b -> cleanup.add(Misc.nodeFormFields(context, b, wrapper))).build()
+				new WidgetFormBuilder().apply(b -> cleanup.add(Misc.nodeFormFields(context, b, wrapper)))
+						.apply(b -> separateFormField(context, b, wrapper))
+						.build()
 		), toolPane = new TitledPane("Tool", null));
 		window.layerTabContent.set(this, pad(tabBox));
 

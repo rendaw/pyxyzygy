@@ -119,7 +119,7 @@ public class GroupNodeWrapper extends Wrapper {
 	public void deleteChild(
 			ProjectContext context, ChangeStepBuilder change, int index
 	) {
-		change.groupNode(node).childrenRemove(index, 1);
+		change.groupLayer(node).childrenRemove(index, 1);
 	}
 
 	@Override

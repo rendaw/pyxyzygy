@@ -89,7 +89,7 @@ class RowAdapterTrueColorImageNode extends BaseFrameRowAdapter<TrueColorImageLay
 	protected void addFrame(
 			ChangeStepBuilder change, int at, TrueColorImageFrame frame
 	) {
-		change.trueColorImageNode(node).framesAdd(at, frame);
+		change.trueColorImageLayer(node).framesAdd(at, frame);
 	}
 
 	@Override
@@ -123,12 +123,12 @@ class RowAdapterTrueColorImageNode extends BaseFrameRowAdapter<TrueColorImageLay
 
 	@Override
 	protected void removeFrame(ChangeStepBuilder change, int at, int count) {
-		change.trueColorImageNode(node).framesRemove(at, count);
+		change.trueColorImageLayer(node).framesRemove(at, count);
 	}
 
 	@Override
 	protected void moveFramesTo(ChangeStepBuilder change, int source, int count, int dest) {
-		change.trueColorImageNode(node).framesMoveTo(source, count, dest);
+		change.trueColorImageLayer(node).framesMoveTo(source, count, dest);
 	}
 
 	@Override

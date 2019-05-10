@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.zarbosoft.pyxyzygy.app.Misc.nodeFormFields;
+import static com.zarbosoft.pyxyzygy.app.Misc.separateFormField;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.pad;
 
 public class GroupNodeEditHandle extends EditHandle {
@@ -88,7 +89,9 @@ public class GroupNodeEditHandle extends EditHandle {
 	public VBox buildTab(ProjectContext context, Window window, TitledPane toolProps) {
 		VBox tabBox = new VBox();
 		tabBox.getChildren().addAll(new TitledPane("Layer",
-				new WidgetFormBuilder().apply(b -> cleanup.add(nodeFormFields(context, b, wrapper))).build()
+				new WidgetFormBuilder().apply(b -> cleanup.add(nodeFormFields(context, b, wrapper)))
+						.apply(b -> separateFormField(context, b, wrapper))
+						.build()
 		), toolProps);
 		return tabBox;
 	}

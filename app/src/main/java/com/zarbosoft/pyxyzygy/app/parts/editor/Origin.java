@@ -56,6 +56,8 @@ public class Origin extends Group {
 			}
 		});
 		window.selectedForEdit.addListener(new ChangeListener<EditHandle>() {
+			private Group overlay;
+
 			{
 				changed(null, null, window.selectedForEdit.get());
 			}
@@ -64,12 +66,14 @@ public class Origin extends Group {
 			public void changed(
 					ObservableValue<? extends EditHandle> observable, EditHandle oldValue, EditHandle newValue
 			) {
-				if (oldValue != null) {
-					oldValue.getCanvas().overlay.getChildren().remove(Origin.this);
+				if (overlay != null) {
+					overlay.getChildren().remove(Origin.this);
+					overlay = null;
 				}
 
 				if (newValue != null) {
-					newValue.getCanvas().overlay.getChildren().addAll(Origin.this);
+					this.overlay = newValue.getCanvas().overlay;
+					overlay.getChildren().addAll(Origin.this);
 				}
 			}
 		});

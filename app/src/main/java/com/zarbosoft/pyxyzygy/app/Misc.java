@@ -3,10 +3,14 @@ package com.zarbosoft.pyxyzygy.app;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupChildWrapper;
+import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
+import com.zarbosoft.pyxyzygy.core.model.v0.GroupChild;
 import com.zarbosoft.pyxyzygy.core.model.v0.ProjectLayer;
 import com.zarbosoft.rendaw.common.Assertion;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
+import javafx.scene.control.Tooltip;
+import javafx.scene.image.ImageView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,6 +18,8 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 
 public class Misc {
 	public static void moveTo(List list, int source, int count, int dest) {
@@ -58,7 +64,7 @@ public class Misc {
 							new CustomBinding.ScalarBinder<>(node::addNameSetListeners,
 									node::removeNameSetListeners,
 									v -> context.change(new ProjectContext.Tuple(wrapper, "name"),
-											c -> c.projectNode(node).nameSet(v)
+											c -> c.projectLayer(node).nameSet(v)
 									)
 							),
 							new CustomBinding.PropertyBinder<>(t.textProperty())
@@ -101,6 +107,29 @@ public class Misc {
 					opacityCleanup.run();
 			}
 		};
+	}
+
+	public static void separate(ProjectContext context, ChangeStepBuilder c, Wrapper wrapper) {
+		ProjectLayer replacement = wrapper.separateClone(context);
+		int at = wrapper.parentIndex;
+		if (wrapper.getParent() == null) {
+			c.project(context.project).topAdd(at, replacement);
+			c.project(context.project).topRemove(at + 1, 1);
+		} else {
+			GroupChild parent = (GroupChild) wrapper.getParent().getValue();
+			c.groupChild(parent).innerSet(replacement);
+		}
+	}
+
+	public static void separateFormField(
+			ProjectContext context, WidgetFormBuilder builder, Wrapper wrapper
+	) {
+		builder.buttons(build -> build.button(b -> {
+			b.setText("Layer");
+			b.setGraphic(new ImageView(icon("link-off.png")));
+			b.setTooltip(new Tooltip("Make layer unique"));
+			b.setOnAction(e -> context.change(null, c -> separate(context, c, wrapper)));
+		}));
 	}
 
 	public static <T, R> Runnable mirror(
