@@ -17,7 +17,7 @@ public class GroupNodeWrapper extends Wrapper {
 	private final Wrapper parent;
 	final GroupLayer node;
 	final GroupNodeConfig config;
-	final ObservableList<Wrapper> children = FXCollections.observableArrayList();
+	final ObservableList<GroupChildWrapper> children = FXCollections.observableArrayList();
 	private final Runnable childrenListenCleanup;
 
 	GroupChild specificChild;
@@ -32,7 +32,7 @@ public class GroupNodeWrapper extends Wrapper {
 		tree.set(new TreeItem<>(this));
 
 		childrenListenCleanup = node.mirrorChildren(children, child -> {
-			return Window.createNode(context, this, -1, child);
+			return (GroupChildWrapper)Window.createNode(context, this, -1, child);
 		}, child -> {
 			child.remove(context);
 		}, at -> {

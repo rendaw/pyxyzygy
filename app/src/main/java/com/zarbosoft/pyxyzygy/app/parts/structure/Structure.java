@@ -8,12 +8,15 @@ import com.zarbosoft.pyxyzygy.app.model.v0.TrueColorTile;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupChildWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeWrapper;
+import com.zarbosoft.pyxyzygy.app.wrappers.paletteimage.PaletteImageNodeWrapper;
+import com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage.TrueColorImageNodeWrapper;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.pyxyzygy.core.model.v0.*;
 import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
 import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
+import com.zarbosoft.rendaw.common.Assertion;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleObjectProperty;
@@ -21,6 +24,7 @@ import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
+import javafx.collections.ObservableSet;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
@@ -35,7 +39,9 @@ import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -56,16 +62,9 @@ public class Structure {
 	VBox layout = new VBox();
 	TreeView<Wrapper> tree;
 	ToolBar toolbar;
-	Set<Wrapper> taggedLifted = new HashSet<>();
-	Set<Wrapper> taggedCopied = new HashSet<>();
+	ObservableSet<Wrapper> taggedLifted = FXCollections.observableSet();
 	Hotkeys.Action[] actions = new Hotkeys.Action[] {
-			new Hotkeys.Action(Hotkeys.Scope.STRUCTURE, "link", "Copy", Global.copyHotkey) {
-				@Override
-				public void run(ProjectContext context, Window window) {
-					link();
-				}
-			},
-			new Hotkeys.Action(Hotkeys.Scope.STRUCTURE, "lift", "Cut", Global.cutHotkey) {
+			new Hotkeys.Action(Hotkeys.Scope.STRUCTURE, "lift", "Lift", Global.cutHotkey) {
 				@Override
 				public void run(ProjectContext context, Window window) {
 					lift();
@@ -88,6 +87,18 @@ public class Structure {
 				public void run(ProjectContext context, Window window) {
 					context.change(null, c -> {
 						duplicate(c);
+					});
+				}
+			},
+			new Hotkeys.Action(Hotkeys.Scope.STRUCTURE,
+					"link",
+					"Link",
+					Hotkeys.Hotkey.create(KeyCode.L, true, false, false)
+			) {
+				@Override
+				public void run(ProjectContext context, Window window) {
+					context.change(null, c -> {
+						link(c);
 					});
 				}
 			},
@@ -164,8 +175,6 @@ public class Structure {
 	public void treeItemRemoved(TreeItem<Wrapper> item) {
 		Wrapper wrapper = item.getValue();
 		if (wrapper != null) {
-			if (wrapper.tagCopied.get())
-				taggedCopied.remove(wrapper);
 			if (wrapper.tagLifted.get())
 				taggedLifted.remove(wrapper);
 		}
@@ -222,9 +231,7 @@ public class Structure {
 				final ImageView showGrabState = new ImageView();
 				final SimpleObjectProperty<Wrapper> wrapper = new SimpleObjectProperty<>(null);
 				ChangeListener<Boolean> copyStateListener = (observable, oldValue, newValue) -> {
-					if (wrapper.get().tagCopied.get())
-						showGrabState.setImage(icon("content-copy.png"));
-					else if (wrapper.get().tagLifted.get())
+					if (wrapper.get().tagLifted.get())
 						showGrabState.setImage(icon("content-cut.png"));
 					else
 						showGrabState.setImage(null);
@@ -252,7 +259,6 @@ public class Structure {
 						if (oldValue != null) {
 							viewingCleanup.run();
 							oldValue.tagLifted.removeListener(copyStateListener);
-							oldValue.tagCopied.removeListener(copyStateListener);
 							((ProjectLayer) oldValue.getValue()).removeNameSetListeners(nameSetListener);
 						}
 						if (newValue != null) {
@@ -285,7 +291,6 @@ public class Structure {
 										).node, "enabled").map(e -> opt(!e)));
 									})
 							);
-							newValue.tagCopied.addListener(copyStateListener);
 							newValue.tagLifted.addListener(copyStateListener);
 							copyStateListener.changed(null, null, null);
 							((ProjectLayer) newValue.getValue()).addNameSetListeners(nameSetListener);
@@ -457,15 +462,38 @@ public class Structure {
 				});
 			});
 		});
-		MenuItem duplicateButton = new MenuItem("Duplicate");
+		MenuItem duplicateButton = new MenuItem("Duplicate", new ImageView(icon("content-copy.png")));
 		duplicateButton.disableProperty().bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedIndices()));
 		duplicateButton.setOnAction(e -> {
 			context.change(null, c -> {
 				duplicate(c);
 			});
 		});
+		MenuItem linkButton = new MenuItem("Link", new ImageView(icon("link-plus.png")));
+		linkButton.disableProperty().bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedIndices()));
+		linkButton.setOnAction(e -> {
+			context.change(null, c -> {
+				link(c);
+			});
+		});
 		MenuButton addButton = HelperJFX.menuButton("plus.png");
-		addButton.getItems().addAll(addImage, addPalette, importImage, addGroup, addCamera, duplicateButton);
+		addButton.getItems().addAll(duplicateButton,
+				linkButton,
+				new SeparatorMenuItem(),
+				addImage,
+				addPalette,
+				addGroup,
+				addCamera,
+				new SeparatorMenuItem(),
+				importImage
+		);
+		Button mainDuplicateButton = HelperJFX.button("content-copy.png", "Duplicate");
+		mainDuplicateButton.disableProperty().bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedIndices()));
+		mainDuplicateButton.setOnAction(e -> {
+			context.change(null, c -> {
+				duplicate(c);
+			});
+		});
 		Button removeButton = HelperJFX.button("minus.png", "Remove");
 		removeButton.disableProperty().bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedIndices()));
 		removeButton.setOnAction(e -> {
@@ -531,43 +559,88 @@ public class Structure {
 			});
 		});
 		MenuItem cutButton = new MenuItem("Lift");
+		cutButton.disableProperty().bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedItems()));
 		cutButton.setOnAction(e -> {
 			lift();
 		});
-		MenuItem copyButton = new MenuItem("Link");
-		copyButton.setOnAction(e -> {
-			link();
-		});
 		MenuItem linkBeforeButton = new MenuItem("Place before");
+		linkBeforeButton.disableProperty().bind(Bindings.isEmpty(taggedLifted));
 		linkBeforeButton.setOnAction(e -> {
 			context.change(null, c -> {
 				placeBefore(c);
 			});
 		});
 		MenuItem linkInButton = new MenuItem("Place in");
+		linkInButton.disableProperty().bind(Bindings.isEmpty(taggedLifted));
 		linkInButton.setOnAction(e -> {
 			context.change(null, c -> {
 				placeIn(c);
 			});
 		});
 		MenuItem linkAfterButton = new MenuItem("Place after");
+		linkAfterButton.disableProperty().bind(Bindings.isEmpty(taggedLifted));
 		linkAfterButton.setOnAction(e -> {
 			context.change(null, c -> {
 				placeAfter(c);
 			});
 		});
-		MenuItem unlinkButton = new MenuItem("Separate");
+		MenuItem unlinkButton = new MenuItem("Unlink");
+		unlinkButton.disableProperty().bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedItems()));
 		unlinkButton.setOnAction(e -> {
 			context.change(null, c -> {
 				Wrapper edit = window.selectedForEdit.get().getWrapper();
 				separate(context, c, edit);
 			});
 		});
-		MenuButton linkButton = HelperJFX.menuButton("pencil.png");
-		linkButton
+		/* WIP
+		MenuItem mergeUpButton = new MenuItem("Merge up");
+		CustomBinding.bind(mergeUpButton.disableProperty(),
+				new CustomBinding.PropertyHalfBinder<>(tree.getSelectionModel().selectedItemProperty()).map(i -> {
+					if (i.getValue().getParent() == null)
+						return opt(false);
+					int index = i.getValue().parentIndex;
+					if (index == 0)
+						return opt(false);
+					Wrapper base = i.getValue();
+					Wrapper over = i.getParent().getChildren().get(index - 1).getValue();
+					if (!(
+							base instanceof TrueColorImageNodeWrapper && over instanceof TrueColorImageNodeWrapper
+					) || (
+							base instanceof PaletteImageNodeWrapper &&
+									over instanceof PaletteImageNodeWrapper &&
+									((PaletteImageNodeWrapper) base).node.palette() ==
+											((PaletteImageNodeWrapper) over).node.palette()
+					))
+						return opt(false);
+					return opt(true);
+				})
+		);
+		mergeUpButton.setOnAction(e -> {
+			TreeItem<Wrapper> i = tree.getSelectionModel().getSelectedItem();
+			int index = i.getValue().parentIndex;
+			Wrapper base = i.getValue();
+			Wrapper over = i.getParent().getChildren().get(index - 1).getValue();
+			if (over.getValue() instanceof TrueColorImageLayer) {
+				TrueColorImage
+			} else if (over.getValue() instanceof PaletteImageLayer) {
+
+			} else
+				throw new Assertion();
+			context.change(null, c -> {
+			});
+		});
+		 */
+		MenuButton stackButton = HelperJFX.menuButton("pencil.png");
+		stackButton
 				.getItems()
-				.addAll(cutButton, copyButton, linkBeforeButton, linkInButton, linkAfterButton, unlinkButton);
-		toolbar = new ToolBar(addButton, removeButton, moveUpButton, moveDownButton, linkButton);
+				.addAll(cutButton,
+						new SeparatorMenuItem(),
+						linkBeforeButton,
+						linkInButton,
+						linkAfterButton,
+						unlinkButton
+				);
+		toolbar = new ToolBar(addButton, mainDuplicateButton, removeButton, moveUpButton, moveDownButton, stackButton);
 
 		HBox opacityBox = new HBox();
 		{
@@ -587,8 +660,7 @@ public class Structure {
 			CustomBinding.bind(enabled.getGraphic().opacityProperty(),
 					new CustomBinding.PropertyHalfBinder<>(enabled.selectedProperty()).map(b -> opt(b ? 1 : 0.5))
 			);
-			CustomBinding.bindBidirectional(new CustomBinding.IndirectBinder<Boolean>(
-					groupChildBinder,
+			CustomBinding.bindBidirectional(new CustomBinding.IndirectBinder<Boolean>(groupChildBinder,
 					childWrapper -> {
 						if (childWrapper == null)
 							return opt(null);
@@ -605,8 +677,7 @@ public class Structure {
 			Slider opacity = new Slider();
 			opacity.setMin(0);
 			opacity.setMax(opacityMax);
-			CustomBinding.bindBidirectional(new CustomBinding.IndirectBinder<Integer>(
-							groupChildBinder,
+			CustomBinding.bindBidirectional(new CustomBinding.IndirectBinder<Integer>(groupChildBinder,
 							childWrapper -> {
 								if (childWrapper == null)
 									return opt(null);
@@ -733,21 +804,6 @@ public class Structure {
 		}
 	}
 
-	private void link() {
-		clearTagLifted();
-		clearTagCopied();
-		tree.getSelectionModel().getSelectedItems().stream().forEach(s -> {
-			Wrapper wrapper = s.getValue();
-			taggedCopied.add(wrapper);
-			wrapper.tagCopied.set(true);
-		});
-	}
-
-	private void clearTagCopied() {
-		taggedCopied.forEach(w -> w.tagCopied.set(false));
-		taggedCopied.clear();
-	}
-
 	private void clearTagLifted() {
 		taggedLifted.forEach(w -> w.tagLifted.set(false));
 		taggedLifted.clear();
@@ -755,7 +811,6 @@ public class Structure {
 
 	private void lift() {
 		clearTagLifted();
-		clearTagCopied();
 		tree.getSelectionModel().getSelectedItems().stream().forEach(s -> {
 			Wrapper wrapper = s.getValue();
 			taggedLifted.add(wrapper);
@@ -764,9 +819,14 @@ public class Structure {
 	}
 
 	private void duplicate(ChangeStepBuilder change) {
-		Wrapper destination = window.selectedForEdit.get().getWrapper();
-		ProjectLayer clone = destination.separateClone(context);
+		Wrapper source = window.selectedForEdit.get().getWrapper();
+		ProjectLayer clone = source.separateClone(context);
 		addNew(clone, change);
+	}
+
+	private void link(ChangeStepBuilder change) {
+		Wrapper destination = window.selectedForEdit.get().getWrapper();
+		addNew((ProjectLayer) destination.getValue(), change);
 	}
 
 	private Wrapper getSelection() {
@@ -828,7 +888,6 @@ public class Structure {
 			placable.add(wrapper);
 		};
 		taggedLifted.forEach(check);
-		taggedCopied.forEach(check);
 		if (placable.isEmpty()) {
 			logger.write("Warning: No nodes left to place!");
 		}
@@ -837,7 +896,8 @@ public class Structure {
 			List<GroupChild> children = new ArrayList<>();
 			for (Wrapper wrapper : placable) {
 				boolean lifted = taggedLifted.contains(wrapper);
-				if (lifted) removeAfter.add(wrapper);
+				if (lifted)
+					removeAfter.add(wrapper);
 				if (wrapper.getParent() != null) {
 					Wrapper childParent = wrapper.getParent();
 					if (lifted) {
@@ -863,7 +923,8 @@ public class Structure {
 			List<ProjectLayer> children = new ArrayList<>();
 			for (Wrapper wrapper : placable) {
 				boolean lifted = taggedLifted.contains(wrapper);
-				if (lifted) removeAfter.add(wrapper);
+				if (lifted)
+					removeAfter.add(wrapper);
 				children.add((ProjectLayer) wrapper.getValue());
 			}
 			int dest;
@@ -878,7 +939,6 @@ public class Structure {
 			change.project(context.project).topAdd(dest, children);
 		}
 		removeAfter.forEach(c -> c.delete(context, change));
-		clearTagCopied();
 		clearTagLifted();
 	}
 

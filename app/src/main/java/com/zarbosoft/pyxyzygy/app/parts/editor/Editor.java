@@ -142,8 +142,6 @@ public class Editor {
 		for (Hotkeys.Action action : actions)
 			context.hotkeys.register(action);
 
-		new Origin(window, this);
-
 		canvasInner = new Group();
 
 		canvas = new Pane();
@@ -364,6 +362,9 @@ public class Editor {
 				}
 			}
 		});
+
+		Origin origin = new Origin(window, this, 20);
+		origin.visibleProperty().bind(GUILaunch.profileConfig.showOrigin);
 	}
 
 	public Node getWidget() {

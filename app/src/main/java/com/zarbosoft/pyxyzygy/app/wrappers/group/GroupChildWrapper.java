@@ -96,7 +96,7 @@ public class GroupChildWrapper extends Wrapper {
 
 	@Override
 	public NodeConfig getConfig() {
-		return null;
+		throw new Assertion();
 	}
 
 	@Override

@@ -15,7 +15,6 @@ public abstract class Wrapper {
 	public int parentIndex;
 	public final SimpleObjectProperty<TreeItem<Wrapper>> tree = new SimpleObjectProperty<>();
 	public final SimpleBooleanProperty tagLifted = new SimpleBooleanProperty(false);
-	public final SimpleBooleanProperty tagCopied = new SimpleBooleanProperty(false);
 	public CanvasHandle canvasParent;
 
 	public abstract Wrapper getParent();

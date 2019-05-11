@@ -1,11 +1,11 @@
 package com.zarbosoft.pyxyzygy.app.parts.editor;
 
-import com.zarbosoft.pyxyzygy.app.CanvasHandle;
-import com.zarbosoft.pyxyzygy.app.EditHandle;
-import com.zarbosoft.pyxyzygy.app.GUILaunch;
-import com.zarbosoft.pyxyzygy.app.Window;
+import com.zarbosoft.pyxyzygy.app.*;
+import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.DoubleBinding;
+import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.Group;
@@ -13,51 +13,39 @@ import javafx.scene.effect.BlendMode;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 
+import static com.zarbosoft.pyxyzygy.app.Misc.opt;
+
 public class Origin extends Group {
 	private final Line originVert = new Line();
 	private final Line originHoriz = new Line();
+	private Group overlay;
 
-	public Origin(Window window, Editor editor) {
-		originHoriz.setFill(Color.WHITE);
-		originHoriz.setBlendMode(BlendMode.DIFFERENCE);
-		originVert.setFill(Color.GRAY);
-		originVert.setBlendMode(BlendMode.DIFFERENCE);
-		originHoriz.setOpacity(0.5);
-		originVert.setOpacity(0.5);
-		originHoriz.visibleProperty().bind(GUILaunch.profileConfig.showOrigin);
-		originVert.visibleProperty().bind(GUILaunch.profileConfig.showOrigin);
+	public final SimpleObjectProperty<Vector> offset = new SimpleObjectProperty<Vector>(Vector.ZERO);
+
+	public Origin(Window window, Editor editor, double size) {
+		CustomBinding.bind(layoutXProperty(),new CustomBinding.PropertyHalfBinder<>(offset).map(o -> opt((double)o.x)));
+		CustomBinding.bind(layoutYProperty(),new CustomBinding.PropertyHalfBinder<>(offset).map(o -> opt((double)o.y)));
+		originHoriz.setStroke(Color.GRAY);
+		originVert.setStroke(Color.GRAY);
 		getChildren().addAll(originHoriz, originVert);
-		setBlendMode(BlendMode.MULTIPLY);
-		window.selectedForView.addListener(new ChangeListener<CanvasHandle>() {
-			{
-				changed(null, null, window.selectedForView.get());
-			}
 
-			@Override
-			public void changed(
-					ObservableValue<? extends CanvasHandle> observable, CanvasHandle oldValue, CanvasHandle newValue
-			) {
-				if (newValue == null) return;
-				DoubleBinding scale = Bindings.createDoubleBinding(
-						() -> 1.0 / editor.computeViewTransform(newValue.getWrapper()).x,
-						newValue.getWrapper().getConfig().zoom
-				);
-				DoubleBinding originHalfSpan = scale.multiply(20.0);
-				originHoriz.startXProperty().bind(originHalfSpan.negate());
-				originHoriz.endXProperty().bind(originHalfSpan);
-				originVert.startYProperty().bind(originHalfSpan.negate());
-				originVert.endYProperty().bind(originHalfSpan);
-				originHoriz.strokeWidthProperty().bind(scale);
-				originVert.strokeWidthProperty().bind(scale);
-				originHoriz.startYProperty().bind(scale.multiply(0.5));
-				originHoriz.endYProperty().bind(scale.multiply(0.5));
-				originVert.startXProperty().bind(scale.multiply(0.5));
-				originVert.endXProperty().bind(scale.multiply(0.5));
-			}
-		});
+		//SimpleDoubleProperty scale = editor.zoomFactor;
+		DoubleBinding scale = Bindings.divide(1.0, editor.zoomFactor);
+		DoubleBinding originHalfSpan = scale.multiply(size);
+		originHoriz.startXProperty().bind(originHalfSpan.negate());
+		originHoriz.endXProperty().bind(originHalfSpan);
+		originVert.startYProperty().bind(originHalfSpan.negate());
+		originVert.endYProperty().bind(originHalfSpan);
+		originHoriz.strokeWidthProperty().bind(scale);
+		originVert.strokeWidthProperty().bind(scale);
+		originHoriz.startYProperty().bind(scale.multiply(0.5));
+		originHoriz.endYProperty().bind(scale.multiply(0.5));
+		originVert.startXProperty().bind(scale.multiply(0.5));
+		originVert.endXProperty().bind(scale.multiply(0.5));
+
+		setBlendMode(BlendMode.DIFFERENCE);
+
 		window.selectedForEdit.addListener(new ChangeListener<EditHandle>() {
-			private Group overlay;
-
 			{
 				changed(null, null, window.selectedForEdit.get());
 			}
@@ -72,10 +60,15 @@ public class Origin extends Group {
 				}
 
 				if (newValue != null) {
-					this.overlay = newValue.getCanvas().overlay;
+					overlay = newValue.getCanvas().overlay;
 					overlay.getChildren().addAll(Origin.this);
 				}
 			}
 		});
+	}
+
+	public void remove() {
+		overlay.getChildren().remove(Origin.this);
+		overlay = null;
 	}
 }
