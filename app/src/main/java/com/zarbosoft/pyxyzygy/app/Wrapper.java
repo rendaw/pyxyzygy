@@ -15,7 +15,6 @@ public abstract class Wrapper {
 	public int parentIndex;
 	public final SimpleObjectProperty<TreeItem<Wrapper>> tree = new SimpleObjectProperty<>();
 	public final SimpleBooleanProperty tagLifted = new SimpleBooleanProperty(false);
-	public CanvasHandle canvasParent;
 
 	public abstract Wrapper getParent();
 
@@ -27,8 +26,8 @@ public abstract class Wrapper {
 
 	public abstract NodeConfig getConfig();
 
-	public abstract CanvasHandle getCanvas(
-			ProjectContext context, Window window
+	public abstract CanvasHandle buildCanvas(
+			ProjectContext context, Window window, CanvasHandle parent
 	);
 
 	public abstract EditHandle buildEditControls(
@@ -49,10 +48,6 @@ public abstract class Wrapper {
 	public abstract void deleteChild(
 			ProjectContext context, ChangeStepBuilder change, int index
 	);
-
-	public void setCanvasParent(CanvasHandle canvasHandle) {
-		this.canvasParent = canvasHandle;
-	}
 
 	public static enum TakesChildren {
 		NONE,

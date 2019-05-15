@@ -7,7 +7,6 @@ import com.zarbosoft.pyxyzygy.core.model.v0.GroupPositionFrame;
 import com.zarbosoft.pyxyzygy.core.model.v0.GroupTimeFrame;
 import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
-import javafx.beans.value.ChangeListener;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,13 +25,12 @@ public class GroupChildCanvasHandle extends CanvasHandle {
 	private final Listener.ListRemove<GroupChild> timeRemoveListener;
 	private final Listener.ListMoveTo<GroupChild> timeMoveListener;
 	private final Listener.ScalarSet<GroupChild, Integer> opacityListener;
-	private final Runnable enabledListener;
+	private final CustomBinding.BinderRoot enabledListenerRoot;
 	private int zoom;
 	private CanvasHandle childCanvas;
 	private final List<Runnable> positionCleanup;
 	private final List<Runnable> timeCleanup;
 	private GroupChildWrapper wrapper;
-	private final ChangeListener<Wrapper> childListener;
 
 	public GroupChildCanvasHandle(
 			ProjectContext context, Window window, GroupChildWrapper wrapper, CanvasHandle parent
@@ -42,19 +40,14 @@ public class GroupChildCanvasHandle extends CanvasHandle {
 		positionCleanup = new ArrayList<>();
 		timeCleanup = new ArrayList<>();
 
-		childListener = (observable, oldValue, newValue) -> {
-			if (newValue != null)
-				newValue.setCanvasParent(this);
-		};
-		wrapper.child.addListener(childListener);
-		enabledListener = new CustomBinding.DoubleHalfBinder<>(new CustomBinding.PropertyHalfBinder<>(wrapper.child),
-				new CustomBinding.DoubleHalfBinder<>(new CustomBinding.PropertyHalfBinder<>(window.selectedForEdit),
+		enabledListenerRoot = new CustomBinding.DoubleHalfBinder<>(new CustomBinding.PropertyHalfBinder<>(wrapper.child),
+				new CustomBinding.DoubleHalfBinder<>(window.selectedForEditWrapperEnabledBinder,
 						new CustomBinding.ScalarHalfBinder<Boolean>(wrapper.node, "enabled")
 				).map((edit, enabled) -> {
 					if (enabled)
 						return opt(true);
 					if (edit != null) {
-						Wrapper at = edit.getWrapper();
+						Wrapper at = edit;
 						while (at != null) {
 							if (at == wrapper)
 								return opt(true);
@@ -69,7 +62,7 @@ public class GroupChildCanvasHandle extends CanvasHandle {
 				childCanvas.remove(context);
 			}
 			if (child != null && enabled) {
-				childCanvas = child.getCanvas(context, window);
+				childCanvas = child.buildCanvas(context, window, this);
 				childCanvas.setViewport(context, bounds.get(), zoom);
 				inner.getChildren().add(childCanvas.getWidget());
 				GroupChildCanvasHandle.this.updateChildCanvasPosition(null);
@@ -158,8 +151,7 @@ public class GroupChildCanvasHandle extends CanvasHandle {
 		wrapper.node.removeTimeFramesRemoveListeners(timeRemoveListener);
 		wrapper.node.removeTimeFramesMoveToListeners(timeMoveListener);
 		wrapper.node.removeOpacitySetListeners(opacityListener);
-		wrapper.child.removeListener(childListener);
-		enabledListener.run();
+		enabledListenerRoot.destroy();
 		positionCleanup.forEach(r -> r.run());
 		timeCleanup.forEach(r -> r.run());
 		wrapper.canvasHandle = null;

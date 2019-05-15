@@ -68,11 +68,11 @@ public class GroupNodeWrapper extends Wrapper {
 	}
 
 	@Override
-	public CanvasHandle getCanvas(
-			ProjectContext context, Window window
+	public CanvasHandle buildCanvas(
+			ProjectContext context, Window window, CanvasHandle parent
 	) {
 		if (canvasHandle == null)
-			canvasHandle = new GroupNodeCanvasHandle(context, window, canvasParent, this);
+			canvasHandle = new GroupNodeCanvasHandle(context, window, parent, this);
 		return canvasHandle;
 	}
 

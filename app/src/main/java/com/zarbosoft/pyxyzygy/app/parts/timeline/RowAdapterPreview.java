@@ -74,8 +74,8 @@ public class RowAdapterPreview extends RowAdapter {
 			ProjectContext context, Window window
 	) {
 		return new WidgetHandle() {
-			private final Runnable startCleanup;
-			private final Runnable lengthCleanup;
+			private final CustomBinding.BinderRoot startCleanup;
+			private final CustomBinding.BinderRoot lengthCleanup;
 
 			{
 				widget = new RowTimeRangeWidget(timeline);
@@ -96,8 +96,8 @@ public class RowAdapterPreview extends RowAdapter {
 
 			@Override
 			public void remove() {
-				startCleanup.run();
-				lengthCleanup.run();
+				startCleanup.destroy();
+				lengthCleanup.destroy();
 			}
 		};
 	}

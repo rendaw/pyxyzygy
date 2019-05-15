@@ -8,15 +8,12 @@ import com.zarbosoft.pyxyzygy.app.model.v0.TrueColorTile;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupChildWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeWrapper;
-import com.zarbosoft.pyxyzygy.app.wrappers.paletteimage.PaletteImageNodeWrapper;
-import com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage.TrueColorImageNodeWrapper;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.pyxyzygy.core.model.v0.*;
 import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
 import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
-import com.zarbosoft.rendaw.common.Assertion;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleObjectProperty;
@@ -118,45 +115,11 @@ public class Structure {
 	boolean postInit = false;
 	public boolean suppressSelect = false;
 
-	public void selectForEdit(Wrapper wrapper) {
-		if (wrapper == null)
-			return;
-		Wrapper preParent = wrapper;
-		Wrapper parent = wrapper.getParent();
-		boolean found = false;
-		while (parent != null) {
-			if (window.selectedForView.get().getWrapper() == parent) {
-				found = true;
-				break;
-			}
-			preParent = parent;
-			parent = parent.getParent();
-		}
-		if (found) {
-			window.selectedForEdit.set(wrapper.buildEditControls(context, window));
-		} else {
-			window.selectedForEdit.set(null);
-			selectForView(preParent);
-			window.selectedForEdit.set(wrapper.buildEditControls(context, window));
-		}
-		if (main)
-			context.config.editPath = getPath(wrapper.tree.get()).collect(Collectors.toList());
-	}
-
 	public static Stream<Integer> getPath(TreeItem<Wrapper> leaf) {
 		if (leaf.getParent() == null)
 			return Stream.empty();
 		else
 			return Stream.concat(getPath(leaf.getParent()), Stream.of(leaf.getParent().getChildren().indexOf(leaf)));
-	}
-
-	public void selectForView(Wrapper wrapper) {
-		if (wrapper != null) {
-			wrapper.setCanvasParent(null);
-			window.selectedForView.set(wrapper.getCanvas(context, window));
-			if (main)
-				context.config.viewPath = getPath(wrapper.tree.get()).collect(Collectors.toList());
-		}
 	}
 
 	public void treeItemAdded(TreeItem<Wrapper> item) {
@@ -221,12 +184,12 @@ public class Structure {
 				TreeItem<Wrapper> first = added.get(0);
 				if (first.getValue() == null)
 					return;
-				selectForEdit(first.getValue());
+				window.selectForEdit(context, first.getValue());
 			}
 		});
 		tree.setCellFactory((TreeView<Wrapper> param) -> {
 			return new TreeCell<Wrapper>() {
-				private Runnable viewingCleanup;
+				private CustomBinding.BinderRoot viewingCleanup;
 				final ImageView showViewing = new ImageView();
 				final ImageView showGrabState = new ImageView();
 				final SimpleObjectProperty<Wrapper> wrapper = new SimpleObjectProperty<>(null);
@@ -240,32 +203,32 @@ public class Structure {
 					setText(value);
 				};
 				final HBox graphic = new HBox();
-				Runnable cleanup;
+				CustomBinding.BinderRoot cleanup;
 
 				{
 					addEventFilter(MouseEvent.MOUSE_CLICKED, e -> {
 						if (wrapper.getValue() == null)
 							return;
 						if (e.getClickCount() >= 2) {
-							selectForView(wrapper.getValue());
+							window.selectForView(context, wrapper.getValue());
 						}
 					});
 					MenuItem setView = new MenuItem("Set View");
 					setView.disableProperty().bind(Bindings.isNull(wrapper));
 					setView.setOnAction(e -> {
-						selectForView(wrapper.getValue());
+						window.selectForView(context, wrapper.getValue());
 					});
 					wrapper.addListener((observable, oldValue, newValue) -> {
 						if (oldValue != null) {
-							viewingCleanup.run();
+							viewingCleanup.destroy();
 							oldValue.tagLifted.removeListener(copyStateListener);
 							((ProjectLayer) oldValue.getValue()).removeNameSetListeners(nameSetListener);
 						}
 						if (newValue != null) {
 							viewingCleanup = CustomBinding.bind(showViewing.imageProperty(),
-									new CustomBinding.DoubleHalfBinder<EditHandle, CanvasHandle>(new CustomBinding.PropertyHalfBinder<>(
-											window.selectedForEdit),
-											new CustomBinding.PropertyHalfBinder<>(window.selectedForView)
+									new CustomBinding.DoubleHalfBinder<EditHandle, CanvasHandle>(
+											window.selectedForEditTreeIconBinder,
+											window.selectedForViewTreeIconBinder
 									).map((edit, view) -> {
 										boolean isEdit = edit != null && edit.getWrapper() == wrapper.get();
 										boolean isView = view != null && view.getWrapper() == wrapper.get();
@@ -314,7 +277,7 @@ public class Structure {
 				@Override
 				protected void updateItem(Wrapper item, boolean empty) {
 					if (cleanup != null) {
-						cleanup.run();
+						cleanup.destroy();
 						cleanup = null;
 					}
 					if (item != null)
@@ -588,7 +551,7 @@ public class Structure {
 		unlinkButton.disableProperty().bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedItems()));
 		unlinkButton.setOnAction(e -> {
 			context.change(null, c -> {
-				Wrapper edit = window.selectedForEdit.get().getWrapper();
+				Wrapper edit = window.getSelectedForEdit().getWrapper();
 				separate(context, c, edit);
 			});
 		});
@@ -648,7 +611,7 @@ public class Structure {
 			opacityBox.setAlignment(Pos.CENTER_LEFT);
 
 			CustomBinding.HalfBinder<GroupChildWrapper> groupChildBinder =
-					new CustomBinding.PropertyHalfBinder<>(window.selectedForEdit).map(e -> {
+					window.selectedForEditOpacityBinder.map(e -> {
 						if (e == null || e.getWrapper().getParent() == null)
 							return opt(null);
 						return opt((GroupChildWrapper) e.getWrapper().getParent());
@@ -741,8 +704,8 @@ public class Structure {
 		});
 
 		if (main) {
-			window.selectedForEdit.set(null);
-			selectForView(findNode(rootTreeItem, viewPath));
+			window.selectForEdit(context, null);
+			window.selectForView(context, findNode(rootTreeItem, viewPath));
 			tree.getSelectionModel().clearSelection();
 			tree.getSelectionModel().select(findNode(rootTreeItem, editPath).tree.get());
 		}
@@ -756,14 +719,14 @@ public class Structure {
 	}
 
 	private void delete(ProjectContext context, ChangeStepBuilder change) {
-		Wrapper edit = window.selectedForEdit.get().getWrapper();
+		Wrapper edit = window.getSelectedForEdit().getWrapper();
 		if (edit == null)
 			return;
 		edit.delete(context, change);
 	}
 
 	private void placeAfter(ChangeStepBuilder change) {
-		Wrapper destination = window.selectedForEdit.get().getWrapper();
+		Wrapper destination = window.getSelectedForEdit().getWrapper();
 		if (destination == null) {
 			place(change, null, false, null);
 		} else {
@@ -773,7 +736,7 @@ public class Structure {
 	}
 
 	private void placeIn(ChangeStepBuilder change) {
-		Wrapper destination = window.selectedForEdit.get().getWrapper();
+		Wrapper destination = window.getSelectedForEdit().getWrapper();
 		if (destination == null) {
 			place(change, null, true, null);
 		} else {
@@ -782,7 +745,7 @@ public class Structure {
 	}
 
 	private void placeBefore(ChangeStepBuilder change) {
-		Wrapper destination = window.selectedForEdit.get().getWrapper();
+		Wrapper destination = window.getSelectedForEdit().getWrapper();
 		if (destination == null) {
 			place(change, null, true, null);
 		} else {
@@ -819,13 +782,13 @@ public class Structure {
 	}
 
 	private void duplicate(ChangeStepBuilder change) {
-		Wrapper source = window.selectedForEdit.get().getWrapper();
+		Wrapper source = window.getSelectedForEdit().getWrapper();
 		ProjectLayer clone = source.separateClone(context);
 		addNew(clone, change);
 	}
 
 	private void link(ChangeStepBuilder change) {
-		Wrapper destination = window.selectedForEdit.get().getWrapper();
+		Wrapper destination = window.getSelectedForEdit().getWrapper();
 		addNew((ProjectLayer) destination.getValue(), change);
 	}
 
@@ -961,5 +924,15 @@ public class Structure {
 
 	public Node getWidget() {
 		return layout;
+	}
+
+	public void selectedForEdit(ProjectContext context, EditHandle newValue) {
+		if (main)
+			context.config.editPath = getPath(newValue.getWrapper().tree.get()).collect(Collectors.toList());
+	}
+
+	public void selectedForView(ProjectContext context, CanvasHandle newValue) {
+		if (main)
+			context.config.viewPath = getPath(newValue.getWrapper().tree.get()).collect(Collectors.toList());
 	}
 }

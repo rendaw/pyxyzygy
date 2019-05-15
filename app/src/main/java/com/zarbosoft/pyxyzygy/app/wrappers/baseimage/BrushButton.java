@@ -15,8 +15,8 @@ import javafx.scene.paint.Color;
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 
 public abstract class BrushButton extends ToggleButton implements Garb {
-	private final Runnable cleanupSelected;
-	private final Runnable cleanupColor;
+	private final CustomBinding.BinderRoot cleanupSelected;
+	private final CustomBinding.BinderRoot cleanupColor;
 
 	public BrushButton(
 			Property<Integer> size, CustomBinding.HalfBinder<Color> color, CustomBinding.HalfBinder<Boolean> selected
@@ -57,7 +57,7 @@ public abstract class BrushButton extends ToggleButton implements Garb {
 	public void destroy(
 			ProjectContext context, Window window
 	) {
-		cleanupSelected.run();
-		cleanupColor.run();
+		cleanupSelected.destroy();
+		cleanupColor.destroy();
 	}
 }

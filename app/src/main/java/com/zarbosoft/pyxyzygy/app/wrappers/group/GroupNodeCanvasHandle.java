@@ -28,9 +28,8 @@ public class GroupNodeCanvasHandle extends CanvasHandle {
 	) {
 		this.parent = parent;
 		layerListenCleanup = mirror(wrapper.children, childHandles, c -> {
-			c.setCanvasParent(this);
-			final CanvasHandle canvasHandle = c.getCanvas(context, window);
-			canvasHandle.setViewport(context,bounds.get(),positiveZoom.get());
+			final CanvasHandle canvasHandle = c.buildCanvas(context, window, this);
+			canvasHandle.setViewport(context, bounds.get(), positiveZoom.get());
 			return canvasHandle;
 		}, h -> h.remove(context), noopConsumer());
 		mirror(childHandles, inner.getChildren(), h -> {
@@ -64,7 +63,8 @@ public class GroupNodeCanvasHandle extends CanvasHandle {
 				previousFrame.set(-1);
 				break;
 			}
-			int frameIndex = GroupChildWrapper.positionFrameFinder.findFrame(wrapper.specificChild, frameNumber).frameIndex - 1;
+			int frameIndex =
+					GroupChildWrapper.positionFrameFinder.findFrame(wrapper.specificChild, frameNumber).frameIndex - 1;
 			if (frameIndex == -1)
 				frameIndex = wrapper.specificChild.positionFramesLength() - 1;
 			int outFrame = 0;

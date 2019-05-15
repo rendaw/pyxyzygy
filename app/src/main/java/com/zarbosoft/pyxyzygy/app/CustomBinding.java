@@ -11,12 +11,12 @@ import javafx.beans.property.Property;
 import javafx.beans.property.ReadOnlyProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.beans.value.WeakChangeListener;
 import javafx.collections.ObservableList;
 
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.*;
 import java.util.stream.Collectors;
 
@@ -25,11 +25,183 @@ import static com.zarbosoft.pyxyzygy.app.Misc.unopt;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 
 public class CustomBinding {
-	public static <T> Runnable bind(Property<T> dest, HalfBinder<T> source) {
+	public static class WeakList<T> implements Collection<T> {
+		private List<WeakReference<T>> list = new ArrayList<>();
+
+		@Override
+		public int size() {
+			return list.size();
+		}
+
+		@Override
+		public boolean isEmpty() {
+			return list.isEmpty();
+		}
+
+		@Override
+		public boolean contains(Object o) {
+			return stream().anyMatch(v -> v == o);
+		}
+
+		@Override
+		public Iterator<T> iterator() {
+			return new Iterator<T>() {
+				Iterator<WeakReference<T>> iter = list.iterator();
+				Boolean hasNext = null;
+				T v;
+
+				private void advance() {
+					if (hasNext != null)
+						return;
+					while (iter.hasNext()) {
+						WeakReference<T> vRef = iter.next();
+						v = vRef.get();
+						if (v == null) {
+							iter.remove();
+							continue;
+						}
+						hasNext = true;
+						return;
+					}
+					hasNext = false;
+				}
+
+				@Override
+				public boolean hasNext() {
+					advance();
+					return hasNext;
+				}
+
+				@Override
+				public T next() {
+					advance();
+					if (hasNext == false)
+						throw new NoSuchElementException();
+					hasNext = null;
+					T out = v;
+					v = null;
+					return out;
+				}
+
+				@Override
+				public void remove() {
+					iter.remove();
+					hasNext = null;
+					v = null;
+				}
+			};
+		}
+
+		@Override
+		public Object[] toArray() {
+			ArrayList<T> temp = new ArrayList<>();
+			for (Iterator<T> iter = iterator(); iter.hasNext(); ) {
+				temp.add(iter.next());
+			}
+			return temp.toArray();
+		}
+
+		@Override
+		public <T1> T1[] toArray(T1[] t1s) {
+			ArrayList<T> temp = new ArrayList<>();
+			for (Iterator<T> iter = iterator(); iter.hasNext(); ) {
+				temp.add(iter.next());
+			}
+			return temp.toArray(t1s);
+		}
+
+		@Override
+		public boolean add(T t) {
+			WeakReference<T> tRef = new WeakReference<>(t);
+			list.add(tRef);
+			return true;
+		}
+
+		@Override
+		public boolean remove(Object o) {
+			for (Iterator<T> iter = iterator(); iter.hasNext(); ) {
+				T v = iter.next();
+				if (v == o) {
+					iter.remove();
+					return true;
+				}
+			}
+			return false;
+		}
+
+		@Override
+		public boolean containsAll(Collection<?> collection) {
+			HashSet set = new HashSet<>(collection);
+			for (T v : this)
+				set.remove(v);
+			return set.isEmpty();
+		}
+
+		@Override
+		public boolean addAll(Collection<? extends T> collection) {
+			for (T v : collection)
+				add(v);
+			return true;
+		}
+
+		@Override
+		public boolean removeAll(Collection<?> collection) {
+			HashSet set = new HashSet<>(collection);
+			boolean changed = false;
+			for (Iterator<T> iter = iterator(); iter.hasNext(); ) {
+				T v = iter.next();
+				if (set.contains(v)) {
+					iter.remove();
+					changed = true;
+				}
+			}
+			return changed;
+		}
+
+		@Override
+		public boolean retainAll(Collection<?> collection) {
+			HashSet set = new HashSet<>(collection);
+			boolean changed = false;
+			for (Iterator<T> iter = iterator(); iter.hasNext(); ) {
+				T v = iter.next();
+				if (!set.contains(v)) {
+					iter.remove();
+					changed = true;
+				}
+			}
+			return changed;
+		}
+
+		@Override
+		public void clear() {
+			list.clear();
+		}
+	}
+
+	public static <T> BinderRoot bind(Property<T> dest, HalfBinder<T> source) {
 		final Consumer<T> listener = v -> {
 			dest.setValue(v);
 		};
 		return source.addListener(listener);
+	}
+
+	public interface BinderRoot {
+		void destroy();
+	}
+
+	public static class SimpleBinderRoot implements BinderRoot {
+		private final HalfBinder binder;
+		private final Object key;
+
+		SimpleBinderRoot(HalfBinder binder, Object key) {
+			this.binder = binder;
+			this.key = key;
+		}
+
+		@Override
+		public void destroy() {
+			binder.removeRoot(key);
+		}
 	}
 
 	public interface HalfBinder<T> {
@@ -37,34 +209,39 @@ public class CustomBinding {
 		 * @param listener Immediately called with latest value
 		 * @return
 		 */
-		Runnable addListener(Consumer<T> listener);
+		BinderRoot addListener(Consumer<T> listener);
+
+		void removeRoot(Object key);
 
 		default <U> HalfBinder<U> map(Function<T, Optional<U>> function) {
 			return new MapBinder(this, function);
 		}
 
 		Optional<T> get();
-
-		void destroy();
 	}
 
 	public static class MapBinder<T, U> implements HalfBinder<U>, Consumer<T> {
 		private final Function<T, Optional<U>> forward;
-		private final Runnable cleanup;
+		private final BinderRoot root; // GC root
 		Optional<U> last = Optional.empty();
-		List<Consumer<U>> listeners = new ArrayList<>();
+		WeakList<Consumer<U>> listeners = new WeakList<>();
 
 		public MapBinder(HalfBinder parent, Function<T, Optional<U>> forward) {
 			this.forward = forward;
-			cleanup = parent.addListener(this);
+			root = parent.addListener(this);
 		}
 
 		@Override
-		public Runnable addListener(Consumer<U> listener) {
+		public BinderRoot addListener(Consumer<U> listener) {
 			listeners.add(listener);
 			if (last.isPresent())
 				listener.accept(unopt(last));
-			return () -> listeners.remove(listener);
+			return new SimpleBinderRoot(this, listener);
+		}
+
+		@Override
+		public void removeRoot(Object key) {
+			listeners.remove(key);
 		}
 
 		@Override
@@ -79,11 +256,6 @@ public class CustomBinding {
 				return;
 			last = v;
 			listeners.forEach(l -> l.accept(unopt(v)));
-		}
-
-		@Override
-		public void destroy() {
-			cleanup.run();
 		}
 	}
 
@@ -139,24 +311,22 @@ public class CustomBinding {
 		}
 
 		@Override
-		public Runnable addListener(Consumer<T> listener) {
+		public BinderRoot addListener(Consumer<T> listener) {
 			final Listener.ScalarSet<Object, T> inner = (t, v) -> {
 				listener.accept(v);
 			};
 			this.listen.accept(inner);
-			return () -> {
-				this.unlisten.accept(inner);
-			};
+			return new SimpleBinderRoot(this, inner);
+		}
+
+		@Override
+		public void removeRoot(Object key) {
+			this.unlisten.accept((Listener.ScalarSet) key);
 		}
 
 		@Override
 		public Optional<T> get() {
 			return opt(last);
-		}
-
-		@Override
-		public void destroy() {
-
 		}
 	}
 
@@ -236,7 +406,7 @@ public class CustomBinding {
 		}
 
 		@Override
-		public Runnable addListener(Consumer<List<T>> listener) {
+		public BinderRoot addListener(Consumer<List<T>> listener) {
 			final Listener.ListAdd listAdd = (target, at, value) -> {
 				listener.accept(get.get());
 			};
@@ -249,21 +419,20 @@ public class CustomBinding {
 				listener.accept(get.get());
 			};
 			listenMoveTo.accept(listMoveTo);
-			return () -> {
-				unlistenAdd.accept(listAdd);
-				unlistenRemove.accept(listRemove);
-				unlistenMoveTo.accept(listMoveTo);
-			};
+			return new SimpleBinderRoot(this, new Object[] {listAdd, listRemove, listMoveTo});
+		}
+
+		@Override
+		public void removeRoot(Object key0) {
+			Object[] key = (Object[]) key0;
+			unlistenAdd.accept((Listener.ListAdd) key[0]);
+			unlistenRemove.accept((Listener.ListRemove) key[1]);
+			unlistenMoveTo.accept((Listener.ListMoveTo) key[2]);
 		}
 
 		@Override
 		public Optional<List<T>> get() {
 			return opt(get.get());
-		}
-
-		@Override
-		public void destroy() {
-
 		}
 	}
 
@@ -275,23 +444,23 @@ public class CustomBinding {
 		}
 
 		@Override
-		public Runnable addListener(Consumer<T> listener) {
+		public BinderRoot addListener(Consumer<T> listener) {
 			final ChangeListener<T> inner = (observable, oldValue, newValue) -> {
 				listener.accept(newValue);
 			};
 			property.addListener(inner);
 			listener.accept(property.getValue());
-			return () -> property.removeListener(inner);
+			return new SimpleBinderRoot(this, inner);
+		}
+
+		@Override
+		public void removeRoot(Object key) {
+			property.removeListener((ChangeListener<? super T>) key);
 		}
 
 		@Override
 		public Optional<T> get() {
 			return opt(property.getValue());
-		}
-
-		@Override
-		public void destroy() {
-
 		}
 	}
 
@@ -314,29 +483,29 @@ public class CustomBinding {
 		}
 
 		@Override
-		public Runnable addListener(Consumer<T> listener) {
+		public BinderRoot addListener(Consumer<T> listener) {
 			final InvalidationListener inner = c -> {
 				listener.accept(property);
 			};
 			property.addListener(inner);
 			listener.accept(property);
-			return () -> property.removeListener(inner);
+			return new SimpleBinderRoot(this, inner);
+		}
+
+		@Override
+		public void removeRoot(Object key) {
+			property.removeListener((InvalidationListener) key);
 		}
 
 		@Override
 		public Optional<T> get() {
 			return opt(property);
 		}
-
-		@Override
-		public void destroy() {
-
-		}
 	}
 
-	public static <T> Runnable bindBidirectional(Binder<T>... properties) {
-		return new Runnable() {
-			List<Runnable> cleanup = new ArrayList<>();
+	public static <T> BinderRoot bindBidirectional(Binder<T>... properties) {
+		return new BinderRoot() {
+			List<BinderRoot> cleanup = new ArrayList<>();
 			boolean suppress;
 			Optional<T> last = Optional.empty();
 
@@ -364,8 +533,8 @@ public class CustomBinding {
 			}
 
 			@Override
-			public void run() {
-				cleanup.forEach(Runnable::run);
+			public void destroy() {
+				cleanup.forEach(BinderRoot::destroy);
 			}
 		};
 	}
@@ -387,44 +556,37 @@ public class CustomBinding {
 	 * @param <T>
 	 */
 	public static class IndirectHalfBinder<T> implements HalfBinder<T> {
-		private Runnable cleanup;
-		private List<Consumer<T>> listeners = new ArrayList<>();
+		private WeakList<Consumer<T>> listeners = new WeakList<>();
 		private final Function<Object, Optional> function;
 		private Optional<T> last = Optional.empty();
 		protected Object base;
-		private Runnable cleanupSource;
+		private Object rootSource; // GC root
+		private Object rootIntermediate; // GC root
 
 		public <U> IndirectHalfBinder(ReadOnlyProperty<U> source, Function<U, Optional> function) {
 			this.function = (Function<Object, Optional>) function;
 			final ChangeListener listener = (observable, oldValue, newValue) -> accept1(newValue);
-			source.addListener(listener);
+			source.addListener(new WeakChangeListener<>(listener));
 			accept1(source.getValue());
-			cleanupSource = () -> source.removeListener(listener);
+			rootSource = listener;
 		}
 
 		public <U> IndirectHalfBinder(HalfBinder<U> source, Function<U, Optional> function) {
 			this.function = (Function<Object, Optional>) function;
-			cleanupSource = ((HalfBinder) source).addListener(o -> accept1(o));
+			rootSource = ((HalfBinder) source).addListener(o -> accept1(o));
 		}
 
 		@Override
-		public void destroy() {
-			if (cleanupSource != null) {
-				cleanupSource.run();
-				cleanupSource = null;
-				if (cleanup != null) {
-					cleanup.run();
-					cleanup = null;
-				}
-			}
-		}
-
-		@Override
-		public Runnable addListener(Consumer<T> listener) {
+		public BinderRoot addListener(Consumer<T> listener) {
 			listeners.add(listener);
 			if (last.isPresent())
 				listener.accept(unopt(last));
-			return () -> listeners.remove(listener);
+			return new SimpleBinderRoot(this, listener);
+		}
+
+		@Override
+		public void removeRoot(Object key) {
+			listeners.remove(key);
 		}
 
 		@Override
@@ -438,10 +600,7 @@ public class CustomBinding {
 		}
 
 		public void accept1(Object v1) {
-			if (cleanup != null) {
-				cleanup.run();
-				cleanup = null;
-			}
+			rootIntermediate = null;
 			Optional<Object> v2 = function.apply(v1);
 			if (!v2.isPresent())
 				return;
@@ -453,11 +612,11 @@ public class CustomBinding {
 				final ChangeListener listener = (observable, oldValue, newValue) -> {
 					accept2((T) newValue);
 				};
-				((ReadOnlyProperty) v).addListener(listener);
-				cleanup = () -> ((ReadOnlyProperty) v).removeListener(listener);
+				((ReadOnlyProperty) v).addListener(new WeakChangeListener(listener));
+				rootIntermediate = listener;
 				accept2((T) ((ReadOnlyProperty) v).getValue());
 			} else if (v instanceof HalfBinder) {
-				cleanup = ((HalfBinder<T>) v).addListener(optional -> {
+				rootIntermediate = ((HalfBinder<T>) v).addListener(optional -> {
 					accept2(optional);
 				});
 			} else
@@ -489,16 +648,15 @@ public class CustomBinding {
 
 	public static class DoubleHalfBinder<X, Y> implements HalfBinder<Pair<X, Y>> {
 		private Optional<Pair<X, Y>> last = Optional.empty();
-		Runnable sourceCleanup;
-		Runnable baseCleanup;
 
 		private final class Value {
 			Optional last = Optional.empty();
+			Object sourceRoot; // GC root
 		}
 
 		private final Value value1 = new Value();
 		private final Value value2 = new Value();
-		private List<Consumer<Pair<X, Y>>> listeners = new ArrayList<>();
+		private WeakList<Consumer<Pair<X, Y>>> listeners = new WeakList<>();
 
 		public DoubleHalfBinder(
 				ReadOnlyProperty<X> source1, ReadOnlyProperty<Y> source2
@@ -533,30 +691,18 @@ public class CustomBinding {
 				final ChangeListener listener = (observable, oldValue, newValue) -> {
 					accept1(value, newValue);
 				};
-				((ReadOnlyProperty) source).addListener(listener);
+				((ReadOnlyProperty) source).addListener(new WeakChangeListener(listener));
 				accept1(value, ((ReadOnlyProperty) source).getValue());
-				sourceCleanup = () -> ((ReadOnlyProperty) source).removeListener(listener);
+				value.sourceRoot = listener;
 			} else if (source instanceof HalfBinder) {
-				sourceCleanup = ((HalfBinder) source).addListener(v -> {
+				value.sourceRoot = ((HalfBinder) source).addListener(v -> {
 					accept1(value, v);
 				});
 			} else
 				throw new Assertion();
 		}
 
-		@Override
-		public void destroy() {
-			if (sourceCleanup != null)
-				sourceCleanup.run();
-			if (baseCleanup != null)
-				baseCleanup.run();
-		}
-
 		private void accept1(Value value, Object newValue) {
-			if (baseCleanup != null) {
-				baseCleanup.run();
-				baseCleanup = null;
-			}
 			value.last = opt(newValue);
 			if (!value1.last.isPresent() || !value2.last.isPresent())
 				return;
@@ -566,14 +712,19 @@ public class CustomBinding {
 		}
 
 		@Override
-		public Runnable addListener(Consumer<Pair<X, Y>> listener) {
+		public BinderRoot addListener(Consumer<Pair<X, Y>> listener) {
 			listeners.add(listener);
 			if (last.isPresent())
 				listener.accept(unopt(last));
-			return () -> listeners.remove(listener);
+			return new SimpleBinderRoot(this, listener);
 		}
 
-		public Runnable addListener(BiConsumer<X, Y> listener) {
+		@Override
+		public void removeRoot(Object key) {
+			listeners.remove(key);
+		}
+
+		public BinderRoot addListener(BiConsumer<X, Y> listener) {
 			return addListener(p -> listener.accept(p.first, p.second));
 		}
 
@@ -595,36 +746,40 @@ public class CustomBinding {
 		}
 
 		@Override
-		public Runnable addListener(Consumer<T> listener) {
+		public BinderRoot addListener(Consumer<T> listener) {
 			listener.accept(v);
-			return () -> {
+			return new BinderRoot() {
+				@Override
+				public void destroy() {
+
+				}
 			};
+		}
+
+		@Override
+		public void removeRoot(Object key) {
+
 		}
 
 		@Override
 		public Optional<T> get() {
 			return opt(v);
 		}
-
-		@Override
-		public void destroy() {
-
-		}
 	}
 
 	public static class DoubleIndirectHalfBinder<X, Y, T> implements HalfBinder<T> {
 		private Optional<T> last = Optional.empty();
-		Runnable sourceCleanup;
 		Optional base;
-		Runnable baseCleanup;
 
 		private final class Value {
 			Optional last = Optional.empty();
+			Object sourceRoot; // GC root
+			Object intermediateRoot; // GC root
 		}
 
 		private final Value value1 = new Value();
 		private final Value value2 = new Value();
-		private List<Consumer<T>> listeners = new ArrayList<>();
+		private WeakList<Consumer<T>> listeners = new WeakList<>();
 		private final BiFunction<X, Y, Optional> function;
 
 		public DoubleIndirectHalfBinder(
@@ -664,30 +819,19 @@ public class CustomBinding {
 				final ChangeListener listener = (observable, oldValue, newValue) -> {
 					accept1(value, newValue);
 				};
-				((ReadOnlyProperty) source).addListener(listener);
+				((ReadOnlyProperty) source).addListener(new WeakChangeListener(listener));
 				accept1(value, ((ReadOnlyProperty) source).getValue());
-				sourceCleanup = () -> ((ReadOnlyProperty) source).removeListener(listener);
+				value.sourceRoot = listener;
 			} else if (source instanceof HalfBinder) {
-				sourceCleanup = ((HalfBinder) source).addListener(v -> {
+				value.sourceRoot = ((HalfBinder) source).addListener(v -> {
 					accept1(value, v);
 				});
 			} else
 				throw new Assertion();
 		}
 
-		@Override
-		public void destroy() {
-			if (sourceCleanup != null)
-				sourceCleanup.run();
-			if (baseCleanup != null)
-				baseCleanup.run();
-		}
-
 		private void accept1(Value value, Object newValue) {
-			if (baseCleanup != null) {
-				baseCleanup.run();
-				baseCleanup = null;
-			}
+			value.intermediateRoot = null;
 			value.last = opt(newValue);
 			if (!value1.last.isPresent() || !value2.last.isPresent())
 				return;
@@ -700,11 +844,11 @@ public class CustomBinding {
 				final ChangeListener<T> listener = (observable, oldValue, newValue2) -> {
 					accept2(newValue2);
 				};
-				((ReadOnlyProperty<T>) unopt(base)).addListener(listener);
-				baseCleanup = () -> ((ReadOnlyProperty<T>) unopt(base)).removeListener(listener);
+				((ReadOnlyProperty<T>) unopt(base)).addListener(new WeakChangeListener<>(listener));
+				value.intermediateRoot = listener;
 				listener.changed(null, null, ((ReadOnlyProperty<T>) unopt(base)).getValue());
 			} else if (unopt(base) instanceof HalfBinder) {
-				baseCleanup = ((HalfBinder<T>) unopt(base)).addListener(newValue2 -> {
+				value.intermediateRoot = ((HalfBinder<T>) unopt(base)).addListener(newValue2 -> {
 					accept2(newValue2);
 				});
 			} else
@@ -718,11 +862,16 @@ public class CustomBinding {
 		}
 
 		@Override
-		public Runnable addListener(Consumer<T> listener) {
+		public BinderRoot addListener(Consumer<T> listener) {
 			listeners.add(listener);
 			if (last.isPresent())
 				listener.accept(unopt(last));
-			return () -> listeners.remove(listener);
+			return new SimpleBinderRoot(this, listener);
+		}
+
+		@Override
+		public void removeRoot(Object key) {
+			listeners.remove(key);
 		}
 
 		@Override
@@ -732,39 +881,72 @@ public class CustomBinding {
 	}
 
 	public static class ListElementsHalfBinder<T> implements HalfBinder<T> {
-		List<Consumer<T>> listeners = new ArrayList<>();
+		WeakList<Consumer<T>> listeners = new WeakList<>();
 		Optional<T> at = Optional.empty();
-		final List<Runnable> cleanup;
+		final List<BinderRoot> rootElements;
 
 		public <G> ListElementsHalfBinder(
-				List<HalfBinder<G>> list,
-				Function<List<HalfBinder<G>>, Optional<T>> function
+				List<HalfBinder<G>> list, Function<List<HalfBinder<G>>, Optional<T>> function
 		) {
 			Consumer<G> listener = u0 -> {
 				at = function.apply(list);
 				if (at.isPresent())
 					listeners.forEach(l -> l.accept(at.get()));
 			};
-			cleanup = list.stream().map(t -> t.addListener(listener)).collect(Collectors.toList());
+			rootElements = list.stream().map(t -> t.addListener(listener)).collect(Collectors.toList());
 			listener.accept(null);
 		}
 
 		@Override
-		public Runnable addListener(Consumer<T> listener) {
+		public BinderRoot addListener(Consumer<T> listener) {
 			listeners.add(listener);
 			if (at.isPresent())
 				listener.accept(at.get());
-			return () -> listeners.remove(listener);
+			return new SimpleBinderRoot(this, listener);
+		}
+
+		@Override
+		public void removeRoot(Object key) {
+			listeners.remove(key);
 		}
 
 		@Override
 		public Optional<T> get() {
 			return at;
 		}
+	}
+
+	public static class ManualHalfBinder<T> implements HalfBinder<T> {
+		Optional<T> value = Optional.empty();
+		WeakList<Consumer<T>> listeners = new WeakList<>();
+
+		public void set(T value) {
+			this.value = opt(value);
+			for (Consumer<T> listener : new ArrayList<>(listeners)) {
+				listener.accept(value);
+			}
+		}
+
+		public void clear() {
+			this.value = Optional.empty();
+		}
 
 		@Override
-		public void destroy() {
-			cleanup.forEach(c -> c.run());
+		public BinderRoot addListener(Consumer<T> listener) {
+			listeners.add(listener);
+			if (value.isPresent())
+				listener.accept(unopt(value));
+			return new SimpleBinderRoot(this, listener);
+		}
+
+		@Override
+		public void removeRoot(Object key) {
+			listeners.remove(key);
+		}
+
+		@Override
+		public Optional<T> get() {
+			return value;
 		}
 	}
 }

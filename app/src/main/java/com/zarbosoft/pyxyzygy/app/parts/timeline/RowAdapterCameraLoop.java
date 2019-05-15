@@ -71,8 +71,8 @@ public class RowAdapterCameraLoop extends RowAdapter {
 			ProjectContext context, Window window
 	) {
 		return new WidgetHandle() {
-			private final Runnable cleanupStart;
-			private final Runnable cleanupLength;
+			private final CustomBinding.BinderRoot cleanupStart;
+			private final CustomBinding.BinderRoot cleanupLength;
 
 			{
 				widget = new RowTimeRangeWidget(timeline);
@@ -101,8 +101,8 @@ public class RowAdapterCameraLoop extends RowAdapter {
 
 			@Override
 			public void remove() {
-				cleanupStart.run();
-				cleanupLength.run();
+				cleanupStart.destroy();
+				cleanupLength.destroy();
 			}
 		};
 	}

@@ -98,14 +98,14 @@ public class PaletteImageNodeWrapper extends BaseImageNodeWrapper<PaletteImageLa
 	}
 
 	@Override
-	public CanvasHandle getCanvas(
-			ProjectContext context, Window window
+	public CanvasHandle buildCanvas(
+			ProjectContext context, Window window, CanvasHandle parent
 	) {
 		if (canvasHandle == null)
 			canvasHandle =
 					new BaseImageCanvasHandle<PaletteImageLayer, PaletteImageFrame, PaletteTileBase, PaletteImage>(
 							context,
-							canvasParent,
+							parent,
 							this
 					) {
 						private Runnable paletteChangeListener;

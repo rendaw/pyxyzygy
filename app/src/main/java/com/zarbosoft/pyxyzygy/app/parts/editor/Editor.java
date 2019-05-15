@@ -8,7 +8,6 @@ import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
@@ -36,7 +35,7 @@ public class Editor {
 			) {
 				@Override
 				public void run(ProjectContext context, Window window) {
-					CanvasHandle view = Editor.this.window.selectedForView.get();
+					CanvasHandle view = Editor.this.window.getSelectedForView();
 					if (view == null)
 						return;
 					view.getWrapper().getConfig().flipHorizontal.set(!view
@@ -51,7 +50,7 @@ public class Editor {
 			) {
 				@Override
 				public void run(ProjectContext context, Window window) {
-					CanvasHandle view = Editor.this.window.selectedForView.get();
+					CanvasHandle view = Editor.this.window.getSelectedForView();
 					if (view == null)
 						return;
 					view.getWrapper().getConfig().flipVertical.set(!view.getWrapper().getConfig().flipVertical.get());
@@ -74,7 +73,7 @@ public class Editor {
 			) {
 				@Override
 				public void run(ProjectContext context, Window window) {
-					EditHandle e = Editor.this.window.selectedForEdit.get();
+					EditHandle e = Editor.this.window.getSelectedForEdit();
 					if (e == null)
 						return;
 					e.getWrapper().getConfig().onionSkin.set(!e.getWrapper().getConfig().onionSkin.get());
@@ -82,6 +81,56 @@ public class Editor {
 			},
 	};
 	private OnionSkin onionSkin;
+	private Runnable zoomListenerCleanup;
+
+	public void selectedForEditChanged(
+			ProjectContext context, EditHandle oldValue, EditHandle newValue
+	) {
+		if (onionSkin != null) {
+			onionSkin.remove();
+			onionSkin = null;
+		}
+		if (newValue != null) {
+			onionSkin = new OnionSkin(context, window.timeline, newValue);
+		}
+	}
+
+	public void selectedForViewChanged(ProjectContext context, CanvasHandle oldValue, CanvasHandle newView) {
+		canvas.scaleXProperty().unbind();
+		canvas.scaleYProperty().unbind();
+		if (zoomListenerCleanup != null) {
+			zoomListenerCleanup.run();
+			zoomListenerCleanup = null;
+		}
+		if (newView == null) return;
+			final ChangeListener<Number> zoomListener = (observable1, oldValue1, zoom0) -> {
+				updateBounds(context);
+				int zoom = zoom0.intValue();
+				positiveZoom.set(zoom < 0 ? 1 : (zoom + 1));
+				zoomFactor.set(zoom < 0 ? (1.0 / (1 + -zoom)) : (1 + zoom));
+			};
+			final NodeConfig config = newView.getWrapper().getConfig();
+			config.zoom.addListener(zoomListener);
+			zoomListener.changed(null, null, config.zoom.get());
+			canvas
+					.scaleXProperty()
+					.bind(Bindings.createDoubleBinding(() -> computeViewTransform(newView.getWrapper()).x,
+							config.zoom,
+							config.flipHorizontal
+					));
+			canvas
+					.scaleYProperty()
+					.bind(Bindings.createDoubleBinding(() -> computeViewTransform(newView.getWrapper()).y,
+							config.zoom,
+							config.flipVertical
+					));
+			updateBounds(context);
+			canvasInner.getChildren().add(newView.getWidget());
+			zoomListenerCleanup = () -> {
+				newView.getWrapper().getConfig().zoom.removeListener(zoomListener);
+				canvasInner.getChildren().clear();
+			};
+	}
 
 	public class MouseCoords {
 		final DoubleVector global;
@@ -102,12 +151,12 @@ public class Editor {
 					/* scaled, flipped */
 					.divide(transform)
 					/* scrolled */
-					.minus(window.selectedForView.get().getWrapper().getConfig().scroll.get());
+					.minus(window.getSelectedForView().getWrapper().getConfig().scroll.get());
 		}
 	}
 
 	public void updateScroll(ProjectContext context, DoubleVector scroll) {
-		CanvasHandle view = window.selectedForView.get();
+		CanvasHandle view = window.getSelectedForView();
 		if (view == null)
 			return;
 		view.getWrapper().getConfig().scroll.set(scroll);
@@ -115,7 +164,7 @@ public class Editor {
 	}
 
 	public void updateBounds(ProjectContext context) {
-		CanvasHandle viewHandle = window.selectedForView.get();
+		CanvasHandle viewHandle = window.getSelectedForView();
 		if (viewHandle == null)
 			return;
 		DoubleVector scroll = viewHandle.getWrapper().getConfig().scroll.get();
@@ -194,7 +243,7 @@ public class Editor {
 		ScrollEventState scrollEventState = new ScrollEventState();
 		outerCanvas.addEventFilter(ScrollEvent.SCROLL_STARTED, e -> {
 			scrollEventState.longScroll = true;
-			scrollEventState.view = window.selectedForView.get();
+			scrollEventState.view = window.getSelectedForView();
 			if (scrollEventState.view == null)
 				return;
 			scrollEventState.startZoom = scrollEventState.view.getWrapper().getConfig().zoom.get();
@@ -204,7 +253,7 @@ public class Editor {
 		});
 		outerCanvas.addEventFilter(ScrollEvent.SCROLL, e1 -> {
 			if (!scrollEventState.longScroll) {
-				scrollEventState.view = window.selectedForView.get();
+				scrollEventState.view = window.getSelectedForView();
 				if (scrollEventState.view == null)
 					return;
 				scrollEventState.view.getWrapper().getConfig().zoom.set(scrollEventState.view
@@ -223,7 +272,6 @@ public class Editor {
 		});
 		class PointerEventState {
 			public CanvasHandle view;
-			EditHandle edit;
 			boolean dragged = false;
 			MouseButton button;
 			MouseCoords previous;
@@ -232,7 +280,7 @@ public class Editor {
 		}
 		PointerEventState pointerEventState = new PointerEventState();
 		outerCanvas.addEventFilter(MouseEvent.MOUSE_PRESSED, e -> {
-			pointerEventState.view = window.selectedForView.get();
+			pointerEventState.view = window.getSelectedForView();
 			if (pointerEventState.view == null)
 				return;
 			outerCanvas.requestFocus();
@@ -241,20 +289,20 @@ public class Editor {
 			pointerEventState.previous = coords;
 			pointerEventState.startScroll = pointerEventState.view.getWrapper().getConfig().scroll.get();
 			pointerEventState.startScrollClick = coords;
-			pointerEventState.edit = window.selectedForEdit.get();
 			pointerEventState.dragged = false;
 			if (e.getButton() == MouseButton.PRIMARY) {
-				if (pointerEventState.edit != null) {
-					pointerEventState.edit.markStart(context, window, pointerEventState.previous.local);
+				if (window.getSelectedForEdit() != null) {
+					window.getSelectedForEdit().markStart(context, window, pointerEventState.previous.local);
 				}
 			}
 		});
 		outerCanvas.addEventFilter(MouseEvent.MOUSE_RELEASED, e -> {
-			if (pointerEventState.edit == null)
+			EditHandle edit = window.getSelectedForEdit();
+			if (edit == null)
 				return;
 			if (pointerEventState.button == MouseButton.PRIMARY) {
 				if (!pointerEventState.dragged) {
-					pointerEventState.edit.mark(context,
+					edit.mark(context,
 							window,
 							pointerEventState.previous.local,
 							pointerEventState.previous.local
@@ -264,11 +312,12 @@ public class Editor {
 			}
 		});
 		outerCanvas.addEventFilter(MouseEvent.MOUSE_DRAGGED, e -> {
+			EditHandle edit = window.getSelectedForEdit();
 			pointerEventState.dragged = true;
 			MouseCoords end = new MouseCoords(pointerEventState.view, e);
 			if (pointerEventState.button == MouseButton.PRIMARY) {
-				if (pointerEventState.edit != null) {
-					pointerEventState.edit.mark(context, window, pointerEventState.previous.local, end.local);
+				if (edit != null) {
+					edit.mark(context, window, pointerEventState.previous.local, end.local);
 				}
 			} else if (pointerEventState.button == MouseButton.MIDDLE) {
 				updateScroll(context,
@@ -281,10 +330,10 @@ public class Editor {
 		});
 		outerCanvas.addEventFilter(MouseEvent.MOUSE_MOVED, e -> {
 			outerCanvas.requestFocus();
-			EditHandle edit = window.selectedForEdit.get();
+			EditHandle edit = window.getSelectedForEdit();
 			if (edit == null)
 				return;
-			CanvasHandle view = window.selectedForView.get();
+			CanvasHandle view = window.getSelectedForView();
 			if (view == null)
 				return;
 			edit.cursorMoved(context, window, new MouseCoords(view, e).local);
@@ -292,75 +341,6 @@ public class Editor {
 		outerCanvas.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
 			if (context.hotkeys.event(context, window, Hotkeys.Scope.CANVAS, e))
 				e.consume();
-		});
-
-		window.selectedForView.addListener(new ChangeListener<CanvasHandle>() {
-			Runnable cleanup;
-
-			{
-				changed(null, null, window.selectedForView.get());
-			}
-
-			@Override
-			public void changed(
-					ObservableValue<? extends CanvasHandle> observable, CanvasHandle oldValue, CanvasHandle newView
-			) {
-				if (cleanup != null) {
-					cleanup.run();
-					cleanup = null;
-				}
-				if (newView != null) {
-					final ChangeListener<Number> zoomListener = (observable1, oldValue1, zoom0) -> {
-						updateBounds(context);
-						int zoom = zoom0.intValue();
-						positiveZoom.set(zoom < 0 ? 1 : (zoom + 1));
-						zoomFactor.set(zoom < 0 ? (1.0 / (1 + -zoom)) : (1 + zoom));
-					};
-					final NodeConfig config = newView.getWrapper().getConfig();
-					config.zoom.addListener(zoomListener);
-					zoomListener.changed(null, null, config.zoom.get());
-					canvas
-							.scaleXProperty()
-							.bind(Bindings.createDoubleBinding(() -> computeViewTransform(newView.getWrapper()).x,
-									config.zoom,
-									config.flipHorizontal
-							));
-					canvas
-							.scaleYProperty()
-							.bind(Bindings.createDoubleBinding(() -> computeViewTransform(newView.getWrapper()).y,
-									config.zoom,
-									config.flipVertical
-							));
-					updateBounds(context);
-					canvasInner.getChildren().add(newView.getWidget());
-					cleanup = () -> {
-						newView.getWrapper().getConfig().zoom.removeListener(zoomListener);
-						canvasInner.getChildren().clear();
-					};
-				} else {
-					canvas.scaleXProperty().unbind();
-					canvas.scaleYProperty().unbind();
-				}
-			}
-		});
-
-		window.selectedForEdit.addListener(new ChangeListener<EditHandle>() {
-			{
-				changed(null, null, window.selectedForEdit.get());
-			}
-
-			@Override
-			public void changed(
-					ObservableValue<? extends EditHandle> observable, EditHandle oldValue, EditHandle newValue
-			) {
-				if (onionSkin != null) {
-					onionSkin.remove();
-					onionSkin = null;
-				}
-				if (newValue != null) {
-					onionSkin = new OnionSkin(context, window.timeline, newValue);
-				}
-			}
 		});
 
 		Origin origin = new Origin(window, this, 20);

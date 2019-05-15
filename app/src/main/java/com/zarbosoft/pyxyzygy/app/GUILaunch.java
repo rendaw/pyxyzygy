@@ -202,6 +202,8 @@ public class GUILaunch extends Application {
 	}
 
 	public static class ProjectDialog extends Stage {
+		private final CustomBinding.BinderRoot rootChoice; // GC root
+
 		public enum Result {
 			NONE,
 			CREATE,
@@ -421,13 +423,17 @@ public class GUILaunch extends Application {
 					}
 				});
 			}
-			CustomBinding.<Path>bindBidirectional(new CustomBinding.PropertyBinder<String>(text.textProperty()).<Path>bimap(t -> Optional.of(cwd.get().resolve(t)),
-					(Path v) -> v.getFileName().toString()
-					),
-					new CustomBinding.PropertyBinder<ChooserEntry>(listProxy).<Path>bimap(e -> Optional
-							.ofNullable(e)
-							.map(v -> v.path), (Path v) -> entries.get(v))
-			);
+			this.rootChoice =
+					CustomBinding.<Path>bindBidirectional(
+							new CustomBinding.PropertyBinder<String>(text.textProperty()).<Path>bimap(
+								t -> Optional.of(cwd.get().resolve(t)),
+								(Path v) -> v.getFileName().toString()
+							),
+							new CustomBinding.PropertyBinder<ChooserEntry>(listProxy).<Path>bimap(
+									e -> Optional.ofNullable(e).map(v -> v.path),
+									(Path v) -> entries.get(v)
+							)
+					);
 			resolvedPath.bind(Bindings.createObjectBinding(() -> cwd.get().resolve(text.getText()),
 					cwd,
 					text.textProperty()
@@ -516,9 +522,7 @@ public class GUILaunch extends Application {
 						.recordStats()
 						.maximumWeight(newValue.intValue())
 						.weigher((Weigher<Integer, Image>) (key, value) -> (int) (
-								value.getWidth() *
-										value.getHeight() *
-										4 / 1024 / 1024
+								value.getWidth() * value.getHeight() * 4 / 1024 / 1024
 						))
 						.build();
 			}

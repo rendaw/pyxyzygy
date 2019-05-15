@@ -62,15 +62,16 @@ import static com.zarbosoft.rendaw.common.Common.enumerate;
 public class PaletteImageEditHandle extends EditHandle {
 	final PaletteImageNodeWrapper wrapper;
 	private final TitledPane toolPane;
-	private Runnable paletteAddSeparatorCleanup;
-	private Runnable colorPickerDisableCleanup;
-	private Runnable paletteMoveDownCleanup;
-	private Runnable paletteMoveUpCleanup;
-	private Runnable paletteRemoveCleanup;
-	private Runnable paletteAddCleanup;
+	private CustomBinding.BinderRoot paletteAddSeparatorCleanup;
+	private CustomBinding.BinderRoot colorPickerDisableCleanup;
+	private CustomBinding.BinderRoot paletteMoveDownCleanup;
+	private CustomBinding.BinderRoot paletteMoveUpCleanup;
+	private CustomBinding.BinderRoot paletteRemoveCleanup;
+	private CustomBinding.BinderRoot paletteAddCleanup;
 	private Runnable paletteTilesCleanup;
-	private Runnable colorPickerCleanup;
+	private CustomBinding.BinderRoot colorPickerCleanup;
 	List<Runnable> cleanup = new ArrayList<>();
+	List<CustomBinding.BinderRoot> cleanup2 = new ArrayList<>();
 
 	private final Runnable brushesCleanup;
 	Group overlay;
@@ -110,7 +111,7 @@ public class PaletteImageEditHandle extends EditHandle {
 
 	class SeparatorTile extends Region implements PaletteTileBase {
 		final PaletteSeparator self;
-		private final Runnable cleanupBorder;
+		private final CustomBinding.BinderRoot cleanupBorder;
 		private int index;
 
 		SeparatorTile(PaletteSeparator self) {
@@ -150,15 +151,15 @@ public class PaletteImageEditHandle extends EditHandle {
 
 		@Override
 		public void destroy(ProjectContext context, Window window) {
-			cleanupBorder.run();
+			cleanupBorder.destroy();
 		}
 	}
 
 	class ColorTile extends ColorSwatch implements PaletteTileBase {
 		public int index;
 		public final PaletteColor color;
-		private final Runnable cleanupBorder;
-		private final Runnable cleanupColor;
+		private final CustomBinding.BinderRoot cleanupBorder;
+		private final CustomBinding.BinderRoot cleanupColor;
 
 		{
 			getStyleClass().add("large");
@@ -190,8 +191,8 @@ public class PaletteImageEditHandle extends EditHandle {
 
 		@Override
 		public void destroy(ProjectContext context, Window window) {
-			cleanupBorder.run();
-			cleanupColor.run();
+			cleanupBorder.destroy();
+			cleanupColor.destroy();
 			tiles.remove(color);
 		}
 
@@ -215,7 +216,6 @@ public class PaletteImageEditHandle extends EditHandle {
 			ProjectContext context, Window window, final PaletteImageNodeWrapper wrapper
 	) {
 		this.wrapper = wrapper;
-		wrapper.getCanvas(context, window);
 		positiveZoom.bind(wrapper.canvasHandle.zoom);
 
 		actions = Streams.concat(Stream.of(new Hotkeys.Action(Hotkeys.Scope.CANVAS, "paste", "Paste", pasteHotkey) {
@@ -529,7 +529,7 @@ public class PaletteImageEditHandle extends EditHandle {
 						}))
 						.build()
 		), new TitledPane("Palette", new WidgetFormBuilder().text("Name", t -> {
-			cleanup.add(CustomBinding.bindBidirectional(new CustomBinding.ScalarBinder<>(wrapper.node.palette()::addNameSetListeners,
+			cleanup2.add(CustomBinding.bindBidirectional(new CustomBinding.ScalarBinder<>(wrapper.node.palette()::addNameSetListeners,
 					wrapper.node.palette()::removeNameSetListeners,
 					v -> context.change(new ProjectContext.Tuple(wrapper, "palette_name"),
 							c -> c.palette(wrapper.node.palette()).nameSet(v)
@@ -734,14 +734,15 @@ public class PaletteImageEditHandle extends EditHandle {
 			wrapper.canvasHandle.overlay.getChildren().remove(overlay);
 		brushesCleanup.run();
 		paletteTilesCleanup.run();
-		paletteAddCleanup.run();
-		paletteAddSeparatorCleanup.run();
-		paletteRemoveCleanup.run();
-		paletteMoveUpCleanup.run();
-		paletteMoveDownCleanup.run();
-		colorPickerCleanup.run();
-		colorPickerDisableCleanup.run();
+		paletteAddCleanup.destroy();
+		paletteAddSeparatorCleanup.destroy();
+		paletteRemoveCleanup.destroy();
+		paletteMoveUpCleanup.destroy();
+		paletteMoveDownCleanup.destroy();
+		colorPickerCleanup.destroy();
+		colorPickerDisableCleanup.destroy();
 		cleanup.forEach(Runnable::run);
+		cleanup2.forEach(CustomBinding.BinderRoot::destroy);
 		for (Hotkeys.Action action : actions)
 			context.hotkeys.unregister(action);
 		window.menuChildren.clear(this);

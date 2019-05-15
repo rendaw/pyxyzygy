@@ -28,6 +28,7 @@ import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -39,6 +40,7 @@ import static com.zarbosoft.rendaw.common.Common.uncheck;
 import static org.jcodec.common.model.ColorSpace.RGB;
 
 public class CameraEditHandle extends GroupNodeEditHandle {
+	protected List<CustomBinding.BinderRoot> cleanup2 = new ArrayList<>();
 	public CameraEditHandle(
 			ProjectContext context, Window window, GroupNodeWrapper wrapper
 	) {
@@ -57,11 +59,11 @@ public class CameraEditHandle extends GroupNodeEditHandle {
 								.build()
 				),
 				new TitledPane("Camera", new WidgetFormBuilder().intSpinner("Width", 1, 99999, s -> {
-					cleanup.add(CustomBinding.bindBidirectional(new CustomBinding.PropertyBinder<Integer>(wrapper.width.asObject()),
+					cleanup2.add(CustomBinding.bindBidirectional(new CustomBinding.PropertyBinder<Integer>(wrapper.width.asObject()),
 							new CustomBinding.PropertyBinder<Integer>(s.getValueFactory().valueProperty())
 					));
 				}).intSpinner("Height", 1, 99999, s -> {
-					cleanup.add(CustomBinding.bindBidirectional(new CustomBinding.PropertyBinder<Integer>(wrapper.height
+					cleanup2.add(CustomBinding.bindBidirectional(new CustomBinding.PropertyBinder<Integer>(wrapper.height
 									.asObject()),
 							new CustomBinding.PropertyBinder<Integer>(s.getValueFactory().valueProperty())
 					));
@@ -251,5 +253,11 @@ public class CameraEditHandle extends GroupNodeEditHandle {
 			return new ToolViewport((CameraWrapper) wrapper);
 		} else
 			return super.createTool(context, window, newValue);
+	}
+
+	@Override
+	public void remove(ProjectContext context, Window window) {
+		super.remove(context, window);
+		cleanup2.forEach(c -> c.destroy());
 	}
 }

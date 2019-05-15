@@ -100,11 +100,11 @@ public class GroupChildWrapper extends Wrapper {
 	}
 
 	@Override
-	public CanvasHandle getCanvas(
-			ProjectContext context, Window window
+	public CanvasHandle buildCanvas(
+			ProjectContext context, Window window, CanvasHandle parent
 	) {
 		if (canvasHandle == null)
-			canvasHandle = new GroupChildCanvasHandle(context, window, this, canvasParent);
+			canvasHandle = new GroupChildCanvasHandle(context, window, this, parent);
 		return canvasHandle;
 	}
 

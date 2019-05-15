@@ -26,8 +26,8 @@ public class CameraWrapper extends GroupNodeWrapper {
 	public final Camera node;
 	public final SimpleIntegerProperty width = new SimpleIntegerProperty(0);
 	public final SimpleIntegerProperty height = new SimpleIntegerProperty(0);
-	private final Runnable cleanupWidth;
-	private final Runnable cleanupHeight;
+	private final CustomBinding.BinderRoot cleanupWidth;
+	private final CustomBinding.BinderRoot cleanupHeight;
 	public boolean adjustViewport = false;
 	private ProjectContext.Tuple actionWidthChange = new ProjectContext.Tuple(this, "width");
 	private ProjectContext.Tuple actionHeightChange = new ProjectContext.Tuple(this, "height");
@@ -59,14 +59,14 @@ public class CameraWrapper extends GroupNodeWrapper {
 
 	@Override
 	public void remove(ProjectContext context) {
-		cleanupWidth.run();
-		cleanupHeight.run();
+		cleanupWidth.destroy();
+		cleanupHeight.destroy();
 		super.remove(context);
 	}
 
 	@Override
-	public CanvasHandle getCanvas(
-			ProjectContext context, Window window
+	public CanvasHandle buildCanvas(
+			ProjectContext context, Window window, CanvasHandle parent
 	) {
 		if (canvasHandle == null) {
 			class CameraCanvasHandle extends GroupNodeCanvasHandle {

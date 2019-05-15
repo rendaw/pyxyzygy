@@ -57,11 +57,11 @@ public abstract class BaseImageNodeWrapper<N extends ProjectLayer, F extends Pro
 	}
 
 	@Override
-	public CanvasHandle getCanvas(
-			ProjectContext context, Window window
+	public CanvasHandle buildCanvas(
+			ProjectContext context, Window window, CanvasHandle parent
 	) {
 		if (canvasHandle == null)
-			canvasHandle = new BaseImageCanvasHandle<N, F, T, L>(context, canvasParent, this);
+			canvasHandle = new BaseImageCanvasHandle<N, F, T, L>(context, parent, this);
 		return canvasHandle;
 	}
 

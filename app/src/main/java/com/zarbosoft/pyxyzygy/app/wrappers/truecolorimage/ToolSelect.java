@@ -72,7 +72,7 @@ public class ToolSelect extends BaseToolSelect<TrueColorImageFrame, TrueColorIma
 	@Override
 	protected Vector negViewCenter(Window window) {
 		return editHandle.wrapper.canvasHandle
-				.toInner(window.selectedForView.get().getWrapper().getConfig().scroll.get())
+				.toInner(window.getSelectedForView().getWrapper().getConfig().scroll.get())
 				.toInt();
 	}
 

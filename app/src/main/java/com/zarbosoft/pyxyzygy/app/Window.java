@@ -18,7 +18,6 @@ import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.Pair;
 import javafx.beans.binding.Bindings;
-import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -51,8 +50,32 @@ import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 
 public class Window {
 	public List<FrameMapEntry> timeMap;
-	public SimpleObjectProperty<EditHandle> selectedForEdit = new SimpleObjectProperty<>();
-	public SimpleObjectProperty<CanvasHandle> selectedForView = new SimpleObjectProperty<>();
+	public CustomBinding.ManualHalfBinder<Wrapper> selectedForEditWrapperEnabledBinder =
+			new CustomBinding.ManualHalfBinder<>();
+	public CustomBinding.ManualHalfBinder<EditHandle> selectedForEditOriginBinder =
+			new CustomBinding.ManualHalfBinder<>();
+	public CustomBinding.ManualHalfBinder<EditHandle> selectedForEditOpacityBinder =
+			new CustomBinding.ManualHalfBinder<>();
+	public CustomBinding.ManualHalfBinder<EditHandle> selectedForEditFramerateBinder =
+			new CustomBinding.ManualHalfBinder<>();
+	public CustomBinding.ManualHalfBinder<EditHandle> selectedForEditOnionBinder =
+			new CustomBinding.ManualHalfBinder<>();
+	public CustomBinding.ManualHalfBinder<EditHandle> selectedForEditPlayingBinder =
+			new CustomBinding.ManualHalfBinder<>();
+	public CustomBinding.ManualHalfBinder<EditHandle> selectedForEditTreeIconBinder =
+			new CustomBinding.ManualHalfBinder<>();
+	private EditHandle selectedForEdit = null;
+	public CustomBinding.ManualHalfBinder<CanvasHandle> selectedForViewZoomControlBinder =
+			new CustomBinding.ManualHalfBinder<>();
+	public CustomBinding.ManualHalfBinder<CanvasHandle> selectedForViewMaxFrameBinder =
+			new CustomBinding.ManualHalfBinder<>();
+	public CustomBinding.ManualHalfBinder<CanvasHandle> selectedForViewPlayingBinder =
+			new CustomBinding.ManualHalfBinder<>();
+	public CustomBinding.ManualHalfBinder<CanvasHandle> selectedForViewFrameBinder =
+			new CustomBinding.ManualHalfBinder<>();
+	public CustomBinding.ManualHalfBinder<CanvasHandle> selectedForViewTreeIconBinder =
+			new CustomBinding.ManualHalfBinder<>();
+	private CanvasHandle selectedForView = null;
 	public Set<KeyCode> pressed = new HashSet<>();
 	public Editor editor;
 	private Tab layerTab;
@@ -103,6 +126,122 @@ public class Window {
 		}
 	}
 
+	public EditHandle getSelectedForEdit() {
+		return selectedForEdit;
+	}
+
+	public CanvasHandle getSelectedForView() {
+		return selectedForView;
+	}
+
+	public void selectForView(ProjectContext context, Wrapper wrapper) {
+		selectForView(context, wrapper, false);
+	}
+
+	public void selectForView(ProjectContext context, Wrapper wrapper, boolean fromEdit) {
+		CanvasHandle oldValue = selectedForView;
+		selectedForView = null;
+		if (wrapper == null) {
+			return;
+		}
+		selectedForView = wrapper.buildCanvas(context, this, null);
+
+		selectedForViewZoomControlBinder.clear();
+		selectedForViewMaxFrameBinder.clear();
+		selectedForViewPlayingBinder.clear();
+		selectedForViewFrameBinder.clear();
+		selectedForViewTreeIconBinder.clear();
+
+		editor.selectedForViewChanged(context, oldValue, selectedForView);
+
+		if (!fromEdit)
+			timeline.setNodes(selectedForView, selectedForEdit);
+
+		structure.selectedForView(context, selectedForView);
+
+		selectedForViewZoomControlBinder.set(selectedForView);
+		selectedForViewMaxFrameBinder.set(selectedForView);
+		selectedForViewPlayingBinder.set(selectedForView);
+		selectedForViewFrameBinder.set(selectedForView);
+		selectedForViewTreeIconBinder.set(selectedForView);
+	}
+
+	public void selectForEdit(ProjectContext context, Wrapper wrapper) {
+		selectedForEditWrapperEnabledBinder.set(wrapper);
+
+		/*
+		Canvas is always created first if necessary
+		Then edit handle
+		Then various callbacks called
+		 */
+		EditHandle oldValue = selectedForEdit;
+		selectedForEdit = null;
+		if (wrapper == null) {
+			return;
+		}
+
+		Wrapper preParent = wrapper;
+		Wrapper parent = wrapper.getParent();
+		boolean found = false;
+		while (parent != null) {
+			if (selectedForView.getWrapper() == parent) {
+				found = true;
+				break;
+			}
+			preParent = parent;
+			parent = parent.getParent();
+		}
+		if (found) {
+			selectedForEdit = wrapper.buildEditControls(context, this);
+		} else {
+			selectForView(context, preParent, true);
+			selectedForEdit = wrapper.buildEditControls(context, this);
+		}
+
+		// Clear binder states while transitioning
+		selectedForEditOriginBinder.clear();
+		selectedForEditOpacityBinder.clear();
+		selectedForEditFramerateBinder.clear();
+		selectedForEditOnionBinder.clear();
+		selectedForEditPlayingBinder.clear();
+		selectedForEditTreeIconBinder.clear();
+
+		// React to change
+		structure.selectedForEdit(context, selectedForEdit);
+
+		timeline.setNodes(selectedForView, selectedForEdit);
+
+		editor.selectedForEditChanged(context, oldValue, selectedForEdit);
+
+		selectedForEditOriginBinder.set(selectedForEdit);
+		selectedForEditOpacityBinder.set(selectedForEdit);
+		selectedForEditFramerateBinder.set(selectedForEdit);
+		selectedForEditOnionBinder.set(selectedForEdit);
+		selectedForEditPlayingBinder.set(selectedForEdit);
+		selectedForEditTreeIconBinder.set(selectedForEdit);
+
+		// Mark selected items in structure
+		NodeConfig oldConfig;
+		if (oldValue != null) {
+			oldValue.remove(context, this);
+			oldConfig = oldValue.getWrapper().getConfig();
+		} else {
+			oldConfig = null;
+		}
+		NodeConfig newConfig;
+		if (selectedForEdit != null) {
+			newConfig = selectedForEdit.getWrapper().getConfig();
+		} else {
+			newConfig = null;
+		}
+		if (newConfig != oldConfig) {
+			if (oldConfig != null)
+				oldConfig.selectedSomewhere.set(false);
+			if (newConfig != null)
+				newConfig.selectedSomewhere.set(true);
+		}
+	}
+
 	public void start(ProjectContext context, Stage primaryStage, boolean main) {
 		this.stage = primaryStage;
 		Thread.currentThread().setUncaughtExceptionHandler((thread, e) -> {
@@ -114,7 +253,8 @@ public class Window {
 			textArea.setMaxHeight(Double.MAX_VALUE);
 			dialog("An unexpected error occurred")
 					.addContent(new TitledPane("Trace", textArea))
-					.addAction(ButtonType.OK, true, () -> true).go();
+					.addAction(ButtonType.OK, true, () -> true)
+					.go();
 		});
 		primaryStage.getIcons().addAll(GUILaunch.appIcons);
 		primaryStage.setOnCloseRequest(e -> {
@@ -145,28 +285,6 @@ public class Window {
 						}
 				)
 				.forEach(context.hotkeys::register);
-
-		selectedForEdit.addListener((observable, oldValue, newValue) -> {
-			NodeConfig oldConfig;
-			if (oldValue != null) {
-				oldValue.remove(context, this);
-				oldConfig = oldValue.getWrapper().getConfig();
-			} else {
-				oldConfig = null;
-			}
-			NodeConfig newConfig;
-			if (newValue != null) {
-				newConfig = newValue.getWrapper().getConfig();
-			} else {
-				newConfig = null;
-			}
-			if (newConfig != oldConfig) {
-				if (oldConfig != null)
-					oldConfig.selectedSomewhere.set(false);
-				if (newConfig != null)
-					newConfig.selectedSomewhere.set(true);
-			}
-		});
 
 		TabPane leftTabs = new TabPane();
 		leftTabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
@@ -220,11 +338,9 @@ public class Window {
 			spinner.setPrefWidth(60);
 			spinner.setEditable(true);
 			spinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(-10, 50));
-			CustomBinding.bindBidirectional(new CustomBinding.IndirectBinder<>(selectedForView,
-							v -> opt(v == null ? null : v.getWrapper().getConfig().zoom)
-					),
-					new CustomBinding.PropertyBinder<Integer>(spinner.getValueFactory().valueProperty())
-			);
+			CustomBinding.bindBidirectional(new CustomBinding.IndirectBinder<>(selectedForViewZoomControlBinder,
+					v -> opt(v == null ? null : v.getWrapper().getConfig().zoom)
+			), new CustomBinding.PropertyBinder<Integer>(spinner.getValueFactory().valueProperty()));
 			final ImageView imageView = new ImageView(icon("zoom.png"));
 			zoomBox.getChildren().addAll(imageView, spinner);
 		}
@@ -440,6 +556,7 @@ public class Window {
 			ancestors.add(at);
 			at = at.getParent();
 		}
+		System.out.format("anc %s\n", ancestors.size());
 		return ancestors;
 	}
 

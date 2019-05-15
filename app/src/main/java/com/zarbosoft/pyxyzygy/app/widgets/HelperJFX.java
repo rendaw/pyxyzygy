@@ -393,7 +393,7 @@ public class HelperJFX {
 		alert.showAndWait();
 	}
 
-	public static Runnable bindStyle(Node node, String styleClass, CustomBinding.HalfBinder<Boolean> source) {
+	public static CustomBinding.BinderRoot bindStyle(Node node, String styleClass, CustomBinding.HalfBinder<Boolean> source) {
 		return source.addListener(b -> {
 			if (b) {
 				if (!node.getStyleClass().contains(styleClass))

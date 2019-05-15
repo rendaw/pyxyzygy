@@ -20,7 +20,7 @@ import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.centerCursor;
 
 public class ToolLayerMove extends Tool {
 	private final GroupNodeEditHandle editHandle;
-	private Runnable originCleanup;
+	private CustomBinding.BinderRoot originCleanup;
 	protected DoubleVector markStart;
 	private Vector markStartOffset;
 	private GroupNodeWrapper wrapper;
@@ -58,7 +58,7 @@ public class ToolLayerMove extends Tool {
 		CustomBinding.bind(origin.visibleProperty(), selectBinder.map(s -> opt(s != null)));
 		new CustomBinding.DoubleHalfBinder<>(selectBinder,wrapper.getConfig().frame).addListener((select, frame) -> {
 			if (originCleanup != null) {
-				originCleanup.run();
+				originCleanup.destroy();
 				originCleanup = null;
 			}
 			if (select == null) return;
@@ -109,7 +109,7 @@ public class ToolLayerMove extends Tool {
 		editHandle.toolPropReplacer.clear(this);
 		origin.remove();
 		if (originCleanup != null) {
-			originCleanup.run();
+			originCleanup.destroy();
 			originCleanup = null;
 		}
 	}

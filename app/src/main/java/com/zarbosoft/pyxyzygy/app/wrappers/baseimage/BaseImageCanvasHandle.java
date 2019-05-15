@@ -24,7 +24,7 @@ public class BaseImageCanvasHandle<N extends ProjectLayer, F extends ProjectObje
 	public SimpleIntegerProperty zoom = new SimpleIntegerProperty(1);
 	private Listener.MapPutAll<F, Long, T> tilesPutListener;
 	private Listener.Clear<F> tilesClearListener;
-	private Runnable offsetCleanup;
+	private CustomBinding.BinderRoot offsetCleanup;
 
 	public BaseImageCanvasHandle(
 			ProjectContext context, CanvasHandle parent, BaseImageNodeWrapper<N, F, T, L> wrapper
@@ -178,7 +178,7 @@ public class BaseImageCanvasHandle<N extends ProjectLayer, F extends ProjectObje
 		wrapper.removeFrameTilesPutAllListener(frame, tilesPutListener);
 		wrapper.removeFrameTilesClearListener(frame, tilesClearListener);
 		if (offsetCleanup != null) {
-			offsetCleanup.run();
+			offsetCleanup.destroy();
 			offsetCleanup = null;
 		}
 		tilesPutListener = null;

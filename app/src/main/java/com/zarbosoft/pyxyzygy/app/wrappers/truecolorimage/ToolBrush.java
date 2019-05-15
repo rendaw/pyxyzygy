@@ -57,7 +57,7 @@ public class ToolBrush extends BaseToolBrush<TrueColorImageFrame, TrueColorImage
 								.check("Use brush color", widget -> {
 									widget.selectedProperty().bindBidirectional(brush.useColor);
 									widget.selectedProperty().addListener(new ChangeListener<Boolean>() {
-										Runnable pickerBindingCleanup;
+										CustomBinding.BinderRoot pickerBindingCleanup;
 
 										{
 											changed(null, null, widget.isSelected());
@@ -76,7 +76,7 @@ public class ToolBrush extends BaseToolBrush<TrueColorImageFrame, TrueColorImage
 												color = context.config.trueColor;
 
 											if (pickerBindingCleanup != null) {
-												pickerBindingCleanup.run();
+												pickerBindingCleanup.destroy();
 												pickerBindingCleanup = null;
 											}
 											pickerBindingCleanup = CustomBinding.bindBidirectional(
@@ -179,9 +179,9 @@ public class ToolBrush extends BaseToolBrush<TrueColorImageFrame, TrueColorImage
 			TrueColorImage out = TrueColorImage.create(1, 1);
 			Render.render(
 					context,
-					window.selectedForView.get().getWrapper().getValue(),
+					window.getSelectedForView().getWrapper().getValue(),
 					out,
-					window.selectedForView.get().frameNumber.get(),
+					window.getSelectedForView().frameNumber.get(),
 					new Rectangle((int) Math.floor(outer.x), (int) Math.floor(outer.y), 1, 1),
 					1
 			);

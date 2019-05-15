@@ -77,6 +77,7 @@ public class Timeline {
 			toolBox.getChildren().clear();
 		}
 	};
+	private final CustomBinding.BinderRoot rootFrame; // GC root
 	public double zoom = 16;
 
 	VBox foreground = new VBox();
@@ -156,31 +157,22 @@ public class Timeline {
 			}
 		}).forEach(context.hotkeys::register);
 
-		window.selectedForView.addListener(new ChangeListener<CanvasHandle>() {
-			{
-				changed(null, null, window.selectedForView.get());
-			}
-
-			@Override
-			public void changed(
-					ObservableValue<? extends CanvasHandle> observable, CanvasHandle oldValue, CanvasHandle newValue
-			) {
-				Observable[] deps;
-				if (newValue == null)
-					deps = new Observable[] {requestedMaxFrame, calculatedMaxFrame};
-				else
-					deps = new Observable[] {
-							requestedMaxFrame, calculatedMaxFrame, frame
-					};
-				useMaxFrame.bind(Bindings.createIntegerBinding(() -> {
-					int out = 0;
-					out = Math.max(out, requestedMaxFrame.get());
-					out = Math.max(out, calculatedMaxFrame.get());
-					if (newValue != null)
-						out = Math.max(out, frame.get());
-					return out + extraFrames;
-				}, deps));
-			}
+		window.selectedForViewMaxFrameBinder.addListener(newValue -> {
+			Observable[] deps;
+			if (newValue == null)
+				deps = new Observable[] {requestedMaxFrame, calculatedMaxFrame};
+			else
+				deps = new Observable[] {
+						requestedMaxFrame, calculatedMaxFrame, frame
+				};
+			useMaxFrame.bind(Bindings.createIntegerBinding(() -> {
+				int out = 0;
+				out = Math.max(out, requestedMaxFrame.get());
+				out = Math.max(out, calculatedMaxFrame.get());
+				if (newValue != null)
+					out = Math.max(out, frame.get());
+				return out + extraFrames;
+			}, deps));
 		});
 		timeScroll.maxProperty().bind(useMaxFrame.multiply(zoom));
 		tree.addEventFilter(MouseEvent.MOUSE_ENTERED, e -> {
@@ -201,7 +193,7 @@ public class Timeline {
 		scrub.setMinHeight(30);
 		scrub.getChildren().addAll(scrubElements);
 		EventHandler<MouseEvent> mouseEventEventHandler = e -> {
-			if (window.selectedForView.get() == null)
+			if (window.getSelectedForView() == null)
 				return;
 			frame.set(Math.max(0, (int) (getTimelineX(e) / zoom)));
 			updateFrameMarker();
@@ -221,7 +213,7 @@ public class Timeline {
 		}, tree.getSelectionModel().selectedItemProperty());
 		add.disableProperty().bind(hasNoFrames);
 		add.setOnAction(e -> {
-			if (window.selectedForView.get() == null)
+			if (window.getSelectedForView() == null)
 				return;
 			context.change(null, change -> {
 				tree
@@ -237,7 +229,7 @@ public class Timeline {
 		duplicate = HelperJFX.button("content-copy.png", "Duplicate");
 		duplicate.disableProperty().bind(hasNoFrames);
 		duplicate.setOnAction(e -> {
-			if (window.selectedForView.get() == null)
+			if (window.getSelectedForView() == null)
 				return;
 			context.change(null, change -> {
 				tree
@@ -292,12 +284,9 @@ public class Timeline {
 		});
 		ToggleButton onion = new ToggleButton(null, new ImageView(icon("onion.png")));
 		onion.setTooltip(new Tooltip("Toggle onion skin"));
-		CustomBinding.bindBidirectional(
-				new CustomBinding.IndirectBinder<Boolean>(window.selectedForEdit,
-						e -> Optional.ofNullable(e).map(e1 -> e1.getWrapper().getConfig().onionSkin)
-				),
-				new CustomBinding.PropertyBinder<Boolean>(onion.selectedProperty())
-		);
+		CustomBinding.bindBidirectional(new CustomBinding.IndirectBinder<Boolean>(window.selectedForEditOnionBinder,
+				e -> Optional.ofNullable(e).map(e1 -> e1.getWrapper().getConfig().onionSkin)
+		), new CustomBinding.PropertyBinder<Boolean>(onion.selectedProperty()));
 		toolBox = new HBox();
 
 		Region space = new Region();
@@ -314,22 +303,24 @@ public class Timeline {
 			spinner.setPrefWidth(60);
 			spinner.setEditable(true);
 			spinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 100));
-			CustomBinding.bindBidirectional(new CustomBinding.IndirectBinder<>(window.selectedForEdit, v -> {
-				if (v == null)
-					return opt(null);
-				Wrapper wrapper = v.getWrapper();
-				if (wrapper instanceof CameraWrapper) {
-					Camera camera = ((CameraWrapper) wrapper).node;
-					return opt(new CustomBinding.ScalarBinder<Integer>(camera,
-							"frameRate",
-							r -> context.change(new ProjectContext.Tuple(camera, "framerate"),
-									c -> c.camera(camera).frameRateSet(r)
-							)
-					));
-				} else {
-					return opt(wrapper.getConfig().previewRate);
-				}
-			}), new CustomBinding.PropertyBinder<Integer>(spinner.getValueFactory().valueProperty()));
+			CustomBinding.bindBidirectional(new CustomBinding.IndirectBinder<>(window.selectedForEditFramerateBinder,
+					v -> {
+						if (v == null)
+							return opt(null);
+						Wrapper wrapper = v.getWrapper();
+						if (wrapper instanceof CameraWrapper) {
+							Camera camera = ((CameraWrapper) wrapper).node;
+							return opt(new CustomBinding.ScalarBinder<Integer>(camera,
+									"frameRate",
+									r -> context.change(new ProjectContext.Tuple(camera, "framerate"),
+											c -> c.camera(camera).frameRateSet(r)
+									)
+							));
+						} else {
+							return opt(wrapper.getConfig().previewRate);
+						}
+					}
+			), new CustomBinding.PropertyBinder<Integer>(spinner.getValueFactory().valueProperty()));
 			final ImageView imageView = new ImageView(icon("play-speed.png"));
 			previewRate.getChildren().addAll(imageView, spinner);
 		}
@@ -454,17 +445,13 @@ public class Timeline {
 		scrubElements.getChildren().add(frameMarker);
 		timeScroll.visibleAmountProperty().bind(scrub.widthProperty().subtract(nameColumn.widthProperty()));
 
-		window.selectedForView.addListener((observable, oldValue, newValue) -> {
-			setNodes(newValue, window.selectedForEdit.get());
-			if (newValue == null)
-				frame.unbind();
-			else
-				frame.bindBidirectional(newValue.getWrapper().getConfig().frame);
-		});
-		window.selectedForEdit.addListener((observable, oldValue, newValue) -> setNodes(window.selectedForView.get(),
-				newValue
-		));
-		setNodes(window.selectedForView.get(), window.selectedForEdit.get());
+		rootFrame = CustomBinding.bind(frame,
+				new CustomBinding.IndirectHalfBinder<Number>(window.selectedForViewFrameBinder,
+						e -> e == null ?
+								Optional.empty() :
+								opt(new CustomBinding.PropertyHalfBinder<>(e.getWrapper().getConfig().frame))
+				)
+		);
 		final ChangeListener<Number> frameListener = new ChangeListener<>() {
 			{
 				changed(null, null, frame.get());
@@ -478,8 +465,8 @@ public class Timeline {
 		frame.addListener(frameListener);
 
 		new CustomBinding.DoubleHalfBinder<Boolean, Pair<CanvasHandle, EditHandle>>(playingProperty,
-				new CustomBinding.DoubleHalfBinder<>(window.selectedForView,
-						window.selectedForEdit
+				new CustomBinding.DoubleHalfBinder<>(window.selectedForViewPlayingBinder,
+						window.selectedForEditPlayingBinder
 				)
 		).addListener((Boolean playing, Pair<CanvasHandle, EditHandle> sel) -> {
 			((ImageView) previewPlay.getGraphic()).setImage(playing ? icon("stop.png") : icon("play.png"));
@@ -719,7 +706,7 @@ public class Timeline {
 	}
 
 	private void updateFrameMarker() {
-		CanvasHandle root = window.selectedForView.get();
+		CanvasHandle root = window.getSelectedForView();
 		if (root == null)
 			return;
 		root.setFrame(context, frame.get());
@@ -901,7 +888,7 @@ public class Timeline {
 	}
 
 	public TimeMapper createTimeMapper(ProjectObject object) {
-		if (object == window.selectedForEdit.get().getWrapper().getValue())
+		if (object == window.getSelectedForEdit().getWrapper().getValue())
 			return createEndTimeHandle();
 		if (false) {
 			throw new Assertion();
@@ -914,7 +901,8 @@ public class Timeline {
 				TimeMapper child;
 
 				{
-					childrenAddListener = ((GroupLayer) object).addChildrenAddListeners((target, at, value) -> relocate());
+					childrenAddListener =
+							((GroupLayer) object).addChildrenAddListeners((target, at, value) -> relocate());
 					childrenRemoveListener =
 							((GroupLayer) object).addChildrenRemoveListeners((target, at, count) -> relocate());
 					childrenMoveToListener =
@@ -931,7 +919,7 @@ public class Timeline {
 					// Find the layer that leads to the edited node
 					// First find the layer whose parent is this node
 					Wrapper beforeAt = null;
-					Wrapper at = window.selectedForEdit.get().getWrapper();
+					Wrapper at = window.getSelectedForEdit().getWrapper();
 					while (at != null && at.getValue() != object) {
 						beforeAt = at;
 						at = at.getParent();
@@ -976,7 +964,7 @@ public class Timeline {
 									child.remove();
 								if (value ==
 										Optional
-												.ofNullable(window.selectedForEdit.get())
+												.ofNullable(window.getSelectedForEdit())
 												.map(e -> e.getWrapper().getValue())
 												.orElse(null))
 									child = createTimeMapper(value);

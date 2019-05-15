@@ -18,6 +18,7 @@ import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 public class Origin extends Group {
 	private final Line originVert = new Line();
 	private final Line originHoriz = new Line();
+	private final CustomBinding.BinderRoot selectedForEditCleanup;
 	private Group overlay;
 
 	public final SimpleObjectProperty<Vector> offset = new SimpleObjectProperty<Vector>(Vector.ZERO);
@@ -45,24 +46,15 @@ public class Origin extends Group {
 
 		setBlendMode(BlendMode.DIFFERENCE);
 
-		window.selectedForEdit.addListener(new ChangeListener<EditHandle>() {
-			{
-				changed(null, null, window.selectedForEdit.get());
+		this.selectedForEditCleanup = window.selectedForEditOriginBinder.addListener(newValue -> {
+			if (overlay != null) {
+				overlay.getChildren().remove(Origin.this);
+				overlay = null;
 			}
 
-			@Override
-			public void changed(
-					ObservableValue<? extends EditHandle> observable, EditHandle oldValue, EditHandle newValue
-			) {
-				if (overlay != null) {
-					overlay.getChildren().remove(Origin.this);
-					overlay = null;
-				}
-
-				if (newValue != null) {
-					overlay = newValue.getCanvas().overlay;
-					overlay.getChildren().addAll(Origin.this);
-				}
+			if (newValue != null) {
+				overlay = newValue.getCanvas().overlay;
+				overlay.getChildren().addAll(Origin.this);
 			}
 		});
 	}
@@ -70,5 +62,6 @@ public class Origin extends Group {
 	public void remove() {
 		overlay.getChildren().remove(Origin.this);
 		overlay = null;
+		selectedForEditCleanup.destroy();
 	}
 }

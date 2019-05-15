@@ -24,7 +24,7 @@ public class OnionSkin {
 	// Convenience, from relations
 	private final SimpleIntegerProperty frameProp;
 	private final SimpleObjectProperty<DoubleRectangle> bounds;
-	private final Runnable onCleanup;
+	private final CustomBinding.BinderRoot onCleanup;
 	private final CustomBinding.HalfBinder<Boolean> on;
 	private final Group overlay;
 
@@ -54,7 +54,7 @@ public class OnionSkin {
 	}
 
 	public void remove() {
-		onCleanup.run();
+		onCleanup.destroy();
 		overlay.getChildren().remove(widget);
 	}
 

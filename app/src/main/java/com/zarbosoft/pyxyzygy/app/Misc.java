@@ -45,9 +45,9 @@ public class Misc {
 			ProjectContext context, WidgetFormBuilder builder, Wrapper wrapper
 	) {
 		return new Runnable() {
-			private Runnable enabledCleanup;
-			private Runnable opacityCleanup;
-			private Runnable nameCleanup;
+			private CustomBinding.BinderRoot enabledCleanup;
+			private CustomBinding.BinderRoot opacityCleanup;
+			private CustomBinding.BinderRoot nameCleanup;
 
 			{
 				ProjectLayer node = (ProjectLayer) wrapper.getValue();
@@ -100,11 +100,11 @@ public class Misc {
 
 			@Override
 			public void run() {
-				nameCleanup.run();
+				nameCleanup.destroy();
 				if (enabledCleanup != null)
-					enabledCleanup.run();
+					enabledCleanup.destroy();
 				if (opacityCleanup != null)
-					opacityCleanup.run();
+					opacityCleanup.destroy();
 			}
 		};
 	}
