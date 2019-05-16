@@ -21,7 +21,6 @@ import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
-import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
@@ -109,6 +108,7 @@ public class Window {
 	public Timeline timeline;
 	private StackPane stack;
 	public Structure structure;
+	private CustomBinding.BinderRoot rootTabWidth;
 
 	public static class Tab extends javafx.scene.control.Tab {
 		ScrollPane scrollPane = new ScrollPane();
@@ -293,29 +293,22 @@ public class Window {
 		layerTab = new Tab("Layer");
 		layerTab.disableProperty().bind(layerTab.contentProperty().isNull());
 		leftTabs.getTabs().addAll(structureTab, layerTab, configTab);
-		{
-			CustomBinding.ListPropertyHalfBinder<ObservableList<javafx.scene.control.Tab>> tabsProp =
-					new CustomBinding.ListPropertyHalfBinder<>(leftTabs.getTabs());
-			CustomBinding.bind(leftTabs.minWidthProperty(),
-					new CustomBinding.IndirectHalfBinder<>(tabsProp.<List<CustomBinding.HalfBinder<Double>>>map(l -> opt(
-							l
+		this.rootTabWidth = CustomBinding.bind(leftTabs.minWidthProperty(),
+				new CustomBinding.IndirectHalfBinder<>(new CustomBinding.ListPropertyHalfBinder<>(leftTabs.getTabs()).<List<CustomBinding.HalfBinder<Double>>>map(
+						l -> opt(l.stream().map(t -> new CustomBinding.IndirectHalfBinder<Double>(t.contentProperty(),
+								c -> opt(c == null ? null : ((Region) c).widthProperty().asObject())
+						)).collect(Collectors.toList()))),
+						l -> opt(new CustomBinding.ListElementsHalfBinder<Double>(l, s -> {
+							double out = leftTabs
+									.getTabs()
 									.stream()
-									.map(t -> new CustomBinding.IndirectHalfBinder<Double>(t.contentProperty(),
-											c -> opt(c == null ? null : ((Region) c).widthProperty().asObject())
-									))
-									.collect(Collectors.toList()))),
-							l -> opt(new CustomBinding.ListElementsHalfBinder<Double>(l, s -> {
-								double out = leftTabs
-										.getTabs()
-										.stream()
-										.mapToDouble(t -> t.getContent().minWidth(-1))
-										.max()
-										.orElse(0);
-								return opt(out);
-							}))
-					)
-			);
-		}
+									.mapToDouble(t -> t.getContent().minWidth(-1))
+									.max()
+									.orElse(0);
+							return opt(out);
+						}))
+				)
+		);
 
 		structure = new Structure(context, this, main);
 		structureTab.setContent(structure.getWidget());
@@ -338,9 +331,12 @@ public class Window {
 			spinner.setPrefWidth(60);
 			spinner.setEditable(true);
 			spinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(-10, 50));
-			CustomBinding.bindBidirectional(new CustomBinding.IndirectBinder<>(selectedForViewZoomControlBinder,
-					v -> opt(v == null ? null : v.getWrapper().getConfig().zoom)
-			), new CustomBinding.PropertyBinder<Integer>(spinner.getValueFactory().valueProperty()));
+			CustomBinding.bindBidirectional(
+					new CustomBinding.IndirectBinder<>(selectedForViewZoomControlBinder,
+							v -> opt(v == null ? null : v.getWrapper().getConfig().zoom)
+					),
+					new CustomBinding.PropertyBinder<Integer>(spinner.getValueFactory().valueProperty())
+			);
 			final ImageView imageView = new ImageView(icon("zoom.png"));
 			zoomBox.getChildren().addAll(imageView, spinner);
 		}
@@ -556,7 +552,6 @@ public class Window {
 			ancestors.add(at);
 			at = at.getParent();
 		}
-		System.out.format("anc %s\n", ancestors.size());
 		return ancestors;
 	}
 
