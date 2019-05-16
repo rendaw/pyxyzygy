@@ -425,7 +425,7 @@ public class Timeline {
 				.bind(tree
 						.widthProperty()
 						.subtract(nameColumn.widthProperty())
-						.subtract(25 /* No way to get actual inner width? Also leave room for scrollbar :& */));
+						.subtract(25 /* No way to get actual paint width? Also leave room for scrollbar :& */));
 		foreground.getChildren().addAll(toolBar, tree, scrub, timeScroll);
 
 		foreground.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
@@ -851,7 +851,7 @@ public class Timeline {
 					}
 				}
 
-				// Create the inner frames to fill up the designated range
+				// Create the paint frames to fill up the designated range
 				if (useLength == Global.NO_LENGTH) {
 					subMap.add(new FrameMapEntry(Global.NO_LENGTH, innerOffset));
 					break;
@@ -865,7 +865,7 @@ public class Timeline {
 						endAt += maxLength;
 					}
 
-					// Make inner frames for each loop + a cap if unbounded
+					// Make paint frames for each loop + a cap if unbounded
 					while (at < endAt) {
 						subMap.add(new FrameMapEntry(useLength, innerOffset));
 						if (outerRemaining != Global.NO_LENGTH)

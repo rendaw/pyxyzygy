@@ -294,8 +294,7 @@ public class PaletteImageEditHandle extends EditHandle {
 			context.hotkeys.register(action);
 
 		// Overlay
-		overlay = new Group();
-		wrapper.canvasHandle.overlay.getChildren().add(overlay);
+		overlay = wrapper.canvasHandle.overlay;
 
 		Wrapper.ToolToggle move = new Wrapper.ToolToggle(wrapper, "cursor-move16.png", "Move layer", TOOL_MOVE);
 		Wrapper.ToolToggle select = new Wrapper.ToolToggle(wrapper, "select.png", "Select", TOOL_SELECT);
@@ -730,8 +729,6 @@ public class PaletteImageEditHandle extends EditHandle {
 			tool.remove(context, window);
 			tool = null;
 		}
-		if (wrapper.canvasHandle != null)
-			wrapper.canvasHandle.overlay.getChildren().remove(overlay);
 		brushesCleanup.run();
 		paletteTilesCleanup.run();
 		paletteAddCleanup.destroy();
@@ -755,7 +752,7 @@ public class PaletteImageEditHandle extends EditHandle {
 
 	@Override
 	public void cursorMoved(ProjectContext context, Window window, DoubleVector vector) {
-		vector = Window.toLocal(wrapper.canvasHandle, vector);
+		vector = Window.toLocal(wrapper.canvasHandle, vector).minus(offset());
 		mouseX.set(vector.x);
 		mouseY.set(vector.y);
 	}

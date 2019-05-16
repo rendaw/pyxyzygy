@@ -152,7 +152,7 @@ public class Window {
 		selectedForViewFrameBinder.clear();
 		selectedForViewTreeIconBinder.clear();
 
-		editor.selectedForViewChanged(context, oldValue, selectedForView);
+		editor.selectedForViewChanged(context, selectedForView);
 
 		if (!fromEdit)
 			timeline.setNodes(selectedForView, selectedForEdit);
@@ -211,7 +211,7 @@ public class Window {
 
 		timeline.setNodes(selectedForView, selectedForEdit);
 
-		editor.selectedForEditChanged(context, oldValue, selectedForEdit);
+		editor.selectedForEditChanged(context, selectedForEdit);
 
 		selectedForEditOriginBinder.set(selectedForEdit);
 		selectedForEditOpacityBinder.set(selectedForEdit);

@@ -16,16 +16,15 @@ public abstract class CanvasHandle {
 
 	public abstract DoubleVector toInner(DoubleVector vector);
 
-	private final Group outer = new Group();
-	public final Group inner = new Group();
+	public final Group paint = new Group();
 	public final Group overlay = new Group();
 
-	{
-		outer.getChildren().addAll(inner, overlay);
+	final public Node getPaintWidget() {
+		return paint;
 	}
 
-	final public Node getWidget() {
-		return outer;
+	final public Node getOverlayWidget() {
+		return overlay;
 	}
 
 	public abstract void setViewport(ProjectContext context, DoubleRectangle newBounds, int positiveZoom);

@@ -24,7 +24,7 @@ import java.util.Optional;
 import static com.zarbosoft.pyxyzygy.app.Global.NO_LOOP;
 
 public class RowAdapterGroupChildTime extends BaseFrameRowAdapter<GroupChild, GroupTimeFrame> {
-	// TODO setup listeners for inner subtree to keep track of the max inner frame (?)
+	// TODO setup listeners for paint subtree to keep track of the max paint frame (?)
 	final GroupChild child;
 	final RowAdapterGroupChild childRowAdapter;
 	Optional<RowTimeMapRangeWidget> rowInnerRange = Optional.empty();

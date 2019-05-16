@@ -44,7 +44,7 @@ public class RowTimeMapRangeWidget {
 
 	private final Group outerA = new Group();
 	private final Group outerB = new Group();
-	private final ImageView stopMark = new ImageView(icon("no-inner.png"));
+	private final ImageView stopMark = new ImageView(icon("no-paint.png"));
 	private final Rectangle stopSeparator;
 
 	private final Group inner = new Group();

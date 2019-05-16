@@ -61,6 +61,17 @@ public class Structure {
 	ToolBar toolbar;
 	ObservableSet<Wrapper> taggedLifted = FXCollections.observableSet();
 	Hotkeys.Action[] actions = new Hotkeys.Action[] {
+			new Hotkeys.Action(
+					Hotkeys.Scope.STRUCTURE,
+					"clear-lift",
+					"Clear lifting",
+					Hotkeys.Hotkey.create(KeyCode.ESCAPE, false, false, false)
+			) {
+				@Override
+				public void run(ProjectContext context, Window window) {
+					clearTagLifted();
+				}
+			},
 			new Hotkeys.Action(Hotkeys.Scope.STRUCTURE, "lift", "Lift", Global.cutHotkey) {
 				@Override
 				public void run(ProjectContext context, Window window) {
@@ -226,8 +237,7 @@ public class Structure {
 						}
 						if (newValue != null) {
 							viewingCleanup = CustomBinding.bind(showViewing.imageProperty(),
-									new CustomBinding.DoubleHalfBinder<EditHandle, CanvasHandle>(
-											window.selectedForEditTreeIconBinder,
+									new CustomBinding.DoubleHalfBinder<EditHandle, CanvasHandle>(window.selectedForEditTreeIconBinder,
 											window.selectedForViewTreeIconBinder
 									).map((edit, view) -> {
 										boolean isEdit = edit != null && edit.getWrapper() == wrapper.get();
@@ -773,11 +783,15 @@ public class Structure {
 	}
 
 	private void lift() {
-		clearTagLifted();
 		tree.getSelectionModel().getSelectedItems().stream().forEach(s -> {
 			Wrapper wrapper = s.getValue();
-			taggedLifted.add(wrapper);
-			wrapper.tagLifted.set(true);
+			if (wrapper.tagLifted.get()) {
+				taggedLifted.remove(wrapper);
+				wrapper.tagLifted.set(false);
+			} else {
+				taggedLifted.add(wrapper);
+				wrapper.tagLifted.set(true);
+			}
 		});
 	}
 

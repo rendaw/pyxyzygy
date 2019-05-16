@@ -22,7 +22,8 @@ public class Editor {
 	private final VBox layout;
 	public final StackPane outerCanvas;
 	public final Pane canvas;
-	private final Group canvasInner;
+	private final Group canvasInnerPaint;
+	private final Group canvasInnerOverlay;
 	private final ReadOnlyObjectProperty<Bounds> sizeProperty;
 	public final SimpleIntegerProperty positiveZoom = new SimpleIntegerProperty(1);
 	public final SimpleDoubleProperty zoomFactor = new SimpleDoubleProperty(1);
@@ -84,7 +85,7 @@ public class Editor {
 	private Runnable zoomListenerCleanup;
 
 	public void selectedForEditChanged(
-			ProjectContext context, EditHandle oldValue, EditHandle newValue
+			ProjectContext context, EditHandle newValue
 	) {
 		if (onionSkin != null) {
 			onionSkin.remove();
@@ -95,41 +96,44 @@ public class Editor {
 		}
 	}
 
-	public void selectedForViewChanged(ProjectContext context, CanvasHandle oldValue, CanvasHandle newView) {
+	public void selectedForViewChanged(ProjectContext context, CanvasHandle newView) {
 		canvas.scaleXProperty().unbind();
 		canvas.scaleYProperty().unbind();
 		if (zoomListenerCleanup != null) {
 			zoomListenerCleanup.run();
 			zoomListenerCleanup = null;
 		}
-		if (newView == null) return;
-			final ChangeListener<Number> zoomListener = (observable1, oldValue1, zoom0) -> {
-				updateBounds(context);
-				int zoom = zoom0.intValue();
-				positiveZoom.set(zoom < 0 ? 1 : (zoom + 1));
-				zoomFactor.set(zoom < 0 ? (1.0 / (1 + -zoom)) : (1 + zoom));
-			};
-			final NodeConfig config = newView.getWrapper().getConfig();
-			config.zoom.addListener(zoomListener);
-			zoomListener.changed(null, null, config.zoom.get());
-			canvas
-					.scaleXProperty()
-					.bind(Bindings.createDoubleBinding(() -> computeViewTransform(newView.getWrapper()).x,
-							config.zoom,
-							config.flipHorizontal
-					));
-			canvas
-					.scaleYProperty()
-					.bind(Bindings.createDoubleBinding(() -> computeViewTransform(newView.getWrapper()).y,
-							config.zoom,
-							config.flipVertical
-					));
+		if (newView == null)
+			return;
+		final ChangeListener<Number> zoomListener = (observable1, oldValue1, zoom0) -> {
 			updateBounds(context);
-			canvasInner.getChildren().add(newView.getWidget());
-			zoomListenerCleanup = () -> {
-				newView.getWrapper().getConfig().zoom.removeListener(zoomListener);
-				canvasInner.getChildren().clear();
-			};
+			int zoom = zoom0.intValue();
+			positiveZoom.set(zoom < 0 ? 1 : (zoom + 1));
+			zoomFactor.set(zoom < 0 ? (1.0 / (1 + -zoom)) : (1 + zoom));
+		};
+		final NodeConfig config = newView.getWrapper().getConfig();
+		config.zoom.addListener(zoomListener);
+		zoomListener.changed(null, null, config.zoom.get());
+		canvas
+				.scaleXProperty()
+				.bind(Bindings.createDoubleBinding(() -> computeViewTransform(newView.getWrapper()).x,
+						config.zoom,
+						config.flipHorizontal
+				));
+		canvas
+				.scaleYProperty()
+				.bind(Bindings.createDoubleBinding(() -> computeViewTransform(newView.getWrapper()).y,
+						config.zoom,
+						config.flipVertical
+				));
+		updateBounds(context);
+		canvasInnerPaint.getChildren().add(newView.getPaintWidget());
+		canvasInnerOverlay.getChildren().add(newView.getOverlayWidget());
+		zoomListenerCleanup = () -> {
+			newView.getWrapper().getConfig().zoom.removeListener(zoomListener);
+			canvasInnerPaint.getChildren().clear();
+			canvasInnerOverlay.getChildren().clear();
+		};
 	}
 
 	public class MouseCoords {
@@ -168,8 +172,10 @@ public class Editor {
 		if (viewHandle == null)
 			return;
 		DoubleVector scroll = viewHandle.getWrapper().getConfig().scroll.get();
-		canvasInner.setLayoutX(scroll.x + outerCanvas.widthProperty().get() / 2);
-		canvasInner.setLayoutY(scroll.y + outerCanvas.heightProperty().get() / 2);
+		canvasInnerPaint.setLayoutX(scroll.x + outerCanvas.widthProperty().get() / 2);
+		canvasInnerPaint.setLayoutY(scroll.y + outerCanvas.heightProperty().get() / 2);
+		canvasInnerOverlay.setLayoutX(scroll.x + outerCanvas.widthProperty().get() / 2);
+		canvasInnerOverlay.setLayoutY(scroll.y + outerCanvas.heightProperty().get() / 2);
 		double width = sizeProperty.get().getWidth() / zoomFactor.get();
 		double height = sizeProperty.get().getHeight() / zoomFactor.get();
 		viewHandle.setViewport(context,
@@ -191,10 +197,11 @@ public class Editor {
 		for (Hotkeys.Action action : actions)
 			context.hotkeys.register(action);
 
-		canvasInner = new Group();
+		canvasInnerPaint = new Group();
+		canvasInnerOverlay = new Group();
 
 		canvas = new Pane();
-		canvas.getChildren().addAll(canvasInner);
+		canvas.getChildren().addAll(canvasInnerPaint, canvasInnerOverlay);
 
 		outerCanvas = new StackPane();
 		VBox.setVgrow(outerCanvas, Priority.ALWAYS);
@@ -302,11 +309,7 @@ public class Editor {
 				return;
 			if (pointerEventState.button == MouseButton.PRIMARY) {
 				if (!pointerEventState.dragged) {
-					edit.mark(context,
-							window,
-							pointerEventState.previous.local,
-							pointerEventState.previous.local
-					);
+					edit.mark(context, window, pointerEventState.previous.local, pointerEventState.previous.local);
 				}
 				context.finishChange();
 			}
@@ -321,9 +324,7 @@ public class Editor {
 				}
 			} else if (pointerEventState.button == MouseButton.MIDDLE) {
 				updateScroll(context,
-						pointerEventState.startScroll.plus(end.global
-								.minus(pointerEventState.startScrollClick.global)
-								)
+						pointerEventState.startScroll.plus(end.global.minus(pointerEventState.startScrollClick.global))
 				);
 			}
 			pointerEventState.previous = end;

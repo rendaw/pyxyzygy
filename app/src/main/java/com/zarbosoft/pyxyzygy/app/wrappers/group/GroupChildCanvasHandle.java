@@ -58,13 +58,15 @@ public class GroupChildCanvasHandle extends CanvasHandle {
 				})
 		).addListener((child, enabled) -> {
 			if (childCanvas != null) {
-				inner.getChildren().clear();
+				paint.getChildren().clear();
+				overlay.getChildren().clear();
 				childCanvas.remove(context);
 			}
 			if (child != null && enabled) {
 				childCanvas = child.buildCanvas(context, window, this);
 				childCanvas.setViewport(context, bounds.get(), zoom);
-				inner.getChildren().add(childCanvas.getWidget());
+				paint.getChildren().add(childCanvas.getPaintWidget());
+				overlay.getChildren().add(childCanvas.getOverlayWidget());
 				GroupChildCanvasHandle.this.updateChildCanvasPosition(null);
 			}
 		});
@@ -121,7 +123,7 @@ public class GroupChildCanvasHandle extends CanvasHandle {
 			moveTo(timeCleanup, source, count, dest);
 		});
 		opacityListener = wrapper.node.addOpacitySetListeners((target, value) -> {
-			inner.setOpacity((double) value / opacityMax);
+			paint.setOpacity((double) value / opacityMax);
 		});
 	}
 
@@ -186,8 +188,10 @@ public class GroupChildCanvasHandle extends CanvasHandle {
 	private void updateChildCanvasPosition(GroupPositionFrame pos) {
 		if (pos == null)
 			pos = findPosition();
-		inner.setLayoutX(pos.offset().x);
-		inner.setLayoutY(pos.offset().y);
+		paint.setLayoutX(pos.offset().x);
+		paint.setLayoutY(pos.offset().y);
+		overlay.setLayoutX(pos.offset().x);
+		overlay.setLayoutY(pos.offset().y);
 	}
 
 	@Override

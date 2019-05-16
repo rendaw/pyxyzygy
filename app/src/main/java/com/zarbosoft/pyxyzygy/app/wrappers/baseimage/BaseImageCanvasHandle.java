@@ -82,7 +82,7 @@ public class BaseImageCanvasHandle<N extends ProjectLayer, F extends ProjectObje
 				if (newBounds.contains(x, y))
 					continue;
 				long key = oldBounds.corner().to1D();
-				inner.getChildren().remove(wrapTiles.get(key));
+				paint.getChildren().remove(wrapTiles.get(key));
 			}
 		}
 
@@ -102,7 +102,7 @@ public class BaseImageCanvasHandle<N extends ProjectLayer, F extends ProjectObje
 						wrapper.createWrapTile(useIndexes.x * context.tileSize, useIndexes.y * context.tileSize);
 				wrapTile.update(wrapTile.getImage(context, tile)); // Image deserialization must be serial
 				wrapTiles.put(key, wrapTile);
-				inner.getChildren().add(wrapTile.widget);
+				paint.getChildren().add(wrapTile.widget);
 			}
 		}
 	}
@@ -143,7 +143,7 @@ public class BaseImageCanvasHandle<N extends ProjectLayer, F extends ProjectObje
 			for (Long key : remove) {
 				WrapTile old = wrapTiles.remove(key);
 				if (old != null)
-					inner.getChildren().remove(old.widget);
+					paint.getChildren().remove(old.widget);
 			}
 			Rectangle checkBounds = bounds.get().scale(3).divideContains(context.tileSize);
 			for (Map.Entry<Long, T> entry : put.entrySet()) {
@@ -157,20 +157,22 @@ public class BaseImageCanvasHandle<N extends ProjectLayer, F extends ProjectObje
 				if (wrap == null) {
 					wrap = wrapper.createWrapTile(indexes.x * context.tileSize, indexes.y * context.tileSize);
 					wrapTiles.put(key, wrap);
-					inner.getChildren().add(wrap.widget);
+					paint.getChildren().add(wrap.widget);
 				}
 				wrap.update(wrap.getImage(context, value)); // Image deserialization can't be done in parallel :(
 			}
 		});
 		tilesClearListener = wrapper.addFrameTilesClearListener(frame, (target) -> {
-			inner.getChildren().clear();
+			paint.getChildren().clear();
 			wrapTiles.clear();
 		});
 		offsetCleanup =
 				new CustomBinding.DoubleHalfBinder<>(new CustomBinding.ScalarHalfBinder<Vector>(wrapper.getValue(),
 						"offset"), new CustomBinding.ScalarHalfBinder<Vector>(frame, "offset")).addListener(p -> {
-					inner.setLayoutX(p.first.x + p.second.x);
-					inner.setLayoutY(p.first.y + p.second.y);
+					paint.setLayoutX(p.first.x + p.second.x);
+					paint.setLayoutY(p.first.y + p.second.y);
+					overlay.setLayoutX(p.first.x + p.second.x);
+					overlay.setLayoutY(p.first.y + p.second.y);
 				});
 	}
 
@@ -182,7 +184,7 @@ public class BaseImageCanvasHandle<N extends ProjectLayer, F extends ProjectObje
 			offsetCleanup = null;
 		}
 		tilesPutListener = null;
-		inner.getChildren().clear();
+		paint.getChildren().clear();
 		wrapTiles.clear();
 	}
 
