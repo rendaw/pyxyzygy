@@ -12,11 +12,13 @@ import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.Pair;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.ImageCursor;
 import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.*;
 import javafx.scene.layout.HBox;
@@ -24,6 +26,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 
 import java.io.InputStream;
 import java.nio.Buffer;
@@ -393,7 +396,9 @@ public class HelperJFX {
 		alert.showAndWait();
 	}
 
-	public static CustomBinding.BinderRoot bindStyle(Node node, String styleClass, CustomBinding.HalfBinder<Boolean> source) {
+	public static CustomBinding.BinderRoot bindStyle(
+			Node node, String styleClass, CustomBinding.HalfBinder<Boolean> source
+	) {
 		return source.addListener(b -> {
 			if (b) {
 				if (!node.getStyleClass().contains(styleClass))
@@ -401,5 +406,19 @@ public class HelperJFX {
 			} else
 				node.getStyleClass().remove(styleClass);
 		});
+	}
+
+	public static void switchStage(
+			Stage primaryStage, String title, Scene scene, boolean max, EventHandler<WindowEvent> onClose
+	) {
+		if (primaryStage.getScene() instanceof ClosableScene)
+			((ClosableScene) primaryStage.getScene()).close();
+		primaryStage.hide(); // setMaximized only works if stage hidden first _(´ཀ`」 ∠)_
+		primaryStage.setTitle(title);
+		primaryStage.setOnCloseRequest(onClose);
+		primaryStage.setScene(scene);
+		primaryStage.show();
+		primaryStage.setMaximized(max);
+		primaryStage.sizeToScene();
 	}
 }

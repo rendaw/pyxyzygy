@@ -78,6 +78,9 @@ public class Timeline {
 		}
 	};
 	private final CustomBinding.BinderRoot rootFrame; // GC root
+	private final CustomBinding.BinderRoot rootOnionToggle; // GC root
+	private final CustomBinding.BinderRoot rootFramerate; // GC root
+	private final CustomBinding.BinderRoot rootPlaying; // GC root
 	public double zoom = 16;
 
 	VBox foreground = new VBox();
@@ -284,7 +287,7 @@ public class Timeline {
 		});
 		ToggleButton onion = new ToggleButton(null, new ImageView(icon("onion.png")));
 		onion.setTooltip(new Tooltip("Toggle onion skin"));
-		CustomBinding.bindBidirectional(new CustomBinding.IndirectBinder<Boolean>(window.selectedForEditOnionBinder,
+		rootOnionToggle = CustomBinding.bindBidirectional(new CustomBinding.IndirectBinder<Boolean>(window.selectedForEditOnionBinder,
 				e -> Optional.ofNullable(e).map(e1 -> e1.getWrapper().getConfig().onionSkin)
 		), new CustomBinding.PropertyBinder<Boolean>(onion.selectedProperty()));
 		toolBox = new HBox();
@@ -303,7 +306,7 @@ public class Timeline {
 			spinner.setPrefWidth(60);
 			spinner.setEditable(true);
 			spinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 100));
-			CustomBinding.bindBidirectional(new CustomBinding.IndirectBinder<>(window.selectedForEditFramerateBinder,
+			rootFramerate = CustomBinding.bindBidirectional(new CustomBinding.IndirectBinder<>(window.selectedForEditFramerateBinder,
 					v -> {
 						if (v == null)
 							return opt(null);
@@ -464,7 +467,7 @@ public class Timeline {
 		};
 		frame.addListener(frameListener);
 
-		new CustomBinding.DoubleHalfBinder<Boolean, Pair<CanvasHandle, EditHandle>>(playingProperty,
+		rootPlaying = new CustomBinding.DoubleHalfBinder<Boolean, Pair<CanvasHandle, EditHandle>>(playingProperty,
 				new CustomBinding.DoubleHalfBinder<>(window.selectedForViewPlayingBinder,
 						window.selectedForEditPlayingBinder
 				)

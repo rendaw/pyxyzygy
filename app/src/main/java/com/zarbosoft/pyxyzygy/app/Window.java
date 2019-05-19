@@ -28,7 +28,6 @@ import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
@@ -108,7 +107,8 @@ public class Window {
 	public Timeline timeline;
 	private StackPane stack;
 	public Structure structure;
-	private CustomBinding.BinderRoot rootTabWidth;
+	private CustomBinding.BinderRoot rootTabWidth; // GC root
+	private ChangeListener<? super Boolean> maxListener;
 
 	public static class Tab extends javafx.scene.control.Tab {
 		ScrollPane scrollPane = new ScrollPane();
@@ -256,10 +256,6 @@ public class Window {
 					.addAction(ButtonType.OK, true, () -> true)
 					.go();
 		});
-		primaryStage.getIcons().addAll(GUILaunch.appIcons);
-		primaryStage.setOnCloseRequest(e -> {
-			Global.shutdown();
-		});
 
 		Stream
 				.of(new Hotkeys.Action(Hotkeys.Scope.GLOBAL,
@@ -331,12 +327,9 @@ public class Window {
 			spinner.setPrefWidth(60);
 			spinner.setEditable(true);
 			spinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(-10, 50));
-			CustomBinding.bindBidirectional(
-					new CustomBinding.IndirectBinder<>(selectedForViewZoomControlBinder,
-							v -> opt(v == null ? null : v.getWrapper().getConfig().zoom)
-					),
-					new CustomBinding.PropertyBinder<Integer>(spinner.getValueFactory().valueProperty())
-			);
+			CustomBinding.bindBidirectional(new CustomBinding.IndirectBinder<>(selectedForViewZoomControlBinder,
+					v -> opt(v == null ? null : v.getWrapper().getConfig().zoom)
+			), new CustomBinding.PropertyBinder<Integer>(spinner.getValueFactory().valueProperty()));
 			final ImageView imageView = new ImageView(icon("zoom.png"));
 			zoomBox.getChildren().addAll(imageView, spinner);
 		}
@@ -457,7 +450,12 @@ public class Window {
 
 		stack = new StackPane(generalLayout);
 
-		Scene scene = new Scene(stack, 1200, 800);
+		ClosableScene scene = new ClosableScene(stack, 1200, 800) {
+			@Override
+			public void close() {
+				primaryStage.maximizedProperty().removeListener(maxListener);
+			}
+		};
 
 		new CustomBinding.DoubleHalfBinder<Boolean, Boolean>(new CustomBinding.PropertyHalfBinder<>(context.config.maxCanvas),
 				new CustomBinding.PropertyHalfBinder<>(GUILaunch.profileConfig.showTimeline)
@@ -515,16 +513,23 @@ public class Window {
 				getClass().getResource("widgets/brushbutton/style.css").toExternalForm()
 		);
 
-		primaryStage.setMaximized(GUILaunch.profileConfig.maximize);
-		primaryStage.maximizedProperty().addListener((observable, oldValue, newValue) -> {
-			GUILaunch.profileConfig.maximize = newValue.booleanValue();
-		});
-
 		structure.populate();
 
-		primaryStage.setTitle(String.format("%s - %s", context.path.getFileName().toString(), nameHuman));
-		primaryStage.setScene(scene);
-		primaryStage.show();
+		HelperJFX.switchStage(primaryStage,
+				String.format("%s - %s", context.path.getFileName().toString(), nameHuman),
+				scene,
+				GUILaunch.profileConfig.maximize,
+				main ? (
+						Global.fixedProject ? e -> Global.shutdown() : e -> {
+							e.consume();
+							GUILaunch.selectProject(primaryStage);
+						}
+				) : e -> {
+				}
+		);
+		primaryStage.maximizedProperty().addListener(maxListener = (observable, oldValue, newValue) -> {
+			GUILaunch.profileConfig.maximize = newValue.booleanValue();
+		});
 	}
 
 	public Pair<Integer, FrameMapEntry> findTimeMapEntry(int outer) {

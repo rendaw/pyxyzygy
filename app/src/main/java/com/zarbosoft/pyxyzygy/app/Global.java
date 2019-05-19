@@ -9,6 +9,7 @@ import com.zarbosoft.pyxyzygy.core.model.v0.Project;
 import com.zarbosoft.pyxyzygy.core.model.v0.ProjectLayer;
 import com.zarbosoft.pyxyzygy.seed.deserialize.ModelDeserializationContext;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
+import javafx.application.Platform;
 import javafx.scene.input.KeyCode;
 
 import java.io.InputStream;
@@ -42,11 +43,14 @@ public class Global {
 	public final static String groupLayerName = "Group";
 
 	public static List<Runnable> shutdown = new ArrayList<>();
+	public static boolean fixedProfile = false;
+	public static boolean fixedProject = false;
 
 	public static void shutdown() {
 		for (Runnable s : shutdown) s.run();
 		shutdown.clear();
 		logger.flush();
+		Platform.exit();
 	}
 
 	public static ProjectContext create(Path path, int tileSize) {
