@@ -648,9 +648,10 @@ public class Structure {
 			Slider opacity = new Slider();
 			opacity.setMin(0);
 			opacity.setMax(opacityMax);
-			CustomBinding.bindBidirectional(new IndirectBinder<Integer>(groupChildBinder, childWrapper -> {
+			CustomBinding.bindBidirectional(
+					new IndirectBinder<Integer>(groupChildBinder, childWrapper -> {
 						if (childWrapper == null)
-							return opt(null);
+							return Optional.empty();
 						GroupChild layerNode = childWrapper.node;
 						return opt(new ScalarBinder<Integer>(layerNode,
 								"opacity",
@@ -659,7 +660,8 @@ public class Structure {
 								)
 						));
 					}),
-					new PropertyBinder<>(opacity.valueProperty()).bimap(d -> Optional.of((int) (double) d),
+					new PropertyBinder<>(opacity.valueProperty()).bimap(
+							d -> Optional.of((int) (double) d),
 							i -> opt((double) (int) i)
 					)
 			);
