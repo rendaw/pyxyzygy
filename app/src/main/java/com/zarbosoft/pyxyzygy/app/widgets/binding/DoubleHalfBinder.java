@@ -15,6 +15,11 @@ import java.util.function.Consumer;
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.pyxyzygy.app.Misc.unopt;
 
+/**
+ * Create a value binding whose value changes when both sub-value bindings are present and change.
+ * @param <X>
+ * @param <Y>
+ */
 public class DoubleHalfBinder<X, Y> implements HalfBinder<Pair<X, Y>> {
 	private Optional<Pair<X, Y>> last = Optional.empty();
 

@@ -400,24 +400,34 @@ public class Timeline {
 			}
 		});
 		tree.getColumns().addAll(nameColumn, framesColumn);
-		CustomBinding.bindBidirectional(new IndirectBinder<>(window.selectedForEditPlayingBinder,
-				e -> e.getWrapper() instanceof GroupNodeWrapper ?
-						opt(((GroupNodeWrapper) e.getWrapper()).specificChild) :
-						Optional.empty()
-		), new SelectionModelBinder<>(tree.getSelectionModel()).<GroupChild>bimap(t -> {
-			if (t == null) return Optional.empty();
-			if (groupTreeItemLookup.containsKey(t)) {
-				return opt(groupTreeItemLookup.get(t));
-			} else if (groupTreeItemLookup.containsKey(t.getParent())) {
-				return opt(groupTreeItemLookup.get(t.getParent()));
-			}
-			return Optional.<GroupChild>empty();
-		}, c -> {
-			if (groupTreeItemLookup.inverse().containsKey(c)) {
-				return opt(groupTreeItemLookup.inverse().get(c));
-			}
-			return Optional.<TreeItem<RowAdapter>>empty();
-		}));
+		CustomBinding.bindBidirectional(
+				new IndirectBinder<>(
+						window.selectedForEditPlayingBinder,
+						e -> {
+							if (e.getWrapper() instanceof GroupNodeWrapper) {
+								return opt(((GroupNodeWrapper) e.getWrapper()).specificChild);
+							} else {
+								return Optional.empty();
+							}
+						}
+				),
+				new SelectionModelBinder<>(tree.getSelectionModel()).<GroupChild>bimap(
+						t -> {
+							if (t == null) return Optional.empty();
+							if (groupTreeItemLookup.containsKey(t)) {
+								return opt(groupTreeItemLookup.get(t));
+							} else if (groupTreeItemLookup.containsKey(t.getParent())) {
+								return opt(groupTreeItemLookup.get(t.getParent()));
+							}
+							return Optional.<GroupChild>empty();
+						}, c -> {
+							if (groupTreeItemLookup.inverse().containsKey(c)) {
+								return opt(groupTreeItemLookup.inverse().get(c));
+							}
+							return Optional.<TreeItem<RowAdapter>>empty();
+						}
+				)
+		);
 		framesColumn
 				.prefWidthProperty()
 				.bind(tree

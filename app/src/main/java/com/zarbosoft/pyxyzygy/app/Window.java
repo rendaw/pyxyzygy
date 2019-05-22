@@ -24,6 +24,7 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
+import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
@@ -293,15 +294,20 @@ public class Window {
 		leftTabs.getTabs().addAll(structureTab, layerTab, configTab);
 		this.rootTabWidth = CustomBinding.bind(leftTabs.minWidthProperty(),
 				new IndirectHalfBinder<>(
-						new ListPropertyHalfBinder<>(leftTabs.getTabs()).<List<HalfBinder<Node>>>map(
+						new ListPropertyHalfBinder<>(leftTabs.getTabs()).<List<HalfBinder<Pair<Node, Bounds>>>>map(
 								l -> opt(l.stream()
-										.map(t -> new PropertyHalfBinder<>(t.contentProperty()))
+										.map(t -> new DoubleHalfBinder<Node, Bounds>(
+												t.contentProperty(),
+												new IndirectHalfBinder<Bounds>( // Ignored but included to trigger updates
+														t.contentProperty(),
+														c -> opt(c == null ? null : c.layoutBoundsProperty()))
+										))
 										.collect(Collectors.toList()))
 						),
 						l -> opt(new ListElementsHalfBinder<Double>(l, s -> {
 							double out = s
-									.filter(t -> t != null)
-									.mapToDouble(t -> t.minWidth(-1))
+									.filter(t -> t.first != null)
+									.mapToDouble(t -> t.first.minWidth(-1))
 									.max()
 									.orElse(0);
 							return opt(out);

@@ -13,6 +13,12 @@ public interface HalfBinder<T> {
 
 	void removeRoot(Object key);
 
+	/**
+	 *
+	 * @param function Return a new value, or Optional.empty() if it is not possible to determine if the state of the value has changed.
+	 * @param <U>
+	 * @return
+	 */
 	default <U> HalfBinder<U> map(Function<T, Optional<U>> function) {
 		return new MapBinder(this, function);
 	}

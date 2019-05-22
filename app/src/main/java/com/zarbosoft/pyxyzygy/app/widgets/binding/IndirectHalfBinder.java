@@ -17,7 +17,10 @@ import static com.zarbosoft.pyxyzygy.app.Misc.unopt;
  * Binder expressing (prop/binder -> value -> function -> prop/binder)
  * Acts as half/binder for last prop/binder so addListener receives prop/binder value rather than prop/binder itself
  * <p>
- * T is the paint type of the final prop/binder, so for SimpleBooleanProperty it would be Boolean
+ * T is the inner type of the final prop/binder, so for SimpleBooleanProperty it would be Boolean
+ *
+ * The function may return a non-prop/binder value of type T.  In this case the IndirectHalfBinder acts like a standard
+ * .map call.
  *
  * @param <T>
  */

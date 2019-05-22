@@ -12,6 +12,7 @@ public class FrameWidget extends Pane {
 	private final static double sizePercent = 0.7;
 	private final static double sizePercentComp = (1.0 - sizePercent) * 0.5;
 	final Rectangle rectangle;
+	private boolean dragged = false;
 	double zoom;
 
 	final RowFramesWidget row;
@@ -39,7 +40,12 @@ public class FrameWidget extends Pane {
 		rectangle.setArcHeight(rectangle.getArcWidth());
 		getChildren().add(rectangle);
 
+		addEventHandler(MouseEvent.MOUSE_PRESSED, e -> {
+			dragged = false;
+		});
 		addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
+			if (dragged)
+				return;
 			if (row.timeline.selectedFrame.get() == this)
 				row.timeline.select(null);
 			else
@@ -57,6 +63,7 @@ public class FrameWidget extends Pane {
 			context.change(new ProjectContext.Tuple(row.adapter.getData(), "frame"), change -> {
 				((FrameWidget) this.row.frames.get(index - 1)).frame.setLength(context, change, length);
 			});
+			dragged = true;
 		});
 		deselect();
 	}

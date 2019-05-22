@@ -14,6 +14,12 @@ public abstract class RowAdapter extends TreeItem<RowAdapter> {
 		this.setValue(this);
 		this.setExpanded(true);
 	}
+
+	@Override
+	public String toString() {
+		return String.format("(Row adapter for %s)", getData());
+	}
+
 	public abstract ObservableValue<String> getName();
 
 	public abstract boolean hasFrames();
