@@ -550,7 +550,7 @@ public class PaletteImageEditHandle extends EditHandle {
 					CustomBinding.bindBidirectional(new IndirectBinder<TrueColor>(wrapper.paletteSelectionBinder,
 									e -> {
 										if (e == null)
-											return opt(null);
+											return Optional.empty();
 										if (e instanceof PaletteColor) {
 											return opt(new ScalarBinder<TrueColor>(e,
 													"color",
@@ -559,7 +559,7 @@ public class PaletteImageEditHandle extends EditHandle {
 													)
 											));
 										} else if (e instanceof PaletteSeparator) {
-											return opt(null);
+											return Optional.empty();
 										} else
 											throw new Assertion();
 									}

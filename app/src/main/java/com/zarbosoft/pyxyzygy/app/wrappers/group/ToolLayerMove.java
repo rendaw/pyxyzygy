@@ -71,7 +71,7 @@ public class ToolLayerMove extends Tool {
 			originCleanup =
 					CustomBinding.bind(origin.offset, new ScalarHalfBinder<Vector>(pos, "offset"));
 		});
-		if (!layerList.getItems().isEmpty())
+		if (!layerList.getItems().isEmpty() && layerList.getSelectionModel().getSelectedItem() == null)
 			layerList.getSelectionModel().select(0);
 		editHandle.toolPropReplacer.set(this, "Move layer", new WidgetFormBuilder().span(() -> {
 			return layerList;

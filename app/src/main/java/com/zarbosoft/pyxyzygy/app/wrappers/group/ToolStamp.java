@@ -172,6 +172,7 @@ public class ToolStamp extends Tool {
 		} finally {
 			window.structure.suppressSelect = false;
 		}
+		wrapper.specificChild.set(layer);
 	}
 
 	@Override
