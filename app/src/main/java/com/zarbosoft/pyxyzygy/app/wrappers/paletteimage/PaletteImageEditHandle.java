@@ -9,6 +9,7 @@ import com.zarbosoft.pyxyzygy.app.config.PaletteImageNodeConfig;
 import com.zarbosoft.pyxyzygy.app.model.v0.PaletteTile;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.*;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.*;
 import com.zarbosoft.pyxyzygy.app.wrappers.ToolMove;
 import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.BrushButton;
 import com.zarbosoft.pyxyzygy.core.PaletteImage;
@@ -62,16 +63,16 @@ import static com.zarbosoft.rendaw.common.Common.enumerate;
 public class PaletteImageEditHandle extends EditHandle {
 	final PaletteImageNodeWrapper wrapper;
 	private final TitledPane toolPane;
-	private CustomBinding.BinderRoot paletteAddSeparatorCleanup;
-	private CustomBinding.BinderRoot colorPickerDisableCleanup;
-	private CustomBinding.BinderRoot paletteMoveDownCleanup;
-	private CustomBinding.BinderRoot paletteMoveUpCleanup;
-	private CustomBinding.BinderRoot paletteRemoveCleanup;
-	private CustomBinding.BinderRoot paletteAddCleanup;
+	private BinderRoot paletteAddSeparatorCleanup;
+	private BinderRoot colorPickerDisableCleanup;
+	private BinderRoot paletteMoveDownCleanup;
+	private BinderRoot paletteMoveUpCleanup;
+	private BinderRoot paletteRemoveCleanup;
+	private BinderRoot paletteAddCleanup;
 	private Runnable paletteTilesCleanup;
-	private CustomBinding.BinderRoot colorPickerCleanup;
+	private BinderRoot colorPickerCleanup;
 	List<Runnable> cleanup = new ArrayList<>();
-	List<CustomBinding.BinderRoot> cleanup2 = new ArrayList<>();
+	List<BinderRoot> cleanup2 = new ArrayList<>();
 
 	private final Runnable brushesCleanup;
 	Group overlay;
@@ -111,7 +112,7 @@ public class PaletteImageEditHandle extends EditHandle {
 
 	class SeparatorTile extends Region implements PaletteTileBase {
 		final PaletteSeparator self;
-		private final CustomBinding.BinderRoot cleanupBorder;
+		private final BinderRoot cleanupBorder;
 		private int index;
 
 		SeparatorTile(PaletteSeparator self) {
@@ -158,8 +159,8 @@ public class PaletteImageEditHandle extends EditHandle {
 	class ColorTile extends ColorSwatch implements PaletteTileBase {
 		public int index;
 		public final PaletteColor color;
-		private final CustomBinding.BinderRoot cleanupBorder;
-		private final CustomBinding.BinderRoot cleanupColor;
+		private final BinderRoot cleanupBorder;
+		private final BinderRoot cleanupColor;
 
 		{
 			getStyleClass().add("large");
@@ -168,7 +169,7 @@ public class PaletteImageEditHandle extends EditHandle {
 		ColorTile(ProjectContext context, PaletteColor color) {
 			super(2);
 			this.color = color;
-			this.cleanupColor = new CustomBinding.ScalarHalfBinder<TrueColor>(color::addColorSetListeners,
+			this.cleanupColor = new ScalarHalfBinder<TrueColor>(color::addColorSetListeners,
 					color::removeColorSetListeners
 			).addListener(c0 -> {
 				Color c = c0.toJfx();
@@ -366,19 +367,19 @@ public class PaletteImageEditHandle extends EditHandle {
 		brushesCleanup = Misc.mirror(GUILaunch.profileConfig.paletteBrushes,
 				brushesBox.getChildren(),
 				b -> new BrushButton(b.size,
-						new CustomBinding.DoubleIndirectHalfBinder<Integer, List<ProjectObject>, TrueColor>(new CustomBinding.IndirectHalfBinder<>(
+						new DoubleIndirectHalfBinder<Integer, List<ProjectObject>, TrueColor>(new IndirectHalfBinder<>(
 								b.useColor,
 								(Boolean u) -> opt(u ? b.paletteOffset : wrapper.config.paletteOffset)
 						),
-								new CustomBinding.ListHalfBinder<>(wrapper.node.palette(), "entries"),
+								new ListHalfBinder<>(wrapper.node.palette(), "entries"),
 								(Integer i, List<ProjectObject> l) -> {
 									if (i >= l.size())
-										return opt(new CustomBinding.ConstHalfBinder(null));
+										return opt(new ConstHalfBinder(null));
 									ProjectObject o = l.get(i);
 									if (o instanceof PaletteColor) {
-										return opt(new CustomBinding.ScalarHalfBinder<TrueColor>(o, "color"));
+										return opt(new ScalarHalfBinder<TrueColor>(o, "color"));
 									} else if (o instanceof PaletteSeparator) {
-										return opt(new CustomBinding.ConstHalfBinder(null));
+										return opt(new ConstHalfBinder(null));
 									} else
 										throw new Assertion();
 								}
@@ -528,17 +529,17 @@ public class PaletteImageEditHandle extends EditHandle {
 						}))
 						.build()
 		), new TitledPane("Palette", new WidgetFormBuilder().text("Name", t -> {
-			cleanup2.add(CustomBinding.bindBidirectional(new CustomBinding.ScalarBinder<>(wrapper.node.palette()::addNameSetListeners,
+			cleanup2.add(CustomBinding.bindBidirectional(new ScalarBinder<>(wrapper.node.palette()::addNameSetListeners,
 					wrapper.node.palette()::removeNameSetListeners,
 					v -> context.change(new ProjectContext.Tuple(wrapper, "palette_name"),
 							c -> c.palette(wrapper.node.palette()).nameSet(v)
 					)
-			), new CustomBinding.PropertyBinder<>(t.textProperty())));
+			), new PropertyBinder<>(t.textProperty())));
 		}).span(() -> {
 			TrueColorPicker colorPicker = new TrueColorPicker();
 			colorPickerDisableCleanup = CustomBinding.bind(colorPicker.disableProperty(),
-					new CustomBinding.DoubleHalfBinder<>(wrapper.config.tool,
-							new CustomBinding.DoubleHalfBinder<>(wrapper.paletteSelOffsetBinder,
+					new DoubleHalfBinder<>(wrapper.config.tool,
+							new DoubleHalfBinder<>(wrapper.paletteSelOffsetBinder,
 									wrapper.paletteSelectionBinder
 							).map(p -> opt(p.first ==
 									null || p.first == 0 || p.second instanceof PaletteSeparator))
@@ -546,12 +547,12 @@ public class PaletteImageEditHandle extends EditHandle {
 			);
 			GridPane.setHalignment(colorPicker, HPos.CENTER);
 			colorPickerCleanup =
-					CustomBinding.bindBidirectional(new CustomBinding.IndirectBinder<TrueColor>(wrapper.paletteSelectionBinder,
+					CustomBinding.bindBidirectional(new IndirectBinder<TrueColor>(wrapper.paletteSelectionBinder,
 									e -> {
 										if (e == null)
 											return opt(null);
 										if (e instanceof PaletteColor) {
-											return opt(new CustomBinding.ScalarBinder<TrueColor>(e,
+											return opt(new ScalarBinder<TrueColor>(e,
 													"color",
 													v -> context.change(new ProjectContext.Tuple(e, "color"),
 															c -> c.paletteColor((PaletteColor) e).colorSet(v)
@@ -563,8 +564,8 @@ public class PaletteImageEditHandle extends EditHandle {
 											throw new Assertion();
 									}
 							),
-							new CustomBinding.PropertyBinder<Color>(colorPicker.colorProxyProperty).<TrueColor>bimap(c -> Optional
-									.of(TrueColor.fromJfx(c)), c -> c.toJfx())
+							new PropertyBinder<Color>(colorPicker.colorProxyProperty).<TrueColor>bimap(c -> Optional
+									.of(TrueColor.fromJfx(c)), c -> opt(c.toJfx()))
 					);
 			return colorPicker;
 		}).span(() -> {
@@ -739,7 +740,7 @@ public class PaletteImageEditHandle extends EditHandle {
 		colorPickerCleanup.destroy();
 		colorPickerDisableCleanup.destroy();
 		cleanup.forEach(Runnable::run);
-		cleanup2.forEach(CustomBinding.BinderRoot::destroy);
+		cleanup2.forEach(BinderRoot::destroy);
 		for (Hotkeys.Action action : actions)
 			context.hotkeys.unregister(action);
 		window.menuChildren.clear(this);

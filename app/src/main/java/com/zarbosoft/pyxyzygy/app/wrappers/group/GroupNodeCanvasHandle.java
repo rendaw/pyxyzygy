@@ -2,6 +2,7 @@ package com.zarbosoft.pyxyzygy.app.wrappers.group;
 
 import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
+import com.zarbosoft.pyxyzygy.core.model.v0.GroupChild;
 import com.zarbosoft.pyxyzygy.core.model.v0.ProjectLayer;
 import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
@@ -10,8 +11,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.ToolBar;
 
-import static com.zarbosoft.pyxyzygy.app.Misc.mirror;
-import static com.zarbosoft.pyxyzygy.app.Misc.noopConsumer;
+import static com.zarbosoft.pyxyzygy.app.Misc.*;
 
 public class GroupNodeCanvasHandle extends CanvasHandle {
 	private final Runnable layerListenCleanup;
@@ -60,21 +60,22 @@ public class GroupNodeCanvasHandle extends CanvasHandle {
 		childHandles.forEach(c -> c.setFrame(context, frameNumber));
 
 		do {
-			if (wrapper.specificChild == null) {
+			GroupChild specificChild = unopt(wrapper.specificChild.get());
+			if (specificChild == null) {
 				previousFrame.set(-1);
 				break;
 			}
-			if (wrapper.specificChild.positionFramesLength() == 1) {
+			if (specificChild.positionFramesLength() == 1) {
 				previousFrame.set(-1);
 				break;
 			}
 			int frameIndex =
-					GroupChildWrapper.positionFrameFinder.findFrame(wrapper.specificChild, frameNumber).frameIndex - 1;
+					GroupChildWrapper.positionFrameFinder.findFrame(specificChild, frameNumber).frameIndex - 1;
 			if (frameIndex == -1)
-				frameIndex = wrapper.specificChild.positionFramesLength() - 1;
+				frameIndex = specificChild.positionFramesLength() - 1;
 			int outFrame = 0;
 			for (int i = 0; i < frameIndex; ++i) {
-				outFrame += wrapper.specificChild.positionFramesGet(i).length();
+				outFrame += specificChild.positionFramesGet(i).length();
 			}
 			previousFrame.set(outFrame);
 		} while (false);

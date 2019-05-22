@@ -5,6 +5,7 @@ import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.parts.timeline.Timeline;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.*;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.pyxyzygy.nearestneighborimageview.NearestNeighborImageView;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
@@ -24,8 +25,8 @@ public class OnionSkin {
 	// Convenience, from relations
 	private final SimpleIntegerProperty frameProp;
 	private final SimpleObjectProperty<DoubleRectangle> bounds;
-	private final CustomBinding.BinderRoot onCleanup;
-	private final CustomBinding.HalfBinder<Boolean> on;
+	private final BinderRoot onCleanup;
+	private final HalfBinder<Boolean> on;
 	private final Group overlay;
 
 	// Own
@@ -38,9 +39,9 @@ public class OnionSkin {
 		this.editHandle = editHandle;
 		frameProp = editHandle.getCanvas().previousFrame;
 		bounds = editHandle.getCanvas().bounds;
-		on = new CustomBinding.DoubleHalfBinder<>(
-				new CustomBinding.PropertyHalfBinder<>(editHandle.getWrapper().getConfig().onionSkin),
-				new CustomBinding.PropertyHalfBinder<>(timeline.playingProperty)
+		on = new DoubleHalfBinder<>(
+				new PropertyHalfBinder<>(editHandle.getWrapper().getConfig().onionSkin),
+				new PropertyHalfBinder<>(timeline.playingProperty)
 		).map((on0, playing) -> opt(on0 && !playing));
 		onCleanup = on.addListener(v -> render(context));
 		frameProp.addListener((observable, oldValue, newValue) -> render(context));

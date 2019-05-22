@@ -4,6 +4,10 @@ import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.config.CameraNodeConfig;
 import com.zarbosoft.pyxyzygy.app.config.GroupNodeConfig;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.CustomBinding;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.ScalarBinder;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeCanvasHandle;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeWrapper;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
@@ -26,8 +30,8 @@ public class CameraWrapper extends GroupNodeWrapper {
 	public final Camera node;
 	public final SimpleIntegerProperty width = new SimpleIntegerProperty(0);
 	public final SimpleIntegerProperty height = new SimpleIntegerProperty(0);
-	private final CustomBinding.BinderRoot cleanupWidth;
-	private final CustomBinding.BinderRoot cleanupHeight;
+	private final BinderRoot cleanupWidth;
+	private final BinderRoot cleanupHeight;
 	public boolean adjustViewport = false;
 	private ProjectContext.Tuple actionWidthChange = new ProjectContext.Tuple(this, "width");
 	private ProjectContext.Tuple actionHeightChange = new ProjectContext.Tuple(this, "height");
@@ -37,17 +41,17 @@ public class CameraWrapper extends GroupNodeWrapper {
 	public CameraWrapper(ProjectContext context, Wrapper parent, int parentIndex, Camera node) {
 		super(context, parent, parentIndex, node);
 		this.node = node;
-		cleanupWidth = CustomBinding.bindBidirectional(new CustomBinding.ScalarBinder<Integer>(node,
+		cleanupWidth = CustomBinding.bindBidirectional(new ScalarBinder<Integer>(node,
 						"width",
 						v -> context.change(actionWidthChange, c -> c.camera(node).widthSet(v))
 				),
-				new CustomBinding.PropertyBinder<>(width.asObject())
+				new PropertyBinder<>(width.asObject())
 		);
-		cleanupHeight = CustomBinding.bindBidirectional(new CustomBinding.ScalarBinder<Integer>(node,
+		cleanupHeight = CustomBinding.bindBidirectional(new ScalarBinder<Integer>(node,
 						"height",
 						v -> context.change(actionHeightChange, c -> c.camera(node).heightSet(v))
 				),
-				new CustomBinding.PropertyBinder<>(height.asObject())
+				new PropertyBinder<>(height.asObject())
 		);
 	}
 

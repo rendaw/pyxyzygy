@@ -4,6 +4,7 @@ import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.config.GroupNodeConfig;
 import com.zarbosoft.pyxyzygy.app.config.NodeConfig;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.VariableBinder;
 import com.zarbosoft.pyxyzygy.core.model.v0.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -20,7 +21,7 @@ public class GroupNodeWrapper extends Wrapper {
 	final ObservableList<GroupChildWrapper> children = FXCollections.observableArrayList();
 	private final Runnable childrenListenCleanup;
 
-	GroupChild specificChild;
+	public final VariableBinder<GroupChild> specificChild = new VariableBinder<>(null);
 	public GroupNodeCanvasHandle canvasHandle;
 
 	public GroupNodeWrapper(ProjectContext context, Wrapper parent, int parentIndex, GroupLayer node) {
@@ -133,6 +134,6 @@ public class GroupNodeWrapper extends Wrapper {
 	}
 
 	public void setSpecificChild(GroupChild child) {
-		this.specificChild = child;
+		this.specificChild.set(child);
 	}
 }

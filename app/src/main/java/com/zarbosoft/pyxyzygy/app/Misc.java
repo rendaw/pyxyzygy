@@ -2,6 +2,10 @@ package com.zarbosoft.pyxyzygy.app;
 
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.CustomBinding;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.ScalarBinder;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupChildWrapper;
 import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
 import com.zarbosoft.pyxyzygy.core.model.v0.GroupChild;
@@ -45,9 +49,9 @@ public class Misc {
 			ProjectContext context, WidgetFormBuilder builder, Wrapper wrapper
 	) {
 		return new Runnable() {
-			private CustomBinding.BinderRoot enabledCleanup;
-			private CustomBinding.BinderRoot opacityCleanup;
-			private CustomBinding.BinderRoot nameCleanup;
+			private BinderRoot enabledCleanup;
+			private BinderRoot opacityCleanup;
+			private BinderRoot nameCleanup;
 
 			{
 				ProjectLayer node = (ProjectLayer) wrapper.getValue();
@@ -61,37 +65,37 @@ public class Misc {
 
 				builder.text("Name", t -> {
 					this.nameCleanup = CustomBinding.bindBidirectional(
-							new CustomBinding.ScalarBinder<>(node::addNameSetListeners,
+							new ScalarBinder<>(node::addNameSetListeners,
 									node::removeNameSetListeners,
 									v -> context.change(new ProjectContext.Tuple(wrapper, "name"),
 											c -> c.projectLayer(node).nameSet(v)
 									)
 							),
-							new CustomBinding.PropertyBinder<>(t.textProperty())
+							new PropertyBinder<>(t.textProperty())
 					);
 				});
 
 				if (groupChildWrapper != null) {
 					builder.check("Enabled", cb -> {
-						enabledCleanup = CustomBinding.bindBidirectional(new CustomBinding.ScalarBinder<Boolean>(
+						enabledCleanup = CustomBinding.bindBidirectional(new ScalarBinder<Boolean>(
 								groupChildWrapper.node,
 								"enabled",
 								v -> context.change(new ProjectContext.Tuple(groupChildWrapper, "enabled"),
 										c -> c.groupChild(groupChildWrapper.node).enabledSet(v)
 								)
-						), new CustomBinding.PropertyBinder<>(cb.selectedProperty()));
+						), new PropertyBinder<>(cb.selectedProperty()));
 					});
 					builder.slider("Opacity", 0, Global.opacityMax, slider -> {
 						slider.setValue(groupChildWrapper.node.opacity());
-						opacityCleanup = CustomBinding.bindBidirectional(new CustomBinding.ScalarBinder<Integer>(
+						opacityCleanup = CustomBinding.bindBidirectional(new ScalarBinder<Integer>(
 										groupChildWrapper.node,
 										"opacity",
 										v -> context.change(new ProjectContext.Tuple(wrapper, "opacity"),
 												c -> c.groupChild(groupChildWrapper.node).opacitySet(v)
 										)
 								),
-								new CustomBinding.PropertyBinder<>(slider.valueProperty()).bimap(d -> Optional.of((int) (double) d),
-										i -> (double) (int) i
+								new PropertyBinder<>(slider.valueProperty()).bimap(d -> Optional.of((int) (double) d),
+										i -> opt((double) (int) i)
 								)
 						);
 					});

@@ -1,9 +1,12 @@
 package com.zarbosoft.pyxyzygy.app.parts.timeline;
 
-import com.zarbosoft.pyxyzygy.app.CustomBinding;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.CustomBinding;
 import com.zarbosoft.pyxyzygy.app.WidgetHandle;
 import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.ScalarBinder;
 import com.zarbosoft.pyxyzygy.core.model.v0.Camera;
 import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
 import javafx.beans.property.SimpleStringProperty;
@@ -50,16 +53,6 @@ public class RowAdapterCameraLoop extends RowAdapter {
 	}
 
 	@Override
-	public void deselected() {
-
-	}
-
-	@Override
-	public void selected() {
-
-	}
-
-	@Override
 	public boolean duplicateFrame(
 			ProjectContext context, Window window, ChangeStepBuilder change, int outer
 	) {
@@ -71,27 +64,27 @@ public class RowAdapterCameraLoop extends RowAdapter {
 			ProjectContext context, Window window
 	) {
 		return new WidgetHandle() {
-			private final CustomBinding.BinderRoot cleanupStart;
-			private final CustomBinding.BinderRoot cleanupLength;
+			private final BinderRoot cleanupStart;
+			private final BinderRoot cleanupLength;
 
 			{
 				widget = new RowTimeRangeWidget(timeline);
-				cleanupStart = CustomBinding.bindBidirectional(new CustomBinding.ScalarBinder<Integer>(
+				cleanupStart = CustomBinding.bindBidirectional(new ScalarBinder<Integer>(
 						node,
 						"frameStart",
 						v -> context.change(
 								new ProjectContext.Tuple(node, "framestart"),
 								c -> c.camera(node).frameStartSet(v)
 						)
-				), new CustomBinding.PropertyBinder<>(widget.start.asObject()));
-				cleanupLength = CustomBinding.bindBidirectional(new CustomBinding.ScalarBinder<Integer>(
+				), new PropertyBinder<>(widget.start.asObject()));
+				cleanupLength = CustomBinding.bindBidirectional(new ScalarBinder<Integer>(
 						node,
 						"frameLength",
 						v -> context.change(
 								new ProjectContext.Tuple(node, "framelength"),
 								c -> c.camera(node).frameLengthSet(v)
 						)
-				), new CustomBinding.PropertyBinder<>(widget.length.asObject()));
+				), new PropertyBinder<>(widget.length.asObject()));
 			}
 
 			@Override

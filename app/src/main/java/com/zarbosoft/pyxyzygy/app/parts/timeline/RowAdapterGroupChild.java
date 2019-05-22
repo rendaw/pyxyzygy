@@ -1,8 +1,10 @@
 package com.zarbosoft.pyxyzygy.app.parts.timeline;
 
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.WidgetHandle;
 import com.zarbosoft.pyxyzygy.app.Window;
+import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.CustomBinding;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeWrapper;
 import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
 import com.zarbosoft.pyxyzygy.core.model.v0.GroupChild;
@@ -15,18 +17,24 @@ import javafx.beans.value.ObservableObjectValue;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.image.Image;
 
+import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 
 public class RowAdapterGroupChild extends RowAdapter {
-	private final GroupNodeWrapper wrapper;
 	private final GroupChild child;
+	private final BinderRoot cleanIconBind;
 	SimpleObjectProperty<Image> stateImage = new SimpleObjectProperty<>(null);
 	Runnable nameCleanup;
 	private Listener.ScalarSet<GroupChild, ProjectLayer> innerListener;
 
-	RowAdapterGroupChild(GroupNodeWrapper wrapper, GroupChild child) {
-		this.wrapper = wrapper;
+	RowAdapterGroupChild(
+			GroupNodeWrapper wrapper, GroupChild child
+	) {
 		this.child = child;
+		cleanIconBind = CustomBinding.bind(
+				stateImage,
+				wrapper.specificChild.map(c -> opt(c == child ? icon("editing.png") : null))
+		);
 	}
 
 	@Override
@@ -36,7 +44,7 @@ public class RowAdapterGroupChild extends RowAdapter {
 			if (nameCleanup != null) {
 				nameCleanup.run();
 				nameCleanup = null;
-			};
+			}
 			if (inner != null) {
 				Listener.ScalarSet<ProjectLayer, String> nameListener =
 						inner.addNameSetListeners((target1, name) -> out.setValue(name));
@@ -51,6 +59,7 @@ public class RowAdapterGroupChild extends RowAdapter {
 	@Override
 	public void remove(ProjectContext context) {
 		child.removeInnerSetListeners(innerListener);
+		cleanIconBind.destroy();
 		if (nameCleanup != null) {
 			nameCleanup.run();
 		}
@@ -108,25 +117,5 @@ public class RowAdapterGroupChild extends RowAdapter {
 	@Override
 	public ObservableObjectValue<Image> getStateImage() {
 		return stateImage;
-	}
-
-	@Override
-	public void deselected() {
-		treeDeselected();
-	}
-
-	@Override
-	public void selected() {
-		treeSelected();
-	}
-
-	public void treeDeselected() {
-		wrapper.setSpecificChild(null);
-		stateImage.set(null);
-	}
-
-	public void treeSelected() {
-		wrapper.setSpecificChild(child);
-		stateImage.set(icon("cursor-move16.png"));
 	}
 }

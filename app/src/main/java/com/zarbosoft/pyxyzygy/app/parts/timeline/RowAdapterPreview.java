@@ -1,11 +1,13 @@
 package com.zarbosoft.pyxyzygy.app.parts.timeline;
 
-import com.zarbosoft.pyxyzygy.app.CustomBinding;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.CustomBinding;
 import com.zarbosoft.pyxyzygy.app.WidgetHandle;
 import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.Wrapper;
 import com.zarbosoft.pyxyzygy.app.config.NodeConfig;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyBinder;
 import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ObservableObjectValue;
@@ -53,16 +55,6 @@ public class RowAdapterPreview extends RowAdapter {
 	}
 
 	@Override
-	public void deselected() {
-
-	}
-
-	@Override
-	public void selected() {
-
-	}
-
-	@Override
 	public boolean duplicateFrame(
 			ProjectContext context, Window window, ChangeStepBuilder change, int outer
 	) {
@@ -74,18 +66,18 @@ public class RowAdapterPreview extends RowAdapter {
 			ProjectContext context, Window window
 	) {
 		return new WidgetHandle() {
-			private final CustomBinding.BinderRoot startCleanup;
-			private final CustomBinding.BinderRoot lengthCleanup;
+			private final BinderRoot startCleanup;
+			private final BinderRoot lengthCleanup;
 
 			{
 				widget = new RowTimeRangeWidget(timeline);
 				startCleanup = CustomBinding.bindBidirectional(
-						new CustomBinding.PropertyBinder<>(config.previewStart),
-						new CustomBinding.PropertyBinder<>(widget.start.asObject())
+						new PropertyBinder<>(config.previewStart),
+						new PropertyBinder<>(widget.start.asObject())
 				);
 				lengthCleanup = CustomBinding.bindBidirectional(
-						new CustomBinding.PropertyBinder<>(config.previewLength),
-						new CustomBinding.PropertyBinder<>(widget.length.asObject())
+						new PropertyBinder<>(config.previewLength),
+						new PropertyBinder<>(widget.length.asObject())
 				);
 			}
 

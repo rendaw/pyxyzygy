@@ -1,5 +1,7 @@
 package com.zarbosoft.pyxyzygy.app;
 
+import com.zarbosoft.pyxyzygy.app.widgets.binding.CustomBinding;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyBinder;
 import javafx.beans.property.SimpleObjectProperty;
 import org.junit.Test;
 
@@ -12,7 +14,7 @@ public class TestCustomBinding {
 	public void testBindBidirectional() {
 		SimpleObjectProperty<Integer> a = new SimpleObjectProperty<>(15);
 		SimpleObjectProperty<Integer> b = new SimpleObjectProperty<>(0);
-		CustomBinding.bindBidirectional(new CustomBinding.PropertyBinder<>(a), new CustomBinding.PropertyBinder<>(b));
+		CustomBinding.bindBidirectional(new PropertyBinder<>(a), new PropertyBinder<>(b));
 		assertThat(a.get(), equalTo(15));
 		assertThat(b.get(), equalTo(15));
 	}

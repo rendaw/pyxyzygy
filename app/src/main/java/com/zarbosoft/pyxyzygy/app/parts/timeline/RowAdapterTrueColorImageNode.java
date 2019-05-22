@@ -155,14 +155,4 @@ class RowAdapterTrueColorImageNode extends BaseFrameRowAdapter<TrueColorImageLay
 	public ObservableObjectValue<Image> getStateImage() {
 		return Timeline.emptyStateImage;
 	}
-
-	@Override
-	public void deselected() {
-
-	}
-
-	@Override
-	public void selected() {
-
-	}
 }

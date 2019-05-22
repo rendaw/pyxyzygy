@@ -5,7 +5,7 @@ import com.squareup.gifencoder.Color;
 import com.squareup.gifencoder.GifEncoder;
 import com.squareup.gifencoder.Image;
 import com.squareup.gifencoder.ImageOptions;
-import com.zarbosoft.pyxyzygy.app.CustomBinding;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.CustomBinding;
 import com.zarbosoft.pyxyzygy.app.Tool;
 import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.Wrapper;
@@ -14,6 +14,8 @@ import com.zarbosoft.pyxyzygy.app.config.GroupNodeConfig;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.TitledPane;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyBinder;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeEditHandle;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeWrapper;
 import javafx.scene.Node;
@@ -40,7 +42,7 @@ import static com.zarbosoft.rendaw.common.Common.uncheck;
 import static org.jcodec.common.model.ColorSpace.RGB;
 
 public class CameraEditHandle extends GroupNodeEditHandle {
-	protected List<CustomBinding.BinderRoot> cleanup2 = new ArrayList<>();
+	protected List<BinderRoot> cleanup2 = new ArrayList<>();
 	public CameraEditHandle(
 			ProjectContext context, Window window, GroupNodeWrapper wrapper
 	) {
@@ -59,13 +61,13 @@ public class CameraEditHandle extends GroupNodeEditHandle {
 								.build()
 				),
 				new TitledPane("Camera", new WidgetFormBuilder().intSpinner("Width", 1, 99999, s -> {
-					cleanup2.add(CustomBinding.bindBidirectional(new CustomBinding.PropertyBinder<Integer>(wrapper.width.asObject()),
-							new CustomBinding.PropertyBinder<Integer>(s.getValueFactory().valueProperty())
+					cleanup2.add(CustomBinding.bindBidirectional(new PropertyBinder<Integer>(wrapper.width.asObject()),
+							new PropertyBinder<Integer>(s.getValueFactory().valueProperty())
 					));
 				}).intSpinner("Height", 1, 99999, s -> {
-					cleanup2.add(CustomBinding.bindBidirectional(new CustomBinding.PropertyBinder<Integer>(wrapper.height
+					cleanup2.add(CustomBinding.bindBidirectional(new PropertyBinder<Integer>(wrapper.height
 									.asObject()),
-							new CustomBinding.PropertyBinder<Integer>(s.getValueFactory().valueProperty())
+							new PropertyBinder<Integer>(s.getValueFactory().valueProperty())
 					));
 				}).build()),
 				new TitledPane("Render",

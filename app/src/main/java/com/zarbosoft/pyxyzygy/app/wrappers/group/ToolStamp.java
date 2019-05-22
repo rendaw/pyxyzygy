@@ -6,6 +6,7 @@ import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.modelmirror.*;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyHalfBinder;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.pyxyzygy.core.model.v0.*;
 import com.zarbosoft.pyxyzygy.nearestneighborimageview.NearestNeighborImageView;
@@ -54,7 +55,7 @@ public class ToolStamp extends Tool {
 			Runnable cleanup;
 
 			{
-				HelperJFX.bindStyle(this, "disable", new CustomBinding.PropertyHalfBinder<>(disableProperty()));
+				HelperJFX.bindStyle(this, "disable", new PropertyHalfBinder<>(disableProperty()));
 			}
 
 			@Override

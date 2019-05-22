@@ -7,6 +7,9 @@ import com.zarbosoft.pyxyzygy.app.config.TrueColorImageNodeConfig;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.model.v0.TrueColorTile;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.DoubleHalfBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.HalfBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.ListPropertyHalfBinder;
 import com.zarbosoft.pyxyzygy.app.wrappers.FrameFinder;
 import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.BaseImageNodeWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.WrapTile;
@@ -49,7 +52,7 @@ public class TrueColorImageNodeWrapper extends BaseImageNodeWrapper<TrueColorIma
 					return frame.length();
 				}
 			};
-	public final CustomBinding.HalfBinder<TrueColorBrush> brushBinder;
+	public final HalfBinder<TrueColorBrush> brushBinder;
 
 	// Cache values when there's no canvas
 	public TrueColorImageNodeWrapper(ProjectContext context, Wrapper parent, int parentIndex, TrueColorImageLayer node) {
@@ -58,9 +61,9 @@ public class TrueColorImageNodeWrapper extends BaseImageNodeWrapper<TrueColorIma
 				id -> new TrueColorImageNodeConfig(context)
 		);
 		this.brushBinder =
-				new CustomBinding.DoubleHalfBinder<ObservableList<TrueColorBrush>, Integer>(new CustomBinding.ListPropertyHalfBinder<>(
+				new DoubleHalfBinder<ObservableList<TrueColorBrush>, Integer>(new ListPropertyHalfBinder<>(
 						GUILaunch.profileConfig.trueColorBrushes),
-						new CustomBinding.DoubleHalfBinder<>(config.tool, config.brush).map(p -> {
+						new DoubleHalfBinder<>(config.tool, config.brush).map(p -> {
 							String t = p.first;
 							Number index = p.second;
 							if (!TOOL_BRUSH.equals(t))

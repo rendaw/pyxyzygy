@@ -2,6 +2,9 @@ package com.zarbosoft.pyxyzygy.app.wrappers.baseimage;
 
 import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.DoubleHalfBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.ScalarHalfBinder;
 import com.zarbosoft.pyxyzygy.app.wrappers.FrameFinder;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
@@ -24,7 +27,7 @@ public class BaseImageCanvasHandle<N extends ProjectLayer, F extends ProjectObje
 	public SimpleIntegerProperty zoom = new SimpleIntegerProperty(1);
 	private Listener.MapPutAll<F, Long, T> tilesPutListener;
 	private Listener.Clear<F> tilesClearListener;
-	private CustomBinding.BinderRoot offsetCleanup;
+	private BinderRoot offsetCleanup;
 
 	public BaseImageCanvasHandle(
 			ProjectContext context, CanvasHandle parent, BaseImageNodeWrapper<N, F, T, L> wrapper
@@ -167,8 +170,8 @@ public class BaseImageCanvasHandle<N extends ProjectLayer, F extends ProjectObje
 			wrapTiles.clear();
 		});
 		offsetCleanup =
-				new CustomBinding.DoubleHalfBinder<>(new CustomBinding.ScalarHalfBinder<Vector>(wrapper.getValue(),
-						"offset"), new CustomBinding.ScalarHalfBinder<Vector>(frame, "offset")).addListener(p -> {
+				new DoubleHalfBinder<>(new ScalarHalfBinder<Vector>(wrapper.getValue(),
+						"offset"), new ScalarHalfBinder<Vector>(frame, "offset")).addListener(p -> {
 					paint.setLayoutX(p.first.x + p.second.x);
 					paint.setLayoutY(p.first.y + p.second.y);
 					overlay.setLayoutX(p.first.x + p.second.x);

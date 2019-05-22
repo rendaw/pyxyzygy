@@ -10,6 +10,7 @@ import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.ContentReplacer;
 import com.zarbosoft.pyxyzygy.app.widgets.TitledPane;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.IndirectHalfBinder;
 import com.zarbosoft.pyxyzygy.app.wrappers.ToolMove;
 import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.BrushButton;
 import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
@@ -242,7 +243,7 @@ public class TrueColorImageEditHandle extends EditHandle {
 		brushesBox.setFillHeight(true);
 		brushesCleanup = Misc.mirror(GUILaunch.profileConfig.trueColorBrushes, brushesBox.getChildren(), b -> {
 			return new BrushButton(b.size,
-					new CustomBinding.IndirectHalfBinder<TrueColor>(b.useColor,
+					new IndirectHalfBinder<TrueColor>(b.useColor,
 							(Boolean u) -> opt(u ? b.color : context.config.trueColor)
 					).map(c -> opt(c.toJfx())),
 					wrapper.brushBinder.map(b1 -> opt(b1 == b))

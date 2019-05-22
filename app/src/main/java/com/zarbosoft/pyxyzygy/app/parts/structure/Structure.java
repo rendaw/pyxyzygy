@@ -6,6 +6,7 @@ import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.model.v0.TrueColorTile;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.*;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupChildWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeWrapper;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
@@ -61,8 +62,7 @@ public class Structure {
 	ToolBar toolbar;
 	ObservableSet<Wrapper> taggedLifted = FXCollections.observableSet();
 	Hotkeys.Action[] actions = new Hotkeys.Action[] {
-			new Hotkeys.Action(
-					Hotkeys.Scope.STRUCTURE,
+			new Hotkeys.Action(Hotkeys.Scope.STRUCTURE,
 					"clear-lift",
 					"Clear lifting",
 					Hotkeys.Hotkey.create(KeyCode.ESCAPE, false, false, false)
@@ -200,7 +200,8 @@ public class Structure {
 		});
 		tree.setCellFactory((TreeView<Wrapper> param) -> {
 			return new TreeCell<Wrapper>() {
-				private CustomBinding.BinderRoot viewingCleanup;
+				private BinderRoot viewingCleanup;
+				private BinderRoot viewingStyleCleanup;
 				final ImageView showViewing = new ImageView();
 				final ImageView showGrabState = new ImageView();
 				final SimpleObjectProperty<Wrapper> wrapper = new SimpleObjectProperty<>(null);
@@ -214,7 +215,7 @@ public class Structure {
 					setText(value);
 				};
 				final HBox graphic = new HBox();
-				CustomBinding.BinderRoot cleanup;
+				BinderRoot cleanup;
 
 				{
 					addEventFilter(MouseEvent.MOUSE_CLICKED, e -> {
@@ -232,12 +233,13 @@ public class Structure {
 					wrapper.addListener((observable, oldValue, newValue) -> {
 						if (oldValue != null) {
 							viewingCleanup.destroy();
+							viewingStyleCleanup.destroy();
 							oldValue.tagLifted.removeListener(copyStateListener);
 							((ProjectLayer) oldValue.getValue()).removeNameSetListeners(nameSetListener);
 						}
 						if (newValue != null) {
 							viewingCleanup = CustomBinding.bind(showViewing.imageProperty(),
-									new CustomBinding.DoubleHalfBinder<EditHandle, CanvasHandle>(window.selectedForEditTreeIconBinder,
+									new DoubleHalfBinder<EditHandle, CanvasHandle>(window.selectedForEditTreeIconBinder,
 											window.selectedForViewTreeIconBinder
 									).map((edit, view) -> {
 										boolean isEdit = edit != null && edit.getWrapper() == wrapper.get();
@@ -251,15 +253,14 @@ public class Structure {
 										return opt(null);
 									})
 							);
-							bindStyle(this,
+							viewingStyleCleanup = bindStyle(this,
 									"pyxyzygy-disabled",
-									new CustomBinding.IndirectHalfBinder<Boolean>(new CustomBinding.PropertyHalfBinder<>(
-											wrapper), w -> {
+									new IndirectHalfBinder<Boolean>(wrapper, w -> {
 										if (wrapper.get() == null)
-											return opt(null);
+											return opt(false);
 										if (wrapper.get().getParent() == null)
-											return opt(null);
-										return opt(new CustomBinding.ScalarHalfBinder<Boolean>((
+											return opt(false);
+										return opt(new ScalarHalfBinder<Boolean>((
 												(GroupChildWrapper) wrapper.get().getParent()
 										).node, "enabled").map(e -> opt(!e)));
 									})
@@ -293,7 +294,7 @@ public class Structure {
 					if (item != null)
 						cleanup = HelperJFX.bindStyle(this,
 								"link-selected",
-								new CustomBinding.PropertyHalfBinder<>(item.getConfig().selectedSomewhere)
+								new PropertyHalfBinder<>(item.getConfig().selectedSomewhere)
 						);
 					wrapper.set(item);
 					super.updateItem(item, empty);
@@ -620,51 +621,46 @@ public class Structure {
 			opacityBox.setSpacing(3);
 			opacityBox.setAlignment(Pos.CENTER_LEFT);
 
-			CustomBinding.HalfBinder<GroupChildWrapper> groupChildBinder =
-					window.selectedForEditOpacityBinder.map(e -> {
-						if (e == null || e.getWrapper().getParent() == null)
-							return opt(null);
-						return opt((GroupChildWrapper) e.getWrapper().getParent());
-					});
+			HalfBinder<GroupChildWrapper> groupChildBinder = window.selectedForEditOpacityBinder.map(e -> {
+				if (e == null || e.getWrapper().getParent() == null)
+					return opt(null);
+				return opt((GroupChildWrapper) e.getWrapper().getParent());
+			});
 
 			CustomBinding.bind(opacityBox.disableProperty(), groupChildBinder.map(e -> opt(e == null)));
 
 			ToggleButton enabled = HelperJFX.toggleButton("eye.png", "Enabled");
 			CustomBinding.bind(enabled.getGraphic().opacityProperty(),
-					new CustomBinding.PropertyHalfBinder<>(enabled.selectedProperty()).map(b -> opt(b ? 1 : 0.5))
+					new PropertyHalfBinder<>(enabled.selectedProperty()).map(b -> opt(b ? 1 : 0.5))
 			);
-			CustomBinding.bindBidirectional(new CustomBinding.IndirectBinder<Boolean>(groupChildBinder,
-					childWrapper -> {
-						if (childWrapper == null)
-							return opt(null);
-						GroupChild layerNode = childWrapper.node;
-						return opt(new CustomBinding.ScalarBinder<Boolean>(layerNode,
-								"enabled",
-								v -> context.change(new ProjectContext.Tuple(childWrapper, "enabled"),
-										c -> c.groupChild(layerNode).enabledSet(v)
-								)
-						));
-					}
-			), new CustomBinding.PropertyBinder<>(enabled.selectedProperty()));
+			CustomBinding.bindBidirectional(new IndirectBinder<Boolean>(groupChildBinder, childWrapper -> {
+				if (childWrapper == null)
+					return opt(null);
+				GroupChild layerNode = childWrapper.node;
+				return opt(new ScalarBinder<Boolean>(layerNode,
+						"enabled",
+						v -> context.change(new ProjectContext.Tuple(childWrapper, "enabled"),
+								c -> c.groupChild(layerNode).enabledSet(v)
+						)
+				));
+			}), new PropertyBinder<>(enabled.selectedProperty()));
 
 			Slider opacity = new Slider();
 			opacity.setMin(0);
 			opacity.setMax(opacityMax);
-			CustomBinding.bindBidirectional(new CustomBinding.IndirectBinder<Integer>(groupChildBinder,
-							childWrapper -> {
-								if (childWrapper == null)
-									return opt(null);
-								GroupChild layerNode = childWrapper.node;
-								return opt(new CustomBinding.ScalarBinder<Integer>(layerNode,
-										"opacity",
-										v -> context.change(new ProjectContext.Tuple(childWrapper, "opacity"),
-												c -> c.groupChild(layerNode).opacitySet(v)
-										)
-								));
-							}
-					),
-					new CustomBinding.PropertyBinder<>(opacity.valueProperty()).bimap(d -> Optional.of((int) (double) d),
-							i -> (double) (int) i
+			CustomBinding.bindBidirectional(new IndirectBinder<Integer>(groupChildBinder, childWrapper -> {
+						if (childWrapper == null)
+							return opt(null);
+						GroupChild layerNode = childWrapper.node;
+						return opt(new ScalarBinder<Integer>(layerNode,
+								"opacity",
+								v -> context.change(new ProjectContext.Tuple(childWrapper, "opacity"),
+										c -> c.groupChild(layerNode).opacitySet(v)
+								)
+						));
+					}),
+					new PropertyBinder<>(opacity.valueProperty()).bimap(d -> Optional.of((int) (double) d),
+							i -> opt((double) (int) i)
 					)
 			);
 			HBox.setHgrow(opacity, Priority.ALWAYS);

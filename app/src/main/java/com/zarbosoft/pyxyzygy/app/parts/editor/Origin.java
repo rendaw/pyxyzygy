@@ -1,13 +1,13 @@
 package com.zarbosoft.pyxyzygy.app.parts.editor;
 
 import com.zarbosoft.pyxyzygy.app.*;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.CustomBinding;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyHalfBinder;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.DoubleBinding;
-import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.scene.Group;
 import javafx.scene.effect.BlendMode;
 import javafx.scene.paint.Color;
@@ -18,14 +18,14 @@ import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 public class Origin extends Group {
 	private final Line originVert = new Line();
 	private final Line originHoriz = new Line();
-	private final CustomBinding.BinderRoot selectedForEditCleanup;
+	private final BinderRoot selectedForEditCleanup;
 	private Group overlay;
 
 	public final SimpleObjectProperty<Vector> offset = new SimpleObjectProperty<Vector>(Vector.ZERO);
 
 	public Origin(Window window, Editor editor, double size) {
-		CustomBinding.bind(layoutXProperty(),new CustomBinding.PropertyHalfBinder<>(offset).map(o -> opt((double)o.x)));
-		CustomBinding.bind(layoutYProperty(),new CustomBinding.PropertyHalfBinder<>(offset).map(o -> opt((double)o.y)));
+		CustomBinding.bind(layoutXProperty(),new PropertyHalfBinder<>(offset).map(o -> opt((double)o.x)));
+		CustomBinding.bind(layoutYProperty(),new PropertyHalfBinder<>(offset).map(o -> opt((double)o.y)));
 		originHoriz.setStroke(Color.GRAY);
 		originVert.setStroke(Color.GRAY);
 		getChildren().addAll(originHoriz, originVert);

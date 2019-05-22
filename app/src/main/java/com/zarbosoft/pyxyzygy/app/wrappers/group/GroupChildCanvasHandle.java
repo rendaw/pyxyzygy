@@ -2,9 +2,11 @@ package com.zarbosoft.pyxyzygy.app.wrappers.group;
 
 import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.*;
 import com.zarbosoft.pyxyzygy.core.model.v0.GroupChild;
 import com.zarbosoft.pyxyzygy.core.model.v0.GroupPositionFrame;
 import com.zarbosoft.pyxyzygy.core.model.v0.GroupTimeFrame;
+import com.zarbosoft.pyxyzygy.core.model.v0.ProjectLayer;
 import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 
@@ -25,7 +27,7 @@ public class GroupChildCanvasHandle extends CanvasHandle {
 	private final Listener.ListRemove<GroupChild> timeRemoveListener;
 	private final Listener.ListMoveTo<GroupChild> timeMoveListener;
 	private final Listener.ScalarSet<GroupChild, Integer> opacityListener;
-	private final CustomBinding.BinderRoot enabledListenerRoot;
+	private final BinderRoot enabledListenerRoot;
 	private int zoom;
 	private CanvasHandle childCanvas;
 	private final List<Runnable> positionCleanup;
@@ -40,10 +42,22 @@ public class GroupChildCanvasHandle extends CanvasHandle {
 		positionCleanup = new ArrayList<>();
 		timeCleanup = new ArrayList<>();
 
-		enabledListenerRoot = new CustomBinding.DoubleHalfBinder<>(new CustomBinding.PropertyHalfBinder<>(wrapper.child),
-				new CustomBinding.DoubleHalfBinder<>(window.selectedForEditWrapperEnabledBinder,
-						new CustomBinding.ScalarHalfBinder<Boolean>(wrapper.node, "enabled")
-				).map((edit, enabled) -> {
+		enabledListenerRoot = new DoubleHalfBinder<>(
+				new PropertyHalfBinder<>(wrapper.child),
+				new DoubleHalfBinder<>(
+						new ScalarHalfBinder<Boolean>(wrapper.node, "enabled"),
+						new DoubleHalfBinder<>(
+								window.selectedForEditWrapperEnabledBinder,
+								new IndirectHalfBinder<GroupChild>(window.selectedForEditWrapperEnabledBinder, e -> {
+									if (e instanceof GroupNodeWrapper) {
+										return opt(((GroupNodeWrapper) e).specificChild);
+									}
+									return opt(null);
+								})
+						)
+				).map((enabled, p) -> {
+					Wrapper edit = p.first;
+					GroupChild specificLayer = p.second;
 					if (enabled)
 						return opt(true);
 					if (edit != null) {
@@ -54,6 +68,8 @@ public class GroupChildCanvasHandle extends CanvasHandle {
 							at = at.getParent();
 						}
 					}
+					if (specificLayer != null && specificLayer == wrapper.node)
+						return opt(true);
 					return opt(false);
 				})
 		).addListener((child, enabled) -> {

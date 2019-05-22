@@ -8,6 +8,7 @@ import com.zarbosoft.pyxyzygy.app.parts.structure.Structure;
 import com.zarbosoft.pyxyzygy.app.parts.timeline.Timeline;
 import com.zarbosoft.pyxyzygy.app.widgets.TitledPane;
 import com.zarbosoft.pyxyzygy.app.widgets.*;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.*;
 import com.zarbosoft.pyxyzygy.app.wrappers.camera.CameraWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupChildWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeWrapper;
@@ -48,31 +49,31 @@ import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 
 public class Window {
 	public List<FrameMapEntry> timeMap;
-	public CustomBinding.ManualHalfBinder<Wrapper> selectedForEditWrapperEnabledBinder =
-			new CustomBinding.ManualHalfBinder<>();
-	public CustomBinding.ManualHalfBinder<EditHandle> selectedForEditOriginBinder =
-			new CustomBinding.ManualHalfBinder<>();
-	public CustomBinding.ManualHalfBinder<EditHandle> selectedForEditOpacityBinder =
-			new CustomBinding.ManualHalfBinder<>();
-	public CustomBinding.ManualHalfBinder<EditHandle> selectedForEditFramerateBinder =
-			new CustomBinding.ManualHalfBinder<>();
-	public CustomBinding.ManualHalfBinder<EditHandle> selectedForEditOnionBinder =
-			new CustomBinding.ManualHalfBinder<>();
-	public CustomBinding.ManualHalfBinder<EditHandle> selectedForEditPlayingBinder =
-			new CustomBinding.ManualHalfBinder<>();
-	public CustomBinding.ManualHalfBinder<EditHandle> selectedForEditTreeIconBinder =
-			new CustomBinding.ManualHalfBinder<>();
+	public ManualHalfBinder<Wrapper> selectedForEditWrapperEnabledBinder =
+			new ManualHalfBinder<>();
+	public ManualHalfBinder<EditHandle> selectedForEditOriginBinder =
+			new ManualHalfBinder<>();
+	public ManualHalfBinder<EditHandle> selectedForEditOpacityBinder =
+			new ManualHalfBinder<>();
+	public ManualHalfBinder<EditHandle> selectedForEditFramerateBinder =
+			new ManualHalfBinder<>();
+	public ManualHalfBinder<EditHandle> selectedForEditOnionBinder =
+			new ManualHalfBinder<>();
+	public ManualHalfBinder<EditHandle> selectedForEditPlayingBinder =
+			new ManualHalfBinder<>();
+	public ManualHalfBinder<EditHandle> selectedForEditTreeIconBinder =
+			new ManualHalfBinder<>();
 	private EditHandle selectedForEdit = null;
-	public CustomBinding.ManualHalfBinder<CanvasHandle> selectedForViewZoomControlBinder =
-			new CustomBinding.ManualHalfBinder<>();
-	public CustomBinding.ManualHalfBinder<CanvasHandle> selectedForViewMaxFrameBinder =
-			new CustomBinding.ManualHalfBinder<>();
-	public CustomBinding.ManualHalfBinder<CanvasHandle> selectedForViewPlayingBinder =
-			new CustomBinding.ManualHalfBinder<>();
-	public CustomBinding.ManualHalfBinder<CanvasHandle> selectedForViewFrameBinder =
-			new CustomBinding.ManualHalfBinder<>();
-	public CustomBinding.ManualHalfBinder<CanvasHandle> selectedForViewTreeIconBinder =
-			new CustomBinding.ManualHalfBinder<>();
+	public ManualHalfBinder<CanvasHandle> selectedForViewZoomControlBinder =
+			new ManualHalfBinder<>();
+	public ManualHalfBinder<CanvasHandle> selectedForViewMaxFrameBinder =
+			new ManualHalfBinder<>();
+	public ManualHalfBinder<CanvasHandle> selectedForViewPlayingBinder =
+			new ManualHalfBinder<>();
+	public ManualHalfBinder<CanvasHandle> selectedForViewFrameBinder =
+			new ManualHalfBinder<>();
+	public ManualHalfBinder<CanvasHandle> selectedForViewTreeIconBinder =
+			new ManualHalfBinder<>();
 	private CanvasHandle selectedForView = null;
 	public Set<KeyCode> pressed = new HashSet<>();
 	public Editor editor;
@@ -107,7 +108,7 @@ public class Window {
 	public Timeline timeline;
 	private StackPane stack;
 	public Structure structure;
-	private CustomBinding.BinderRoot rootTabWidth; // GC root
+	private BinderRoot rootTabWidth; // GC root
 	private ChangeListener<? super Boolean> maxListener;
 
 	public static class Tab extends javafx.scene.control.Tab {
@@ -180,6 +181,15 @@ public class Window {
 			return;
 		}
 
+		// Clear binder states while transitioning
+		selectedForEditOriginBinder.clear();
+		selectedForEditOpacityBinder.clear();
+		selectedForEditFramerateBinder.clear();
+		selectedForEditOnionBinder.clear();
+		selectedForEditPlayingBinder.clear();
+		selectedForEditTreeIconBinder.clear();
+
+		// Transition
 		Wrapper preParent = wrapper;
 		Wrapper parent = wrapper.getParent();
 		boolean found = false;
@@ -197,14 +207,6 @@ public class Window {
 			selectForView(context, preParent, true);
 			selectedForEdit = wrapper.buildEditControls(context, this);
 		}
-
-		// Clear binder states while transitioning
-		selectedForEditOriginBinder.clear();
-		selectedForEditOpacityBinder.clear();
-		selectedForEditFramerateBinder.clear();
-		selectedForEditOnionBinder.clear();
-		selectedForEditPlayingBinder.clear();
-		selectedForEditTreeIconBinder.clear();
 
 		// React to change
 		structure.selectedForEdit(context, selectedForEdit);
@@ -290,15 +292,16 @@ public class Window {
 		layerTab.disableProperty().bind(layerTab.contentProperty().isNull());
 		leftTabs.getTabs().addAll(structureTab, layerTab, configTab);
 		this.rootTabWidth = CustomBinding.bind(leftTabs.minWidthProperty(),
-				new CustomBinding.IndirectHalfBinder<>(new CustomBinding.ListPropertyHalfBinder<>(leftTabs.getTabs()).<List<CustomBinding.HalfBinder<Double>>>map(
-						l -> opt(l.stream().map(t -> new CustomBinding.IndirectHalfBinder<Double>(t.contentProperty(),
-								c -> opt(c == null ? null : ((Region) c).widthProperty().asObject())
-						)).collect(Collectors.toList()))),
-						l -> opt(new CustomBinding.ListElementsHalfBinder<Double>(l, s -> {
-							double out = leftTabs
-									.getTabs()
-									.stream()
-									.mapToDouble(t -> t.getContent().minWidth(-1))
+				new IndirectHalfBinder<>(
+						new ListPropertyHalfBinder<>(leftTabs.getTabs()).<List<HalfBinder<Node>>>map(
+								l -> opt(l.stream()
+										.map(t -> new PropertyHalfBinder<>(t.contentProperty()))
+										.collect(Collectors.toList()))
+						),
+						l -> opt(new ListElementsHalfBinder<Double>(l, s -> {
+							double out = s
+									.filter(t -> t != null)
+									.mapToDouble(t -> t.minWidth(-1))
 									.max()
 									.orElse(0);
 							return opt(out);
@@ -327,9 +330,9 @@ public class Window {
 			spinner.setPrefWidth(60);
 			spinner.setEditable(true);
 			spinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(-10, 50));
-			CustomBinding.bindBidirectional(new CustomBinding.IndirectBinder<>(selectedForViewZoomControlBinder,
+			CustomBinding.bindBidirectional(new IndirectBinder<>(selectedForViewZoomControlBinder,
 					v -> opt(v == null ? null : v.getWrapper().getConfig().zoom)
-			), new CustomBinding.PropertyBinder<Integer>(spinner.getValueFactory().valueProperty()));
+			), new PropertyBinder<Integer>(spinner.getValueFactory().valueProperty()));
 			final ImageView imageView = new ImageView(icon("zoom.png"));
 			zoomBox.getChildren().addAll(imageView, spinner);
 		}
@@ -457,8 +460,8 @@ public class Window {
 			}
 		};
 
-		new CustomBinding.DoubleHalfBinder<Boolean, Boolean>(new CustomBinding.PropertyHalfBinder<>(context.config.maxCanvas),
-				new CustomBinding.PropertyHalfBinder<>(GUILaunch.profileConfig.showTimeline)
+		new DoubleHalfBinder<Boolean, Boolean>(new PropertyHalfBinder<>(context.config.maxCanvas),
+				new PropertyHalfBinder<>(GUILaunch.profileConfig.showTimeline)
 		).map((max, show) -> {
 			return opt(!max && show);
 		}).addListener(show -> {

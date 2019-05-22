@@ -9,6 +9,7 @@ import com.zarbosoft.pyxyzygy.app.config.*;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.ClosableScene;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.*;
 import com.zarbosoft.pyxyzygy.core.model.v0.*;
 import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
@@ -84,8 +85,8 @@ public class GUILaunch extends Application {
 
 	public static void selectProfile(Stage primaryStage) {
 		class ProfileDialog extends ClosableScene {
-			private final CustomBinding.BinderRoot rootMoveUp; // GC root
-			private final CustomBinding.BinderRoot rootMoveDown; // GC root
+			private final BinderRoot rootMoveUp; // GC root
+			private final BinderRoot rootMoveDown; // GC root
 			private final ListView<RootGlobalConfig.Profile> list;
 
 			ProfileDialog() {
@@ -131,12 +132,10 @@ public class GUILaunch extends Application {
 						});
 				list.setFocusTraversable(false);
 
-				CustomBinding.PropertyHalfBinder<Number> listIndexBinder =
-						new CustomBinding.PropertyHalfBinder<>(list.getSelectionModel().selectedIndexProperty());
-				CustomBinding.DoubleHalfBinder<ObservableList<RootGlobalConfig.Profile>, Number> listBinder =
-						new CustomBinding.DoubleHalfBinder<>(new CustomBinding.ListPropertyHalfBinder<>(list.getItems()),
-								listIndexBinder
-						);
+				PropertyHalfBinder<Number> listIndexBinder =
+						new PropertyHalfBinder<>(list.getSelectionModel().selectedIndexProperty());
+				DoubleHalfBinder<ObservableList<RootGlobalConfig.Profile>, Number> listBinder =
+						new DoubleHalfBinder<>(new ListPropertyHalfBinder<>(list.getItems()), listIndexBinder);
 
 				Button newProfile = HelperJFX.button("plus.png", "New profile");
 				newProfile.setFocusTraversable(false);
@@ -257,14 +256,13 @@ public class GUILaunch extends Application {
 	}
 
 	public static void selectProject(Stage primaryStage) {
-		Runnable cancelResponse =
-		Global.fixedProfile ? () -> {
+		Runnable cancelResponse = Global.fixedProfile ? () -> {
 			Global.shutdown();
 		} : () -> {
 			selectProfile(primaryStage);
 		};
 		class ProjectDialog extends ClosableScene {
-			private final CustomBinding.BinderRoot rootChoice; // GC root
+			private final BinderRoot rootChoice; // GC root
 
 			public Image directoryImage = icon("folder.png");
 			public Image projectImage = icon("folder-outline.png");
@@ -468,38 +466,16 @@ public class GUILaunch extends Application {
 
 				cwd.addListener((observableValue, path, t1) -> text.setText(""));
 				cwd.set(Paths.get(GUILaunch.profileConfig.lastDir));
-				SimpleObjectProperty<ChooserEntry> listProxy = new SimpleObjectProperty<>();
-				{
-					Common.Mutable<Boolean> suppress = new Common.Mutable<>(false);
-					listProxy.addListener((observableValue, chooserEntry, t1) -> {
-						if (suppress.value)
-							return;
-						suppress.value = true;
-						try {
-							list.getSelectionModel().select(t1);
-						} finally {
-							suppress.value = false;
-						}
-					});
-					list.getSelectionModel().selectedItemProperty().addListener((observableValue, chooserEntry, t1) -> {
-						if (suppress.value)
-							return;
-						suppress.value = true;
-						try {
-							listProxy.set(t1);
-						} finally {
-							suppress.value = false;
-						}
-					});
-				}
 				this.rootChoice =
-						CustomBinding.<Path>bindBidirectional(new CustomBinding.PropertyBinder<String>(text.textProperty()).<Path>bimap(
-								t -> Optional.of(cwd.get().resolve(t)),
-								(Path v) -> v.getFileName().toString()
+						CustomBinding.<Path>bindBidirectional(new PropertyBinder<String>(text.textProperty()).<Path>bimap(
+								t -> Optional.of(cwd
+										.get()
+										.resolve(t)),
+								(Path v) -> opt(v.getFileName().toString())
 								),
-								new CustomBinding.PropertyBinder<ChooserEntry>(listProxy).<Path>bimap(e -> Optional
+								new SelectionModelBinder<>(list.getSelectionModel()).<Path>bimap(e -> Optional
 										.ofNullable(e)
-										.map(v -> v.path), (Path v) -> entries.get(v))
+										.map(v -> v.path), (Path v) -> opt(entries.get(v)))
 						);
 				resolvedPath.bind(Bindings.createObjectBinding(() -> cwd.get().resolve(text.getText()),
 						cwd,
@@ -540,7 +516,11 @@ public class GUILaunch extends Application {
 				String.format("%s - Choose project", Global.nameHuman),
 				new ProjectDialog(),
 				false,
-				e->cancelResponse.run()
+				e -> {
+					if (!fixedProfile)
+						e.consume();
+					cancelResponse.run();
+				}
 		);
 	}
 

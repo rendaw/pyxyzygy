@@ -1,11 +1,14 @@
 package com.zarbosoft.pyxyzygy.app.parts.timeline;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableList;
 import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.config.NodeConfig;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.ChildrenReplacer;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.*;
 import com.zarbosoft.pyxyzygy.app.wrappers.camera.CameraWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.paletteimage.PaletteImageNodeWrapper;
@@ -77,10 +80,10 @@ public class Timeline {
 			toolBox.getChildren().clear();
 		}
 	};
-	private final CustomBinding.BinderRoot rootFrame; // GC root
-	private final CustomBinding.BinderRoot rootOnionToggle; // GC root
-	private final CustomBinding.BinderRoot rootFramerate; // GC root
-	private final CustomBinding.BinderRoot rootPlaying; // GC root
+	private final BinderRoot rootFrame; // GC root
+	private final BinderRoot rootOnionToggle; // GC root
+	private final BinderRoot rootFramerate; // GC root
+	private final BinderRoot rootPlaying; // GC root
 	public double zoom = 16;
 
 	VBox foreground = new VBox();
@@ -108,6 +111,7 @@ public class Timeline {
 	final SimpleIntegerProperty frame = new SimpleIntegerProperty();
 	public final SimpleBooleanProperty playingProperty = new SimpleBooleanProperty(false);
 	public PlayThread playThread;
+	public BiMap<TreeItem<RowAdapter>, GroupChild> groupTreeItemLookup = HashBiMap.create();
 
 	public Node getWidget() {
 		return foreground;
@@ -287,9 +291,9 @@ public class Timeline {
 		});
 		ToggleButton onion = new ToggleButton(null, new ImageView(icon("onion.png")));
 		onion.setTooltip(new Tooltip("Toggle onion skin"));
-		rootOnionToggle = CustomBinding.bindBidirectional(new CustomBinding.IndirectBinder<Boolean>(window.selectedForEditOnionBinder,
+		rootOnionToggle = CustomBinding.bindBidirectional(new IndirectBinder<Boolean>(window.selectedForEditOnionBinder,
 				e -> Optional.ofNullable(e).map(e1 -> e1.getWrapper().getConfig().onionSkin)
-		), new CustomBinding.PropertyBinder<Boolean>(onion.selectedProperty()));
+		), new PropertyBinder<Boolean>(onion.selectedProperty()));
 		toolBox = new HBox();
 
 		Region space = new Region();
@@ -306,14 +310,14 @@ public class Timeline {
 			spinner.setPrefWidth(60);
 			spinner.setEditable(true);
 			spinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 100));
-			rootFramerate = CustomBinding.bindBidirectional(new CustomBinding.IndirectBinder<>(window.selectedForEditFramerateBinder,
-					v -> {
+			rootFramerate =
+					CustomBinding.bindBidirectional(new IndirectBinder<>(window.selectedForEditFramerateBinder, v -> {
 						if (v == null)
 							return opt(null);
 						Wrapper wrapper = v.getWrapper();
 						if (wrapper instanceof CameraWrapper) {
 							Camera camera = ((CameraWrapper) wrapper).node;
-							return opt(new CustomBinding.ScalarBinder<Integer>(camera,
+							return opt(new ScalarBinder<Integer>(camera,
 									"frameRate",
 									r -> context.change(new ProjectContext.Tuple(camera, "framerate"),
 											c -> c.camera(camera).frameRateSet(r)
@@ -322,8 +326,7 @@ public class Timeline {
 						} else {
 							return opt(wrapper.getConfig().previewRate);
 						}
-					}
-			), new CustomBinding.PropertyBinder<Integer>(spinner.getValueFactory().valueProperty()));
+					}), new PropertyBinder<Integer>(spinner.getValueFactory().valueProperty()));
 			final ImageView imageView = new ImageView(icon("play-speed.png"));
 			previewRate.getChildren().addAll(imageView, spinner);
 		}
@@ -397,32 +400,24 @@ public class Timeline {
 			}
 		});
 		tree.getColumns().addAll(nameColumn, framesColumn);
-		tree.getSelectionModel().getSelectedItems().addListener(new ListChangeListener<TreeItem<RowAdapter>>() {
-			{
-				onChanged(null);
+		CustomBinding.bindBidirectional(new IndirectBinder<>(window.selectedForEditPlayingBinder,
+				e -> e.getWrapper() instanceof GroupNodeWrapper ?
+						opt(((GroupNodeWrapper) e.getWrapper()).specificChild) :
+						Optional.empty()
+		), new SelectionModelBinder<>(tree.getSelectionModel()).<GroupChild>bimap(t -> {
+			if (t == null) return Optional.empty();
+			if (groupTreeItemLookup.containsKey(t)) {
+				return opt(groupTreeItemLookup.get(t));
+			} else if (groupTreeItemLookup.containsKey(t.getParent())) {
+				return opt(groupTreeItemLookup.get(t.getParent()));
 			}
-
-			@Override
-			public void onChanged(Change<? extends TreeItem<RowAdapter>> c) {
-				while (c != null && c.next()) {
-					for (TreeItem<RowAdapter> removed : c.getRemoved()) {
-						if (removed == null)
-							continue; // ??
-						if (removed.getValue() == null)
-							continue;
-						removed.getValue().deselected();
-					}
-					for (TreeItem<RowAdapter> added : c.getAddedSubList()) {
-						if (added == null)
-							continue; // ??
-						if (added.getValue() == null)
-							continue;
-						added.getValue().selected();
-					}
-				}
-				select(null);
+			return Optional.<GroupChild>empty();
+		}, c -> {
+			if (groupTreeItemLookup.inverse().containsKey(c)) {
+				return opt(groupTreeItemLookup.inverse().get(c));
 			}
-		});
+			return Optional.<TreeItem<RowAdapter>>empty();
+		}));
 		framesColumn
 				.prefWidthProperty()
 				.bind(tree
@@ -448,13 +443,9 @@ public class Timeline {
 		scrubElements.getChildren().add(frameMarker);
 		timeScroll.visibleAmountProperty().bind(scrub.widthProperty().subtract(nameColumn.widthProperty()));
 
-		rootFrame = CustomBinding.bind(frame,
-				new CustomBinding.IndirectHalfBinder<Number>(window.selectedForViewFrameBinder,
-						e -> e == null ?
-								Optional.empty() :
-								opt(new CustomBinding.PropertyHalfBinder<>(e.getWrapper().getConfig().frame))
-				)
-		);
+		rootFrame = CustomBinding.bind(frame, new IndirectHalfBinder<Number>(window.selectedForViewFrameBinder,
+				e -> e == null ? Optional.empty() : opt(new PropertyHalfBinder<>(e.getWrapper().getConfig().frame))
+		));
 		final ChangeListener<Number> frameListener = new ChangeListener<>() {
 			{
 				changed(null, null, frame.get());
@@ -467,41 +458,44 @@ public class Timeline {
 		};
 		frame.addListener(frameListener);
 
-		rootPlaying = new CustomBinding.DoubleHalfBinder<Boolean, Pair<CanvasHandle, EditHandle>>(playingProperty,
-				new CustomBinding.DoubleHalfBinder<>(window.selectedForViewPlayingBinder,
+		rootPlaying =
+				new DoubleHalfBinder<Boolean, Pair<CanvasHandle, EditHandle>>(playingProperty, new DoubleHalfBinder<>(
+						window.selectedForViewPlayingBinder,
 						window.selectedForEditPlayingBinder
-				)
-		).addListener((Boolean playing, Pair<CanvasHandle, EditHandle> sel) -> {
-			((ImageView) previewPlay.getGraphic()).setImage(playing ? icon("stop.png") : icon("play.png"));
-			if (playThread != null)
-				playThread.playing.set(false);
-			playThread = null;
-			if (playing) {
-				Wrapper view = sel.first.getWrapper();
-				Wrapper edit = sel.second.getWrapper();
-				if (edit instanceof CameraWrapper) {
-					playThread = new PlayThread(view) {
-						Camera node = ((CameraWrapper) edit).node;
+				)).addListener((Boolean playing, Pair<CanvasHandle, EditHandle> sel) -> {
+					((ImageView) previewPlay.getGraphic()).setImage(playing ? icon("stop.png") : icon("play.png"));
+					if (playThread != null)
+						playThread.playing.set(false);
+					playThread = null;
+					if (playing) {
+						Wrapper view = sel.first.getWrapper();
+						Wrapper edit = sel.second.getWrapper();
+						if (edit instanceof CameraWrapper) {
+							playThread = new PlayThread(view) {
+								Camera node = ((CameraWrapper) edit).node;
 
-						@Override
-						public PlayState updateState() {
-							return new PlayState(1000 / node.frameRate(), node.frameStart(), node.frameLength());
+								@Override
+								public PlayState updateState() {
+									return new PlayState(1000 / node.frameRate(),
+											node.frameStart(),
+											node.frameLength()
+									);
+								}
+							};
+						} else {
+							NodeConfig config = edit.getConfig();
+							playThread = new PlayThread(view) {
+								@Override
+								public PlayState updateState() {
+									return new PlayState(1000 / config.previewRate.get(),
+											config.previewStart.get(),
+											config.previewLength.get()
+									);
+								}
+							};
 						}
-					};
-				} else {
-					NodeConfig config = edit.getConfig();
-					playThread = new PlayThread(view) {
-						@Override
-						public PlayState updateState() {
-							return new PlayState(1000 / config.previewRate.get(),
-									config.previewStart.get(),
-									config.previewLength.get()
-							);
-						}
-					};
-				}
-			}
-		});
+					}
+				});
 	}
 
 	public static abstract class PlayThread extends Thread {
@@ -565,6 +559,7 @@ public class Timeline {
 
 	public void cleanItemSubtree(TreeItem<RowAdapter> item) {
 		item.getChildren().forEach(child -> cleanItemSubtree(child));
+		groupTreeItemLookup.remove(item);
 		if (item.getValue() != null)
 			item.getValue().remove(context);
 	}
@@ -582,6 +577,7 @@ public class Timeline {
 			outerTimeHandle.remove();
 			outerTimeHandle = null;
 		}
+		groupTreeItemLookup.clear();
 
 		if (root1 == null || edit1 == null)
 			return;
@@ -597,7 +593,7 @@ public class Timeline {
 
 		// Prepare rows
 		if (edit instanceof GroupNodeWrapper) {
-			TreeItem childrenRoot = new TreeItem(new RowAdapter() {
+			TreeItem childrenRoot = new RowAdapter() {
 
 				@Override
 				public ObservableValue<String> getName() {
@@ -624,16 +620,6 @@ public class Timeline {
 				@Override
 				public ObservableObjectValue<Image> getStateImage() {
 					return emptyStateImage;
-				}
-
-				@Override
-				public void deselected() {
-
-				}
-
-				@Override
-				public void selected() {
-
 				}
 
 				@Override
@@ -672,31 +658,31 @@ public class Timeline {
 				public Object getData() {
 					return null;
 				}
-			});
+			};
 			editCleanup.add(((GroupLayer) edit.getValue()).mirrorChildren(childrenRoot.getChildren(), child -> {
 				RowAdapterGroupChild childRowAdapter = new RowAdapterGroupChild((GroupNodeWrapper) edit, child);
-				TreeItem<RowAdapter> childItem = new TreeItem(childRowAdapter);
-				childItem.setExpanded(true);
-				childItem.getChildren().addAll(new TreeItem(new RowAdapterGroupChildTime(this, child, childRowAdapter)),
-						new TreeItem(new RowAdapterGroupChildPosition(this, child, childRowAdapter))
+				childRowAdapter.setExpanded(true);
+				childRowAdapter.getChildren().addAll(new RowAdapterGroupChildTime(this, child, childRowAdapter),
+						new RowAdapterGroupChildPosition(this, child, childRowAdapter)
 				);
-				return childItem;
+				groupTreeItemLookup.put(childRowAdapter, child);
+				return childRowAdapter;
 			}, this::cleanItemSubtree, Misc.noopConsumer()));
-			TreeItem loop;
+			RowAdapter loop;
 			if (edit instanceof CameraWrapper) {
-				loop = new TreeItem(new RowAdapterCameraLoop(this, ((CameraWrapper) edit).node));
+				loop = new RowAdapterCameraLoop(this, ((CameraWrapper) edit).node);
 			} else if (edit.getClass() == GroupNodeWrapper.class) {
-				loop = new TreeItem(new RowAdapterPreview(this, edit));
+				loop = new RowAdapterPreview(this, edit);
 			} else
 				throw new Assertion();
 			tree.getRoot().getChildren().addAll(loop, childrenRoot);
 		} else if (edit instanceof TrueColorImageNodeWrapper) {
-			tree.getRoot().getChildren().addAll(new TreeItem(new RowAdapterPreview(this, edit)),
-					new TreeItem(new RowAdapterTrueColorImageNode(this, (TrueColorImageLayer) edit.getValue()))
+			tree.getRoot().getChildren().addAll(new RowAdapterPreview(this, edit),
+					new RowAdapterTrueColorImageNode(this, (TrueColorImageLayer) edit.getValue())
 			);
 		} else if (edit instanceof PaletteImageNodeWrapper) {
-			tree.getRoot().getChildren().addAll(new TreeItem(new RowAdapterPreview(this, edit)),
-					new TreeItem<>(new RowAdapterPaletteImageNode(this, (PaletteImageLayer) edit.getValue()))
+			tree.getRoot().getChildren().addAll(new RowAdapterPreview(this, edit),
+					new RowAdapterPaletteImageNode(this, (PaletteImageLayer) edit.getValue())
 			);
 		}
 

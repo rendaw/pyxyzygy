@@ -7,6 +7,7 @@ import com.zarbosoft.pyxyzygy.app.config.PaletteImageNodeConfig;
 import com.zarbosoft.pyxyzygy.app.model.v0.PaletteTile;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.*;
 import com.zarbosoft.pyxyzygy.app.wrappers.FrameFinder;
 import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.BaseImageCanvasHandle;
 import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.BaseImageNodeWrapper;
@@ -23,6 +24,7 @@ import javafx.scene.image.Image;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -54,9 +56,9 @@ public class PaletteImageNodeWrapper extends BaseImageNodeWrapper<PaletteImageLa
 					return frame.length();
 				}
 			};
-	public final CustomBinding.HalfBinder<PaletteBrush> brushBinder;
-	public final CustomBinding.IndirectBinder<Integer> paletteSelOffsetBinder;
-	public final CustomBinding.HalfBinder<ProjectObject> paletteSelectionBinder;
+	public final HalfBinder<PaletteBrush> brushBinder;
+	public final IndirectBinder<Integer> paletteSelOffsetBinder;
+	public final HalfBinder<ProjectObject> paletteSelectionBinder;
 
 	public PaletteImageNodeWrapper(
 			ProjectContext context, Wrapper parent, int parentIndex, PaletteImageLayer node
@@ -66,9 +68,8 @@ public class PaletteImageNodeWrapper extends BaseImageNodeWrapper<PaletteImageLa
 				k -> new PaletteImageNodeConfig(context)
 		);
 		this.brushBinder =
-				new CustomBinding.DoubleHalfBinder<ObservableList<PaletteBrush>, Integer>(new CustomBinding.ListPropertyHalfBinder<>(
-						GUILaunch.profileConfig.paletteBrushes),
-						new CustomBinding.DoubleHalfBinder<>(config.tool, config.brush).map((t, index) -> {
+				new DoubleHalfBinder<ObservableList<PaletteBrush>, Integer>(new ListPropertyHalfBinder<>(GUILaunch.profileConfig.paletteBrushes),
+						new DoubleHalfBinder<>(config.tool, config.brush).map((t, index) -> {
 							if (!TOOL_BRUSH.equals(t))
 								return opt(null);
 							return opt(index);
@@ -80,14 +81,15 @@ public class PaletteImageNodeWrapper extends BaseImageNodeWrapper<PaletteImageLa
 						return opt(null);
 					return opt(brushes.get(index));
 				});
-		paletteSelOffsetBinder =
-				new CustomBinding.IndirectBinder<Integer>(new CustomBinding.IndirectHalfBinder<Boolean>(brushBinder,
-						b -> b == null ? opt(null) : opt(b.useColor)
-				),
-						b -> opt((Boolean) b ? brushBinder.get().get().paletteOffset : config.paletteOffset)
-				);
-		paletteSelectionBinder = new CustomBinding.DoubleHalfBinder<>(paletteSelOffsetBinder,
-				new CustomBinding.ListHalfBinder<ProjectObject>(node.palette(), "entries")
+		paletteSelOffsetBinder = new IndirectBinder<Integer>(new IndirectHalfBinder<Boolean>(brushBinder,
+				b -> b == null ? opt(null) : opt(b.useColor)
+		),
+				b -> b == null ?
+						Optional.empty() :
+						opt((Boolean) b ? brushBinder.get().get().paletteOffset : config.paletteOffset)
+		);
+		paletteSelectionBinder = new DoubleHalfBinder<>(paletteSelOffsetBinder,
+				new ListHalfBinder<ProjectObject>(node.palette(), "entries")
 		).map((offset, entries) -> {
 			if (entries.size() <= offset)
 				return opt(null);

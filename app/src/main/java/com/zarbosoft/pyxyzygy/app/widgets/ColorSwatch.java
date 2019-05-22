@@ -1,6 +1,6 @@
 package com.zarbosoft.pyxyzygy.app.widgets;
 
-import com.zarbosoft.pyxyzygy.app.CustomBinding;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.*;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -22,8 +22,8 @@ public class ColorSwatch extends StackPane {
 
 	private Node createClip() {
 		Rectangle clip = new Rectangle();
-		CustomBinding.HalfBinder<CornerRadii> radiiBinder =
-				new CustomBinding.DoubleHalfBinder<>(backgroundProperty(), borderProperty()).map((bg, border) -> {
+		HalfBinder<CornerRadii> radiiBinder =
+				new DoubleHalfBinder<>(backgroundProperty(), borderProperty()).map((bg, border) -> {
 					if (bg != null)
 						return opt(bg.getFills().get(0).getRadii());
 					if (border != null)
@@ -33,18 +33,18 @@ public class ColorSwatch extends StackPane {
 							return opt(border.getStrokes().get(0).getRadii());
 					return opt(CornerRadii.EMPTY);
 				});
-		CustomBinding.HalfBinder<Double> borderWidthBinder =
-				new CustomBinding.PropertyHalfBinder<>(borderProperty()).map(b0 -> Optional.of(Optional
+		HalfBinder<Double> borderWidthBinder =
+				new PropertyHalfBinder<>(borderProperty()).map(b0 -> Optional.of(Optional
 						.ofNullable(b0)
 						.flatMap(b -> b.getStrokes().isEmpty() ? Optional.empty() : Optional.of(b.getStrokes().get(0)))
 						.map(b -> b.getWidths().getTop())
 						.orElse(0.)));
-		new CustomBinding.DoubleIndirectHalfBinder<>(borderWidthBinder, radiiBinder, (w, r) -> {
+		new DoubleIndirectHalfBinder<>(borderWidthBinder, radiiBinder, (w, r) -> {
 			clip.setArcWidth(r.getTopLeftHorizontalRadius() * 2 - w * gapScaler);
 			clip.setArcHeight(r.getTopLeftVerticalRadius() * 2 - w * gapScaler);
 			return Optional.empty();
 		});
-		new CustomBinding.DoubleIndirectHalfBinder<>(
+		new DoubleIndirectHalfBinder<>(
 				borderWidthBinder,
 				layoutBoundsProperty(),
 				(borderWidth, bounds) -> {

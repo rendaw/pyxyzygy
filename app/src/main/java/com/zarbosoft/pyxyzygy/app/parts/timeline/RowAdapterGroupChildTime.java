@@ -103,16 +103,6 @@ public class RowAdapterGroupChildTime extends BaseFrameRowAdapter<GroupChild, Gr
 	}
 
 	@Override
-	public void deselected() {
-		childRowAdapter.treeDeselected();
-	}
-
-	@Override
-	public void selected() {
-		childRowAdapter.treeSelected();
-	}
-
-	@Override
 	protected void frameClear(ChangeStepBuilder change, GroupTimeFrame groupTimeFrame) {
 		change.groupTimeFrame(groupTimeFrame).innerOffsetSet(0);
 		change.groupTimeFrame(groupTimeFrame).innerLoopSet(NO_LOOP);

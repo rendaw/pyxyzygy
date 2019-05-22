@@ -90,16 +90,6 @@ public class RowAdapterGroupChildPosition extends BaseFrameRowAdapter<GroupChild
 	}
 
 	@Override
-	public void deselected() {
-		childRowAdapter.treeDeselected();
-	}
-
-	@Override
-	public void selected() {
-		childRowAdapter.treeSelected();
-	}
-
-	@Override
 	public void remove(ProjectContext context) {
 	}
 

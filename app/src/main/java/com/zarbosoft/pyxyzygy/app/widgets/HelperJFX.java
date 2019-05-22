@@ -1,10 +1,13 @@
 package com.zarbosoft.pyxyzygy.app.widgets;
 
 import com.google.common.base.Throwables;
-import com.zarbosoft.pyxyzygy.app.CustomBinding;
 import com.zarbosoft.pyxyzygy.app.GUILaunch;
 import com.zarbosoft.pyxyzygy.app.Global;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.CustomBinding;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.HalfBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyBinder;
 import com.zarbosoft.pyxyzygy.core.PaletteColors;
 import com.zarbosoft.pyxyzygy.core.PaletteImage;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
@@ -34,7 +37,6 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.text.DecimalFormat;
 import java.util.Optional;
-import java.util.function.Function;
 
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.rendaw.common.Common.getResource;
@@ -85,25 +87,23 @@ public class HelperJFX {
 		out.getChildren().addAll(text, slider);
 
 		double range = max - min;
-		Function<Number, Integer> fromNonlinear = v -> (int) (Math.pow(v.doubleValue(), 2) * range + min);
-		Function<Integer, Number> toNonlinear = v -> Math.pow((v - min) / range, 0.5);
 		SimpleObjectProperty<Integer> value = new SimpleObjectProperty<>(0);
 
-		CustomBinding.bindBidirectional(new CustomBinding.PropertyBinder<>(value),
-				new CustomBinding.PropertyBinder<>(slider.valueProperty()).<Integer>bimap(n -> opt(n).map(fromNonlinear),
-						toNonlinear
-				)
+		CustomBinding.bindBidirectional(new PropertyBinder<>(value),
+				new PropertyBinder<>(slider.valueProperty()).<Integer>bimap(n -> opt(n).map(v1 -> (int) (
+						Math.pow(v1.doubleValue(), 2) * range + min
+				)), v2 -> opt(Math.pow((v2 - min) / range, 0.5)))
 		);
 		DecimalFormat textFormat = new DecimalFormat();
 		textFormat.setMaximumFractionDigits(precision);
-		CustomBinding.bindBidirectional(new CustomBinding.PropertyBinder<>(value),
-				new CustomBinding.PropertyBinder<>(text.textProperty()).bimap(v -> {
+		CustomBinding.bindBidirectional(new PropertyBinder<>(value),
+				new PropertyBinder<>(text.textProperty()).bimap(v -> {
 					try {
 						return opt((int) (Double.parseDouble(v) * divide));
 					} catch (NumberFormatException e) {
 						return Optional.empty();
 					}
-				}, v -> textFormat.format((double) v.intValue() / divide))
+				}, v -> opt(textFormat.format((double) v.intValue() / divide)))
 		);
 
 		return new Pair<>(out, value);
@@ -396,8 +396,8 @@ public class HelperJFX {
 		alert.showAndWait();
 	}
 
-	public static CustomBinding.BinderRoot bindStyle(
-			Node node, String styleClass, CustomBinding.HalfBinder<Boolean> source
+	public static BinderRoot bindStyle(
+			Node node, String styleClass, HalfBinder<Boolean> source
 	) {
 		return source.addListener(b -> {
 			if (b) {
