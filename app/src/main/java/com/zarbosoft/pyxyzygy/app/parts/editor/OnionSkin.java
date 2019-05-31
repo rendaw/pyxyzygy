@@ -5,7 +5,10 @@ import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.parts.timeline.Timeline;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.*;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.DoubleHalfBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.HalfBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyHalfBinder;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.pyxyzygy.nearestneighborimageview.NearestNeighborImageView;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
@@ -28,6 +31,7 @@ public class OnionSkin {
 	private final BinderRoot onCleanup;
 	private final HalfBinder<Boolean> on;
 	private final Group overlay;
+	private final SimpleObjectProperty<TrueColor> colorProperty;
 
 	// Own
 	private boolean lastOn = false;
@@ -35,18 +39,22 @@ public class OnionSkin {
 	private DoubleRectangle triggerBounds = new DoubleRectangle(0, 0, 0, 0);
 	private TrueColor lastColor = null;
 
-	public OnionSkin(ProjectContext context, Timeline timeline, EditHandle editHandle) {
+	public OnionSkin(ProjectContext context, Timeline timeline, EditHandle editHandle, boolean previous) {
 		this.editHandle = editHandle;
-		frameProp = editHandle.getCanvas().previousFrame;
+		frameProp = previous ? editHandle.getCanvas().previousFrame : editHandle.getCanvas().nextFrame;
 		bounds = editHandle.getCanvas().bounds;
-		on = new DoubleHalfBinder<>(
-				new PropertyHalfBinder<>(editHandle.getWrapper().getConfig().onionSkin),
+		on = new DoubleHalfBinder<>(new PropertyHalfBinder<>(previous ?
+				editHandle.getWrapper().getConfig().onionLeft :
+				editHandle.getWrapper().getConfig().onionRight),
 				new PropertyHalfBinder<>(timeline.playingProperty)
 		).map((on0, playing) -> opt(on0 && !playing));
 		onCleanup = on.addListener(v -> render(context));
 		frameProp.addListener((observable, oldValue, newValue) -> render(context));
 		bounds.addListener((observable, oldValue, newValue) -> render(context));
-		GUILaunch.profileConfig.onionSkinColor.addListener((observable, oldValue, newValue) -> render(context));
+		colorProperty = previous ?
+				GUILaunch.profileConfig.ghostPreviousColor :
+				GUILaunch.profileConfig.ghostNextColor;
+		colorProperty.addListener((observable, oldValue, newValue) -> render(context));
 
 		this.overlay = editHandle.getCanvas().overlay;
 		overlay.getChildren().add(widget);
@@ -68,7 +76,7 @@ public class OnionSkin {
 			widget.setImage(null);
 			return;
 		}
-		TrueColor color = GUILaunch.profileConfig.onionSkinColor.get();
+		TrueColor color = colorProperty.get();
 		if (lastOn == on && frame == lastFrame && (
 				triggerBounds.contains(bounds.get().corner()) &&
 						triggerBounds.contains(bounds.get().corner().plus(bounds.get().span()))

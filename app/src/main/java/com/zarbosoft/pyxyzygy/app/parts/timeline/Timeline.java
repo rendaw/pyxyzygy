@@ -81,7 +81,8 @@ public class Timeline {
 		}
 	};
 	private final BinderRoot rootFrame; // GC root
-	private final BinderRoot rootOnionToggle; // GC root
+	private final BinderRoot rootOnionLeftToggle; // GC root
+	private final BinderRoot rootOnionRightToggle; // GC root
 	private final BinderRoot rootFramerate; // GC root
 	private final BinderRoot rootPlaying; // GC root
 	public double zoom = 16;
@@ -289,11 +290,19 @@ public class Timeline {
 				selectedFrame.get().frame.moveRight(context, change);
 			});
 		});
-		ToggleButton onion = new ToggleButton(null, new ImageView(icon("onion.png")));
-		onion.setTooltip(new Tooltip("Toggle onion skin"));
-		rootOnionToggle = CustomBinding.bindBidirectional(new IndirectBinder<Boolean>(window.selectedForEditOnionBinder,
-				e -> Optional.ofNullable(e).map(e1 -> e1.getWrapper().getConfig().onionSkin)
-		), new PropertyBinder<Boolean>(onion.selectedProperty()));
+		ToggleButton onionLeft = new ToggleButton(null, new ImageView(icon("onion-left.png")));
+		onionLeft.setTooltip(new Tooltip("Show previous frame ghost"));
+		rootOnionLeftToggle =
+				CustomBinding.bindBidirectional(new IndirectBinder<Boolean>(window.selectedForEditOnionBinder,
+						e -> Optional.ofNullable(e).map(e1 -> e1.getWrapper().getConfig().onionLeft)
+				), new PropertyBinder<Boolean>(onionLeft.selectedProperty()));
+		ToggleButton onionRight = new ToggleButton(null, new ImageView(icon("onion-right.png")));
+		onionRight.setTooltip(new Tooltip("Show next frame ghost"));
+		rootOnionRightToggle =
+				CustomBinding.bindBidirectional(new IndirectBinder<Boolean>(window.selectedForEditOnionBinder,
+						e -> Optional.ofNullable(e).map(e1 -> e1.getWrapper().getConfig().onionRight)
+				), new PropertyBinder<Boolean>(onionRight.selectedProperty()));
+
 		toolBox = new HBox();
 
 		Region space = new Region();
@@ -340,7 +349,19 @@ public class Timeline {
 
 		toolBar
 				.getItems()
-				.addAll(add, duplicate, left, right, remove, clear, onion, toolBox, space, previewRate, previewPlay);
+				.addAll(add,
+						duplicate,
+						left,
+						right,
+						remove,
+						clear,
+						onionLeft,
+						onionRight,
+						toolBox,
+						space,
+						previewRate,
+						previewPlay
+				);
 		nameColumn.setCellValueFactory(p -> new SimpleObjectProperty<>(p.getValue().getValue()));
 		nameColumn.setCellFactory(param -> new TreeTableCell<RowAdapter, RowAdapter>() {
 			final ImageView showViewing = new ImageView();
@@ -400,34 +421,27 @@ public class Timeline {
 			}
 		});
 		tree.getColumns().addAll(nameColumn, framesColumn);
-		CustomBinding.bindBidirectional(
-				new IndirectBinder<>(
-						window.selectedForEditPlayingBinder,
-						e -> {
-							if (e.getWrapper() instanceof GroupNodeWrapper) {
-								return opt(((GroupNodeWrapper) e.getWrapper()).specificChild);
-							} else {
-								return Optional.empty();
-							}
-						}
-				),
-				new SelectionModelBinder<>(tree.getSelectionModel()).<GroupChild>bimap(
-						t -> {
-							if (t == null) return Optional.empty();
-							if (groupTreeItemLookup.containsKey(t)) {
-								return opt(groupTreeItemLookup.get(t));
-							} else if (groupTreeItemLookup.containsKey(t.getParent())) {
-								return opt(groupTreeItemLookup.get(t.getParent()));
-							}
-							return Optional.<GroupChild>empty();
-						}, c -> {
-							if (groupTreeItemLookup.inverse().containsKey(c)) {
-								return opt(groupTreeItemLookup.inverse().get(c));
-							}
-							return Optional.<TreeItem<RowAdapter>>empty();
-						}
-				)
-		);
+		CustomBinding.bindBidirectional(new IndirectBinder<>(window.selectedForEditPlayingBinder, e -> {
+			if (e.getWrapper() instanceof GroupNodeWrapper) {
+				return opt(((GroupNodeWrapper) e.getWrapper()).specificChild);
+			} else {
+				return Optional.empty();
+			}
+		}), new SelectionModelBinder<>(tree.getSelectionModel()).<GroupChild>bimap(t -> {
+			if (t == null)
+				return Optional.empty();
+			if (groupTreeItemLookup.containsKey(t)) {
+				return opt(groupTreeItemLookup.get(t));
+			} else if (groupTreeItemLookup.containsKey(t.getParent())) {
+				return opt(groupTreeItemLookup.get(t.getParent()));
+			}
+			return Optional.<GroupChild>empty();
+		}, c -> {
+			if (groupTreeItemLookup.inverse().containsKey(c)) {
+				return opt(groupTreeItemLookup.inverse().get(c));
+			}
+			return Optional.<TreeItem<RowAdapter>>empty();
+		}));
 		framesColumn
 				.prefWidthProperty()
 				.bind(tree

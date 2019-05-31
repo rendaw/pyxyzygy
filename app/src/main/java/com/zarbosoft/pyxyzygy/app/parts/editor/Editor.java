@@ -68,31 +68,52 @@ public class Editor {
 				}
 			},
 			new Hotkeys.Action(Hotkeys.Scope.CANVAS,
-					"onion-skin",
-					"Onion skin",
-					Hotkeys.Hotkey.create(KeyCode.O, false, false, false)
+					"ghost-previous",
+					"Previous frame ghost",
+					Hotkeys.Hotkey.create(KeyCode.B, false, false, false)
 			) {
 				@Override
 				public void run(ProjectContext context, Window window) {
 					EditHandle e = Editor.this.window.getSelectedForEdit();
 					if (e == null)
 						return;
-					e.getWrapper().getConfig().onionSkin.set(!e.getWrapper().getConfig().onionSkin.get());
+					e.getWrapper().getConfig().onionLeft.set(!e.getWrapper().getConfig().onionLeft.get());
+				}
+			},
+			new Hotkeys.Action(Hotkeys.Scope.CANVAS,
+					"ghost-next",
+					"Next frame ghost",
+					Hotkeys.Hotkey.create(KeyCode.N, false, false, false)
+			) {
+				@Override
+				public void run(ProjectContext context, Window window) {
+					EditHandle e = Editor.this.window.getSelectedForEdit();
+					if (e == null)
+						return;
+					e.getWrapper().getConfig().onionRight.set(!e.getWrapper().getConfig().onionRight.get());
 				}
 			},
 	};
-	private OnionSkin onionSkin;
+	private OnionSkin onionSkinPrevious;
+	private OnionSkin onionSkinNext;
 	private Runnable zoomListenerCleanup;
 
 	public void selectedForEditChanged(
 			ProjectContext context, EditHandle newValue
 	) {
-		if (onionSkin != null) {
-			onionSkin.remove();
-			onionSkin = null;
+		if (onionSkinPrevious != null) {
+			onionSkinPrevious.remove();
+			onionSkinPrevious = null;
 		}
 		if (newValue != null) {
-			onionSkin = new OnionSkin(context, window.timeline, newValue);
+			onionSkinPrevious = new OnionSkin(context, window.timeline, newValue, true);
+		}
+		if (onionSkinNext != null) {
+			onionSkinNext.remove();
+			onionSkinNext = null;
+		}
+		if (newValue != null) {
+			onionSkinNext = new OnionSkin(context, window.timeline, newValue, false);
 		}
 	}
 

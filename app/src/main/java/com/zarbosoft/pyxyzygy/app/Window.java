@@ -24,10 +24,7 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
-import javafx.geometry.Bounds;
-import javafx.geometry.Insets;
-import javafx.geometry.Orientation;
-import javafx.geometry.Pos;
+import javafx.geometry.*;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.control.*;
@@ -50,31 +47,19 @@ import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 
 public class Window {
 	public List<FrameMapEntry> timeMap;
-	public ManualHalfBinder<Wrapper> selectedForEditWrapperEnabledBinder =
-			new ManualHalfBinder<>();
-	public ManualHalfBinder<EditHandle> selectedForEditOriginBinder =
-			new ManualHalfBinder<>();
-	public ManualHalfBinder<EditHandle> selectedForEditOpacityBinder =
-			new ManualHalfBinder<>();
-	public ManualHalfBinder<EditHandle> selectedForEditFramerateBinder =
-			new ManualHalfBinder<>();
-	public ManualHalfBinder<EditHandle> selectedForEditOnionBinder =
-			new ManualHalfBinder<>();
-	public ManualHalfBinder<EditHandle> selectedForEditPlayingBinder =
-			new ManualHalfBinder<>();
-	public ManualHalfBinder<EditHandle> selectedForEditTreeIconBinder =
-			new ManualHalfBinder<>();
+	public ManualHalfBinder<Wrapper> selectedForEditWrapperEnabledBinder = new ManualHalfBinder<>();
+	public ManualHalfBinder<EditHandle> selectedForEditOriginBinder = new ManualHalfBinder<>();
+	public ManualHalfBinder<EditHandle> selectedForEditOpacityBinder = new ManualHalfBinder<>();
+	public ManualHalfBinder<EditHandle> selectedForEditFramerateBinder = new ManualHalfBinder<>();
+	public ManualHalfBinder<EditHandle> selectedForEditOnionBinder = new ManualHalfBinder<>();
+	public ManualHalfBinder<EditHandle> selectedForEditPlayingBinder = new ManualHalfBinder<>();
+	public ManualHalfBinder<EditHandle> selectedForEditTreeIconBinder = new ManualHalfBinder<>();
 	private EditHandle selectedForEdit = null;
-	public ManualHalfBinder<CanvasHandle> selectedForViewZoomControlBinder =
-			new ManualHalfBinder<>();
-	public ManualHalfBinder<CanvasHandle> selectedForViewMaxFrameBinder =
-			new ManualHalfBinder<>();
-	public ManualHalfBinder<CanvasHandle> selectedForViewPlayingBinder =
-			new ManualHalfBinder<>();
-	public ManualHalfBinder<CanvasHandle> selectedForViewFrameBinder =
-			new ManualHalfBinder<>();
-	public ManualHalfBinder<CanvasHandle> selectedForViewTreeIconBinder =
-			new ManualHalfBinder<>();
+	public ManualHalfBinder<CanvasHandle> selectedForViewZoomControlBinder = new ManualHalfBinder<>();
+	public ManualHalfBinder<CanvasHandle> selectedForViewMaxFrameBinder = new ManualHalfBinder<>();
+	public ManualHalfBinder<CanvasHandle> selectedForViewPlayingBinder = new ManualHalfBinder<>();
+	public ManualHalfBinder<CanvasHandle> selectedForViewFrameBinder = new ManualHalfBinder<>();
+	public ManualHalfBinder<CanvasHandle> selectedForViewTreeIconBinder = new ManualHalfBinder<>();
 	private CanvasHandle selectedForView = null;
 	public Set<KeyCode> pressed = new HashSet<>();
 	public Editor editor;
@@ -83,12 +68,12 @@ public class Window {
 
 		@Override
 		protected void innerSet(String title, Node content) {
-			layerTab.setContent(content);
+			layerTab.setContent2(content);
 		}
 
 		@Override
 		protected void innerClear() {
-			layerTab.setContent(null);
+			layerTab.setContent2(null);
 		}
 	};
 	public final ContentReplacer<Cursor> editorCursor = new ContentReplacer<Cursor>() {
@@ -112,11 +97,29 @@ public class Window {
 	private BinderRoot rootTabWidth; // GC root
 	private ChangeListener<? super Boolean> maxListener;
 
+	public static HalfBinder<Number> effectiveWidthBinder(Node node) {
+		return new PropertyHalfBinder<Bounds>(node.layoutBoundsProperty()).map(b -> opt(node.minWidth(0)));
+	}
+
 	public static class Tab extends javafx.scene.control.Tab {
 		ScrollPane scrollPane = new ScrollPane();
+		private BinderRoot minWidthRoot;
+		HalfBinder<ScrollBar> scrollBarBinder = new PropertyHalfBinder<>(scrollPane.skinProperty()).map(s -> s == null ?
+				opt(null) :
+				scrollPane
+						.lookupAll(".scroll-bar")
+						.stream()
+						.filter(n -> ((ScrollBar) n).getOrientation() == Orientation.VERTICAL)
+						.findFirst()
+						.map(n -> opt((ScrollBar) n))
+						.orElse(Optional.empty()));
 
 		{
 			setContent(scrollPane);
+			scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+			scrollPane.setFitToWidth(true);
+			// TODO rewrite scrollpane because incompetent javafx devs hardcoded wheel scroll amount to be a percent
+			// of the scrollable area
 		}
 
 		public Tab(String title) {
@@ -124,6 +127,19 @@ public class Window {
 		}
 
 		public void setContent2(Node node) {
+			if (minWidthRoot != null) {
+				minWidthRoot.destroy();
+				minWidthRoot = null;
+			}
+			if (node != null) {
+				minWidthRoot = CustomBinding.bind(scrollPane.minWidthProperty(),
+						new DoubleHalfBinder<>(new IndirectHalfBinder<Number>(
+								scrollBarBinder,
+								s -> s == null ? opt(null) : opt(effectiveWidthBinder(s))
+						), effectiveWidthBinder(node)).map((scrollWidth, contentWidth) -> opt(scrollWidth ==
+								null ? 0 : scrollWidth.doubleValue() + contentWidth.doubleValue()))
+				);
+			}
 			scrollPane.setContent(node);
 		}
 	}
@@ -141,7 +157,6 @@ public class Window {
 	}
 
 	public void selectForView(ProjectContext context, Wrapper wrapper, boolean fromEdit) {
-		CanvasHandle oldValue = selectedForView;
 		selectedForView = null;
 		if (wrapper == null) {
 			return;
@@ -293,26 +308,14 @@ public class Window {
 		layerTab.disableProperty().bind(layerTab.contentProperty().isNull());
 		leftTabs.getTabs().addAll(structureTab, layerTab, configTab);
 		this.rootTabWidth = CustomBinding.bind(leftTabs.minWidthProperty(),
-				new IndirectHalfBinder<>(
-						new ListPropertyHalfBinder<>(leftTabs.getTabs()).<List<HalfBinder<Pair<Node, Bounds>>>>map(
-								l -> opt(l.stream()
-										.map(t -> new DoubleHalfBinder<Node, Bounds>(
-												t.contentProperty(),
-												new IndirectHalfBinder<Bounds>( // Ignored but included to trigger updates
-														t.contentProperty(),
-														c -> opt(c == null ? null : c.layoutBoundsProperty()))
-										))
-										.collect(Collectors.toList()))
-						),
-						l -> opt(new ListElementsHalfBinder<Double>(l, s -> {
-							double out = s
-									.filter(t -> t.first != null)
-									.mapToDouble(t -> t.first.minWidth(-1))
-									.max()
-									.orElse(0);
-							return opt(out);
-						}))
-				)
+				new IndirectHalfBinder<>(new ListPropertyHalfBinder<>(leftTabs.getTabs()).<List<HalfBinder<Pair<Node, Bounds>>>>map(
+						l -> opt(l.stream().map(t -> new DoubleHalfBinder<Node, Bounds>(t.contentProperty(),
+								new IndirectHalfBinder<Bounds>( // Ignored but included to trigger updates
+										t.contentProperty(), c -> opt(c == null ? null : c.layoutBoundsProperty()))
+						)).collect(Collectors.toList()))), l -> opt(new ListElementsHalfBinder<Double>(l, s -> {
+					double out = s.filter(t -> t.first != null).mapToDouble(t -> t.first.minWidth(-1)).max().orElse(0);
+					return opt(out);
+				})))
 		);
 
 		structure = new Structure(context, this, main);
@@ -336,9 +339,12 @@ public class Window {
 			spinner.setPrefWidth(60);
 			spinner.setEditable(true);
 			spinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(-10, 50));
-			CustomBinding.bindBidirectional(new IndirectBinder<>(selectedForViewZoomControlBinder,
-					v -> opt(v == null ? null : v.getWrapper().getConfig().zoom)
-			), new PropertyBinder<Integer>(spinner.getValueFactory().valueProperty()));
+			CustomBinding.bindBidirectional(
+					new IndirectBinder<>(selectedForViewZoomControlBinder,
+							v -> opt(v == null ? null : v.getWrapper().getConfig().zoom)
+					),
+					new PropertyBinder<Integer>(spinner.getValueFactory().valueProperty())
+			);
 			final ImageView imageView = new ImageView(icon("zoom.png"));
 			zoomBox.getChildren().addAll(imageView, spinner);
 		}
@@ -398,12 +404,21 @@ public class Window {
 							w.colorProxyProperty.set(GUILaunch.profileConfig.backgroundColor.get().toJfx());
 							w.colorProxyProperty.addListener((observable, oldValue, newValue) -> GUILaunch.profileConfig.backgroundColor
 									.set(TrueColor.fromJfx(newValue)));
+							GridPane.setHalignment(w, HPos.CENTER);
 							return w;
-						}).twoLine("Onion skin color", () -> {
+						}).twoLine("Ghost previous color", () -> {
 							TrueColorPicker w = new TrueColorPicker();
-							w.colorProxyProperty.set(GUILaunch.profileConfig.onionSkinColor.get().toJfx());
-							w.colorProxyProperty.addListener((observable, oldValue, newValue) -> GUILaunch.profileConfig.onionSkinColor
+							w.colorProxyProperty.set(GUILaunch.profileConfig.ghostPreviousColor.get().toJfx());
+							w.colorProxyProperty.addListener((observable, oldValue, newValue) -> GUILaunch.profileConfig.ghostPreviousColor
 									.set(TrueColor.fromJfx(newValue)));
+							GridPane.setHalignment(w, HPos.CENTER);
+							return w;
+						}).twoLine("Ghost next color", () -> {
+							TrueColorPicker w = new TrueColorPicker();
+							w.colorProxyProperty.set(GUILaunch.profileConfig.ghostNextColor.get().toJfx());
+							w.colorProxyProperty.addListener((observable, oldValue, newValue) -> GUILaunch.profileConfig.ghostNextColor
+									.set(TrueColor.fromJfx(newValue)));
+							GridPane.setHalignment(w, HPos.CENTER);
 							return w;
 						}).intSpinner("Max undo", 1, 100000, spinner -> {
 							spinner.getValueFactory().setValue(GUILaunch.profileConfig.maxUndo);
@@ -450,7 +465,7 @@ public class Window {
 								}
 						).get())
 				);
-		configTab.setContent(configLayout);
+		configTab.setContent2(configLayout);
 
 		SplitPane generalLayout = new SplitPane();
 		generalLayout.setOrientation(Orientation.HORIZONTAL);

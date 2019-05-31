@@ -128,16 +128,31 @@ public class BaseImageCanvasHandle<N extends ProjectLayer, F extends ProjectObje
 		do {
 			if (frameCount == 1) {
 				previousFrame.set(-1);
+				nextFrame.set(-1);
 				break;
 			}
-			int frameIndex = found.frameIndex - 1;
-			if (frameIndex == -1)
-				frameIndex = frameCount - 1;
-			int outFrame = 0;
-			for (int i = 0; i < frameIndex; ++i) {
-				outFrame += wrapper.frameFinder.frameLength(wrapper.frameFinder.frameGet(wrapper.node, i));
+
+			{
+				int frameIndex = found.frameIndex - 1;
+				if (frameIndex == -1)
+					frameIndex = frameCount - 1;
+				int outFrame = 0;
+				for (int i = 0; i < frameIndex; ++i) {
+					outFrame += wrapper.frameFinder.frameLength(wrapper.frameFinder.frameGet(wrapper.node, i));
+				}
+				previousFrame.set(outFrame);
 			}
-			previousFrame.set(outFrame);
+
+			{
+				int frameIndex = found.frameIndex + 1;
+				if (frameIndex >= frameCount)
+					frameIndex = 0;
+				int outFrame = 0;
+				for (int i = 0; i < frameIndex; ++i) {
+					outFrame += wrapper.frameFinder.frameLength(wrapper.frameFinder.frameGet(wrapper.node, i));
+				}
+				nextFrame.set(outFrame);
+			}
 		} while (false);
 	}
 

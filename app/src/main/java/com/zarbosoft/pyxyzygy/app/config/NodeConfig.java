@@ -26,7 +26,10 @@ public abstract class NodeConfig {
 	public final SimpleObjectProperty<DoubleVector> scroll = new SimpleObjectProperty<>(new DoubleVector(0, 0));
 
 	@Configuration
-	public final SimpleBooleanProperty onionSkin = new SimpleBooleanProperty(false);
+	public final SimpleBooleanProperty onionLeft = new SimpleBooleanProperty(false);
+
+	@Configuration
+	public final SimpleBooleanProperty onionRight = new SimpleBooleanProperty(false);
 
 	@Configuration(optional = true)
 	public final SimpleObjectProperty<Integer> previewStart = new SimpleObjectProperty<>(0);

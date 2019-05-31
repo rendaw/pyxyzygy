@@ -63,21 +63,36 @@ public class GroupNodeCanvasHandle extends CanvasHandle {
 			GroupChild specificChild = unopt(wrapper.specificChild.get());
 			if (specificChild == null) {
 				previousFrame.set(-1);
+				nextFrame.set(-1);
 				break;
 			}
 			if (specificChild.positionFramesLength() == 1) {
 				previousFrame.set(-1);
+				nextFrame.set(-1);
 				break;
 			}
-			int frameIndex =
-					GroupChildWrapper.positionFrameFinder.findFrame(specificChild, frameNumber).frameIndex - 1;
-			if (frameIndex == -1)
-				frameIndex = specificChild.positionFramesLength() - 1;
-			int outFrame = 0;
-			for (int i = 0; i < frameIndex; ++i) {
-				outFrame += specificChild.positionFramesGet(i).length();
+			{
+				int frameIndex =
+						GroupChildWrapper.positionFrameFinder.findFrame(specificChild, frameNumber).frameIndex - 1;
+				if (frameIndex == -1)
+					frameIndex = specificChild.positionFramesLength() - 1;
+				int outFrame = 0;
+				for (int i = 0; i < frameIndex; ++i) {
+					outFrame += specificChild.positionFramesGet(i).length();
+				}
+				previousFrame.set(outFrame);
 			}
-			previousFrame.set(outFrame);
+			{
+				int frameIndex =
+						GroupChildWrapper.positionFrameFinder.findFrame(specificChild, frameNumber).frameIndex + 1;
+				if (frameIndex >= specificChild.positionFramesLength())
+					frameIndex = 0;
+				int outFrame = 0;
+				for (int i = 0; i < frameIndex; ++i) {
+					outFrame += specificChild.positionFramesGet(i).length();
+				}
+				nextFrame.set(outFrame);
+			}
 		} while (false);
 	}
 

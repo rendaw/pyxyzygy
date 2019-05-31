@@ -53,7 +53,10 @@ public class RootProfileConfig extends ConfigBase {
 			new SimpleObjectProperty<>(TrueColor.fromJfx(Color.WHITE));
 
 	@Configuration(optional = true)
-	public final SimpleObjectProperty<TrueColor> onionSkinColor =
+	public final SimpleObjectProperty<TrueColor> ghostPreviousColor =
 			new SimpleObjectProperty<>(TrueColor.fromJfx(c(new java.awt.Color(0f, 0f, 1f, 0.5f))));
 
+	@Configuration(optional = true)
+	public final SimpleObjectProperty<TrueColor> ghostNextColor =
+			new SimpleObjectProperty<>(TrueColor.fromJfx(c(new java.awt.Color(1f, 0f, 0f, 0.5f))));
 }
