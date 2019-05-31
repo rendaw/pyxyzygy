@@ -60,10 +60,13 @@ public class FrameWidget extends Pane {
 				frame = Math.min(frame, absEnd - 1);
 			frame = Math.max(frame, absStart);
 			int length = minLength + frame - absStart;
-			context.change(new ProjectContext.Tuple(row.adapter.getData(), "frame"), change -> {
-				((FrameWidget) this.row.frames.get(index - 1)).frame.setLength(context, change, length);
-			});
-			dragged = true;
+			RowAdapterFrame frameObj = ((FrameWidget) this.row.frames.get(index - 1)).frame;
+			if (frameObj.length() != length) {
+				context.change(new ProjectContext.Tuple(row.adapter.getData(), "frame"), change -> {
+					frameObj.setLength(context, change, length);
+				});
+				dragged = true;
+			}
 		});
 		deselect();
 	}

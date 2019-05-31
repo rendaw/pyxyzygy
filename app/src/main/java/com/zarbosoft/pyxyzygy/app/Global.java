@@ -4,9 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.zarbosoft.appdirsj.AppDirs;
 import com.zarbosoft.luxem.read.StackReader;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
-import com.zarbosoft.pyxyzygy.core.model.v0.PaletteImageLayer;
-import com.zarbosoft.pyxyzygy.core.model.v0.Project;
-import com.zarbosoft.pyxyzygy.core.model.v0.ProjectLayer;
+import com.zarbosoft.pyxyzygy.core.model.v0.*;
 import com.zarbosoft.pyxyzygy.seed.deserialize.ModelDeserializationContext;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import javafx.application.Platform;
@@ -18,7 +16,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext.countUniqueName;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 
 public class Global {
@@ -47,7 +44,8 @@ public class Global {
 	public static boolean fixedProject = false;
 
 	public static void shutdown() {
-		for (Runnable s : shutdown) s.run();
+		for (Runnable s : shutdown)
+			s.run();
 		shutdown.clear();
 		logger.flush();
 		Platform.exit();
@@ -93,17 +91,18 @@ public class Global {
 				}).get(0);
 			}
 			context.finishers.forEach(finisher -> finisher.finish(context));
-			out.project = (Project) context.objectMap
-					.values()
-					.stream()
-					.filter(o -> o instanceof Project)
-					.findFirst()
-					.get();
+			out.project =
+					(Project) context.objectMap.values().stream().filter(o -> o instanceof Project).findFirst().get();
 			context.objectMap
 					.values()
 					.stream()
 					.filter(o -> o instanceof ProjectLayer)
-					.forEach(o -> countUniqueName(((ProjectLayer) o).name()));
+					.forEach(o -> out.namer.countUniqueName(((ProjectLayer) o).name()));
+			context.objectMap
+					.values()
+					.stream()
+					.filter(o -> o instanceof Palette)
+					.forEach(o -> out.namer.countUniqueName(((Palette) o).name()));
 			for (Object o : context.objectMap.values()) {
 				// Default values in new fields
 				if (o instanceof ProjectLayer && ((ProjectLayer) o).offset() == null) {

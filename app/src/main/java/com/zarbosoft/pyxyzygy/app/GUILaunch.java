@@ -50,7 +50,6 @@ import java.util.stream.Stream;
 
 import static com.zarbosoft.pyxyzygy.app.Global.*;
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
-import static com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext.uniqueName;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 
@@ -91,6 +90,9 @@ public class GUILaunch extends Application {
 
 			ProfileDialog() {
 				super(new VBox());
+
+				Namer profileNames = new Namer();
+				globalConfig.profiles.forEach(p -> profileNames.countUniqueName(p.name.get()));
 
 				list = new ListView<>();
 				HBox.setHgrow(list, Priority.ALWAYS);
@@ -141,7 +143,7 @@ public class GUILaunch extends Application {
 				newProfile.setFocusTraversable(false);
 				newProfile.setOnAction(e -> {
 					RootGlobalConfig.Profile profile1 = new RootGlobalConfig.Profile();
-					profile1.name.set(uniqueName("New Profile"));
+					profile1.name.set(profileNames.uniqueName("New Profile"));
 					profile1.id = globalConfig.nextId++;
 					list.getItems().add(profile1);
 					list.getSelectionModel().clearSelection();
@@ -466,17 +468,14 @@ public class GUILaunch extends Application {
 
 				cwd.addListener((observableValue, path, t1) -> text.setText(""));
 				cwd.set(Paths.get(GUILaunch.profileConfig.lastDir));
-				this.rootChoice =
-						CustomBinding.<Path>bindBidirectional(new PropertyBinder<String>(text.textProperty()).<Path>bimap(
-								t -> Optional.of(cwd
-										.get()
-										.resolve(t)),
-								(Path v) -> opt(v.getFileName().toString())
-								),
-								new SelectionModelBinder<>(list.getSelectionModel()).<Path>bimap(e -> Optional
-										.ofNullable(e)
-										.map(v -> v.path), (Path v) -> opt(entries.get(v)))
-						);
+				this.rootChoice = CustomBinding.<Path>bindBidirectional(
+						new PropertyBinder<String>(text.textProperty()).<Path>bimap(t -> Optional.of(cwd
+								.get()
+								.resolve(t)), (Path v) -> opt(v.getFileName().toString())),
+						new SelectionModelBinder<>(list.getSelectionModel()).<Path>bimap(e -> Optional
+								.ofNullable(e)
+								.map(v -> v.path), (Path v) -> opt(entries.get(v)))
+				);
 				resolvedPath.bind(Bindings.createObjectBinding(() -> cwd.get().resolve(text.getText()),
 						cwd,
 						text.textProperty()
@@ -680,7 +679,7 @@ public class GUILaunch extends Application {
 		switch (createMode) {
 			case normal: {
 				TrueColorImageLayer trueColorImageNode = TrueColorImageLayer.create(context);
-				trueColorImageNode.initialNameSet(context, uniqueName(Global.trueColorLayerName));
+				trueColorImageNode.initialNameSet(context, context.namer.uniqueName(Global.trueColorLayerName));
 				trueColorImageNode.initialOffsetSet(context, Vector.ZERO);
 				TrueColorImageFrame trueColorImageFrame = TrueColorImageFrame.create(context);
 				trueColorImageFrame.initialLengthSet(context, -1);
@@ -691,7 +690,7 @@ public class GUILaunch extends Application {
 			}
 			case pixel: {
 				Palette palette = Palette.create(context);
-				palette.initialNameSet(context, uniqueName(Global.paletteName));
+				palette.initialNameSet(context, context.namer.uniqueName(Global.paletteName));
 				palette.initialNextIdSet(context, 2);
 				PaletteColor transparent = PaletteColor.create(context);
 				transparent.initialIndexSet(context, 0);
@@ -704,7 +703,7 @@ public class GUILaunch extends Application {
 
 				PaletteImageLayer paletteImageNode = PaletteImageLayer.create(context);
 				paletteImageNode.initialPaletteSet(context, palette);
-				paletteImageNode.initialNameSet(context, uniqueName(Global.paletteLayerName));
+				paletteImageNode.initialNameSet(context, context.namer.uniqueName(Global.paletteLayerName));
 				paletteImageNode.initialOffsetSet(context, Vector.ZERO);
 				PaletteImageFrame paletteImageFrame = PaletteImageFrame.create(context);
 				paletteImageFrame.initialLengthSet(context, -1);
@@ -718,7 +717,7 @@ public class GUILaunch extends Application {
 		}
 
 		GroupLayer groupNode = GroupLayer.create(context);
-		groupNode.initialNameSet(context, uniqueName(groupLayerName));
+		groupNode.initialNameSet(context, context.namer.uniqueName(groupLayerName));
 		groupNode.initialOffsetSet(context, Vector.ZERO);
 		groupNode.initialChildrenAdd(context, ImmutableList.of(groupChild));
 

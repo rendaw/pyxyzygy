@@ -48,7 +48,6 @@ import static com.zarbosoft.pyxyzygy.app.Global.logger;
 import static com.zarbosoft.pyxyzygy.app.Global.opacityMax;
 import static com.zarbosoft.pyxyzygy.app.Misc.*;
 import static com.zarbosoft.pyxyzygy.app.Wrapper.TakesChildren.NONE;
-import static com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext.uniqueName;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.*;
 import static com.zarbosoft.rendaw.common.Common.last;
 import static com.zarbosoft.rendaw.common.Common.sublist;
@@ -57,6 +56,10 @@ public class Structure {
 	private final ProjectContext context;
 	private final Window window;
 	private final boolean main;
+	private final BinderRoot opacityAllDisableRoot;
+	private final BinderRoot opacityEnabledGraphicRoot;
+	private final BinderRoot opacityEnabledRoot;
+	private final BinderRoot opacityOpacityRoot;
 	VBox layout = new VBox();
 	TreeView<Wrapper> tree;
 	ToolBar toolbar;
@@ -253,9 +256,8 @@ public class Structure {
 										return opt(null);
 									})
 							);
-							viewingStyleCleanup = bindStyle(this,
-									"pyxyzygy-disabled",
-									new IndirectHalfBinder<Boolean>(wrapper, w -> {
+							viewingStyleCleanup =
+									bindStyle(this, "pyxyzygy-disabled", new IndirectHalfBinder<Boolean>(wrapper, w -> {
 										if (wrapper.get() == null)
 											return opt(false);
 										if (wrapper.get().getParent() == null)
@@ -263,8 +265,7 @@ public class Structure {
 										return opt(new ScalarHalfBinder<Boolean>((
 												(GroupChildWrapper) wrapper.get().getParent()
 										).node, "enabled").map(e -> opt(!e)));
-									})
-							);
+									}));
 							newValue.tagLifted.addListener(copyStateListener);
 							copyStateListener.changed(null, null, null);
 							((ProjectLayer) newValue.getValue()).addNameSetListeners(nameSetListener);
@@ -304,7 +305,7 @@ public class Structure {
 		MenuItem addCamera = new MenuItem("Add camera");
 		addCamera.setOnAction(e -> {
 			Camera camera = Camera.create(context);
-			camera.initialNameSet(context, uniqueName("Camera"));
+			camera.initialNameSet(context, context.namer.uniqueName("Camera"));
 			camera.initialOffsetSet(context, Vector.ZERO);
 			camera.initialFrameStartSet(context, 0);
 			camera.initialFrameLengthSet(context, 12);
@@ -320,7 +321,7 @@ public class Structure {
 		addGroup.setOnAction(e -> {
 			GroupLayer group = GroupLayer.create(context);
 			group.initialOffsetSet(context, Vector.ZERO);
-			group.initialNameSet(context, uniqueName(Global.groupLayerName));
+			group.initialNameSet(context, context.namer.uniqueName(Global.groupLayerName));
 			context.change(null, c -> {
 				addNew(group, c);
 			});
@@ -329,7 +330,7 @@ public class Structure {
 		addImage.setOnAction(e -> {
 			TrueColorImageLayer image = TrueColorImageLayer.create(context);
 			image.initialOffsetSet(context, Vector.ZERO);
-			image.initialNameSet(context, uniqueName(Global.trueColorLayerName));
+			image.initialNameSet(context, context.namer.uniqueName(Global.trueColorLayerName));
 			TrueColorImageFrame frame = TrueColorImageFrame.create(context);
 			frame.initialLengthSet(context, -1);
 			frame.initialOffsetSet(context, new Vector(0, 0));
@@ -366,7 +367,7 @@ public class Structure {
 					Palette palette;
 					if (!palette0.isPresent()) {
 						palette = Palette.create(context);
-						palette.initialNameSet(context, uniqueName(Global.paletteName));
+						palette.initialNameSet(context, context.namer.uniqueName(Global.paletteName));
 						palette.initialNextIdSet(context, 2);
 						PaletteColor transparent = PaletteColor.create(context);
 						transparent.initialIndexSet(context, 0);
@@ -382,7 +383,7 @@ public class Structure {
 					}
 					PaletteImageLayer image = PaletteImageLayer.create(context);
 					image.initialOffsetSet(context, Vector.ZERO);
-					image.initialNameSet(context, uniqueName(Global.paletteLayerName));
+					image.initialNameSet(context, context.namer.uniqueName(Global.paletteLayerName));
 					image.initialPaletteSet(context, palette);
 					PaletteImageFrame frame = PaletteImageFrame.create(context);
 					frame.initialLengthSet(context, -1);
@@ -405,7 +406,7 @@ public class Structure {
 				TrueColorImage data = TrueColorImage.deserialize(p.toString());
 				TrueColorImageLayer image = TrueColorImageLayer.create(context);
 				image.initialOffsetSet(context, Vector.ZERO);
-				image.initialNameSet(context, uniqueName(p.getFileName().toString()));
+				image.initialNameSet(context, context.namer.uniqueName(p.getFileName().toString()));
 				TrueColorImageFrame frame = TrueColorImageFrame.create(context);
 				frame.initialLengthSet(context, -1);
 				frame.initialOffsetSet(context, Vector.ZERO);
@@ -627,44 +628,45 @@ public class Structure {
 				return opt((GroupChildWrapper) e.getWrapper().getParent());
 			});
 
-			CustomBinding.bind(opacityBox.disableProperty(), groupChildBinder.map(e -> opt(e == null)));
+			opacityAllDisableRoot =
+					CustomBinding.bind(opacityBox.disableProperty(), groupChildBinder.map(e -> opt(e == null)));
 
 			ToggleButton enabled = HelperJFX.toggleButton("eye.png", "Enabled");
-			CustomBinding.bind(enabled.getGraphic().opacityProperty(),
+			opacityEnabledGraphicRoot = CustomBinding.bind(enabled.getGraphic().opacityProperty(),
 					new PropertyHalfBinder<>(enabled.selectedProperty()).map(b -> opt(b ? 1 : 0.5))
 			);
-			CustomBinding.bindBidirectional(new IndirectBinder<Boolean>(groupChildBinder, childWrapper -> {
-				if (childWrapper == null)
-					return opt(null);
-				GroupChild layerNode = childWrapper.node;
-				return opt(new ScalarBinder<Boolean>(layerNode,
-						"enabled",
-						v -> context.change(new ProjectContext.Tuple(childWrapper, "enabled"),
-								c -> c.groupChild(layerNode).enabledSet(v)
-						)
-				));
-			}), new PropertyBinder<>(enabled.selectedProperty()));
+			opacityEnabledRoot =
+					CustomBinding.bindBidirectional(new IndirectBinder<Boolean>(groupChildBinder, childWrapper -> {
+						if (childWrapper == null)
+							return opt(null);
+						GroupChild layerNode = childWrapper.node;
+						return opt(new ScalarBinder<Boolean>(layerNode,
+								"enabled",
+								v -> context.change(new ProjectContext.Tuple(childWrapper, "enabled"),
+										c -> c.groupChild(layerNode).enabledSet(v)
+								)
+						));
+					}), new PropertyBinder<>(enabled.selectedProperty()));
 
 			Slider opacity = new Slider();
 			opacity.setMin(0);
 			opacity.setMax(opacityMax);
-			CustomBinding.bindBidirectional(
-					new IndirectBinder<Integer>(groupChildBinder, childWrapper -> {
-						if (childWrapper == null)
-							return Optional.empty();
-						GroupChild layerNode = childWrapper.node;
-						return opt(new ScalarBinder<Integer>(layerNode,
-								"opacity",
-								v -> context.change(new ProjectContext.Tuple(childWrapper, "opacity"),
-										c -> c.groupChild(layerNode).opacitySet(v)
-								)
-						));
-					}),
-					new PropertyBinder<>(opacity.valueProperty()).bimap(
-							d -> Optional.of((int) (double) d),
-							i -> opt((double) (int) i)
-					)
-			);
+			opacityOpacityRoot =
+					CustomBinding.bindBidirectional(new IndirectBinder<Integer>(groupChildBinder, childWrapper -> {
+								if (childWrapper == null)
+									return Optional.empty();
+								GroupChild layerNode = childWrapper.node;
+								return opt(new ScalarBinder<Integer>(layerNode,
+										"opacity",
+										v -> context.change(new ProjectContext.Tuple(childWrapper, "opacity"),
+												c -> c.groupChild(layerNode).opacitySet(v)
+										)
+								));
+							}),
+							new PropertyBinder<>(opacity.valueProperty()).bimap(d -> Optional.of((int) (double) d),
+									i -> opt((double) (int) i)
+							)
+					);
 			HBox.setHgrow(opacity, Priority.ALWAYS);
 			opacityBox.getChildren().addAll(enabled, opacity);
 		}

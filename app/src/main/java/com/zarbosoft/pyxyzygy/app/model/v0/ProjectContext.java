@@ -3,11 +3,11 @@ package com.zarbosoft.pyxyzygy.app.model.v0;
 import com.zarbosoft.interface1.TypeInfo;
 import com.zarbosoft.luxem.read.StackReader;
 import com.zarbosoft.luxem.write.RawWriter;
-import com.zarbosoft.pyxyzygy.app.ConfigBase;
-import com.zarbosoft.pyxyzygy.app.Global;
-import com.zarbosoft.pyxyzygy.app.History;
-import com.zarbosoft.pyxyzygy.app.Hotkeys;
+import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.config.RootProjectConfig;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.HalfBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.SimpleBinderRoot;
 import com.zarbosoft.pyxyzygy.core.PaletteColors;
 import com.zarbosoft.pyxyzygy.core.model.v0.*;
 import com.zarbosoft.pyxyzygy.seed.deserialize.ModelDeserializationContext;
@@ -33,20 +33,20 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.zarbosoft.pyxyzygy.app.Global.logger;
+import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.rendaw.common.Common.atomicWrite;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 
 public class ProjectContext extends ProjectContextBase implements Dirtyable {
 	public final static String version = "v0";
 	public static Map<String, Image> iconCache = new HashMap<>();
-	public static Map<String, Integer> names = new HashMap<>();
 	public Project project;
 	public RootProjectConfig config;
 	public int tileSize;
+	public Namer namer = new Namer();
 
 	public History history;
 	public Hotkeys hotkeys;
@@ -78,6 +78,25 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 		public List<Runnable> cleanup = new ArrayList<>();
 		public List<PaletteImageLayer> users = new ArrayList<>();
 		public List<Runnable> listeners = new ArrayList<>();
+		public HalfBinder<PaletteWrapper> selfBinder = new HalfBinder<PaletteWrapper>() {
+			@Override
+			public BinderRoot addListener(Consumer<PaletteWrapper> listener) {
+				Runnable listener1 = () -> listener.accept(PaletteWrapper.this);
+				listeners.add(listener1);
+				listener1.run();
+				return new SimpleBinderRoot(this, listener1);
+			}
+
+			@Override
+			public void removeRoot(Object key) {
+				listeners.remove(key);
+			}
+
+			@Override
+			public Optional<PaletteWrapper> get() {
+				return opt(PaletteWrapper.this);
+			}
+		};
 	}
 
 	private Map<Palette, PaletteWrapper> colors = new HashMap<>();
@@ -174,40 +193,6 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 			lastChangeUnique = unique;
 			history.change(consumer);
 		});
-	}
-
-	public static Pattern nameCountPattern = Pattern.compile("(.*) \\([0-9]+\\)$");
-
-	public static String splitName(String name) {
-		return nameCountPattern.matcher(name).replaceAll(r -> r.group(1));
-	}
-
-	public static void countUniqueName(String name) {
-		uniqueName(splitName(name));
-	}
-
-	/**
-	 * Start at count 1 (unwritten) for machine generated names
-	 *
-	 * @param name
-	 * @return
-	 */
-	public static String uniqueName(String name) {
-		name = splitName(name);
-		int count = names.compute(name, (n, i) -> i == null ? 1 : i + 1);
-		return count == 1 ? name : String.format("%s (%s)", name, count);
-	}
-
-	/**
-	 * Start at count 2 if the first element is not in the map (user decided name)
-	 *
-	 * @param name
-	 * @return
-	 */
-	public static String uniqueName1(String name) {
-		name = splitName(name);
-		int count = names.compute(name, (n, i) -> i == null ? 2 : i + 1);
-		return count == 1 ? name : String.format("%s (%s)", name, count);
 	}
 
 	public void debugCheckRefs() {

@@ -42,7 +42,6 @@ import static com.zarbosoft.pyxyzygy.app.Misc.separateFormField;
 import static com.zarbosoft.pyxyzygy.app.config.NodeConfig.TOOL_MOVE;
 import static com.zarbosoft.pyxyzygy.app.config.TrueColorImageNodeConfig.TOOL_FRAME_MOVE;
 import static com.zarbosoft.pyxyzygy.app.config.TrueColorImageNodeConfig.TOOL_SELECT;
-import static com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext.uniqueName;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.pad;
 import static com.zarbosoft.rendaw.common.Common.enumerate;
 
@@ -85,62 +84,55 @@ public class TrueColorImageEditHandle extends EditHandle {
 		positiveZoom.bind(wrapper.canvasHandle.zoom);
 
 		actions = Streams.concat(Stream.of(new Hotkeys.Action(Hotkeys.Scope.CANVAS, "paste", "Paste", pasteHotkey) {
-											   @Override
-											   public void run(ProjectContext context, Window window) {
-												   wrapper.config.tool.set(TOOL_SELECT);
-												   ((ToolSelect) tool).paste(context, window);
-											   }
-										   },
-										   new Hotkeys.Action(Hotkeys.Scope.CANVAS,
-												   "last-brush",
-												   "Last brush",
-												   Hotkeys.Hotkey.create(KeyCode.SPACE, false, false, false)
-										   ) {
-											   @Override
-											   public void run(ProjectContext context, Window window) {
-												   if (wrapper.config.tool.get() ==
-														   TrueColorImageNodeConfig.TOOL_BRUSH) {
-													   if (wrapper.config.lastBrush < 0 ||
-															   wrapper.config.lastBrush >=
-																	   GUILaunch.profileConfig.trueColorBrushes.size())
-														   return;
-													   setBrush(wrapper.config.lastBrush);
-												   } else {
-													   wrapper.config.tool.set(TrueColorImageNodeConfig.TOOL_BRUSH);
-												   }
-											   }
-										   },
-										   new Hotkeys.Action(Hotkeys.Scope.CANVAS,
-												   "select",
-												   "Select",
-												   Hotkeys.Hotkey.create(KeyCode.S, false, false, false)
-										   ) {
-											   @Override
-											   public void run(ProjectContext context, Window window) {
-												   wrapper.config.tool.set(TOOL_SELECT);
-											   }
-										   },
-										   new Hotkeys.Action(Hotkeys.Scope.CANVAS,
-												   "move",
-												   "Move layer",
-												   Hotkeys.Hotkey.create(KeyCode.M, false, false, false)
-										   ) {
-											   @Override
-											   public void run(ProjectContext context, Window window) {
-												   wrapper.config.tool.set(TrueColorImageNodeConfig.TOOL_MOVE);
-											   }
-										   },
-										   new Hotkeys.Action(Hotkeys.Scope.CANVAS,
-												   "move-frame",
-												   "Move frame contents",
-												   Hotkeys.Hotkey.create(KeyCode.F, false, false, false)
-										   ) {
-											   @Override
-											   public void run(ProjectContext context, Window window) {
-												   wrapper.config.tool.set(TOOL_FRAME_MOVE);
-											   }
-										   }
-		), enumerate(Stream.of(KeyCode.DIGIT1,
+			@Override
+			public void run(ProjectContext context, Window window) {
+				wrapper.config.tool.set(TOOL_SELECT);
+				((ToolSelect) tool).paste(context, window);
+			}
+		}, new Hotkeys.Action(Hotkeys.Scope.CANVAS,
+				"last-brush",
+				"Last brush",
+				Hotkeys.Hotkey.create(KeyCode.SPACE, false, false, false)
+		) {
+			@Override
+			public void run(ProjectContext context, Window window) {
+				if (wrapper.config.tool.get() == TrueColorImageNodeConfig.TOOL_BRUSH) {
+					if (wrapper.config.lastBrush < 0 ||
+							wrapper.config.lastBrush >= GUILaunch.profileConfig.trueColorBrushes.size())
+						return;
+					setBrush(wrapper.config.lastBrush);
+				} else {
+					wrapper.config.tool.set(TrueColorImageNodeConfig.TOOL_BRUSH);
+				}
+			}
+		}, new Hotkeys.Action(Hotkeys.Scope.CANVAS,
+				"select",
+				"Select",
+				Hotkeys.Hotkey.create(KeyCode.S, false, false, false)
+		) {
+			@Override
+			public void run(ProjectContext context, Window window) {
+				wrapper.config.tool.set(TOOL_SELECT);
+			}
+		}, new Hotkeys.Action(Hotkeys.Scope.CANVAS,
+				"move",
+				"Move layer",
+				Hotkeys.Hotkey.create(KeyCode.M, false, false, false)
+		) {
+			@Override
+			public void run(ProjectContext context, Window window) {
+				wrapper.config.tool.set(TrueColorImageNodeConfig.TOOL_MOVE);
+			}
+		}, new Hotkeys.Action(Hotkeys.Scope.CANVAS,
+				"move-frame",
+				"Move frame contents",
+				Hotkeys.Hotkey.create(KeyCode.F, false, false, false)
+		) {
+			@Override
+			public void run(ProjectContext context, Window window) {
+				wrapper.config.tool.set(TOOL_FRAME_MOVE);
+			}
+		}), enumerate(Stream.of(KeyCode.DIGIT1,
 				KeyCode.DIGIT2,
 				KeyCode.DIGIT3,
 				KeyCode.DIGIT4,
@@ -178,13 +170,14 @@ public class TrueColorImageEditHandle extends EditHandle {
 						"cursor-frame-move.png",
 						"Move frame contents",
 						TOOL_FRAME_MOVE
-				)));
+				))
+		);
 
 		// Brushes
 		MenuItem menuNew = new MenuItem("New");
 		menuNew.setOnAction(e -> {
 			TrueColorBrush brush = new TrueColorBrush();
-			brush.name.set(uniqueName("New brush"));
+			brush.name.set(context.namer.uniqueName("New brush"));
 			brush.useColor.set(true);
 			brush.color.set(TrueColor.rgba(0, 0, 0, 255));
 			brush.blend.set(1000);
@@ -261,7 +254,8 @@ public class TrueColorImageEditHandle extends EditHandle {
 		// Tab
 		VBox tabBox = new VBox();
 		tabBox.getChildren().addAll(new TitledPane("Layer",
-				new WidgetFormBuilder().apply(b -> cleanup.add(Misc.nodeFormFields(context, b, wrapper)))
+				new WidgetFormBuilder()
+						.apply(b -> cleanup.add(Misc.nodeFormFields(context, b, wrapper)))
 						.apply(b -> separateFormField(context, b, wrapper))
 						.build()
 		), toolPane = new TitledPane("Tool", null));
@@ -389,8 +383,7 @@ public class TrueColorImageEditHandle extends EditHandle {
 		if (tool == null)
 			return;
 		Vector offset = offset();
-		tool.mark(
-				context,
+		tool.mark(context,
 				window,
 				Window.toLocal(wrapper.canvasHandle, start).minus(offset),
 				Window.toLocal(wrapper.canvasHandle, end).minus(offset),

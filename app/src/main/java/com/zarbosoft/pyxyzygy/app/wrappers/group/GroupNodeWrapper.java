@@ -12,8 +12,6 @@ import javafx.scene.control.TreeItem;
 
 import java.util.stream.Collectors;
 
-import static com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext.uniqueName1;
-
 public class GroupNodeWrapper extends Wrapper {
 	private final Wrapper parent;
 	final GroupLayer node;
@@ -33,7 +31,7 @@ public class GroupNodeWrapper extends Wrapper {
 		tree.set(new TreeItem<>(this));
 
 		childrenListenCleanup = node.mirrorChildren(children, child -> {
-			return (GroupChildWrapper)Window.createNode(context, this, -1, child);
+			return (GroupChildWrapper) Window.createNode(context, this, -1, child);
 		}, child -> {
 			child.remove(context);
 		}, at -> {
@@ -85,7 +83,7 @@ public class GroupNodeWrapper extends Wrapper {
 	}
 
 	public void cloneSet(ProjectContext context, GroupLayer clone) {
-		clone.initialNameSet(context, uniqueName1(node.name()));
+		clone.initialNameSet(context, context.namer.uniqueName1(node.name()));
 		clone.initialOffsetSet(context, node.offset());
 		clone.initialChildrenAdd(context, node.children().stream().map(child -> {
 			GroupChild newLayer = GroupChild.create(context);

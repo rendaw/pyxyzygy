@@ -1,6 +1,9 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage;
 
-import com.zarbosoft.pyxyzygy.app.*;
+import com.zarbosoft.pyxyzygy.app.EditHandle;
+import com.zarbosoft.pyxyzygy.app.GUILaunch;
+import com.zarbosoft.pyxyzygy.app.Window;
+import com.zarbosoft.pyxyzygy.app.Wrapper;
 import com.zarbosoft.pyxyzygy.app.config.NodeConfig;
 import com.zarbosoft.pyxyzygy.app.config.TrueColorBrush;
 import com.zarbosoft.pyxyzygy.app.config.TrueColorImageNodeConfig;
@@ -30,7 +33,6 @@ import java.util.stream.Collectors;
 import static com.zarbosoft.pyxyzygy.app.GUILaunch.CACHE_OBJECT;
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.pyxyzygy.app.config.TrueColorImageNodeConfig.TOOL_BRUSH;
-import static com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext.uniqueName1;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 
 public class TrueColorImageNodeWrapper extends BaseImageNodeWrapper<TrueColorImageLayer, TrueColorImageFrame, TrueColorTileBase, TrueColorImage> {
@@ -55,14 +57,18 @@ public class TrueColorImageNodeWrapper extends BaseImageNodeWrapper<TrueColorIma
 	public final HalfBinder<TrueColorBrush> brushBinder;
 
 	// Cache values when there's no canvas
-	public TrueColorImageNodeWrapper(ProjectContext context, Wrapper parent, int parentIndex, TrueColorImageLayer node) {
+	public TrueColorImageNodeWrapper(
+			ProjectContext context,
+			Wrapper parent,
+			int parentIndex,
+			TrueColorImageLayer node
+	) {
 		super(parent, parentIndex, node, frameFinder);
 		this.config = (TrueColorImageNodeConfig) context.config.nodes.computeIfAbsent(node.id(),
 				id -> new TrueColorImageNodeConfig(context)
 		);
 		this.brushBinder =
-				new DoubleHalfBinder<ObservableList<TrueColorBrush>, Integer>(new ListPropertyHalfBinder<>(
-						GUILaunch.profileConfig.trueColorBrushes),
+				new DoubleHalfBinder<ObservableList<TrueColorBrush>, Integer>(new ListPropertyHalfBinder<>(GUILaunch.profileConfig.trueColorBrushes),
 						new DoubleHalfBinder<>(config.tool, config.brush).map(p -> {
 							String t = p.first;
 							Number index = p.second;
@@ -94,7 +100,7 @@ public class TrueColorImageNodeWrapper extends BaseImageNodeWrapper<TrueColorIma
 	@Override
 	public ProjectLayer separateClone(ProjectContext context) {
 		TrueColorImageLayer clone = TrueColorImageLayer.create(context);
-		clone.initialNameSet(context, uniqueName1(node.name()));
+		clone.initialNameSet(context, context.namer.uniqueName1(node.name()));
 		clone.initialOffsetSet(context, node.offset());
 		clone.initialFramesAdd(context, node.frames().stream().map(frame -> {
 			TrueColorImageFrame newFrame = TrueColorImageFrame.create(context);

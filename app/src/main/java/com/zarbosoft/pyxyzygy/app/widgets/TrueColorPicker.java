@@ -1,5 +1,8 @@
 package com.zarbosoft.pyxyzygy.app.widgets;
 
+import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.DoubleHalfBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyHalfBinder;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
@@ -8,7 +11,6 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
-import javafx.scene.effect.ColorAdjust;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -16,11 +18,17 @@ import javafx.scene.paint.CycleMethod;
 import javafx.scene.paint.LinearGradient;
 import javafx.scene.paint.Stop;
 
+import static com.zarbosoft.pyxyzygy.app.Misc.opt;
+
 public class TrueColorPicker extends GridPane {
 	public final DoubleProperty hue = new SimpleDoubleProperty(0);
 	public final DoubleProperty sat = new SimpleDoubleProperty(0);
 	public final DoubleProperty bright = new SimpleDoubleProperty(0);
 	public final DoubleProperty alpha = new SimpleDoubleProperty(1);
+	private final BinderRoot hueBarBackgroundRoot; // GC root
+	private final BinderRoot alphaBarBackgroundRoot; // GC root
+	private final BinderRoot bindStyleTrueDisabledRoot; // GC root
+	private final BinderRoot bindStyleEmptyRoot; // GC root
 
 	public boolean suppressProxyListeners;
 	public final SimpleObjectProperty<Color> colorProxyProperty = new SimpleObjectProperty<>();
@@ -29,6 +37,18 @@ public class TrueColorPicker extends GridPane {
 	private final Region alphaBarMarker;
 
 	public TrueColorPicker() {
+		PropertyHalfBinder<Boolean> disableBinder = new PropertyHalfBinder<>(disableProperty());
+		PropertyHalfBinder<Color> colorBinder = new PropertyHalfBinder<>(colorProxyProperty);
+		DoubleHalfBinder<Boolean, Color> colorDisableBinder =
+				new DoubleHalfBinder<>(disableBinder, colorBinder);
+
+		bindStyleTrueDisabledRoot = HelperJFX.bindStyle(this,
+				"true-disabled",
+				colorDisableBinder.map((disable, color) -> opt(disable || color == null)));
+		bindStyleEmptyRoot = HelperJFX.bindStyle(this,
+				"empty",
+				colorBinder.map(color -> opt(color == null)));
+
 		ColorSwatch newColorDisplay = new ColorSwatch(1);
 		newColorDisplay.colorProperty.bind(colorProxyProperty);
 		newColorDisplay.disableProperty().bind(disableProperty());
@@ -36,23 +56,27 @@ public class TrueColorPicker extends GridPane {
 		// Hue bar - select a hue for the slice
 		Pane hueBar = new Pane();
 		hueBar.getStyleClass().add("hue-bar");
-		{
-			double offset;
-			Stop[] stops = new Stop[255];
-			for (int x = 0; x < 255; x++) {
-				offset = (double) ((1.0 / 255) * x);
-				int h = (int) ((x / 255.0) * 360);
-				stops[x] = new Stop(offset, Color.hsb(h, 1.0, 1.0));
+		this.hueBarBackgroundRoot = colorDisableBinder.addListener((disable, color) -> {
+			if (disable || color == null) {
+				hueBar.setBackground(null);
+			} else {
+				double offset;
+				Stop[] stops = new Stop[255];
+				for (int x = 0; x < 255; x++) {
+					offset = (double) ((1.0 / 255) * x);
+					int h = (int) ((x / 255.0) * 360);
+					stops[x] = new Stop(offset, Color.hsb(h, 1.0, 1.0));
+				}
+				hueBar.setBackground(new Background(new BackgroundFill(new LinearGradient(0f,
+						0f,
+						1f,
+						0f,
+						true,
+						CycleMethod.NO_CYCLE,
+						stops
+				), CornerRadii.EMPTY, Insets.EMPTY)));
 			}
-			hueBar.setBackground(new Background(new BackgroundFill(new LinearGradient(0f,
-					0f,
-					1f,
-					0f,
-					true,
-					CycleMethod.NO_CYCLE,
-					stops
-			), CornerRadii.EMPTY, Insets.EMPTY)));
-		}
+		});
 		Region hueBarMarker = new Region();
 		hueBarMarker.setId("hue-bar-cursor");
 		hueBarMarker.setMouseTransparent(true);
@@ -61,42 +85,37 @@ public class TrueColorPicker extends GridPane {
 		hueBar.getChildren().setAll(hueBarMarker);
 
 		// Alpha bar
-		Pane alphaBarLayer = new Pane();
-		final ChangeListener<Number> updateAlphaListener = new ChangeListener<Number>() {
-			{
-				changed(null, null, null);
-			}
-
-			@Override
-			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
-				alphaBarLayer.setBackground(new Background(new BackgroundFill(new LinearGradient(0f,
+		Pane alphaBarColorLayer = new Pane();
+		this.alphaBarBackgroundRoot = colorBinder.addListener(color -> {
+			if (color == null)
+				alphaBarColorLayer.setBackground(null);
+			else
+				alphaBarColorLayer.setBackground(new Background(new BackgroundFill(new LinearGradient(0f,
 						0f,
 						0f,
 						1f,
 						true,
 						CycleMethod.NO_CYCLE,
-						new Stop(0, Color.hsb(hue.get(), sat.get(), bright.get(), 1.0)),
-						new Stop(1, Color.hsb(hue.get(), sat.get(), bright.get(), 0.0))
+						new Stop(0, Color.hsb(color.getHue(), color.getSaturation(), color.getBrightness(), 1.0)),
+						new Stop(1, Color.hsb(color.getHue(), color.getSaturation(), color.getBrightness(), 0.0))
 				), CornerRadii.EMPTY, Insets.EMPTY)));
-			}
-		};
-		hue.addListener(updateAlphaListener);
-		sat.addListener(updateAlphaListener);
-		bright.addListener(updateAlphaListener);
-		alpha.addListener(updateAlphaListener);
+		});
+		Pane alphaBarAlphaLayer = new Pane();
+		alphaBarAlphaLayer.getStyleClass().addAll("true-color-transparent-pattern");
 		Pane alphaBar = new StackPane();
-		alphaBar.getStyleClass().addAll("alpha-bar", "true-color-transparent-pattern");
+		alphaBar.getStyleClass().addAll("alpha-bar");
 		alphaBarMarker = new Region();
 		alphaBarMarker.setId("alpha-bar-cursor");
 		alphaBarMarker.setManaged(false);
 		alphaBarMarker.setMouseTransparent(true);
 		alphaBarMarker.setCache(true);
 		alphaBarMarker.layoutYProperty().bind(Bindings.subtract(1.0, alpha).multiply(alphaBar.heightProperty()));
-		alphaBar.getChildren().setAll(alphaBarLayer, alphaBarMarker);
+		alphaBar.getChildren().setAll(alphaBarAlphaLayer, alphaBarColorLayer, alphaBarMarker);
 
 		// Slice, chooses saturation and brightness
 		Pane sliceLayerColor = new Pane();
 		sliceLayerColor.setMouseTransparent(true);
+		sliceLayerColor.getStyleClass().addAll("slice", "slice-fill");
 		sliceLayerColor.backgroundProperty().bind(Bindings.createObjectBinding(() -> {
 			return new Background(new BackgroundFill(Color.hsb(hue.getValue(), 1.0, 1.0),
 					CornerRadii.EMPTY,
@@ -106,7 +125,7 @@ public class TrueColorPicker extends GridPane {
 
 		Pane sliceLayerWhite = new Pane();
 		sliceLayerWhite.setMouseTransparent(true);
-		sliceLayerWhite.getStyleClass().add("slice");
+		sliceLayerWhite.getStyleClass().addAll("slice", "slice-fill");
 		sliceLayerWhite.setBackground(new Background(new BackgroundFill(new LinearGradient(0,
 				0,
 				1,
@@ -119,7 +138,7 @@ public class TrueColorPicker extends GridPane {
 
 		Pane sliceLayerBlack = new Pane();
 		sliceLayerBlack.setMouseTransparent(true);
-		sliceLayerBlack.getStyleClass().addAll("slice");
+		sliceLayerBlack.getStyleClass().addAll("slice", "slice-fill");
 		sliceLayerBlack.setBackground(new Background(new BackgroundFill(new LinearGradient(0,
 				0,
 				0,
@@ -129,6 +148,10 @@ public class TrueColorPicker extends GridPane {
 				new Stop(0, Color.rgb(0, 0, 0, 0)),
 				new Stop(1, Color.rgb(0, 0, 0, 1))
 		), CornerRadii.EMPTY, Insets.EMPTY)));
+
+		Pane sliceLayerAlpha = new Pane();
+		sliceLayerAlpha.setMouseTransparent(true);
+		sliceLayerAlpha.getStyleClass().addAll("slice", "slice-fill", "true-color-transparent-pattern");
 
 		final StackPane sliceOpaqueLayers = new StackPane();
 		sliceOpaqueLayers.opacityProperty().bind(alpha);
@@ -145,9 +168,8 @@ public class TrueColorPicker extends GridPane {
 		sliceCursor.setCache(true);
 
 		StackPane slice = new StackPane();
-		slice.getStyleClass().addAll("slice", "true-color-transparent-pattern");
 		VBox.setVgrow(slice, Priority.SOMETIMES);
-		slice.getChildren().setAll(sliceOpaqueLayers, sliceBorder, sliceCursor);
+		slice.getChildren().setAll(sliceLayerAlpha, sliceOpaqueLayers, sliceBorder, sliceCursor);
 
 		sliceCursor.layoutXProperty().bind(sat.multiply(slice.widthProperty()));
 		sliceCursor.layoutYProperty().bind(Bindings.subtract(1.0, bright).multiply(slice.heightProperty()));
@@ -158,17 +180,6 @@ public class TrueColorPicker extends GridPane {
 		addRow(1, slice, alphaBar);
 
 		// Event handling
-		disableProperty().addListener((observable, oldValue, newValue) -> {
-			if (newValue) {
-				hueBar.setEffect(new ColorAdjust(0,-1,0,0));
-				alphaBarLayer.setEffect(new ColorAdjust(0,-1,0,0));
-				sliceLayerColor.setEffect(new ColorAdjust(0,-1,0,0));
-			} else {
-				hueBar.setEffect(null);
-				alphaBarLayer.setEffect(null);
-				sliceLayerColor.setEffect(null);
-			}
-		});
 		EventHandler<MouseEvent> hueBarMouseHandler = event -> {
 			hue.set(clamp(event.getX() / hueBar.getWidth()) * 360);
 		};
@@ -193,6 +204,7 @@ public class TrueColorPicker extends GridPane {
 				return;
 			suppressProxyListeners = true;
 			try {
+				if (newValue == null) return;
 				hue.set(newValue.getHue());
 				sat.set(newValue.getSaturation());
 				bright.set(newValue.getBrightness());

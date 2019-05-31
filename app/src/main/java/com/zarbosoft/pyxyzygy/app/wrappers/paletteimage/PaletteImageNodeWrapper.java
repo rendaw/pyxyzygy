@@ -24,7 +24,6 @@ import javafx.scene.image.Image;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -32,12 +31,10 @@ import java.util.stream.Collectors;
 import static com.zarbosoft.pyxyzygy.app.GUILaunch.CACHE_OBJECT;
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.pyxyzygy.app.config.PaletteImageNodeConfig.TOOL_BRUSH;
-import static com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext.uniqueName1;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 
 public class PaletteImageNodeWrapper extends BaseImageNodeWrapper<PaletteImageLayer, PaletteImageFrame, PaletteTileBase, PaletteImage> {
 	final PaletteImageNodeConfig config;
-	public final ProjectContext.PaletteWrapper palette;
 
 	public static FrameFinder<PaletteImageLayer, PaletteImageFrame> frameFinder =
 			new FrameFinder<PaletteImageLayer, PaletteImageFrame>() {
@@ -59,6 +56,9 @@ public class PaletteImageNodeWrapper extends BaseImageNodeWrapper<PaletteImageLa
 	public final HalfBinder<PaletteBrush> brushBinder;
 	public final IndirectBinder<Integer> paletteSelOffsetBinder;
 	public final HalfBinder<ProjectObject> paletteSelectionBinder;
+	public final HalfBinder<Integer> paletteSelOffsetFixedBinder;
+	public final ScalarHalfBinder<Palette> paletteBinder;
+	public ProjectContext.PaletteWrapper palette;
 
 	public PaletteImageNodeWrapper(
 			ProjectContext context, Wrapper parent, int parentIndex, PaletteImageLayer node
@@ -67,6 +67,8 @@ public class PaletteImageNodeWrapper extends BaseImageNodeWrapper<PaletteImageLa
 		config = (PaletteImageNodeConfig) context.config.nodes.computeIfAbsent(node.id(),
 				k -> new PaletteImageNodeConfig(context)
 		);
+		paletteBinder = new ScalarHalfBinder<Palette>(node, "palette");
+		paletteBinder.addListener(p -> this.palette = context.getPaletteWrapper(p));
 		this.brushBinder =
 				new DoubleHalfBinder<ObservableList<PaletteBrush>, Integer>(new ListPropertyHalfBinder<>(GUILaunch.profileConfig.paletteBrushes),
 						new DoubleHalfBinder<>(config.tool, config.brush).map((t, index) -> {
@@ -81,22 +83,33 @@ public class PaletteImageNodeWrapper extends BaseImageNodeWrapper<PaletteImageLa
 						return opt(null);
 					return opt(brushes.get(index));
 				});
-		paletteSelOffsetBinder = new IndirectBinder<Integer>(new IndirectHalfBinder<Boolean>(brushBinder,
+		paletteSelOffsetBinder = new IndirectBinder<Integer>(new IndirectHalfBinder<Boolean>(
+				brushBinder,
 				b -> b == null ? opt(null) : opt(b.useColor)
 		),
 				b -> b == null ?
-						Optional.empty() :
+						opt(null) :
 						opt((Boolean) b ? brushBinder.get().get().paletteOffset : config.paletteOffset)
 		);
+		paletteSelOffsetFixedBinder =
+				new DoubleHalfBinder<>(paletteSelOffsetBinder, paletteBinder).map((offset, palette) -> {
+					if (offset == null)
+						return opt(null);
+					if (offset >= palette.entriesLength())
+						return opt(null);
+					return opt(offset);
+				});
 		paletteSelectionBinder = new DoubleHalfBinder<>(paletteSelOffsetBinder,
-				new ListHalfBinder<ProjectObject>(node.palette(), "entries")
+				new IndirectHalfBinder<List<ProjectObject>>(paletteBinder,
+						palette -> opt(new ListHalfBinder<ProjectObject>(palette, "entries"))
+				)
 		).map((offset, entries) -> {
+			if (entries == null)
+				return opt(null);
 			if (entries.size() <= offset)
 				return opt(null);
-			else
-				return opt(entries.get(offset));
+			return opt(entries.get(offset));
 		});
-		this.palette = context.getPaletteWrapper(node.palette());
 	}
 
 	@Override
@@ -110,23 +123,19 @@ public class PaletteImageNodeWrapper extends BaseImageNodeWrapper<PaletteImageLa
 							parent,
 							this
 					) {
-						private Runnable paletteChangeListener;
-
-						{
-							paletteChangeListener = () -> {
-								wrapTiles.forEach((k, t) -> {
-									t.update(t.getImage(context,
-											wrapper.tileGet(frame, k)
-									)); // Image deserialization can't be done in parallel :( (global pixelreader state?)
-								});
-							};
-							palette.listeners.add(paletteChangeListener);
-						}
+						private final BinderRoot paletteChangeRoot = new IndirectHalfBinder<>(paletteBinder,
+								p -> opt(context.getPaletteWrapper(p).selfBinder)).addListener(palette -> {
+							wrapTiles.forEach((k, t) -> {
+								t.update(t.getImage(context,
+										wrapper.tileGet(frame, k)
+								)); // Image deserialization can't be done in parallel :( (global pixelreader state?)
+							});
+						});
 
 						@Override
 						public void remove(ProjectContext context) {
 							super.remove(context);
-							palette.listeners.remove(paletteChangeListener);
+							paletteChangeRoot.destroy();
 						}
 					};
 		return canvasHandle;
@@ -294,7 +303,7 @@ public class PaletteImageNodeWrapper extends BaseImageNodeWrapper<PaletteImageLa
 	@Override
 	public ProjectLayer separateClone(ProjectContext context) {
 		PaletteImageLayer clone = PaletteImageLayer.create(context);
-		clone.initialNameSet(context, uniqueName1(node.name()));
+		clone.initialNameSet(context, context.namer.uniqueName1(node.name()));
 		clone.initialOffsetSet(context, node.offset());
 		clone.initialPaletteSet(context, node.palette());
 		clone.initialFramesAdd(context, node.frames().stream().map(frame -> {

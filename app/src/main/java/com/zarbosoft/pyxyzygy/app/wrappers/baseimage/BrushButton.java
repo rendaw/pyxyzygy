@@ -1,11 +1,11 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.baseimage;
 
-import com.zarbosoft.pyxyzygy.app.widgets.binding.CustomBinding;
 import com.zarbosoft.pyxyzygy.app.Garb;
 import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.ColorSwatch;
 import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.CustomBinding;
 import com.zarbosoft.pyxyzygy.app.widgets.binding.HalfBinder;
 import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyHalfBinder;
 import javafx.beans.property.Property;
@@ -30,7 +30,8 @@ public abstract class BrushButton extends ToggleButton implements Garb {
 
 		Label label = new Label();
 		CustomBinding.bind(label.textProperty(),
-				new PropertyHalfBinder<>(size).map(v -> opt(String.format("%.1f", v / 10.0))));
+				new PropertyHalfBinder<>(size).map(v -> opt(String.format("%.1f", v / 10.0)))
+		);
 		label.setAlignment(Pos.CENTER);
 
 		StackPane stack = new StackPane();
@@ -42,8 +43,8 @@ public abstract class BrushButton extends ToggleButton implements Garb {
 
 		cleanupColor = color.addListener(c -> {
 			swatch.colorProperty.set(c);
-				double darkness = c == null ? 0 : (1.0 - c.getBrightness()) * c.getOpacity();
-				label.setTextFill(darkness > 0.5 ? Color.WHITE : Color.BLACK);
+			double darkness = c == null ? 0 : (1.0 - c.getBrightness()) * c.getOpacity();
+			label.setTextFill(darkness > 0.5 ? Color.WHITE : Color.BLACK);
 		});
 	}
 

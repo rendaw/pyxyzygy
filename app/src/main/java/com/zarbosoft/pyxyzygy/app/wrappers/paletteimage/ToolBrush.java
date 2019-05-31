@@ -12,6 +12,7 @@ import com.zarbosoft.pyxyzygy.core.PaletteImage;
 import com.zarbosoft.pyxyzygy.core.model.v0.PaletteColor;
 import com.zarbosoft.pyxyzygy.core.model.v0.PaletteImageFrame;
 import com.zarbosoft.pyxyzygy.core.model.v0.PaletteSeparator;
+import com.zarbosoft.pyxyzygy.core.model.v0.ProjectObject;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.Common;
@@ -110,10 +111,9 @@ public class ToolBrush extends BaseToolBrush<PaletteImageFrame, PaletteImage> {
 			DoubleVector end,
 			double endRadius
 	) {
-		PaletteColor color = (PaletteColor) unopt(editHandle.wrapper.paletteSelectionBinder.get());
-		if (color == null)
-			return;
-		canvas.stroke(color.index(), start.x, start.y, startRadius, end.x, end.y, endRadius);
+		ProjectObject paletteSelection = unopt(editHandle.wrapper.paletteSelectionBinder.get());
+		if (paletteSelection == null || !(paletteSelection instanceof PaletteColor)) return;
+		canvas.stroke(((PaletteColor) paletteSelection).index(), start.x, start.y, startRadius, end.x, end.y, endRadius);
 	}
 
 	@Override
