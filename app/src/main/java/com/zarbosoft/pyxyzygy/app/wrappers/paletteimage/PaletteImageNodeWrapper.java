@@ -104,7 +104,7 @@ public class PaletteImageNodeWrapper extends BaseImageNodeWrapper<PaletteImageLa
 						palette -> opt(new ListHalfBinder<ProjectObject>(palette, "entries"))
 				)
 		).map((offset, entries) -> {
-			if (entries == null)
+			if (entries == null || offset == null)
 				return opt(null);
 			if (entries.size() <= offset)
 				return opt(null);
