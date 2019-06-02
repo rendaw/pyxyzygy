@@ -48,7 +48,6 @@ public class OnionSkin {
 				editHandle.getWrapper().getConfig().onionRight),
 				new PropertyHalfBinder<>(timeline.playingProperty)
 		).map((on0, playing) -> opt(on0 && !playing));
-		onCleanup = on.addListener(v -> render(context));
 		frameProp.addListener((observable, oldValue, newValue) -> render(context));
 		bounds.addListener((observable, oldValue, newValue) -> render(context));
 		colorProperty = previous ?
@@ -59,6 +58,8 @@ public class OnionSkin {
 		this.overlay = editHandle.getCanvas().overlay;
 		overlay.getChildren().add(widget);
 
+		onCleanup = on.addListener(v -> render(context));
+		
 		render(context);
 	}
 
