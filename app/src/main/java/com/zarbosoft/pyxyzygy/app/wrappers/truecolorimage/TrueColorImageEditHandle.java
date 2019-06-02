@@ -352,7 +352,7 @@ public class TrueColorImageEditHandle extends EditHandle {
 
 	@Override
 	public void cursorMoved(ProjectContext context, Window window, DoubleVector vector) {
-		vector = Window.toLocal(wrapper.canvasHandle, vector);
+		vector = Window.toLocal(window.getSelectedForView(), wrapper.canvasHandle, vector);
 		mouseX.set(vector.x);
 		mouseY.set(vector.y);
 	}
@@ -370,7 +370,7 @@ public class TrueColorImageEditHandle extends EditHandle {
 	public void markStart(ProjectContext context, Window window, DoubleVector start) {
 		if (tool == null)
 			return;
-		tool.markStart(context, window, Window.toLocal(wrapper.canvasHandle, start).minus(offset()), start);
+		tool.markStart(context, window, Window.toLocal(window.getSelectedForView(), wrapper.canvasHandle, start).minus(offset()), start);
 	}
 
 	@Override
@@ -385,8 +385,8 @@ public class TrueColorImageEditHandle extends EditHandle {
 		Vector offset = offset();
 		tool.mark(context,
 				window,
-				Window.toLocal(wrapper.canvasHandle, start).minus(offset),
-				Window.toLocal(wrapper.canvasHandle, end).minus(offset),
+				Window.toLocal(window.getSelectedForView(), wrapper.canvasHandle, start).minus(offset),
+				Window.toLocal(window.getSelectedForView(), wrapper.canvasHandle, end).minus(offset),
 				start,
 				end
 		);

@@ -150,7 +150,7 @@ public class GroupNodeEditHandle extends EditHandle {
 	public void markStart(ProjectContext context, Window window, DoubleVector start) {
 		if (tool == null)
 			return;
-		tool.markStart(context, window, Window.toLocal(wrapper.canvasHandle, start).minus(offset()), start);
+		tool.markStart(context, window, Window.toLocal(window.getSelectedForView(), wrapper.canvasHandle, start).minus(offset()), start);
 	}
 
 	@Override
@@ -164,14 +164,14 @@ public class GroupNodeEditHandle extends EditHandle {
 			return;
 		Vector offset = offset();
 		tool.mark(context, window,
-				Window.toLocal(wrapper.canvasHandle, start).minus(offset),
-				Window.toLocal(wrapper.canvasHandle, end).minus(offset),
+				Window.toLocal(window.getSelectedForView(), wrapper.canvasHandle, start).minus(offset),
+				Window.toLocal(window.getSelectedForView(), wrapper.canvasHandle, end).minus(offset),
 				start, end);
 	}
 
 	@Override
 	public void cursorMoved(ProjectContext context, Window window, DoubleVector vector) {
-		vector = Window.toLocal(wrapper.canvasHandle, vector);
+		vector = Window.toLocal(window.getSelectedForView(), wrapper.canvasHandle, vector);
 		tool.cursorMoved(context, window, vector);
 	}
 }

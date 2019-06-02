@@ -623,15 +623,20 @@ public class PaletteImageEditHandle extends EditHandle {
 			paletteAddCleanup =
 					CustomBinding.bind(add.disableProperty(), wrapper.paletteSelectionBinder.map(p -> opt(p == null)));
 			add.setOnAction(_e -> {
-				PaletteColor selectedColor = (PaletteColor) wrapper.paletteSelectionBinder.get().get();
+				ProjectObject selectedColor0 = unopt(wrapper.paletteSelectionBinder.get());
 				PaletteColor newColor = PaletteColor.create(context);
-				newColor.initialColorSet(context, selectedColor.color());
+				if (selectedColor0 instanceof PaletteColor) {
+					PaletteColor selectedColor = (PaletteColor) selectedColor0;
+					newColor.initialColorSet(context, selectedColor.color());
+				} else if (selectedColor0 instanceof PaletteSeparator) {
+					newColor.initialColorSet(context, TrueColor.rgba(0,0,0,1));
+				}
 				Palette palette = wrapper.node.palette();
 				int id = palette.nextId();
 				newColor.initialIndexSet(context, id);
 				context.change(null, c -> {
 					c.palette(palette).nextIdSet(id + 1);
-					c.palette(palette).entriesAdd(palette.entries().indexOf(selectedColor) + 1, newColor);
+					c.palette(palette).entriesAdd(palette.entries().indexOf(selectedColor0) + 1, newColor);
 				});
 				wrapper.paletteSelOffsetBinder.set(tiles.get(newColor).index);
 			});
@@ -785,7 +790,7 @@ public class PaletteImageEditHandle extends EditHandle {
 
 	@Override
 	public void cursorMoved(ProjectContext context, Window window, DoubleVector vector) {
-		vector = Window.toLocal(wrapper.canvasHandle, vector).minus(offset());
+		vector = Window.toLocal(window.getSelectedForView(), wrapper.canvasHandle, vector).minus(offset());
 		mouseX.set(vector.x);
 		mouseY.set(vector.y);
 	}
@@ -803,7 +808,7 @@ public class PaletteImageEditHandle extends EditHandle {
 	public void markStart(ProjectContext context, Window window, DoubleVector start) {
 		if (tool == null)
 			return;
-		tool.markStart(context, window, Window.toLocal(wrapper.canvasHandle, start).minus(offset()), start);
+		tool.markStart(context, window, Window.toLocal(window.getSelectedForView(), wrapper.canvasHandle, start).minus(offset()), start);
 	}
 
 	@Override
@@ -818,8 +823,8 @@ public class PaletteImageEditHandle extends EditHandle {
 		Vector offset = offset();
 		tool.mark(context,
 				window,
-				Window.toLocal(wrapper.canvasHandle, start).minus(offset),
-				Window.toLocal(wrapper.canvasHandle, end).minus(offset),
+				Window.toLocal(window.getSelectedForView(), wrapper.canvasHandle, start).minus(offset),
+				Window.toLocal(window.getSelectedForView(), wrapper.canvasHandle, end).minus(offset),
 				start,
 				end
 		);

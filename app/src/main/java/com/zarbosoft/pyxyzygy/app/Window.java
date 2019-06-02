@@ -576,6 +576,7 @@ public class Window {
 
 	public static List<CanvasHandle> getAncestorsOutward(CanvasHandle start, CanvasHandle target) {
 		List<CanvasHandle> ancestors = new ArrayList<>();
+		start = start.getParent(); // Loop check is exclusive of start, so go above the stated start
 		CanvasHandle at = target.getParent();
 		while (at != start) {
 			ancestors.add(at);
@@ -590,8 +591,10 @@ public class Window {
 		return ancestors;
 	}
 
-	public static DoubleVector toLocal(CanvasHandle wrapper, DoubleVector v) {
-		for (CanvasHandle parent : getAncestorsInward(null, wrapper)) {
+	public static DoubleVector toLocal(
+			CanvasHandle selectedForView, CanvasHandle translateTo, DoubleVector v
+	) {
+		for (CanvasHandle parent : getAncestorsInward(selectedForView, translateTo)) {
 			v = parent.toInner(v);
 		}
 		return v;
