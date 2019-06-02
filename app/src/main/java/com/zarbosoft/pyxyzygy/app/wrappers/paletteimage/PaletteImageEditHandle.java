@@ -480,7 +480,7 @@ public class PaletteImageEditHandle extends EditHandle {
 					if (!newOpt.isPresent()) {
 						return;
 					}
-					final int ne = newOpt.get();
+					final int newIndex = newOpt.get();
 					ProjectContext.PaletteWrapper palette = context.getPaletteWrapper(wrapper.node.palette());
 					context.change(null, c -> {
 						palette.users.forEach(p -> p
@@ -488,11 +488,12 @@ public class PaletteImageEditHandle extends EditHandle {
 								.forEach(f -> new ArrayList<>(f.tiles().keySet()).forEach(t -> {
 									PaletteImage oldTile = ((PaletteTile) f.tilesGet(t)).getData(context);
 									PaletteImage newTile = oldTile.copy(0, 0, oldTile.getWidth(), oldTile.getHeight());
-									newTile.mergeColor(old, ne);
+									newTile.mergeColor(old, newIndex);
 									c.paletteImageFrame(f).tilesPut(t, PaletteTile.create(context, newTile));
 								})));
 						c.palette(wrapper.node.palette()).entriesRemove(this.index, 1);
 					});
+					wrapper.paletteSelOffsetBinder.set(newIndex);
 				} finally {
 					paletteState.set(null);
 				}
@@ -593,7 +594,15 @@ public class PaletteImageEditHandle extends EditHandle {
 					if (index < 0)
 						throw new Assertion();
 					if (paletteState.get() == null) {
-						paletteState.set(new MergeState(index));
+						ProjectObject sel = unopt(wrapper.paletteSelectionBinder.get());
+						if (sel instanceof PaletteColor) {
+							paletteState.set(new MergeState(index));
+						} else if (sel instanceof PaletteSeparator) {
+							context.change(null, c -> {
+								c.palette(wrapper.node.palette()).entriesRemove(index, 1);
+							});
+							wrapper.paletteSelOffsetBinder.set(Math.max(index - 1, 0));
+						} else throw new Assertion();
 					} else {
 						paletteState.set(null);
 					}
