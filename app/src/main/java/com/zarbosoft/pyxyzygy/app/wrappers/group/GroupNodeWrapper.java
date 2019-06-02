@@ -71,7 +71,7 @@ public class GroupNodeWrapper extends Wrapper {
 			ProjectContext context, Window window, CanvasHandle parent
 	) {
 		if (canvasHandle == null)
-			canvasHandle = new GroupNodeCanvasHandle(context, window, parent, this);
+			canvasHandle = new GroupNodeCanvasHandle(context, window, this);
 		return canvasHandle;
 	}
 

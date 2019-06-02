@@ -6,7 +6,6 @@ import com.zarbosoft.pyxyzygy.app.widgets.binding.*;
 import com.zarbosoft.pyxyzygy.core.model.v0.GroupChild;
 import com.zarbosoft.pyxyzygy.core.model.v0.GroupPositionFrame;
 import com.zarbosoft.pyxyzygy.core.model.v0.GroupTimeFrame;
-import com.zarbosoft.pyxyzygy.core.model.v0.ProjectLayer;
 import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 
@@ -19,7 +18,7 @@ import static com.zarbosoft.pyxyzygy.app.Misc.moveTo;
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 
 public class GroupChildCanvasHandle extends CanvasHandle {
-	private final CanvasHandle parent;
+	private CanvasHandle parent;
 	private final Listener.ListAdd<GroupChild, GroupPositionFrame> positionAddListener;
 	private final Listener.ListRemove<GroupChild> positionRemoveListener;
 	private final Listener.ListMoveTo<GroupChild> positionMoveListener;
@@ -35,27 +34,22 @@ public class GroupChildCanvasHandle extends CanvasHandle {
 	private GroupChildWrapper wrapper;
 
 	public GroupChildCanvasHandle(
-			ProjectContext context, Window window, GroupChildWrapper wrapper, CanvasHandle parent
+			ProjectContext context, Window window, GroupChildWrapper wrapper
 	) {
 		this.wrapper = wrapper;
-		this.parent = parent;
 		positionCleanup = new ArrayList<>();
 		timeCleanup = new ArrayList<>();
 
-		enabledListenerRoot = new DoubleHalfBinder<>(
-				new PropertyHalfBinder<>(wrapper.child),
-				new DoubleHalfBinder<>(
-						new ScalarHalfBinder<Boolean>(wrapper.node, "enabled"),
-						new DoubleHalfBinder<>(
-								window.selectedForEditWrapperEnabledBinder,
-								new IndirectHalfBinder<GroupChild>(window.selectedForEditWrapperEnabledBinder, e -> {
-									if (e instanceof GroupNodeWrapper) {
-										return opt(((GroupNodeWrapper) e).specificChild);
-									}
-									return opt(null);
-								})
-						)
-				).map((enabled, p) -> {
+		enabledListenerRoot = new DoubleHalfBinder<>(new PropertyHalfBinder<>(wrapper.child),
+				new DoubleHalfBinder<>(new ScalarHalfBinder<Boolean>(wrapper.node, "enabled"), new DoubleHalfBinder<>(
+						window.selectedForEditWrapperEnabledBinder,
+						new IndirectHalfBinder<GroupChild>(window.selectedForEditWrapperEnabledBinder, e -> {
+							if (e instanceof GroupNodeWrapper) {
+								return opt(((GroupNodeWrapper) e).specificChild);
+							}
+							return opt(null);
+						})
+				)).map((enabled, p) -> {
 					Wrapper edit = p.first;
 					GroupChild specificLayer = p.second;
 					if (enabled)
@@ -76,7 +70,7 @@ public class GroupChildCanvasHandle extends CanvasHandle {
 			if (childCanvas != null) {
 				paint.getChildren().clear();
 				overlay.getChildren().clear();
-				childCanvas.remove(context);
+				childCanvas.remove(context, null);
 			}
 			if (child != null && enabled) {
 				childCanvas = child.buildCanvas(context, window, this);
@@ -143,6 +137,11 @@ public class GroupChildCanvasHandle extends CanvasHandle {
 		});
 	}
 
+	@Override
+	public void setParent(CanvasHandle parent) {
+		this.parent = parent;
+	}
+
 	private GroupPositionFrame findPosition() {
 		return findPosition(frameNumber.get());
 	}
@@ -157,9 +156,10 @@ public class GroupChildCanvasHandle extends CanvasHandle {
 	}
 
 	@Override
-	public void remove(ProjectContext context) {
+	public void remove(ProjectContext context, Wrapper excludeSubtree) {
 		if (childCanvas != null) {
-			childCanvas.remove(context);
+			if (childCanvas.getWrapper() != excludeSubtree)
+				childCanvas.remove(context, excludeSubtree);
 			childCanvas = null;
 		}
 		wrapper.node.removePositionFramesAddListeners(positionAddListener);

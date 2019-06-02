@@ -32,9 +32,11 @@ public abstract class CanvasHandle {
 
 	public abstract void setFrame(ProjectContext context, int frameNumber);
 
-	public abstract void remove(ProjectContext context);
+	public abstract void remove(ProjectContext context, Wrapper excludeSubtree);
 
 	public abstract Wrapper getWrapper();
 
 	public abstract CanvasHandle getParent();
+
+	public abstract void setParent(CanvasHandle parent);
 }

@@ -120,7 +120,6 @@ public class PaletteImageNodeWrapper extends BaseImageNodeWrapper<PaletteImageLa
 			canvasHandle =
 					new BaseImageCanvasHandle<PaletteImageLayer, PaletteImageFrame, PaletteTileBase, PaletteImage>(
 							context,
-							parent,
 							this
 					) {
 						private final BinderRoot paletteChangeRoot = new IndirectHalfBinder<>(paletteBinder,
@@ -133,11 +132,12 @@ public class PaletteImageNodeWrapper extends BaseImageNodeWrapper<PaletteImageLa
 						});
 
 						@Override
-						public void remove(ProjectContext context) {
-							super.remove(context);
+						public void remove(ProjectContext context, Wrapper excludeSubtree) {
+							super.remove(context, excludeSubtree);
 							paletteChangeRoot.destroy();
 						}
 					};
+		canvasHandle.setParent(parent);
 		return canvasHandle;
 	}
 

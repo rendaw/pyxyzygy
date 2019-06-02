@@ -61,7 +61,8 @@ public abstract class BaseImageNodeWrapper<N extends ProjectLayer, F extends Pro
 			ProjectContext context, Window window, CanvasHandle parent
 	) {
 		if (canvasHandle == null)
-			canvasHandle = new BaseImageCanvasHandle<N, F, T, L>(context, parent, this);
+			canvasHandle = new BaseImageCanvasHandle<N, F, T, L>(context, this);
+		canvasHandle.setParent(parent);
 		return canvasHandle;
 	}
 

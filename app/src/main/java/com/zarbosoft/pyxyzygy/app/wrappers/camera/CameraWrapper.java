@@ -77,9 +77,9 @@ public class CameraWrapper extends GroupNodeWrapper {
 				Rectangle cameraBorder;
 
 				public CameraCanvasHandle(
-						ProjectContext context, Window window, CanvasHandle parent, GroupNodeWrapper wrapper
+						ProjectContext context, Window window, GroupNodeWrapper wrapper
 				) {
-					super(context, window, parent, wrapper);
+					super(context, window, wrapper);
 					cameraBorder = new Rectangle();
 					cameraBorder.strokeWidthProperty().bind(Bindings.divide(1.0, window.editor.zoomFactor));
 					cameraBorder.setOpacity(0.8);
@@ -95,13 +95,14 @@ public class CameraWrapper extends GroupNodeWrapper {
 				}
 
 				@Override
-				public void remove(ProjectContext context) {
+				public void remove(ProjectContext context, Wrapper excludeSubtree) {
 					cameraBorder = null;
-					super.remove(context);
+					super.remove(context, excludeSubtree);
 				}
 			}
-			canvasHandle = new CameraCanvasHandle(context, window, canvasHandle, this);
+			canvasHandle = new CameraCanvasHandle(context, window, this);
 		}
+		canvasHandle.setParent(parent);
 		return canvasHandle;
 	}
 

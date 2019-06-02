@@ -104,7 +104,8 @@ public class GroupChildWrapper extends Wrapper {
 			ProjectContext context, Window window, CanvasHandle parent
 	) {
 		if (canvasHandle == null)
-			canvasHandle = new GroupChildCanvasHandle(context, window, this, parent);
+			canvasHandle = new GroupChildCanvasHandle(context, window, this);
+		canvasHandle.setParent(parent);
 		return canvasHandle;
 	}
 

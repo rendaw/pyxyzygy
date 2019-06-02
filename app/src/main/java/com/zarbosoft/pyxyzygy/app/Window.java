@@ -132,13 +132,14 @@ public class Window {
 				minWidthRoot = null;
 			}
 			if (node != null) {
-				minWidthRoot = CustomBinding.bind(scrollPane.minWidthProperty(),
-						new DoubleHalfBinder<>(new IndirectHalfBinder<Number>(
-								scrollBarBinder,
+				minWidthRoot = CustomBinding.bind(scrollPane.minWidthProperty(), new DoubleHalfBinder<>(
+						new IndirectHalfBinder<Number>(scrollBarBinder,
 								s -> s == null ? opt(null) : opt(effectiveWidthBinder(s))
-						), effectiveWidthBinder(node)).map((scrollWidth, contentWidth) -> opt(scrollWidth ==
-								null ? 0 : scrollWidth.doubleValue() + contentWidth.doubleValue()))
-				);
+						),
+						effectiveWidthBinder(node)
+				).map((scrollWidth, contentWidth) -> opt(scrollWidth == null ?
+						0 :
+						scrollWidth.doubleValue() + contentWidth.doubleValue())));
 			}
 			scrollPane.setContent(node);
 		}
@@ -157,10 +158,51 @@ public class Window {
 	}
 
 	public void selectForView(ProjectContext context, Wrapper wrapper, boolean fromEdit) {
-		selectedForView = null;
+		Wrapper oldViewWrapper = selectedForView == null ? null : selectedForView.getWrapper();
+		if (oldViewWrapper == wrapper)
+			return;
 		if (wrapper == null) {
 			return;
 		}
+		do {
+			// Delete old canvas handles--
+
+			// Case: Old parent of new - delete with exclude subtree
+			{
+				Wrapper at = wrapper;
+				while (at != null) {
+					if (at == oldViewWrapper)
+						break;
+					at = at.getParent();
+				}
+				if (at == oldViewWrapper) {
+					if (selectedForView != null)
+						selectedForView.remove(context, wrapper);
+					break;
+				}
+			}
+
+			// Case: New parent of old - no delete
+			{
+				Wrapper at = oldViewWrapper;
+				while (at != null) {
+					if (at == wrapper)
+						break;
+					at = at.getParent();
+				}
+				if (at == wrapper) {
+					break;
+				}
+			}
+
+			// Case: Neither - delete old no exclude
+			{
+				if (selectedForView != null)
+					selectedForView.remove(context, null);
+				break;
+			}
+		} while (false);
+		selectedForView = null;
 		selectedForView = wrapper.buildCanvas(context, this, null);
 
 		selectedForViewZoomControlBinder.clear();
@@ -206,21 +248,21 @@ public class Window {
 		selectedForEditTreeIconBinder.clear();
 
 		// Transition
-		Wrapper preParent = wrapper;
-		Wrapper parent = wrapper.getParent();
+		Wrapper lastPotentialView = null;
+		Wrapper nextPotentialView = wrapper;
 		boolean found = false;
-		while (parent != null) {
-			if (selectedForView.getWrapper() == parent) {
+		while (nextPotentialView != null) {
+			if (selectedForView.getWrapper() == nextPotentialView) {
 				found = true;
 				break;
 			}
-			preParent = parent;
-			parent = parent.getParent();
+			lastPotentialView = nextPotentialView;
+			nextPotentialView = nextPotentialView.getParent();
 		}
 		if (found) {
 			selectedForEdit = wrapper.buildEditControls(context, this);
 		} else {
-			selectForView(context, preParent, true);
+			selectForView(context, lastPotentialView, true);
 			selectedForEdit = wrapper.buildEditControls(context, this);
 		}
 
@@ -295,6 +337,53 @@ public class Window {
 							@Override
 							public void run(ProjectContext context, Window window) {
 								context.redo();
+							}
+						},
+						new Hotkeys.Action(Hotkeys.Scope.GLOBAL,
+								"view-top",
+								"View top",
+								Hotkeys.Hotkey.create(KeyCode.T, false, false, false)
+						) {
+
+							@Override
+							public void run(ProjectContext context, Window window) {
+								Wrapper at = window.selectedForView.getWrapper();
+								Wrapper next = at.getParent();
+								while (next != null) {
+									at = next;
+									next = at.getParent();
+								}
+								selectForView(context, at);
+							}
+						},
+						new Hotkeys.Action(Hotkeys.Scope.GLOBAL,
+								"view-up",
+								"View up",
+								Hotkeys.Hotkey.create(KeyCode.P, false, false, false)
+						) {
+
+							@Override
+							public void run(ProjectContext context, Window window) {
+								Wrapper at = window.selectedForView.getWrapper();
+								Wrapper next = at.getParent();
+								while (next != null) {
+									at = next;
+									if (!(at instanceof GroupChildWrapper))
+										break;
+									next = at.getParent();
+								}
+								selectForView(context, at);
+							}
+						},
+						new Hotkeys.Action(Hotkeys.Scope.GLOBAL,
+								"view-selected",
+								"View selected",
+								Hotkeys.Hotkey.create(KeyCode.E, false, false, false)
+						) {
+
+							@Override
+							public void run(ProjectContext context, Window window) {
+								selectForView(context, selectedForEdit.getWrapper());
 							}
 						}
 				)

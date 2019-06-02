@@ -18,7 +18,7 @@ import javafx.beans.property.SimpleIntegerProperty;
 import java.util.*;
 
 public class BaseImageCanvasHandle<N extends ProjectLayer, F extends ProjectObject, T, L> extends CanvasHandle {
-	final CanvasHandle parent;
+	CanvasHandle parent;
 	private final Runnable mirrorCleanup;
 	public final BaseImageNodeWrapper<N, F, T, L> wrapper;
 	public Map<Long, WrapTile> wrapTiles = new HashMap<>();
@@ -30,9 +30,8 @@ public class BaseImageCanvasHandle<N extends ProjectLayer, F extends ProjectObje
 	private BinderRoot offsetCleanup;
 
 	public BaseImageCanvasHandle(
-			ProjectContext context, CanvasHandle parent, BaseImageNodeWrapper<N, F, T, L> wrapper
+			ProjectContext context, BaseImageNodeWrapper<N, F, T, L> wrapper
 	) {
-		this.parent = parent;
 		this.wrapper = wrapper;
 
 		mirrorCleanup = wrapper.mirrorFrames(wrapper.node, frameCleanup, frame -> {
@@ -52,7 +51,12 @@ public class BaseImageCanvasHandle<N extends ProjectLayer, F extends ProjectObje
 	}
 
 	@Override
-	public void remove(ProjectContext context) {
+	public void setParent(CanvasHandle parent) {
+		this.parent = parent;
+	}
+
+	@Override
+	public void remove(ProjectContext context, Wrapper excludeSubtree) {
 		wrapper.canvasHandle = null;
 		mirrorCleanup.run();
 		detachTiles();

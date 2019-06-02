@@ -16,7 +16,7 @@ import static com.zarbosoft.pyxyzygy.app.Misc.*;
 public class GroupNodeCanvasHandle extends CanvasHandle {
 	private final Runnable layerListenCleanup;
 	private final ObservableList<CanvasHandle> childHandles = FXCollections.observableArrayList();
-	private final CanvasHandle parent;
+	private CanvasHandle parent;
 	final SimpleIntegerProperty positiveZoom = new SimpleIntegerProperty(0);
 	private final Listener.ScalarSet<ProjectLayer, Vector> offsetListener;
 
@@ -24,14 +24,13 @@ public class GroupNodeCanvasHandle extends CanvasHandle {
 	private GroupNodeWrapper wrapper;
 
 	public GroupNodeCanvasHandle(
-			ProjectContext context, Window window, CanvasHandle parent, GroupNodeWrapper wrapper
+			ProjectContext context, Window window, GroupNodeWrapper wrapper
 	) {
-		this.parent = parent;
 		layerListenCleanup = mirror(wrapper.children, childHandles, c -> {
 			final CanvasHandle canvasHandle = c.buildCanvas(context, window, this);
 			canvasHandle.setViewport(context, bounds.get(), positiveZoom.get());
 			return canvasHandle;
-		}, h -> h.remove(context), noopConsumer());
+		}, h -> h.remove(context, null), noopConsumer());
 		mirror(childHandles, paint.getChildren(), h -> {
 			return h.getPaintWidget();
 		}, noopConsumer(), noopConsumer());
@@ -45,6 +44,11 @@ public class GroupNodeCanvasHandle extends CanvasHandle {
 			overlay.setLayoutY(offset.y);
 		});
 		this.wrapper = wrapper;
+	}
+
+	@Override
+	public void setParent(CanvasHandle parent) {
+		this.parent = parent;
 	}
 
 	@Override
@@ -97,9 +101,9 @@ public class GroupNodeCanvasHandle extends CanvasHandle {
 	}
 
 	@Override
-	public void remove(ProjectContext context) {
+	public void remove(ProjectContext context, Wrapper excludeSubtree) {
 		wrapper.canvasHandle = null;
-		childHandles.forEach(c -> c.remove(context));
+		childHandles.forEach(c -> c.remove(context, excludeSubtree));
 		wrapper.node.removeOffsetSetListeners(offsetListener);
 		layerListenCleanup.run();
 	}
