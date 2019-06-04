@@ -3,6 +3,7 @@ package com.zarbosoft.pyxyzygy.app.parts.editor;
 import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.config.NodeConfig;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
+import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupChildWrapper;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.SimpleDoubleProperty;
@@ -93,6 +94,53 @@ public class Editor {
 					e.getWrapper().getConfig().onionRight.set(!e.getWrapper().getConfig().onionRight.get());
 				}
 			},
+			new Hotkeys.Action(Hotkeys.Scope.GLOBAL,
+					"view-top",
+					"View top",
+					Hotkeys.Hotkey.create(KeyCode.T, false, false, false)
+			) {
+
+				@Override
+				public void run(ProjectContext context, Window window) {
+					Wrapper at = window.getSelectedForView().getWrapper();
+					Wrapper next = at.getParent();
+					while (next != null) {
+						at = next;
+						next = at.getParent();
+					}
+					window.selectForView(context, at);
+				}
+			},
+			new Hotkeys.Action(Hotkeys.Scope.GLOBAL,
+					"view-up",
+					"View up",
+					Hotkeys.Hotkey.create(KeyCode.P, false, false, false)
+			) {
+
+				@Override
+				public void run(ProjectContext context, Window window) {
+					Wrapper at = window.getSelectedForView().getWrapper();
+					Wrapper next = at.getParent();
+					while (next != null) {
+						at = next;
+						if (!(at instanceof GroupChildWrapper))
+							break;
+						next = at.getParent();
+					}
+					window.selectForView(context, at);
+				}
+			},
+			new Hotkeys.Action(Hotkeys.Scope.GLOBAL,
+					"view-selected",
+					"View selected",
+					Hotkeys.Hotkey.create(KeyCode.E, false, false, false)
+			) {
+
+				@Override
+				public void run(ProjectContext context, Window window) {
+					window.selectForView(context, window.getSelectedForEdit().getWrapper());
+				}
+			}
 	};
 	private OnionSkin onionSkinPrevious;
 	private OnionSkin onionSkinNext;

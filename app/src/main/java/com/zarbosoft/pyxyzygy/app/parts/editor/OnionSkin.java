@@ -59,7 +59,7 @@ public class OnionSkin {
 		overlay.getChildren().add(widget);
 
 		onCleanup = on.addListener(v -> render(context));
-		
+
 		render(context);
 	}
 
