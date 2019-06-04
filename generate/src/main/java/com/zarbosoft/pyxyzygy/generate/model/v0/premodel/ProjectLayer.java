@@ -5,18 +5,13 @@ import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 
 import java.util.Map;
 
-/**
- * Shared, mutable
- */
+/** Shared, mutable */
 @Configuration
 public abstract class ProjectLayer extends ProjectObject {
 
-	@Configuration
-	String name;
+  @Configuration String name;
 
-	@Configuration
-	Map<String, String> metadata;
+  @Configuration Map<String, String> metadata;
 
-	@Configuration
-	public Vector offset;
+  @Configuration public Vector offset;
 }

@@ -7,10 +7,7 @@ import java.util.Map;
 
 @Configuration
 public class PaletteImageFrame extends ProjectObject {
-	@Configuration
-	public int length;
-	@Configuration
-	public Vector offset;
-	@Configuration
-	public Map<Long, PaletteTileBase> tiles;
+  @Configuration public int length;
+  @Configuration public Vector offset;
+  @Configuration public Map<Long, PaletteTileBase> tiles;
 }

@@ -7,35 +7,35 @@ import java.util.function.Consumer;
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 
 public class VariableBinder<T> implements Binder<T> {
-	T value;
-	WeakList<Consumer<T>> listeners = new WeakList<>();
+  T value;
+  WeakList<Consumer<T>> listeners = new WeakList<>();
 
-	public VariableBinder(T value) {
-		this.value = value;
-	}
+  public VariableBinder(T value) {
+    this.value = value;
+  }
 
-	@Override
-	public void set(T v) {
-		value = v;
-		for (Consumer<T> listener : new ArrayList<>(listeners)) {
-			listener.accept(v);
-		}
-	}
+  @Override
+  public void set(T v) {
+    value = v;
+    for (Consumer<T> listener : new ArrayList<>(listeners)) {
+      listener.accept(v);
+    }
+  }
 
-	@Override
-	public BinderRoot addListener(Consumer<T> listener) {
-		listeners.add(listener);
-		listener.accept(value);
-		return new SimpleBinderRoot(this, listener);
-	}
+  @Override
+  public BinderRoot addListener(Consumer<T> listener) {
+    listeners.add(listener);
+    listener.accept(value);
+    return new SimpleBinderRoot(this, listener);
+  }
 
-	@Override
-	public void removeRoot(Object key) {
-		listeners.remove(key);
-	}
+  @Override
+  public void removeRoot(Object key) {
+    listeners.remove(key);
+  }
 
-	@Override
-	public Optional<T> get() {
-		return opt(value);
-	}
+  @Override
+  public Optional<T> get() {
+    return opt(value);
+  }
 }

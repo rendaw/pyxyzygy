@@ -6,9 +6,7 @@ import java.util.List;
 
 @Configuration
 public class PaletteImageLayer extends ProjectLayer {
-	@Configuration
-	public List<PaletteImageFrame> frames;
+  @Configuration public List<PaletteImageFrame> frames;
 
-	@Configuration
-	public Palette palette;
+  @Configuration public Palette palette;
 }

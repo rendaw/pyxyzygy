@@ -12,68 +12,66 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.control.TreeItem;
 
 public abstract class Wrapper {
-	public int parentIndex;
-	public final SimpleObjectProperty<TreeItem<Wrapper>> tree = new SimpleObjectProperty<>();
-	public final SimpleBooleanProperty tagLifted = new SimpleBooleanProperty(false);
+  public int parentIndex;
+  public final SimpleObjectProperty<TreeItem<Wrapper>> tree = new SimpleObjectProperty<>();
+  public final SimpleBooleanProperty tagLifted = new SimpleBooleanProperty(false);
 
-	public abstract Wrapper getParent();
+  public abstract Wrapper getParent();
 
-	public void setParentIndex(int index) {
-		parentIndex = index;
-	}
+  public void setParentIndex(int index) {
+    parentIndex = index;
+  }
 
-	public abstract ProjectObject getValue();
+  public abstract ProjectObject getValue();
 
-	public abstract NodeConfig getConfig();
+  public abstract NodeConfig getConfig();
 
-	public abstract CanvasHandle buildCanvas(
-			ProjectContext context, Window window, CanvasHandle parent
-	);
+  public abstract CanvasHandle buildCanvas(
+      ProjectContext context, Window window, CanvasHandle parent);
 
-	public abstract EditHandle buildEditControls(
-			ProjectContext context, Window window
-	);
+  public abstract EditHandle buildEditControls(ProjectContext context, Window window);
 
-	public abstract void remove(ProjectContext context);
+  public abstract void remove(ProjectContext context);
 
-	public void delete(ProjectContext context, ChangeStepBuilder change) {
-		if (getParent() != null)
-			getParent().deleteChild(context, change, parentIndex);
-		else
-			change.project(context.project).topRemove(parentIndex, 1);
-	}
+  public void delete(ProjectContext context, ChangeStepBuilder change) {
+    if (getParent() != null) getParent().deleteChild(context, change, parentIndex);
+    else change.project(context.project).topRemove(parentIndex, 1);
+  }
 
-	public abstract ProjectLayer separateClone(ProjectContext context);
+  public abstract ProjectLayer separateClone(ProjectContext context);
 
-	public abstract void deleteChild(
-			ProjectContext context, ChangeStepBuilder change, int index
-	);
+  public abstract void deleteChild(ProjectContext context, ChangeStepBuilder change, int index);
 
-	public static enum TakesChildren {
-		NONE,
-		ANY
-	}
+  public static enum TakesChildren {
+    NONE,
+    ANY
+  }
 
-	// TODO take this info to prevent calling addChildren if it wouldn't succeed, simplify that signature
-	public abstract TakesChildren takesChildren();
+  // TODO take this info to prevent calling addChildren if it wouldn't succeed, simplify that
+  // signature
+  public abstract TakesChildren takesChildren();
 
-	public static class ToolToggle extends HelperJFX.IconToggleButton {
-		private final Wrapper wrapper;
-		private final String value;
+  public static class ToolToggle extends HelperJFX.IconToggleButton {
+    private final Wrapper wrapper;
+    private final String value;
 
-		public ToolToggle(Wrapper wrapper, String icon, String hint, String value) {
-			super(icon, hint);
-			this.wrapper = wrapper;
-			this.value = value;
-			selectedProperty().bind(Bindings.createBooleanBinding(() -> {
-				return value.equals(this.wrapper.getConfig().tool.get());
-			}, this.wrapper.getConfig().tool));
-			setMaxHeight(Double.MAX_VALUE);
-		}
+    public ToolToggle(Wrapper wrapper, String icon, String hint, String value) {
+      super(icon, hint);
+      this.wrapper = wrapper;
+      this.value = value;
+      selectedProperty()
+          .bind(
+              Bindings.createBooleanBinding(
+                  () -> {
+                    return value.equals(this.wrapper.getConfig().tool.get());
+                  },
+                  this.wrapper.getConfig().tool));
+      setMaxHeight(Double.MAX_VALUE);
+    }
 
-		@Override
-		public void fire() {
-			wrapper.getConfig().tool.set(value);
-		}
-	}
+    @Override
+    public void fire() {
+      wrapper.getConfig().tool.set(value);
+    }
+  }
 }

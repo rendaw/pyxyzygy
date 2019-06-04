@@ -10,50 +10,49 @@ import javafx.scene.control.TreeItem;
 import javafx.scene.image.Image;
 
 public abstract class RowAdapter extends TreeItem<RowAdapter> {
-	public RowAdapter() {
-		this.setValue(this);
-		this.setExpanded(true);
-	}
+  public RowAdapter() {
+    this.setValue(this);
+    this.setExpanded(true);
+  }
 
-	@Override
-	public String toString() {
-		return String.format("(Row adapter for %s)", getData());
-	}
+  @Override
+  public String toString() {
+    return String.format("(Row adapter for %s)", getData());
+  }
 
-	public abstract ObservableValue<String> getName();
+  public abstract ObservableValue<String> getName();
 
-	public abstract boolean hasFrames();
+  public abstract boolean hasFrames();
 
-	public abstract boolean hasNormalFrames();
+  public abstract boolean hasNormalFrames();
 
-	public abstract boolean createFrame(
-			ProjectContext context, Window window, ChangeStepBuilder change, int outer
-	);
+  public abstract boolean createFrame(
+      ProjectContext context, Window window, ChangeStepBuilder change, int outer);
 
-	public abstract ObservableObjectValue<Image> getStateImage();
+  public abstract ObservableObjectValue<Image> getStateImage();
 
-	public abstract boolean duplicateFrame(
-			ProjectContext context, Window window, ChangeStepBuilder change, int outer
-	);
+  public abstract boolean duplicateFrame(
+      ProjectContext context, Window window, ChangeStepBuilder change, int outer);
 
-	public abstract WidgetHandle createRowWidget(ProjectContext context, Window window);
+  public abstract WidgetHandle createRowWidget(ProjectContext context, Window window);
 
-	/**
-	 * @param context
-	 * @param window
-	 * @return Maximum frame in this row
-	 */
-	public abstract int updateTime(ProjectContext context, Window window);
+  /**
+   * @param context
+   * @param window
+   * @return Maximum frame in this row
+   */
+  public abstract int updateTime(ProjectContext context, Window window);
 
-	public abstract void updateFrameMarker(ProjectContext context, Window window);
+  public abstract void updateFrameMarker(ProjectContext context, Window window);
 
-	public abstract void remove(ProjectContext context);
+  public abstract void remove(ProjectContext context);
 
-	public abstract boolean frameAt(Window window, int outer);
+  public abstract boolean frameAt(Window window, int outer);
 
-	/**
-	 * Only called if hasFrames (unique data for describing a change)
-	 * @return
-	 */
-	public abstract Object getData();
+  /**
+   * Only called if hasFrames (unique data for describing a change)
+   *
+   * @return
+   */
+  public abstract Object getData();
 }

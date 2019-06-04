@@ -6,6 +6,5 @@ import java.util.List;
 
 @Configuration
 public class TrueColorImageLayer extends ProjectLayer {
-	@Configuration
-	public List<TrueColorImageFrame> frames;
+  @Configuration public List<TrueColorImageFrame> frames;
 }

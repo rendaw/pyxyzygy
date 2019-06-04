@@ -6,9 +6,7 @@ import java.util.List;
 
 @Configuration
 public class Project extends ProjectObject {
-	@Configuration
-	public List<ProjectLayer> top;
+  @Configuration public List<ProjectLayer> top;
 
-	@Configuration
-	public List<Palette> palettes;
+  @Configuration public List<Palette> palettes;
 }

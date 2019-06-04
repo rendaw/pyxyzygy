@@ -372,7 +372,7 @@ public class Window {
                                                 t.contentProperty(),
                                                 new IndirectHalfBinder<
                                                     Bounds>( // Ignored but included to trigger
-                                                             // updates
+                                                    // updates
                                                     t.contentProperty(),
                                                     c ->
                                                         opt(

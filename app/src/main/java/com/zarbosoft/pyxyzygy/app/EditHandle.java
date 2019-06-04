@@ -1,44 +1,34 @@
 package com.zarbosoft.pyxyzygy.app;
 
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
-import javafx.beans.property.SimpleIntegerProperty;
-import javafx.scene.Node;
-
-import java.util.Optional;
 
 public abstract class EditHandle {
-	/**
-	 *
-	 * @param context
-	 * @param window
-	 * @param vector In flipped/zoomed coordinates relative to canvas global origin
-	 */
-	public abstract void cursorMoved(
-			ProjectContext context, Window window, DoubleVector vector
-	);
+  /**
+   * @param context
+   * @param window
+   * @param vector In flipped/zoomed coordinates relative to canvas global origin
+   */
+  public abstract void cursorMoved(ProjectContext context, Window window, DoubleVector vector);
 
-	public abstract Wrapper getWrapper();
+  public abstract Wrapper getWrapper();
 
-	public abstract void remove(ProjectContext context, Window window);
+  public abstract void remove(ProjectContext context, Window window);
 
-	/**
-	 *
-	 * @param context
-	 * @param window
-	 * @param start In flipped/zoomed coordinates relative to canvas global origin
-	 * @param end In flipped/zoomed coordinates relative to canvas global origin
-	 */
-	public abstract void mark(
-			ProjectContext context, Window window, DoubleVector start, DoubleVector end
-	);
+  /**
+   * @param context
+   * @param window
+   * @param start In flipped/zoomed coordinates relative to canvas global origin
+   * @param end In flipped/zoomed coordinates relative to canvas global origin
+   */
+  public abstract void mark(
+      ProjectContext context, Window window, DoubleVector start, DoubleVector end);
 
-	/**
-	 *
-	 * @param context
-	 * @param window
-	 * @param start In flipped/zoomed coordinates relative to canvas global origin
-	 */
-	public abstract void markStart(ProjectContext context, Window window, DoubleVector start);
+  /**
+   * @param context
+   * @param window
+   * @param start In flipped/zoomed coordinates relative to canvas global origin
+   */
+  public abstract void markStart(ProjectContext context, Window window, DoubleVector start);
 
-	public abstract CanvasHandle getCanvas();
+  public abstract CanvasHandle getCanvas();
 }

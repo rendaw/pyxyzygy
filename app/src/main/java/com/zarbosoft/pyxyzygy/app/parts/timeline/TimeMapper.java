@@ -5,12 +5,11 @@ import com.zarbosoft.pyxyzygy.app.FrameMapEntry;
 import java.util.List;
 
 public abstract class TimeMapper {
-	public List<FrameMapEntry> timeMap = null;
+  public List<FrameMapEntry> timeMap = null;
 
-	public void remove() {
-	}
+  public void remove() {}
 
-	public void updateTime(List<FrameMapEntry> timeMap) {
-		this.timeMap = timeMap;
-	}
+  public void updateTime(List<FrameMapEntry> timeMap) {
+    this.timeMap = timeMap;
+  }
 }

@@ -21,138 +21,137 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-class RowAdapterTrueColorImageNode extends BaseFrameRowAdapter<TrueColorImageLayer, TrueColorImageFrame> {
-	private final TrueColorImageLayer node;
+class RowAdapterTrueColorImageNode
+    extends BaseFrameRowAdapter<TrueColorImageLayer, TrueColorImageFrame> {
+  private final TrueColorImageLayer node;
 
-	public RowAdapterTrueColorImageNode(Timeline timeline, TrueColorImageLayer node) {
-		super(timeline);
-		this.node = node;
-	}
+  public RowAdapterTrueColorImageNode(Timeline timeline, TrueColorImageLayer node) {
+    super(timeline);
+    this.node = node;
+  }
 
-	@Override
-	public void remove(ProjectContext context) {
-	}
+  @Override
+  public void remove(ProjectContext context) {}
 
-	@Override
-	public ObservableValue<String> getName() {
-		return new SimpleStringProperty("Frames");
-	}
+  @Override
+  public ObservableValue<String> getName() {
+    return new SimpleStringProperty("Frames");
+  }
 
-	@Override
-	public WidgetHandle createRowWidget(ProjectContext context, Window window) {
-		return new WidgetHandle() {
-			private VBox layout;
-			private final Runnable framesCleanup;
-			private final List<Runnable> frameCleanup = new ArrayList<>();
+  @Override
+  public WidgetHandle createRowWidget(ProjectContext context, Window window) {
+    return new WidgetHandle() {
+      private VBox layout;
+      private final Runnable framesCleanup;
+      private final List<Runnable> frameCleanup = new ArrayList<>();
 
-			{
-				layout = new VBox();
-				row = Optional.of(new RowFramesWidget(window, timeline, RowAdapterTrueColorImageNode.this));
-				layout.getChildren().add(row.get());
+      {
+        layout = new VBox();
+        row = Optional.of(new RowFramesWidget(window, timeline, RowAdapterTrueColorImageNode.this));
+        layout.getChildren().add(row.get());
 
-				framesCleanup = node.mirrorFrames(frameCleanup, f -> {
-					Listener.ScalarSet<TrueColorImageFrame, Integer> lengthListener =
-							f.addLengthSetListeners((target, value) -> {
-								updateTime(context, window);
-							});
-					return () -> {
-						f.removeLengthSetListeners(lengthListener);
-					};
-				}, c -> c.run(), at -> {
-					updateTime(context, window);
-				});
-			}
+        framesCleanup =
+            node.mirrorFrames(
+                frameCleanup,
+                f -> {
+                  Listener.ScalarSet<TrueColorImageFrame, Integer> lengthListener =
+                      f.addLengthSetListeners(
+                          (target, value) -> {
+                            updateTime(context, window);
+                          });
+                  return () -> {
+                    f.removeLengthSetListeners(lengthListener);
+                  };
+                },
+                c -> c.run(),
+                at -> {
+                  updateTime(context, window);
+                });
+      }
 
-			@Override
-			public Node getWidget() {
-				return layout;
-			}
+      @Override
+      public Node getWidget() {
+        return layout;
+      }
 
-			@Override
-			public void remove() {
-				framesCleanup.run();
-				frameCleanup.forEach(c -> c.run());
-			}
-		};
-	}
+      @Override
+      public void remove() {
+        framesCleanup.run();
+        frameCleanup.forEach(c -> c.run());
+      }
+    };
+  }
 
-	@Override
-	protected TrueColorImageFrame innerCreateFrame(
-			ProjectContext context, TrueColorImageFrame previousFrame
-	) {
-		TrueColorImageFrame out = TrueColorImageFrame.create(context);
-		out.initialOffsetSet(context, Vector.ZERO);
-		return out;
-	}
+  @Override
+  protected TrueColorImageFrame innerCreateFrame(
+      ProjectContext context, TrueColorImageFrame previousFrame) {
+    TrueColorImageFrame out = TrueColorImageFrame.create(context);
+    out.initialOffsetSet(context, Vector.ZERO);
+    return out;
+  }
 
-	@Override
-	protected void addFrame(
-			ChangeStepBuilder change, int at, TrueColorImageFrame frame
-	) {
-		change.trueColorImageLayer(node).framesAdd(at, frame);
-	}
+  @Override
+  protected void addFrame(ChangeStepBuilder change, int at, TrueColorImageFrame frame) {
+    change.trueColorImageLayer(node).framesAdd(at, frame);
+  }
 
-	@Override
-	protected void setFrameLength(ChangeStepBuilder change, TrueColorImageFrame frame, int length) {
-		change.trueColorImageFrame(frame).lengthSet(length);
-	}
+  @Override
+  protected void setFrameLength(ChangeStepBuilder change, TrueColorImageFrame frame, int length) {
+    change.trueColorImageFrame(frame).lengthSet(length);
+  }
 
-	@Override
-	protected void setFrameInitialLength(
-			ProjectContext context, TrueColorImageFrame frame, int length
-	) {
-		frame.initialLengthSet(context, length);
-	}
+  @Override
+  protected void setFrameInitialLength(
+      ProjectContext context, TrueColorImageFrame frame, int length) {
+    frame.initialLengthSet(context, length);
+  }
 
-	@Override
-	protected int getFrameLength(TrueColorImageFrame frame) {
-		return frame.length();
-	}
+  @Override
+  protected int getFrameLength(TrueColorImageFrame frame) {
+    return frame.length();
+  }
 
-	@Override
-	protected void frameClear(
-			ChangeStepBuilder change, TrueColorImageFrame trueColorImageFrame
-	) {
-		change.trueColorImageFrame(trueColorImageFrame).tilesClear();
-	}
+  @Override
+  protected void frameClear(ChangeStepBuilder change, TrueColorImageFrame trueColorImageFrame) {
+    change.trueColorImageFrame(trueColorImageFrame).tilesClear();
+  }
 
-	@Override
-	protected int frameCount() {
-		return node.framesLength();
-	}
+  @Override
+  protected int frameCount() {
+    return node.framesLength();
+  }
 
-	@Override
-	protected void removeFrame(ChangeStepBuilder change, int at, int count) {
-		change.trueColorImageLayer(node).framesRemove(at, count);
-	}
+  @Override
+  protected void removeFrame(ChangeStepBuilder change, int at, int count) {
+    change.trueColorImageLayer(node).framesRemove(at, count);
+  }
 
-	@Override
-	protected void moveFramesTo(ChangeStepBuilder change, int source, int count, int dest) {
-		change.trueColorImageLayer(node).framesMoveTo(source, count, dest);
-	}
+  @Override
+  protected void moveFramesTo(ChangeStepBuilder change, int source, int count, int dest) {
+    change.trueColorImageLayer(node).framesMoveTo(source, count, dest);
+  }
 
-	@Override
-	public FrameFinder<TrueColorImageLayer, TrueColorImageFrame> getFrameFinder() {
-		return TrueColorImageNodeWrapper.frameFinder;
-	}
+  @Override
+  public FrameFinder<TrueColorImageLayer, TrueColorImageFrame> getFrameFinder() {
+    return TrueColorImageNodeWrapper.frameFinder;
+  }
 
-	@Override
-	protected TrueColorImageFrame innerDuplicateFrame(
-			ProjectContext context, TrueColorImageFrame source
-	) {
-		TrueColorImageFrame created = TrueColorImageFrame.create(context);
-		created.initialOffsetSet(context, source.offset());
-		created.initialTilesPutAll(context, source.tiles());
-		return created;
-	}
+  @Override
+  protected TrueColorImageFrame innerDuplicateFrame(
+      ProjectContext context, TrueColorImageFrame source) {
+    TrueColorImageFrame created = TrueColorImageFrame.create(context);
+    created.initialOffsetSet(context, source.offset());
+    created.initialTilesPutAll(context, source.tiles());
+    return created;
+  }
 
-	@Override
-	protected TrueColorImageLayer getNode() {
-		return node;
-	}
+  @Override
+  protected TrueColorImageLayer getNode() {
+    return node;
+  }
 
-	@Override
-	public ObservableObjectValue<Image> getStateImage() {
-		return Timeline.emptyStateImage;
-	}
+  @Override
+  public ObservableObjectValue<Image> getStateImage() {
+    return Timeline.emptyStateImage;
+  }
 }

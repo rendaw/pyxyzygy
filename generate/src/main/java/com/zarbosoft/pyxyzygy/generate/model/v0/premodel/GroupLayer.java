@@ -6,6 +6,5 @@ import java.util.List;
 
 @Configuration
 public class GroupLayer extends ProjectLayer {
-	@Configuration
-	public List<GroupChild> children;
+  @Configuration public List<GroupChild> children;
 }
