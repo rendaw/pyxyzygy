@@ -718,79 +718,90 @@ public class GUILaunch extends Application {
 
   public static void newProject(Stage primaryStage, Path path, CreateMode createMode) {
     profileConfig.lastDir = path.getParent().toString();
-    ProjectContext context = Global.create(path, createMode.tileSize());
-    context.config.defaultZoom = createMode.defaultZoom();
+    new Window()
+        .start(
+            Global.create(
+                path,
+                createMode.tileSize(),
+                context -> {
+                  GroupChild groupChild = GroupChild.create(context);
+                  groupChild.initialOpacitySet(context, opacityMax);
+                  groupChild.initialEnabledSet(context, true);
 
-    GroupChild groupChild = GroupChild.create(context);
-    groupChild.initialOpacitySet(context, opacityMax);
-    groupChild.initialEnabledSet(context, true);
+                  GroupPositionFrame groupPositionFrame = GroupPositionFrame.create(context);
+                  groupPositionFrame.initialLengthSet(context, NO_LENGTH);
+                  groupPositionFrame.initialOffsetSet(context, Vector.ZERO);
+                  groupChild.initialPositionFramesAdd(
+                      context, ImmutableList.of(groupPositionFrame));
 
-    GroupPositionFrame groupPositionFrame = GroupPositionFrame.create(context);
-    groupPositionFrame.initialLengthSet(context, NO_LENGTH);
-    groupPositionFrame.initialOffsetSet(context, Vector.ZERO);
-    groupChild.initialPositionFramesAdd(context, ImmutableList.of(groupPositionFrame));
+                  GroupTimeFrame groupTimeFrame = GroupTimeFrame.create(context);
+                  groupTimeFrame.initialLengthSet(context, NO_LENGTH);
+                  groupTimeFrame.initialInnerOffsetSet(context, 0);
+                  groupTimeFrame.initialInnerLoopSet(context, NO_LOOP);
+                  groupChild.initialTimeFramesAdd(context, ImmutableList.of(groupTimeFrame));
 
-    GroupTimeFrame groupTimeFrame = GroupTimeFrame.create(context);
-    groupTimeFrame.initialLengthSet(context, NO_LENGTH);
-    groupTimeFrame.initialInnerOffsetSet(context, 0);
-    groupTimeFrame.initialInnerLoopSet(context, NO_LOOP);
-    groupChild.initialTimeFramesAdd(context, ImmutableList.of(groupTimeFrame));
+                  switch (createMode) {
+                    case normal:
+                      {
+                        TrueColorImageLayer trueColorImageNode =
+                            TrueColorImageLayer.create(context);
+                        trueColorImageNode.initialNameSet(
+                            context, context.namer.uniqueName(Global.trueColorLayerName));
+                        trueColorImageNode.initialOffsetSet(context, Vector.ZERO);
+                        TrueColorImageFrame trueColorImageFrame =
+                            TrueColorImageFrame.create(context);
+                        trueColorImageFrame.initialLengthSet(context, -1);
+                        trueColorImageFrame.initialOffsetSet(context, Vector.ZERO);
+                        trueColorImageNode.initialFramesAdd(
+                            context, ImmutableList.of(trueColorImageFrame));
+                        groupChild.initialInnerSet(context, trueColorImageNode);
+                        break;
+                      }
+                    case pixel:
+                      {
+                        Palette palette = Palette.create(context);
+                        palette.initialNameSet(
+                            context, context.namer.uniqueName(Global.paletteName));
+                        palette.initialNextIdSet(context, 2);
+                        PaletteColor transparent = PaletteColor.create(context);
+                        transparent.initialIndexSet(context, 0);
+                        transparent.initialColorSet(context, TrueColor.fromJfx(Color.TRANSPARENT));
+                        PaletteColor black = PaletteColor.create(context);
+                        black.initialIndexSet(context, 1);
+                        black.initialColorSet(context, TrueColor.fromJfx(Color.BLACK));
+                        palette.initialEntriesAdd(context, ImmutableList.of(transparent, black));
+                        context.project.initialPalettesAdd(context, ImmutableList.of(palette));
 
-    switch (createMode) {
-      case normal:
-        {
-          TrueColorImageLayer trueColorImageNode = TrueColorImageLayer.create(context);
-          trueColorImageNode.initialNameSet(
-              context, context.namer.uniqueName(Global.trueColorLayerName));
-          trueColorImageNode.initialOffsetSet(context, Vector.ZERO);
-          TrueColorImageFrame trueColorImageFrame = TrueColorImageFrame.create(context);
-          trueColorImageFrame.initialLengthSet(context, -1);
-          trueColorImageFrame.initialOffsetSet(context, Vector.ZERO);
-          trueColorImageNode.initialFramesAdd(context, ImmutableList.of(trueColorImageFrame));
-          groupChild.initialInnerSet(context, trueColorImageNode);
-          break;
-        }
-      case pixel:
-        {
-          Palette palette = Palette.create(context);
-          palette.initialNameSet(context, context.namer.uniqueName(Global.paletteName));
-          palette.initialNextIdSet(context, 2);
-          PaletteColor transparent = PaletteColor.create(context);
-          transparent.initialIndexSet(context, 0);
-          transparent.initialColorSet(context, TrueColor.fromJfx(Color.TRANSPARENT));
-          PaletteColor black = PaletteColor.create(context);
-          black.initialIndexSet(context, 1);
-          black.initialColorSet(context, TrueColor.fromJfx(Color.BLACK));
-          palette.initialEntriesAdd(context, ImmutableList.of(transparent, black));
-          context.project.initialPalettesAdd(context, ImmutableList.of(palette));
+                        PaletteImageLayer paletteImageNode = PaletteImageLayer.create(context);
+                        paletteImageNode.initialPaletteSet(context, palette);
+                        paletteImageNode.initialNameSet(
+                            context, context.namer.uniqueName(Global.paletteLayerName));
+                        paletteImageNode.initialOffsetSet(context, Vector.ZERO);
+                        PaletteImageFrame paletteImageFrame = PaletteImageFrame.create(context);
+                        paletteImageFrame.initialLengthSet(context, -1);
+                        paletteImageFrame.initialOffsetSet(context, Vector.ZERO);
+                        paletteImageNode.initialFramesAdd(
+                            context, ImmutableList.of(paletteImageFrame));
+                        groupChild.initialInnerSet(context, paletteImageNode);
+                        break;
+                      }
+                    default:
+                      throw new Assertion();
+                  }
 
-          PaletteImageLayer paletteImageNode = PaletteImageLayer.create(context);
-          paletteImageNode.initialPaletteSet(context, palette);
-          paletteImageNode.initialNameSet(
-              context, context.namer.uniqueName(Global.paletteLayerName));
-          paletteImageNode.initialOffsetSet(context, Vector.ZERO);
-          PaletteImageFrame paletteImageFrame = PaletteImageFrame.create(context);
-          paletteImageFrame.initialLengthSet(context, -1);
-          paletteImageFrame.initialOffsetSet(context, Vector.ZERO);
-          paletteImageNode.initialFramesAdd(context, ImmutableList.of(paletteImageFrame));
-          groupChild.initialInnerSet(context, paletteImageNode);
-          break;
-        }
-      default:
-        throw new Assertion();
-    }
+                  GroupLayer groupNode = GroupLayer.create(context);
+                  groupNode.initialNameSet(context, context.namer.uniqueName(groupLayerName));
+                  groupNode.initialOffsetSet(context, Vector.ZERO);
+                  groupNode.initialChildrenAdd(context, ImmutableList.of(groupChild));
 
-    GroupLayer groupNode = GroupLayer.create(context);
-    groupNode.initialNameSet(context, context.namer.uniqueName(groupLayerName));
-    groupNode.initialOffsetSet(context, Vector.ZERO);
-    groupNode.initialChildrenAdd(context, ImmutableList.of(groupChild));
+                  context.project.initialTopAdd(context, ImmutableList.of(groupNode));
 
-    context.change(null, c -> c.project(context.project).topAdd(groupNode));
-
-    context.config.viewPath = ImmutableList.of(0);
-    context.config.editPath = ImmutableList.of(0, 0);
-
-    new Window().start(context, primaryStage, true);
+                  context.config.defaultZoom = createMode.defaultZoom();
+                  context.config.viewPath = ImmutableList.of(0);
+                  context.config.editPath = ImmutableList.of(0, 0);
+                }),
+            primaryStage,
+            true);
   }
 
   public static void openProject(Stage primaryStage, Path path) {

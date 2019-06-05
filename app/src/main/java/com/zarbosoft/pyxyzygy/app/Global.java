@@ -18,6 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 
@@ -57,13 +58,16 @@ public class Global {
     Platform.exit();
   }
 
-  public static ProjectContext create(Path path, int tileSize) {
+  public static ProjectContext create(
+      Path path, int tileSize, Consumer<ProjectContext> initialize) {
     ProjectContext out = new ProjectContext(path);
-    out.tileSize = tileSize;
-    out.project = Project.create(out);
     out.history = new History(out, ImmutableList.of(), ImmutableList.of(), null);
     out.hotkeys = new Hotkeys();
     out.initConfig();
+    out.tileSize = tileSize;
+    out.project = Project.create(out);
+    initialize.accept(out);
+    out.project.incRef(out); // Never delete project
     return out;
   }
 

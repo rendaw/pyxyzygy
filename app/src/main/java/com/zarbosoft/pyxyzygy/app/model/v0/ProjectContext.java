@@ -245,6 +245,7 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
 
     // Check reference counts
     Map<Long, Long> counts = new HashMap<>();
+    counts.put(project.id(), 1L); // Project must never be deleted
     Consumer<ProjectObjectInterface> incCount =
         o -> counts.compute(o.id(), (i, count) -> count == null ? 1 : count + 1);
     objectMap.values().forEach(o -> dispatchRefs.accept(o, incCount));
