@@ -13,12 +13,14 @@ import com.zarbosoft.rendaw.common.WeakCache;
 
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import static com.zarbosoft.pyxyzygy.app.Global.logger;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 
 public class History {
@@ -86,38 +88,54 @@ public class History {
     context.setDirty(changeStep);
   }
 
-  public ChangeStep get(ChangeStep.CacheId id) {
-    return stepLookup.getOrCreate(
-        id,
-        id1 ->
-            uncheck(
-                () -> {
-                  try (InputStream source =
-                      Files.newInputStream(ChangeStep.path(context, id1.id))) {
-                    ChangeDeserializationContext deserializationContext =
-                        new ChangeDeserializationContext();
-                    deserializationContext.objectMap = context.objectMap;
-                    ChangeStep out = new ChangeStep(id1);
-                    out.changes =
-                        new StackReader()
-                            .read(
-                                source,
-                                new StackReader.ArrayState() {
-                                  @Override
-                                  public void value(Object value) {
-                                    if (!(value instanceof Change)) throw new Assertion();
-                                    data.add(value);
-                                  }
+  public ChangeStep getNullable(ChangeStep.CacheId id) {
+    return get(id, true);
+  }
 
-                                  @Override
-                                  public StackReader.State record() {
-                                    return DeserializeHelper.deserializeChange(
-                                        deserializationContext, type);
-                                  }
-                                });
-                    return out;
-                  }
-                }));
+  public ChangeStep get(ChangeStep.CacheId id) {
+    return get(id, false);
+  }
+
+  public ChangeStep get(ChangeStep.CacheId id, boolean nullable) {
+    Path path = ChangeStep.path(context, id.id);
+    try {
+      return stepLookup.getOrCreate(
+          id,
+          id1 ->
+              uncheck(
+                  () -> {
+                    try (InputStream source = Files.newInputStream(path)) {
+                      ChangeDeserializationContext deserializationContext =
+                          new ChangeDeserializationContext();
+                      deserializationContext.objectMap = context.objectMap;
+                      ChangeStep out = new ChangeStep(id1);
+                      out.changes =
+                          new StackReader()
+                              .read(
+                                  source,
+                                  new StackReader.ArrayState() {
+                                    @Override
+                                    public void value(Object value) {
+                                      if (!(value instanceof Change)) throw new Assertion();
+                                      data.add(value);
+                                    }
+
+                                    @Override
+                                    public StackReader.State record() {
+                                      return DeserializeHelper.deserializeChange(
+                                          deserializationContext, type);
+                                    }
+                                  });
+                      return out;
+                    }
+                  }));
+    } catch (Exception e) {
+      if (nullable) {
+        logger.writeException(e, "Failed to deserialize change %s", path);
+        return null;
+      }
+      throw e;
+    }
   }
 
   private void clearRedo() {

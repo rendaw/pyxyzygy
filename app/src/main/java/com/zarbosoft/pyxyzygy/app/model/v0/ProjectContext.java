@@ -11,6 +11,7 @@ import com.zarbosoft.pyxyzygy.app.widgets.binding.SimpleBinderRoot;
 import com.zarbosoft.pyxyzygy.core.PaletteColors;
 import com.zarbosoft.pyxyzygy.core.model.v0.*;
 import com.zarbosoft.pyxyzygy.seed.deserialize.ModelDeserializationContext;
+import com.zarbosoft.pyxyzygy.seed.model.ChangeStep;
 import com.zarbosoft.pyxyzygy.seed.model.Dirtyable;
 import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.pyxyzygy.seed.model.v0.ProjectContextBase;
@@ -34,6 +35,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.zarbosoft.pyxyzygy.app.Global.logger;
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
@@ -205,7 +207,15 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
         });
   }
 
+  public void debugCheckRefsFix() {
+    debugCheckRefs(true);
+  }
+
   public void debugCheckRefs() {
+    debugCheckRefs(false);
+  }
+
+  public void debugCheckRefs(boolean fix) {
     BiConsumer<ProjectObjectInterface, Consumer<ProjectObjectInterface>> dispatchRefs =
         (o, consumer) -> {
           if (false) {
@@ -250,10 +260,24 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
         o -> counts.compute(o.id(), (i, count) -> count == null ? 1 : count + 1);
     objectMap.values().forEach(o -> dispatchRefs.accept(o, incCount));
     history.changeStep.changes.forEach(change -> change.debugRefCounts(incCount));
-    history.undoHistory.forEach(
-        id -> history.get(id).changes.forEach(change -> change.debugRefCounts(incCount)));
-    history.redoHistory.forEach(
-        id -> history.get(id).changes.forEach(change -> change.debugRefCounts(incCount)));
+      for (Iterator<ChangeStep.CacheId> i = history.undoHistory.iterator(); i.hasNext();) {
+        ChangeStep.CacheId id = i.next();
+        ChangeStep step = history.get(id, fix);
+        if (step == null) {
+          i.remove();
+          continue;
+        }
+        step.changes.forEach(change -> change.debugRefCounts(incCount));
+      }
+    for (Iterator<ChangeStep.CacheId> i = history.redoHistory.iterator(); i.hasNext();) {
+      ChangeStep.CacheId id = i.next();
+      ChangeStep step = history.get(id, fix);
+      if (step == null) {
+        i.remove();
+        continue;
+      }
+      step.changes.forEach(change -> change.debugRefCounts(incCount));
+    }
     objectMap
         .values()
         .forEach(
@@ -261,23 +285,37 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
               long got = ((ProjectObject) o).refCount();
               long expected = counts.getOrDefault(o.id(), 0L);
               if (got != expected) {
-                throw new Assertion(
+                String error =
                     String.format(
-                        "Ref count for %s id %s : %s should be %s", o, o.id(), got, expected));
+                        "Ref count for %s id %s : %s should be %s", o, o.id(), got, expected);
+                if (fix) {
+                  logger.write(error);
+                } else {
+                  throw new Assertion(error);
+                }
               }
             });
 
     // Check rootedness
-    Consumer<ProjectObjectInterface> walk =
-        new Consumer<ProjectObjectInterface>() {
-          @Override
-          public void accept(ProjectObjectInterface o) {
-            if (!objectMap.containsKey(o.id()))
-              throw new Assertion(String.format("%s (id %s) missing from object map", o, o.id()));
-            dispatchRefs.accept(o, this);
+    new Consumer<ProjectObjectInterface>() {
+      {
+        accept(project);
+      }
+
+      @Override
+      public void accept(ProjectObjectInterface o) {
+        if (!objectMap.containsKey(o.id())) {
+          String error = String.format("%s (id %s) missing from object map", o, o.id());
+          if (fix) {
+            objectMap.put(o.id(), o);
+            logger.write(error);
+          } else {
+            throw new Assertion(error);
           }
-        };
-    walk.accept(project);
+        }
+        dispatchRefs.accept(o, this);
+      }
+    };
   }
 
   // Config flushing

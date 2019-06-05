@@ -131,7 +131,7 @@ public class Global {
               new History(out, context.undoHistory, context.redoHistory, context.activeChange);
           out.hotkeys = new Hotkeys();
           out.initConfig();
-          out.debugCheckRefs();
+          out.debugCheckRefsFix();
           context
               .objectMap
               .values()
