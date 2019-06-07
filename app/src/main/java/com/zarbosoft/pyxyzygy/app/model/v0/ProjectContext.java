@@ -1,5 +1,6 @@
 package com.zarbosoft.pyxyzygy.app.model.v0;
 
+import com.google.common.collect.ImmutableList;
 import com.zarbosoft.interface1.TypeInfo;
 import com.zarbosoft.luxem.read.StackReader;
 import com.zarbosoft.luxem.write.RawWriter;
@@ -34,8 +35,8 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.zarbosoft.pyxyzygy.app.Global.logger;
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
@@ -207,115 +208,166 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
         });
   }
 
-  public void debugCheckRefsFix() {
-    debugCheckRefs(true);
+  public boolean debugCheckRefsFix() {
+    return debugCheckRefs(true);
   }
 
   public void debugCheckRefs() {
     debugCheckRefs(false);
   }
 
-  public void debugCheckRefs(boolean fix) {
-    BiConsumer<ProjectObjectInterface, Consumer<ProjectObjectInterface>> dispatchRefs =
-        (o, consumer) -> {
-          if (false) {
-            throw new Assertion();
-          } else if (o instanceof Project) {
-            ((Project) o).palettes().forEach(consumer);
-            ((Project) o).top().forEach(consumer);
-          } else if (o instanceof GroupChild) {
-            if (((GroupChild) o).inner() != null) {
-              consumer.accept(((GroupChild) o).inner());
+  public boolean debugCheckRefs(boolean fix) {
+    Common.Mutable<Boolean> hadErrors = new Common.Mutable<>(false);
+    BiConsumer<ProjectObjectInterface, Function<ProjectObjectInterface, Boolean>> walkTree =
+        (ProjectObjectInterface o0, Function<ProjectObjectInterface, Boolean> consumer) -> {
+          Deque<Iterator<? extends ProjectObjectInterface>> d = new ArrayDeque<>();
+          d.addLast(ImmutableList.of(o0).iterator());
+          while (!d.isEmpty()) {
+            Iterator<? extends ProjectObjectInterface> iter = d.getFirst();
+            if (!iter.hasNext()) {
+              d.removeFirst();
+              continue;
             }
-            ((GroupChild) o).timeFrames().forEach(consumer);
-            ((GroupChild) o).positionFrames().forEach(consumer);
-          } else if (o instanceof GroupLayer) {
-            ((GroupLayer) o).children().forEach(consumer);
-          } else if (o instanceof GroupPositionFrame) {
-          } else if (o instanceof GroupTimeFrame) {
-          } else if (o instanceof TrueColorImageFrame) {
-            ((TrueColorImageFrame) o).tiles().values().forEach(consumer);
-          } else if (o instanceof TrueColorImageLayer) {
-            ((TrueColorImageLayer) o).frames().forEach(consumer);
-          } else if (o instanceof TrueColorTileBase) {
-          } else if (o instanceof PaletteImageFrame) {
-            ((PaletteImageFrame) o).tiles().values().forEach(consumer);
-          } else if (o instanceof PaletteImageLayer) {
-            consumer.accept(((PaletteImageLayer) o).palette());
-            ((PaletteImageLayer) o).frames().forEach(consumer);
-          } else if (o instanceof PaletteTileBase) {
-          } else if (o instanceof Palette) {
-            ((Palette) o).entries().forEach(consumer);
-          } else if (o instanceof PaletteColor) {
-          } else if (o instanceof PaletteSeparator) {
-          } else {
-            throw new Assertion(String.format("Unhandled type %s", o.getClass()));
+            ProjectObjectInterface o = iter.next();
+            boolean recurse = consumer.apply(o);
+            if (!recurse) continue;
+            if (false) {
+              throw new Assertion();
+            } else if (o instanceof Project) {
+              d.addLast(((Project) o).palettes().iterator());
+              d.addLast(((Project) o).top().iterator());
+            } else if (o instanceof GroupChild) {
+              if (((GroupChild) o).inner() != null) {
+                d.addLast(ImmutableList.of(((GroupChild) o).inner()).iterator());
+              }
+              d.addLast(((GroupChild) o).timeFrames().iterator());
+              d.addLast(((GroupChild) o).positionFrames().iterator());
+            } else if (o instanceof GroupLayer) {
+              d.addLast(((GroupLayer) o).children().iterator());
+            } else if (o instanceof GroupPositionFrame) {
+            } else if (o instanceof GroupTimeFrame) {
+            } else if (o instanceof TrueColorImageFrame) {
+              d.addLast(((TrueColorImageFrame) o).tiles().values().iterator());
+            } else if (o instanceof TrueColorImageLayer) {
+              d.addLast(((TrueColorImageLayer) o).frames().iterator());
+            } else if (o instanceof TrueColorTileBase) {
+            } else if (o instanceof PaletteImageFrame) {
+              d.addLast(((PaletteImageFrame) o).tiles().values().iterator());
+            } else if (o instanceof PaletteImageLayer) {
+              d.addLast(ImmutableList.of(((PaletteImageLayer) o).palette()).iterator());
+              d.addLast(((PaletteImageLayer) o).frames().iterator());
+            } else if (o instanceof PaletteTileBase) {
+            } else if (o instanceof Palette) {
+              d.addLast(((Palette) o).entries().iterator());
+            } else if (o instanceof PaletteColor) {
+            } else if (o instanceof PaletteSeparator) {
+            } else {
+              throw new Assertion(String.format("Unhandled type %s", o.getClass()));
+            }
           }
         };
 
     // Check reference counts
     Map<Long, Long> counts = new HashMap<>();
-    counts.put(project.id(), 1L); // Project must never be deleted
-    Consumer<ProjectObjectInterface> incCount =
-        o -> counts.compute(o.id(), (i, count) -> count == null ? 1 : count + 1);
-    objectMap.values().forEach(o -> dispatchRefs.accept(o, incCount));
-    history.changeStep.changes.forEach(change -> change.debugRefCounts(incCount));
-      for (Iterator<ChangeStep.CacheId> i = history.undoHistory.iterator(); i.hasNext();) {
-        ChangeStep.CacheId id = i.next();
-        ChangeStep step = history.get(id, fix);
-        if (step == null) {
-          i.remove();
-          continue;
-        }
-        step.changes.forEach(change -> change.debugRefCounts(incCount));
-      }
-    for (Iterator<ChangeStep.CacheId> i = history.redoHistory.iterator(); i.hasNext();) {
+    Function<ProjectObjectInterface, Boolean> incCount =
+        o -> {
+          Long count = counts.get(o.id());
+          if (count != null) {
+            counts.put(o.id(), count + 1);
+            return false;
+          }
+          counts.put(o.id(), 1L);
+          return true;
+        };
+    walkTree.accept(project, incCount);
+    history.changeStep.changes.forEach(change -> change.debugRefCounts(c -> incCount.apply(c)));
+    for (Iterator<ChangeStep.CacheId> i = history.undoHistory.iterator(); i.hasNext(); ) {
       ChangeStep.CacheId id = i.next();
       ChangeStep step = history.get(id, fix);
       if (step == null) {
         i.remove();
         continue;
       }
-      step.changes.forEach(change -> change.debugRefCounts(incCount));
+      step.changes.forEach(change -> change.debugRefCounts(c -> incCount.apply(c)));
     }
-    objectMap
-        .values()
-        .forEach(
-            o -> {
-              long got = ((ProjectObject) o).refCount();
-              long expected = counts.getOrDefault(o.id(), 0L);
-              if (got != expected) {
-                String error =
-                    String.format(
-                        "Ref count for %s id %s : %s should be %s", o, o.id(), got, expected);
-                if (fix) {
-                  logger.write(error);
-                } else {
-                  throw new Assertion(error);
-                }
-              }
-            });
-
-    // Check rootedness
-    new Consumer<ProjectObjectInterface>() {
-      {
-        accept(project);
+    for (Iterator<ChangeStep.CacheId> i = history.redoHistory.iterator(); i.hasNext(); ) {
+      ChangeStep.CacheId id = i.next();
+      ChangeStep step = history.get(id, fix);
+      if (step == null) {
+        i.remove();
+        continue;
       }
-
-      @Override
-      public void accept(ProjectObjectInterface o) {
-        if (!objectMap.containsKey(o.id())) {
-          String error = String.format("%s (id %s) missing from object map", o, o.id());
+      step.changes.forEach(change -> change.debugRefCounts(c -> incCount.apply(c)));
+    }
+    {
+      // If fixing ref counts, start at root and move to leaves - leaves never modify other counts
+      // but if a leaf is decremented first and reaches 0, it will go negative if/when parents dec
+      // and also reach 0
+      List<ProjectObjectInterface> treeSorted = new ArrayList<>();
+      walkTree.accept(
+          project,
+          o -> {
+            treeSorted.add(o);
+            return true;
+          });
+      {
+        Collections.reverse(treeSorted);
+        Set<Long> seen = new HashSet<>();
+        for (Iterator<ProjectObjectInterface> iter = treeSorted.iterator(); iter.hasNext(); ) {
+          ProjectObjectInterface o = iter.next();
+          if (seen.contains(o.id())) iter.remove();
+          seen.add(o.id());
+        }
+        Collections.reverse(treeSorted);
+      }
+      for (ProjectObjectInterface o : treeSorted) {
+        long got = ((ProjectObject) o).refCount();
+        long expected = counts.getOrDefault(o.id(), 0L);
+        if (got != expected) {
+          hadErrors.value = true;
+          String error =
+              String.format("Ref count for %s id %s : %s should be %s", o, o.id(), got, expected);
           if (fix) {
-            objectMap.put(o.id(), o);
             logger.write(error);
+            long diff = expected - got;
+            if (diff >= 0)
+              for (long i = 0; i < diff; ++i) {
+                o.incRef(this);
+              }
+            else
+              for (long i = 0; i < -diff; ++i) {
+                o.decRef(this);
+              }
           } else {
             throw new Assertion(error);
           }
         }
-        dispatchRefs.accept(o, this);
       }
-    };
+    }
+
+    // Check rootedness
+    {
+      Set<Long> seen = new HashSet<>();
+      walkTree.accept(
+          project,
+          (ProjectObjectInterface o) -> {
+            if (!objectMap.containsKey(o.id())) {
+              hadErrors.value = true;
+              String error = String.format("%s (id %s) missing from object map", o, o.id());
+              if (fix) {
+                objectMap.put(o.id(), o);
+                logger.write(error);
+              } else {
+                throw new Assertion(error);
+              }
+            }
+            if (seen.contains(o.id())) return false;
+            seen.add(o.id());
+            return true;
+          });
+    }
+
+    return hadErrors.value;
   }
 
   // Config flushing

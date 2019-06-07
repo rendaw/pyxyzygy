@@ -35,10 +35,13 @@ public class History {
   public History(
       ProjectContext context, List<Long> undoHistory, List<Long> redoHistory, Long activeChange) {
     this.context = context;
-    changeStep =
-        activeChange == null
-            ? new ChangeStep(new ChangeStep.CacheId(context.nextId++))
-            : get(new ChangeStep.CacheId(activeChange));
+    if (activeChange == null) {
+      changeStep = new ChangeStep(new ChangeStep.CacheId(context.nextId++));
+    } else {
+      changeStep = getNullable(new ChangeStep.CacheId(activeChange));
+      if (changeStep == null)
+        changeStep = new ChangeStep(new ChangeStep.CacheId(context.nextId++));
+    }
     this.undoHistory =
         undoHistory.stream()
             .map(i -> new ChangeStep.CacheId(i))

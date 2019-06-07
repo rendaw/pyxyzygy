@@ -11,7 +11,10 @@ import com.zarbosoft.pyxyzygy.core.model.v0.ProjectLayer;
 import com.zarbosoft.pyxyzygy.seed.deserialize.ModelDeserializationContext;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import javafx.application.Platform;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import javafx.scene.input.KeyCode;
+import javafx.scene.layout.Region;
 
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -131,7 +134,19 @@ public class Global {
               new History(out, context.undoHistory, context.redoHistory, context.activeChange);
           out.hotkeys = new Hotkeys();
           out.initConfig();
-          out.debugCheckRefsFix();
+          boolean fixed = out.debugCheckRefsFix();
+          if (fixed) {
+            Alert alert =
+                new Alert(
+                    Alert.AlertType.ERROR,
+                    String.format("There were one or more errors while opening the project.\n\n%s attempted to fix them but in case it did so incorrectly we recommend you back up the project and re-open it.", nameHuman),
+                    ButtonType.OK);
+            alert.setTitle(String.format("%s - error", Global.nameHuman));
+            alert.setHeaderText("Error opening project");
+            alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
+            alert.showAndWait();
+          }
+          out.debugCheckRefs();
           context
               .objectMap
               .values()
