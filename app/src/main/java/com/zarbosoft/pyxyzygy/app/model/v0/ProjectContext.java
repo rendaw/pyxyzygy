@@ -266,8 +266,34 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
             }
           }
         };
+    Consumer<Function<ProjectObjectInterface, Boolean>> walkAll =
+        consumer -> {
+          walkTree.accept(project, consumer);
+          history.changeStep.changes.forEach(
+              change -> change.debugRefCounts(c -> walkTree.accept(c, consumer)));
+          for (Iterator<ChangeStep.CacheId> i = history.undoHistory.iterator(); i.hasNext(); ) {
+            ChangeStep.CacheId id = i.next();
+            ChangeStep step = history.get(id, fix);
+            if (step == null) {
+              i.remove();
+              continue;
+            }
+            step.changes.forEach(
+                change -> change.debugRefCounts(c -> walkTree.accept(c, consumer)));
+          }
+          for (Iterator<ChangeStep.CacheId> i = history.redoHistory.iterator(); i.hasNext(); ) {
+            ChangeStep.CacheId id = i.next();
+            ChangeStep step = history.get(id, fix);
+            if (step == null) {
+              i.remove();
+              continue;
+            }
+            step.changes.forEach(
+                change -> change.debugRefCounts(c -> walkTree.accept(c, consumer)));
+          }
+        };
 
-    // Check reference counts
+    // Sum expected reference counts
     Map<Long, Long> counts = new HashMap<>();
     Function<ProjectObjectInterface, Boolean> incCount =
         o -> {
@@ -279,37 +305,23 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
           counts.put(o.id(), 1L);
           return true;
         };
-    walkTree.accept(project, incCount);
-    history.changeStep.changes.forEach(change -> change.debugRefCounts(c -> incCount.apply(c)));
-    for (Iterator<ChangeStep.CacheId> i = history.undoHistory.iterator(); i.hasNext(); ) {
-      ChangeStep.CacheId id = i.next();
-      ChangeStep step = history.get(id, fix);
-      if (step == null) {
-        i.remove();
-        continue;
-      }
-      step.changes.forEach(change -> change.debugRefCounts(c -> incCount.apply(c)));
-    }
-    for (Iterator<ChangeStep.CacheId> i = history.redoHistory.iterator(); i.hasNext(); ) {
-      ChangeStep.CacheId id = i.next();
-      ChangeStep step = history.get(id, fix);
-      if (step == null) {
-        i.remove();
-        continue;
-      }
-      step.changes.forEach(change -> change.debugRefCounts(c -> incCount.apply(c)));
-    }
+    walkAll.accept(incCount);
+
+    // Compare (and fix) actual reference counts
     {
       // If fixing ref counts, start at root and move to leaves - leaves never modify other counts
       // but if a leaf is decremented first and reaches 0, it will go negative if/when parents dec
       // and also reach 0
-      List<ProjectObjectInterface> treeSorted = new ArrayList<>();
+      LinkedHashMap<ProjectObjectInterface, Void> treeSorted0 =
+          new LinkedHashMap<>(objectMap.size());
       walkTree.accept(
           project,
           o -> {
-            treeSorted.add(o);
+            treeSorted0.remove(o);
+            treeSorted0.put(o, null);
             return true;
           });
+      List<ProjectObjectInterface> treeSorted = new ArrayList<>(treeSorted0.keySet());
       {
         Collections.reverse(treeSorted);
         Set<Long> seen = new HashSet<>();
@@ -348,8 +360,7 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
     // Check rootedness
     {
       Set<Long> seen = new HashSet<>();
-      walkTree.accept(
-          project,
+      walkAll.accept(
           (ProjectObjectInterface o) -> {
             if (!objectMap.containsKey(o.id())) {
               hadErrors.value = true;
