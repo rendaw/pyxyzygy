@@ -40,7 +40,6 @@ import javafx.scene.control.*;
 import javafx.scene.effect.BlendMode;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
@@ -110,7 +109,7 @@ public class Timeline {
   private final SimpleIntegerProperty requestedMaxFrame = new SimpleIntegerProperty();
   private final SimpleIntegerProperty calculatedMaxFrame = new SimpleIntegerProperty();
   private final SimpleIntegerProperty useMaxFrame = new SimpleIntegerProperty();
-  final SimpleIntegerProperty frame = new SimpleIntegerProperty();
+  public final SimpleIntegerProperty frame = new SimpleIntegerProperty();
   public final SimpleBooleanProperty playingProperty = new SimpleBooleanProperty(false);
   public PlayThread playThread;
   public BiMap<TreeItem<RowAdapter>, GroupChild> groupTreeItemLookup = HashBiMap.create();
@@ -136,39 +135,6 @@ public class Timeline {
   public Timeline(ProjectContext context, Window window) {
     this.context = context;
     this.window = window;
-
-    Stream.of(
-            new Hotkeys.Action(
-                Hotkeys.Scope.TIMELINE,
-                "previous-frame",
-                "Previous frame",
-                Hotkeys.Hotkey.create(KeyCode.LEFT, false, false, false)) {
-              @Override
-              public void run(ProjectContext context, Window window) {
-                frame.set(Math.max(0, frame.get() - 1));
-              }
-            },
-            new Hotkeys.Action(
-                Hotkeys.Scope.TIMELINE,
-                "next-frame",
-                "Next frame",
-                Hotkeys.Hotkey.create(KeyCode.RIGHT, false, false, false)) {
-              @Override
-              public void run(ProjectContext context, Window window) {
-                frame.set(frame.get() + 1);
-              }
-            },
-            new Hotkeys.Action(
-                Hotkeys.Scope.CANVAS,
-                "play-toggle",
-                "Play/pause",
-                Hotkeys.Hotkey.create(KeyCode.P, false, false, false)) {
-              @Override
-              public void run(ProjectContext context, Window window) {
-                playingProperty.set(!playingProperty.get());
-              }
-            })
-        .forEach(context.hotkeys::register);
 
     window.selectedForViewMaxFrameBinder.addListener(
         newValue -> {
@@ -389,7 +355,7 @@ public class Timeline {
     Tooltip.install(previewPlay, new Tooltip("Play/stop"));
     previewPlay.setOnAction(
         e -> {
-          playingProperty.set(!playingProperty.get());
+          togglePlaying();
         });
 
     toolBar
@@ -599,6 +565,10 @@ public class Timeline {
                     }
                   }
                 });
+  }
+
+  public void togglePlaying() {
+    playingProperty.set(!playingProperty.get());
   }
 
   public abstract static class PlayThread extends Thread {
@@ -964,10 +934,10 @@ public class Timeline {
                   break;
                 } else {
                   // Find out how much of the outer frame to practically fill up - maxLength is
-                  // actually the
-                  // ideal fill
+                  // actually the ideal fill
                   int endAt = Math.max(outer.innerOffset, at);
                   if (maxLength == Global.NO_LENGTH) {
+                    // If looping and last map entry, only draw 5 loops
                     endAt += useLength + inner.innerLoop() * 4;
                   } else {
                     endAt += maxLength;
@@ -983,7 +953,7 @@ public class Timeline {
                     innerOffset = 0;
                   }
                   if (maxLength == Global.NO_LENGTH)
-                    subMap.add(new FrameMapEntry(Global.NO_LENGTH, innerOffset));
+                    subMap.add(new FrameMapEntry(inner.innerLoop(), innerOffset));
                 }
 
                 if (outerRemaining == 0) break;

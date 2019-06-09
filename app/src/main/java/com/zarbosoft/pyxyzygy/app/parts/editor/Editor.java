@@ -96,7 +96,7 @@ public class Editor {
           }
         },
         new Hotkeys.Action(
-            Hotkeys.Scope.GLOBAL,
+            Hotkeys.Scope.CANVAS,
             "view-top",
             "View top",
             Hotkeys.Hotkey.create(KeyCode.T, false, false, false)) {
@@ -113,7 +113,7 @@ public class Editor {
           }
         },
         new Hotkeys.Action(
-            Hotkeys.Scope.GLOBAL,
+            Hotkeys.Scope.CANVAS,
             "view-up",
             "View up",
             Hotkeys.Hotkey.create(KeyCode.P, false, false, false)) {
@@ -131,7 +131,7 @@ public class Editor {
           }
         },
         new Hotkeys.Action(
-            Hotkeys.Scope.GLOBAL,
+            Hotkeys.Scope.CANVAS,
             "view-selected",
             "View selected",
             Hotkeys.Hotkey.create(KeyCode.E, false, false, false)) {
@@ -139,6 +139,44 @@ public class Editor {
           @Override
           public void run(ProjectContext context, Window window) {
             window.selectForView(context, window.getSelectedForEdit().getWrapper());
+          }
+        },
+        new Hotkeys.Action(
+          Hotkeys.Scope.CANVAS,
+          "previous-frame",
+          "Previous frame",
+          Hotkeys.Hotkey.create(KeyCode.LEFT, false, false, false)) {
+          @Override
+          public void run(ProjectContext context, Window window) {
+            CanvasHandle edit = window.getSelectedForEdit().getCanvas();
+            if (edit == null)return;
+            int prev = edit.previousFrame.get();
+            if (prev == -1) prev = 0;
+            window.timeline.frame.set(prev);
+          }
+        },
+        new Hotkeys.Action(
+          Hotkeys.Scope.CANVAS,
+          "next-frame",
+          "Next frame",
+          Hotkeys.Hotkey.create(KeyCode.RIGHT, false, false, false)) {
+          @Override
+          public void run(ProjectContext context, Window window) {
+            CanvasHandle edit = window.getSelectedForEdit().getCanvas();
+            if (edit == null)return;
+            int next = edit.nextFrame.get();
+            if (next == -1) next = 0;
+            window.timeline.frame.set(next);
+          }
+        },
+        new Hotkeys.Action(
+          Hotkeys.Scope.CANVAS,
+          "play-toggle",
+          "Play/pause",
+          Hotkeys.Hotkey.create(KeyCode.SPACE, false, false, false)) {
+          @Override
+          public void run(ProjectContext context, Window window) {
+            window.timeline.togglePlaying();
           }
         }
       };

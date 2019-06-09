@@ -184,7 +184,7 @@ public class TestTimeMapCalc {
             new FrameMapEntry(10, 0),
             new FrameMapEntry(10, 0),
             new FrameMapEntry(10, 0),
-            new FrameMapEntry(Global.NO_LENGTH, 0)));
+            new FrameMapEntry(10, 0)));
   }
 
   @Test
@@ -199,7 +199,7 @@ public class TestTimeMapCalc {
             new FrameMapEntry(10, 0),
             new FrameMapEntry(10, 0),
             new FrameMapEntry(10, 0),
-            new FrameMapEntry(Global.NO_LENGTH, 0)));
+            new FrameMapEntry(10, 0)));
   }
 
   @Test

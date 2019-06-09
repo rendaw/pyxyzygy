@@ -1,5 +1,7 @@
 package com.zarbosoft.pyxyzygy.app;
 
+import static com.zarbosoft.pyxyzygy.app.Global.NO_LENGTH;
+
 public class FrameMapEntry {
   public final int length;
   public final int innerOffset;

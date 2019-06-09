@@ -46,7 +46,7 @@ import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 
 public class Window {
-  public List<FrameMapEntry> timeMap;
+  public List<FrameMapEntry> timeMap; // Visual time map - how time map between edit and view is visualized
   public ManualHalfBinder<Wrapper> selectedForEditWrapperEnabledBinder = new ManualHalfBinder<>();
   public ManualHalfBinder<EditHandle> selectedForEditOriginBinder = new ManualHalfBinder<>();
   public ManualHalfBinder<EditHandle> selectedForEditOpacityBinder = new ManualHalfBinder<>();
