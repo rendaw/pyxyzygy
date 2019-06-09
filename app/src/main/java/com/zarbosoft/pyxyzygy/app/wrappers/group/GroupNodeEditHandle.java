@@ -7,6 +7,7 @@ import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.ContentReplacer;
 import com.zarbosoft.pyxyzygy.app.widgets.TitledPane;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
 import com.zarbosoft.pyxyzygy.app.wrappers.ToolMove;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import com.zarbosoft.rendaw.common.Assertion;
@@ -26,6 +27,7 @@ import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.pad;
 public class GroupNodeEditHandle extends EditHandle {
   public final ContentReplacer<Node> toolPropReplacer;
   protected List<Runnable> cleanup = new ArrayList<>();
+  protected List<BinderRoot> cleanup2 = new ArrayList<>();
   Tool tool = null;
 
   Group overlay;
@@ -126,6 +128,7 @@ public class GroupNodeEditHandle extends EditHandle {
     }
     if (wrapper.canvasHandle != null) wrapper.canvasHandle.overlay.getChildren().remove(overlay);
     cleanup.forEach(c -> c.run());
+    cleanup2.forEach(c -> c.destroy());
     window.layerTabContent.clear(this);
     window.toolBarChildren.clear(this);
   }

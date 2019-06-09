@@ -42,8 +42,6 @@ import static com.zarbosoft.rendaw.common.Common.uncheck;
 import static org.jcodec.common.model.ColorSpace.RGB;
 
 public class CameraEditHandle extends GroupNodeEditHandle {
-  protected List<BinderRoot> cleanup2 = new ArrayList<>();
-
   public CameraEditHandle(ProjectContext context, Window window, GroupNodeWrapper wrapper) {
     super(context, window, wrapper);
   }

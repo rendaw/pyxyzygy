@@ -15,6 +15,7 @@ import com.zarbosoft.pyxyzygy.seed.model.Listener;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
 import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
 import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
+import com.zarbosoft.rendaw.common.Assertion;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleObjectProperty;
@@ -56,10 +57,10 @@ public class Structure {
   private final ProjectContext context;
   private final Window window;
   private final boolean main;
-  private final BinderRoot opacityAllDisableRoot;
-  private final BinderRoot opacityEnabledGraphicRoot;
-  private final BinderRoot opacityEnabledRoot;
-  private final BinderRoot opacityOpacityRoot;
+  private final BinderRoot opacityAllDisableRoot; // GC root
+  private final BinderRoot opacityEnabledGraphicRoot; // GC root
+  private final BinderRoot opacityEnabledRoot; // GC root
+  private final BinderRoot opacityOpacityRoot; // GC root
   VBox layout = new VBox();
   TreeView<Wrapper> tree;
   ToolBar toolbar;
@@ -96,7 +97,7 @@ public class Structure {
         new Hotkeys.Action(
             Hotkeys.Scope.STRUCTURE,
             "duplicate",
-            "Duplicate",
+            "Unlinked duplicate",
             Hotkeys.Hotkey.create(KeyCode.D, true, false, false)) {
           @Override
           public void run(ProjectContext context, Window window) {
@@ -110,7 +111,7 @@ public class Structure {
         new Hotkeys.Action(
             Hotkeys.Scope.STRUCTURE,
             "link",
-            "Link",
+            "Linked duplicate",
             Hotkeys.Hotkey.create(KeyCode.L, true, false, false)) {
           @Override
           public void run(ProjectContext context, Window window) {
@@ -504,7 +505,7 @@ public class Structure {
                         });
                   });
         });
-    MenuItem duplicateButton = new MenuItem("Duplicate", new ImageView(icon("content-copy.png")));
+    MenuItem duplicateButton = new MenuItem("Unlinked duplicate", new ImageView(icon("content-copy.png")));
     duplicateButton
         .disableProperty()
         .bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedIndices()));
@@ -516,7 +517,7 @@ public class Structure {
                 duplicate(c);
               });
         });
-    MenuItem linkButton = new MenuItem("Link", new ImageView(icon("link-plus.png")));
+    MenuItem linkButton = new MenuItem("Linked duplicate", new ImageView(icon("link-plus.png")));
     linkButton
         .disableProperty()
         .bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedIndices()));
@@ -930,12 +931,12 @@ public class Structure {
   private void duplicate(ChangeStepBuilder change) {
     Wrapper source = window.getSelectedForEdit().getWrapper();
     ProjectLayer clone = source.separateClone(context);
-    addNew(clone, change);
+    addNewAfter(source, clone, change);
   }
 
   private void link(ChangeStepBuilder change) {
-    Wrapper destination = window.getSelectedForEdit().getWrapper();
-    addNew((ProjectLayer) destination.getValue(), change);
+    Wrapper source = window.getSelectedForEdit().getWrapper();
+    addNewAfter(source, (ProjectLayer) source.getValue(), change);
   }
 
   private Wrapper getSelection() {
@@ -955,6 +956,7 @@ public class Structure {
     int index = 0;
     while (placeAt != null) {
       if (placeAt instanceof GroupNodeWrapper) {
+        if (!confirmPlaceLocation(placeAt, node)) throw new Assertion();
         change
             .groupLayer((GroupLayer) placeAt.getValue())
             .childrenAdd(index, createGroupChild(node));
@@ -964,6 +966,41 @@ public class Structure {
       placeAt = placeAt.getParent();
     }
     change.project(context.project).topAdd(node);
+  }
+
+  private void addNewAfter(Wrapper placeAfter, ProjectLayer node, ChangeStepBuilder change) {
+    if (placeAfter.getParent() == null) {
+      int index = placeAfter.parentIndex;
+      change.project(context.project).topAdd(index + 1, node);
+    } else {
+      int index = placeAfter.getParent().parentIndex;
+      change
+          .groupLayer(((GroupLayer) placeAfter.getParent().getParent().getValue()))
+          .childrenAdd(index + 1, createGroupChild(node));
+    }
+  }
+
+  /**
+   * Confirm there won't be recursion when placing new wrapper (or node)
+   *
+   * @param firstParent
+   * @param node
+   * @return
+   */
+  private boolean confirmPlaceLocation(Wrapper firstParent, ProjectObject node) {
+    // Omit items that would have infinite recursion if pasted
+    if (firstParent != null) {
+      Wrapper parent = firstParent;
+      while (parent != null) {
+        if (parent.getValue() == node) {
+          logger.write(
+              "Warning: Can't place relative to copied element - destination is a child of element; skipping element.");
+          return false;
+        }
+        parent = parent.getParent();
+      }
+    }
+    return true;
   }
 
   /**
@@ -984,20 +1021,7 @@ public class Structure {
             return;
           }
 
-          // Omit items that would have infinite recursion if pasted
-          if (pasteParent != null) {
-            Wrapper parent = pasteParent;
-            while (parent != null) {
-              if (parent == wrapper) {
-                logger.write(
-                    "Warning: Can't place relative to copied element - destination is a child of element; skipping element.");
-                return;
-              }
-              parent = parent.getParent();
-            }
-          }
-
-          // Register for placing
+          if (!confirmPlaceLocation(pasteParent, (ProjectLayer) wrapper.getValue())) return;
           placable.add(wrapper);
         };
     taggedLifted.forEach(check);
