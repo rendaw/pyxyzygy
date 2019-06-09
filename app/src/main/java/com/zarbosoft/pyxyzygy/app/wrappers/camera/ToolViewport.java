@@ -4,6 +4,7 @@ import com.zarbosoft.pyxyzygy.app.DoubleVector;
 import com.zarbosoft.pyxyzygy.app.Tool;
 import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
+import com.zarbosoft.pyxyzygy.core.model.v0.Camera;
 import javafx.scene.ImageCursor;
 
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
@@ -31,7 +32,8 @@ public class ToolViewport extends Tool {
   }
 
   public Quadrant calculateQuadrant(DoubleVector start) {
-    double xyRatio = (double) wrapper.node.width() / wrapper.node.height();
+    Camera node = (Camera) wrapper.node;
+    double xyRatio = (double) node.width() / node.height();
     boolean horizontal = Math.abs(start.x) >= Math.abs(start.y * xyRatio);
     boolean positive;
     if (horizontal) {
@@ -45,14 +47,15 @@ public class ToolViewport extends Tool {
   @Override
   public void markStart(
       ProjectContext context, Window window, DoubleVector start, DoubleVector globalStart) {
+    Camera node = (Camera) wrapper.node;
     markStart = start;
     Quadrant quadrant = calculateQuadrant(markStart);
     adjustHorizontal = quadrant.horizontal;
     adjustPositive = quadrant.positive;
     if (adjustHorizontal) {
-      startValue = wrapper.node.width();
+      startValue = node.width();
     } else {
-      startValue = wrapper.node.height();
+      startValue = node.height();
     }
   }
 

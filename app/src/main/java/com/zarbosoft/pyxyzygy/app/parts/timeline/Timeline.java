@@ -332,7 +332,7 @@ public class Timeline {
                     if (v == null) return opt(null);
                     Wrapper wrapper = v.getWrapper();
                     if (wrapper instanceof CameraWrapper) {
-                      Camera camera = ((CameraWrapper) wrapper).node;
+                      Camera camera = (Camera) ((CameraWrapper) wrapper).node;
                       return opt(
                           new ScalarBinder<Integer>(
                               camera,
@@ -542,12 +542,11 @@ public class Timeline {
                     if (edit instanceof CameraWrapper) {
                       playThread =
                           new PlayThread(view) {
-                            Camera node = ((CameraWrapper) edit).node;
-
                             @Override
                             public PlayState updateState() {
+                              Camera node = (Camera) ((CameraWrapper) edit).node;
                               return new PlayState(
-                                  1000 / node.frameRate(), node.frameStart(), node.frameLength());
+                                  1000 * 10 / node.frameRate(), node.frameStart(), node.frameLength());
                             }
                           };
                     } else {
@@ -747,7 +746,7 @@ public class Timeline {
                   Misc.noopConsumer()));
       RowAdapter loop;
       if (edit instanceof CameraWrapper) {
-        loop = new RowAdapterCameraLoop(this, ((CameraWrapper) edit).node);
+        loop = new RowAdapterCameraLoop(this, (Camera) ((CameraWrapper) edit).node);
       } else if (edit.getClass() == GroupNodeWrapper.class) {
         loop = new RowAdapterPreview(this, edit);
       } else throw new Assertion();

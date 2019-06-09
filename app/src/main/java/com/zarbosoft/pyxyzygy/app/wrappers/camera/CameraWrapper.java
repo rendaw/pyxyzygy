@@ -13,6 +13,7 @@ import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeWrapper;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.pyxyzygy.core.model.v0.Camera;
 import com.zarbosoft.pyxyzygy.core.model.v0.ProjectLayer;
+import com.zarbosoft.rendaw.common.Common;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleIntegerProperty;
@@ -27,7 +28,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 
 public class CameraWrapper extends GroupNodeWrapper {
-  public final Camera node;
   public final SimpleIntegerProperty width = new SimpleIntegerProperty(0);
   public final SimpleIntegerProperty height = new SimpleIntegerProperty(0);
   private final BinderRoot cleanupWidth;
@@ -40,7 +40,6 @@ public class CameraWrapper extends GroupNodeWrapper {
 
   public CameraWrapper(ProjectContext context, Wrapper parent, int parentIndex, Camera node) {
     super(context, parent, parentIndex, node);
-    this.node = node;
     cleanupWidth =
         CustomBinding.bindBidirectional(
             new ScalarBinder<Integer>(
@@ -109,6 +108,7 @@ public class CameraWrapper extends GroupNodeWrapper {
   public ProjectLayer separateClone(ProjectContext context) {
     Camera clone = Camera.create(context);
     cloneSet(context, clone);
+    Camera node = (Camera) this.node;
     clone.initialOffsetSet(context, node.offset());
     clone.initialWidthSet(context, node.width());
     clone.initialHeightSet(context, node.height());
@@ -126,21 +126,19 @@ public class CameraWrapper extends GroupNodeWrapper {
   public void render(
       ProjectContext context,
       Window window,
-      BiConsumer<Integer, TrueColorImage> frameConsumer,
+      Common.UncheckedConsumer<Common.UncheckedConsumer<BiConsumer<Integer, TrueColorImage>>>
+          thread,
       int scale) {
+    Camera node = (Camera) this.node;
     render(
-        context,
-        window,
-        frameConsumer,
-        node.frameStart(),
-        node.frameStart() + node.frameLength(),
-        scale);
+        context, window, thread, node.frameStart(), node.frameStart() + node.frameLength(), scale);
   }
 
   public void render(
       ProjectContext context,
       Window window,
-      BiConsumer<Integer, TrueColorImage> frameConsumer,
+      Common.UncheckedConsumer<Common.UncheckedConsumer<BiConsumer<Integer, TrueColorImage>>>
+          thread,
       int start,
       int end,
       int scale) {
@@ -150,28 +148,36 @@ public class CameraWrapper extends GroupNodeWrapper {
     new Thread(
             () -> {
               try {
-                TrueColorImage canvas = TrueColorImage.create(node.width(), node.height());
-                for (int i = start; i < end; ++i) {
-                  if (cancel.get()) return;
-                  if (i != start) canvas.clear();
-                  context.lock.readLock().lock();
-                  try {
-                    Render.render(
-                        context,
-                        node,
-                        canvas,
-                        i,
-                        new com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle(
-                            -width.get() / 2, -height.get() / 2, width.get(), height.get()),
-                        1.0);
-                  } finally {
-                    context.lock.readLock().unlock();
-                  }
-                  if (scale > 1) canvas = canvas.scale(scale);
-                  frameConsumer.accept(i, canvas);
-                  final double percent = ((double) (i - start)) / (end - start);
-                  Platform.runLater(() -> progress.setProgress(percent));
-                }
+                thread.run(
+                    frameConsumer -> {
+                      Camera node = (Camera) this.node;
+                      TrueColorImage canvas = TrueColorImage.create(node.width(), node.height());
+                      for (int i = start; i < end; ++i) {
+                        if (cancel.get()) return;
+                        if (i != start) canvas.clear();
+                        context.lock.readLock().lock();
+                        try {
+                          Render.render(
+                              context,
+                              node,
+                              canvas,
+                              i,
+                              new com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle(
+                                  -width.get() / 2, -height.get() / 2, width.get(), height.get()),
+                              1.0);
+                        } finally {
+                          context.lock.readLock().unlock();
+                        }
+                        frameConsumer.accept(i, scale == 1 ? canvas : canvas.scale(scale));
+                        final double percent = ((double) (i - start)) / (end - start);
+                        Platform.runLater(() -> progress.setProgress(percent));
+                      }
+                    });
+              } catch (Exception e) {
+                Platform.runLater(
+                    () ->
+                        window.error(
+                            e, "Error while rendering", "Encountered an error while rendering."));
               } finally {
                 Platform.runLater(() -> builder.close());
               }

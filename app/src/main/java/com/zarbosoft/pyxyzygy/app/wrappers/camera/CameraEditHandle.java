@@ -1,10 +1,7 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.camera;
 
 import com.google.common.collect.ImmutableList;
-import com.squareup.gifencoder.Color;
-import com.squareup.gifencoder.GifEncoder;
-import com.squareup.gifencoder.Image;
-import com.squareup.gifencoder.ImageOptions;
+import com.squareup.gifencoder.*;
 import com.zarbosoft.pyxyzygy.app.Tool;
 import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.Wrapper;
@@ -13,11 +10,12 @@ import com.zarbosoft.pyxyzygy.app.config.GroupNodeConfig;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.TitledPane;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
 import com.zarbosoft.pyxyzygy.app.widgets.binding.CustomBinding;
 import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyBinder;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeEditHandle;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeWrapper;
+import com.zarbosoft.pyxyzygy.core.model.v0.Camera;
+import com.zarbosoft.rendaw.common.Assertion;
 import javafx.scene.Node;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
@@ -25,12 +23,12 @@ import javafx.scene.layout.VBox;
 import org.jcodec.api.SequenceEncoder;
 import org.jcodec.common.model.Picture;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -154,175 +152,126 @@ public class CameraEditHandle extends GroupNodeEditHandle {
                               e ->
                                   uncheck(
                                       () -> {
-                                        Path dir = Paths.get(wrapper.config.renderDir);
-                                        Files.createDirectories(dir);
-                                        int scale = wrapper.config.renderScale.get();
-                                        switch (wrapper.config.renderMode) {
-                                          case PNG:
-                                            wrapper.render(
-                                                context,
-                                                window,
-                                                (i, canvas) ->
-                                                    canvas.serialize(
-                                                        dir.resolve(
-                                                                String.format(
-                                                                    "%s.png",
-                                                                    wrapper.config.renderName))
-                                                            .toString()),
-                                                wrapper.canvasHandle.frameNumber.get(),
-                                                wrapper.canvasHandle.frameNumber.get() + 1,
-                                                scale);
-                                            break;
-                                          case WEBM:
-                                            {
-                                              SequenceEncoder encoder =
-                                                  SequenceEncoder.createSequenceEncoder(
-                                                      dir.resolve(
-                                                              String.format(
-                                                                  "%s.webm",
-                                                                  wrapper.config.renderName))
-                                                          .toFile(),
-                                                      (int) (wrapper.node.frameRate() / 10.0));
-                                              Picture rgbPic =
-                                                  Picture.create(
-                                                      wrapper.node.width() * scale,
-                                                      wrapper.node.height() * scale,
-                                                      RGB);
-                                              byte[] rgb = rgbPic.getPlaneData(0);
-                                              wrapper.render(
-                                                  context,
-                                                  window,
-                                                  (i, canvas) -> {
-                                                    byte[] bgra = canvas.data();
-                                                    for (int y = 0;
-                                                        y < wrapper.node.height();
-                                                        ++y) {
-                                                      for (int x = 0;
-                                                          x < wrapper.node.width();
-                                                          ++x) {
-                                                        int inBase =
-                                                            (y * wrapper.node.width() + x) * 4;
-                                                        int outBase =
-                                                            (y * wrapper.node.width() + x) * 3;
-                                                        int b =
-                                                            Byte.toUnsignedInt(bgra[inBase + 0]);
-                                                        int g =
-                                                            Byte.toUnsignedInt(bgra[inBase + 1]);
-                                                        int r =
-                                                            Byte.toUnsignedInt(bgra[inBase + 2]);
-                                                        int a =
-                                                            Byte.toUnsignedInt(bgra[inBase + 3]);
-                                                        rgb[outBase] =
-                                                            (byte)
-                                                                ((r * a + 0xFF * (0xFF - a)) / 0xFF
-                                                                    - 128);
-                                                        rgb[outBase + 1] =
-                                                            (byte)
-                                                                ((g * a + 0xFF * (0xFF - a)) / 0xFF
-                                                                    - 128);
-                                                        rgb[outBase + 2] =
-                                                            (byte)
-                                                                ((b * a + 0xFF * (0xFF - a)) / 0xFF
-                                                                    - 128);
-                                                      }
-                                                    }
-                                                    uncheck(
-                                                        () -> encoder.encodeNativeFrame(rgbPic));
-                                                  },
-                                                  scale);
-                                              encoder.finish();
-                                              break;
-                                            }
-                                          case GIF:
-                                            try (OutputStream stream =
-                                                Files.newOutputStream(
-                                                    dir.resolve(
-                                                        String.format(
-                                                            "%s.gif",
-                                                            wrapper.config.renderName)))) {
-                                              GifEncoder gifEncoder =
-                                                  new GifEncoder(
-                                                      stream,
-                                                      wrapper.node.width(),
-                                                      wrapper.node.height(),
-                                                      0);
-                                              Method addImage =
-                                                  GifEncoder.class.getDeclaredMethod(
-                                                      "addImage", Image.class, ImageOptions.class);
-                                              addImage.setAccessible(true);
-
-                                              ImageOptions options = new ImageOptions();
-                                              options.setDelay(
-                                                  TimeUnit.MICROSECONDS.convert(1, TimeUnit.SECONDS)
-                                                      / wrapper.node.frameRate(),
-                                                  TimeUnit.MICROSECONDS);
-
-                                              Color[][] rgb =
-                                                  new Color[wrapper.node.height() * scale]
-                                                      [wrapper.node.width() * scale];
-                                              wrapper.render(
-                                                  context,
-                                                  window,
-                                                  (i, canvas) -> {
-                                                    byte[] bgra = canvas.data();
-                                                    for (int y = 0;
-                                                        y < wrapper.node.height();
-                                                        ++y) {
-                                                      for (int x = 0;
-                                                          x < wrapper.node.width();
-                                                          ++x) {
-                                                        int base =
-                                                            (y * wrapper.node.width() + x) * 4;
-                                                        double b =
-                                                            Byte.toUnsignedInt(bgra[base]) / 255.0;
-                                                        double g =
-                                                            Byte.toUnsignedInt(bgra[base + 1])
-                                                                / 255.0;
-                                                        double r =
-                                                            Byte.toUnsignedInt(bgra[base + 2])
-                                                                / 255.0;
-                                                        double a =
-                                                            Byte.toUnsignedInt(bgra[base + 3])
-                                                                / 255.0;
-                                                        rgb[y][x] =
-                                                            new Color(
-                                                                r * a + (1.0 - a),
-                                                                g * a + (1.0 - a),
-                                                                b * a + (1.0 - a));
-                                                      }
-                                                    }
-                                                    uncheck(
-                                                        () ->
-                                                            addImage.invoke(
-                                                                gifEncoder,
-                                                                Image.fromColors(rgb),
-                                                                options));
-                                                  },
-                                                  scale);
-                                              gifEncoder.finishEncoding();
-                                            }
-                                            break;
-                                          case PNG_SEQUENCE:
-                                            {
-                                              wrapper.render(
-                                                  context,
-                                                  window,
-                                                  (i, canvas) ->
-                                                      canvas.serialize(
-                                                          dir.resolve(
-                                                                  String.format(
-                                                                      "%s%06d.png",
-                                                                      wrapper.config.renderName, i))
-                                                              .toString()),
-                                                  scale);
-                                            }
-                                            break;
-                                        }
+                                        render(context, window, wrapper);
                                       }));
                         })
                     .build()),
             toolProps);
     return tabBox;
+  }
+
+  private static void render(ProjectContext context, Window window, CameraWrapper wrapper)
+      throws IOException, NoSuchMethodException {
+    Camera node = (Camera) wrapper.node;
+    Path dir = Paths.get(wrapper.config.renderDir);
+    Files.createDirectories(dir);
+    int scale = wrapper.config.renderScale.get();
+    switch (wrapper.config.renderMode) {
+      case PNG:
+        wrapper.render(
+            context,
+            window,
+            continuation -> {
+              continuation.run(
+                  (i, canvas) ->
+                      canvas.serialize(
+                          dir.resolve(String.format("%s.png", wrapper.config.renderName))
+                              .toString()));
+            },
+            wrapper.canvasHandle.frameNumber.get(),
+            wrapper.canvasHandle.frameNumber.get() + 1,
+            scale);
+        break;
+      case WEBM:
+        wrapper.render(
+            context,
+            window,
+            continuation -> {
+              SequenceEncoder encoder =
+                  SequenceEncoder.createSequenceEncoder(
+                      dir.resolve(String.format("%s.webm", wrapper.config.renderName)).toFile(),
+                      (int) (node.frameRate() / 10.0));
+              Picture rgbPic = Picture.create(node.width() * scale, node.height() * scale, RGB);
+              byte[] rgb = rgbPic.getPlaneData(0);
+              continuation.run(
+                  (i, canvas) -> {
+                    byte[] bgra = canvas.data();
+                    for (int y = 0; y < canvas.getHeight(); ++y) {
+                      for (int x = 0; x < canvas.getWidth(); ++x) {
+                        int inBase = (y * canvas.getWidth() + x) * 4;
+                        int outBase = (y * canvas.getWidth() + x) * 3;
+                        int b = Byte.toUnsignedInt(bgra[inBase + 0]);
+                        int g = Byte.toUnsignedInt(bgra[inBase + 1]);
+                        int r = Byte.toUnsignedInt(bgra[inBase + 2]);
+                        int a = Byte.toUnsignedInt(bgra[inBase + 3]);
+                        rgb[outBase] = (byte) ((r * a + 0xFF * (0xFF - a)) / 0xFF - 128);
+                        rgb[outBase + 1] = (byte) ((g * a + 0xFF * (0xFF - a)) / 0xFF - 128);
+                        rgb[outBase + 2] = (byte) ((b * a + 0xFF * (0xFF - a)) / 0xFF - 128);
+                      }
+                    }
+                    uncheck(() -> encoder.encodeNativeFrame(rgbPic));
+                  });
+              encoder.finish();
+            },
+            scale);
+        break;
+      case GIF:
+        wrapper.render(
+            context,
+            window,
+            continuation -> {
+              try (OutputStream stream =
+                  Files.newOutputStream(
+                      dir.resolve(String.format("%s.gif", wrapper.config.renderName)))) {
+                GifEncoder gifEncoder =
+                    new GifEncoder(stream, node.width() * scale, node.height() * scale, 0);
+                Method addImage =
+                    GifEncoder.class.getDeclaredMethod("addImage", Image.class, ImageOptions.class);
+                addImage.setAccessible(true);
+
+                ImageOptions options = new ImageOptions();
+                options.setDelay(
+                    TimeUnit.MICROSECONDS.convert(1, TimeUnit.SECONDS) * 10 / node.frameRate(),
+                    TimeUnit.MICROSECONDS);
+
+                Color[][] rgb = new Color[node.height() * scale][node.width() * scale];
+                continuation.run(
+                    (i, canvas) -> {
+                      byte[] bgra = canvas.data();
+                      for (int y = 0; y < canvas.getHeight(); ++y) {
+                        for (int x = 0; x < canvas.getWidth(); ++x) {
+                          int base = (y * canvas.getWidth() + x) * 4;
+                          double b = Byte.toUnsignedInt(bgra[base]) / 255.0;
+                          double g = Byte.toUnsignedInt(bgra[base + 1]) / 255.0;
+                          double r = Byte.toUnsignedInt(bgra[base + 2]) / 255.0;
+                          double a = Byte.toUnsignedInt(bgra[base + 3]) / 255.0;
+                          rgb[y][x] =
+                              new Color(r * a + (1.0 - a), g * a + (1.0 - a), b * a + (1.0 - a));
+                        }
+                      }
+                      uncheck(() -> addImage.invoke(gifEncoder, Image.fromColors(rgb), options));
+                    });
+                gifEncoder.finishEncoding();
+              }
+            },
+            scale);
+        break;
+      case PNG_SEQUENCE:
+        {
+          wrapper.render(
+              context,
+              window,
+              continuation -> {
+                continuation.run(
+                    (i, canvas) ->
+                        canvas.serialize(
+                            dir.resolve(String.format("%s%06d.png", wrapper.config.renderName, i))
+                                .toString()));
+              },
+              scale);
+        }
+        break;
+    }
   }
 
   @Override

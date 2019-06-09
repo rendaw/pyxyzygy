@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 
 public class GroupNodeWrapper extends Wrapper {
   private final Wrapper parent;
-  final GroupLayer node;
+  public final GroupLayer node;
   final GroupNodeConfig config;
   final ObservableList<GroupChildWrapper> children = FXCollections.observableArrayList();
   private final Runnable childrenListenCleanup;

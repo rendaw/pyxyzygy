@@ -887,4 +887,17 @@ public class Window {
   public DialogBuilder dialog(String title) {
     return new DialogBuilder(title);
   }
+
+  public void error(Exception e, String title, String message) {
+    logger.writeException(e, title + "\n" + message);
+    TextArea textArea = new TextArea(Throwables.getStackTraceAsString(e));
+    textArea.setEditable(false);
+    textArea.setWrapText(true);
+    textArea.setMaxWidth(Double.MAX_VALUE);
+    textArea.setMaxHeight(Double.MAX_VALUE);
+    dialog(message)
+      .addContent(new TitledPane("Trace", textArea))
+      .addAction(ButtonType.OK, true, () -> true)
+      .go();
+  }
 }

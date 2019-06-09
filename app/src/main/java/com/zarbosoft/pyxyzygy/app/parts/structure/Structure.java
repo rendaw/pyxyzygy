@@ -857,7 +857,7 @@ public class Structure {
 
   private static Wrapper findNode(TreeItem<Wrapper> root, List<Integer> path) {
     if (path.isEmpty()) return root.getValue();
-    return findNode(root.getChildren().get(path.get(0)), sublist(path, 1));
+    return findNode(root.getChildren().get(Math.min(root.getChildren().size() - 1, path.get(0))), sublist(path, 1));
   }
 
   private void delete(ProjectContext context, ChangeStepBuilder change) {
