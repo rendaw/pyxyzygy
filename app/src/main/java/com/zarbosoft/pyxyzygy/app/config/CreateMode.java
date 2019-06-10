@@ -4,30 +4,30 @@ import com.zarbosoft.interface1.Configuration;
 
 @Configuration
 public enum CreateMode {
-	@Configuration
-	normal {
-		public int tileSize() {
-			return 200;
-		}
+  @Configuration
+  normal {
+    public int tileSize() {
+      return 200;
+    }
 
-		@Override
-		public int defaultZoom() {
-			return 0;
-		}
-	},
-	@Configuration
-	pixel {
-		public int tileSize() {
-			return 32;
-		}
+    @Override
+    public int defaultZoom() {
+      return 0;
+    }
+  },
+  @Configuration
+  pixel {
+    public int tileSize() {
+      return 32;
+    }
 
-		@Override
-		public int defaultZoom() {
-			return 8;
-		}
-	};
+    @Override
+    public int defaultZoom() {
+      return 8;
+    }
+  };
 
-	abstract public int tileSize();
+  public abstract int tileSize();
 
-	abstract public int defaultZoom();
+  public abstract int defaultZoom();
 }

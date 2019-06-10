@@ -5,11 +5,15 @@ import com.zarbosoft.pyxyzygy.seed.model.v0.ProjectObjectInterface;
 import java.util.Map;
 
 public class ChangeDeserializationContext {
-	public Map<Long, ProjectObjectInterface> objectMap;
+  public Map<Long, ProjectObjectInterface> objectMap;
 
-	public <T> T getObject(long key) {
-		return (T) objectMap.computeIfAbsent(key, k -> {
-			throw new IllegalStateException(String.format("Can't find object %s in saved data.", key));
-		});
-	}
+  public <T> T getObject(long key) {
+    return (T)
+        objectMap.computeIfAbsent(
+            key,
+            k -> {
+              throw new IllegalStateException(
+                  String.format("Can't find object %s in saved data.", key));
+            });
+  }
 }

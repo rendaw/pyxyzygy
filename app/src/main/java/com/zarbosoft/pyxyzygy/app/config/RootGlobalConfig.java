@@ -2,42 +2,27 @@ package com.zarbosoft.pyxyzygy.app.config;
 
 import com.zarbosoft.interface1.Configuration;
 import com.zarbosoft.pyxyzygy.app.ConfigBase;
-import com.zarbosoft.pyxyzygy.app.Hotkeys;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleStringProperty;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import static com.zarbosoft.pyxyzygy.app.Global.appDirs;
+import java.util.ArrayList;
+import java.util.List;
 
 @Configuration
 public class RootGlobalConfig extends ConfigBase {
-	@Configuration
-	public final ObservableList<TrueColorBrush> trueColorBrushes = FXCollections.observableArrayList();
+  @Configuration public long nextId = 0;
 
-	@Configuration
-	public final ObservableList<PaletteBrush> paletteBrushes = FXCollections.observableArrayList();
+  @Configuration
+  public static class Profile {
+    @Configuration public final SimpleStringProperty name = new SimpleStringProperty();
 
-	@Configuration
-	public String lastDir = appDirs.user_dir().toString();
+    @Configuration public long id;
+  }
 
-	@Configuration(optional = true)
-	public String importDir = appDirs.user_dir().toString();
+  @Configuration public List<Profile> profiles = new ArrayList<>();
 
-	@Configuration
-	public int maxUndo = 1000;
+  @Configuration public long lastId = 0;
 
-	@Configuration
-	public Map<String, Hotkeys.Hotkey> hotkeys = new HashMap<>();
-
-	@Configuration(optional = true)
-	public CreateMode newProjectNormalMode = CreateMode.normal;
-
-	@Configuration(optional = true)
-	public final SimpleBooleanProperty showOrigin = new SimpleBooleanProperty(false);
-
-	@Configuration(optional = true)
-	public boolean maximize = true;
+  @Configuration(optional = true)
+  public SimpleIntegerProperty cacheSize = new SimpleIntegerProperty(1024);
 }

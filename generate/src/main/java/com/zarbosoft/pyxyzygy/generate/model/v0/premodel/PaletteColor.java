@@ -5,9 +5,7 @@ import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
 
 @Configuration
 public class PaletteColor extends ProjectObject {
-	@Configuration
-	public int index;
+  @Configuration public int index;
 
-	@Configuration
-	public TrueColor color;
+  @Configuration public TrueColor color;
 }

@@ -7,10 +7,7 @@ import java.util.Map;
 
 @Configuration
 public class TrueColorImageFrame extends ProjectObject {
-	@Configuration
-	public int length;
-	@Configuration
-	public Vector offset;
-	@Configuration
-	public Map<Long, TrueColorTileBase> tiles;
+  @Configuration public int length;
+  @Configuration public Vector offset;
+  @Configuration public Map<Long, TrueColorTileBase> tiles;
 }

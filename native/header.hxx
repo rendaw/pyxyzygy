@@ -57,6 +57,14 @@
 { if ($input && $1) JCALL4(GetByteArrayRegion, jenv, $input, 0, (jsize)$2, (jbyte *)$1); }
 %typemap(javadirectorin, descriptor="[B") (uint8_t *DATA, size_t LENGTH) "$jniinput"
 
+%newobject PaletteImage::create;
+%newobject PaletteImage::deserialize;
+%newobject PaletteImage::copy;
+%newobject TrueColorImage::create;
+%newobject TrueColorImage::deserialize;
+%newobject TrueColorImage::copy;
+%newobject TrueColorImage::scale;
+
 #endif
 
 #include <vector>
@@ -102,6 +110,7 @@ class PaletteImage {
 		void stroke(p_t index, double x1, double y1, double r1, double x2, double y2, double r2);
 		void mergeColor(p_t oldIndex, p_t newIndex);
 		void replace(PaletteImage const & source, int32_t x, int32_t y);
+		void compose(PaletteImage const & source, int32_t x, int32_t y);
 
 		PaletteImage &operator = (PaletteImage const & other) = delete;
 		PaletteImage &operator = (PaletteImage && other) = delete;

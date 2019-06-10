@@ -51,7 +51,7 @@ def main():
         args.cc,
         '-Wall', '-pedantic',
         '-O3',
-        # '-ggdb',
+        # '-ggdb', '-O0',
         '-shared',
         '-fPIC',
         f'-L{args.lib}',
@@ -67,6 +67,7 @@ def main():
     ] + (['-lws2_32'] if args.java_platform == 'win32' else []) + [
         '-lpng',
         '-lz',
+        # '-ljemalloc',  # DEBUG
     ])
 
 

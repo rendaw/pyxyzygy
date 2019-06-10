@@ -435,7 +435,7 @@ template <class HandleLine> static inline void merge(
 		handleLine(
 			&dest[((y.a + y1) * d_w + x.a) * unitStride],
 			&source[((y.b + y1) * s_w + x.b) * unitStride],
-			x.span
+			x.span // count of elements (multiply by unitStride for bytes)
 		);
 	}
 }
@@ -594,6 +594,19 @@ void PaletteImage::mergeColor(p_t oldIndex, p_t newIndex) {
 
 void PaletteImage::replace(PaletteImage const & source, int32_t x, int32_t y) {
 	::replace((uint8_t *)pixels, sizeof(p_t), w, h, (uint8_t const *)source.pixels, source.w, source.h, x, y);
+}
+
+void PaletteImage::compose(PaletteImage const & source, int32_t x, int32_t y) {
+	::merge(
+		(uint8_t *)pixels, sizeof(p_t), w, h, (uint8_t const *)source.pixels, source.w, source.h, x, y,
+		[](uint8_t *destLineStart, uint8_t const * const sourceLineStart, int span) {
+			for (l_t x = 0; x < span; ++x) {
+				p_t &dest = *(((p_t *)destLineStart) + x);
+				p_t const &source = *(((p_t const *)sourceLineStart) + x);
+				if (source != 0) dest = source;
+			}
+		}
+	);
 }
 
 TrueColorImage::TrueColorImage(l_t w, l_t h, uint8_t * const pixels) :

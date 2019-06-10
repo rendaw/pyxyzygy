@@ -18,114 +18,115 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 
 public class PaletteTile extends PaletteTileBase implements Dirtyable {
-	AtomicBoolean deleted = new AtomicBoolean(false);
-	public WeakReference<PaletteImage> data;
-	private PaletteImage dirtyData;
+  AtomicBoolean deleted = new AtomicBoolean(false);
+  public WeakReference<PaletteImage> data;
+  private PaletteImage dirtyData;
 
-	public static PaletteTile create(ProjectContext context, PaletteImage data) {
-		PaletteTile out = new PaletteTile();
-		out.id = context.nextId++;
-		out.data = new WeakReference<>(data);
-		out.dirtyData = data;
-		context.setDirty(out);
-		return out;
-	}
+  public static PaletteTile create(ProjectContext context, PaletteImage data) {
+    PaletteTile out = new PaletteTile();
+    out.id = context.nextId++;
+    out.data = new WeakReference<>(data);
+    out.dirtyData = data;
+    context.setDirty(out);
+    return out;
+  }
 
-	@Override
-	public void incRef(ProjectContextBase project) {
-		refCount += 1;
-		if (refCount == 1) {
-			project.objectMap.put(id, this);
-		}
-	}
+  @Override
+  public void incRef(ProjectContextBase project) {
+    refCount += 1;
+    if (refCount == 1) {
+      project.objectMap.put(id, this);
+    }
+  }
 
-	@Override
-	public void decRef(ProjectContextBase project) {
-		refCount -= 1;
-		if (refCount == 0) {
-			deleted.set(true);
-			project.objectMap.remove(id);
-			uncheck(()-> {
-				try {
-					Files.delete(path(project));
-				} catch (NoSuchFileException e) {
-					// nop
-				}
-			});
-		}
-	}
+  @Override
+  public void decRef(ProjectContextBase project) {
+    refCount -= 1;
+    if (refCount == 0) {
+      deleted.set(true);
+      project.objectMap.remove(id);
+      uncheck(
+          () -> {
+            try {
+              Files.delete(path(project));
+            } catch (NoSuchFileException e) {
+              // nop
+            }
+          });
+    }
+  }
 
-	@Override
-	public void serialize(RawWriter writer) {
-		writer.type("PaletteTile");
-		writer.recordBegin();
-		writer.key("id").primitive(Long.toString(id));
-		writer.key("refCount").primitive(Long.toString(refCount));
-		writer.recordEnd();
-	}
+  @Override
+  public void serialize(RawWriter writer) {
+    writer.type("PaletteTile");
+    writer.recordBegin();
+    writer.key("id").primitive(Long.toString(id));
+    writer.key("refCount").primitive(Long.toString(refCount));
+    writer.recordEnd();
+  }
 
-	@Override
-	public void dirtyFlush(ProjectContextBase context) {
-		if (deleted.get()) return;
-		dirtyData.serialize(path(context).toString());
-		dirtyData = null;
-	}
+  @Override
+  public void dirtyFlush(ProjectContextBase context) {
+    if (deleted.get()) return;
+    dirtyData.serialize(path(context).toString());
+    dirtyData = null;
+  }
 
-	public PaletteImage getData(ProjectContext context) {
-		PaletteImage data = this.data.get();
-		if (data == null) {
-			data = PaletteImage.deserialize(path(context).toString());
-			this.data = new WeakReference<>(data);
-		}
-		return data;
-	}
+  public PaletteImage getData(ProjectContext context) {
+    PaletteImage data = this.data.get();
+    if (data == null) {
+      data = PaletteImage.deserialize(path(context).toString());
+      this.data = new WeakReference<>(data);
+    }
+    return data;
+  }
 
-	public static Path path(ProjectContextBase context, long id) {
-		return context.tileDir.resolve(Objects.toString(id));
-	}
+  public static Path path(ProjectContextBase context, long id) {
+    return context.tileDir.resolve(Objects.toString(id));
+  }
 
-	private Path path(ProjectContextBase context) {
-		return path(context, id);
-	}
+  private Path path(ProjectContextBase context) {
+    return path(context, id);
+  }
 
-	public static class Deserializer extends StackReader.RecordState {
-		private final ModelDeserializationContext context;
+  public static class Deserializer extends StackReader.RecordState {
+    private final ModelDeserializationContext context;
 
-		private final PaletteTile out;
+    private final PaletteTile out;
 
-		public Deserializer(ModelDeserializationContext context) {
-			this.context = context;
-			out = new PaletteTile();
-		}
+    public Deserializer(ModelDeserializationContext context) {
+      this.context = context;
+      out = new PaletteTile();
+    }
 
-		@Override
-		public void value(Object value) {
-			if ("id".equals(key)) {
-				out.id = Long.valueOf((String) value);
-				return;
-			}
-			if ("refCount".equals(key)) {
-				out.refCount = Long.valueOf((String) value);
-				return;
-			}
-			throw new RuntimeException(String.format("Unknown key (%s)", key));
-		}
+    @Override
+    public void value(Object value) {
+      if ("id".equals(key)) {
+        out.id = Long.valueOf((String) value);
+        return;
+      }
+      if ("refCount".equals(key)) {
+        out.refCount = Long.valueOf((String) value);
+        return;
+      }
+      throw new RuntimeException(String.format("Unknown key (%s)", key));
+    }
 
-		@Override
-		public StackReader.State array() {
-			throw new RuntimeException(String.format("Key (%s) is unknown or is not an array", key));
-		}
+    @Override
+    public StackReader.State array() {
+      throw new RuntimeException(String.format("Key (%s) is unknown or is not an array", key));
+    }
 
-		@Override
-		public StackReader.State record() {
-			throw new RuntimeException(String.format("Key (%s) is unknown or is not an record", key));
-		}
+    @Override
+    public StackReader.State record() {
+      throw new RuntimeException(String.format("Key (%s) is unknown or is not an record", key));
+    }
 
-		@Override
-		public Object get() {
-			out.data = new WeakReference<>(null);
-			context.objectMap.put(out.id(), out);
-			return out;
-		}
-	}
+    @Override
+    public Object get() {
+      out.data = new WeakReference<>(null);
+      context.objectMap.put(out.id(), out);
+      return out;
+    }
+  }
 }

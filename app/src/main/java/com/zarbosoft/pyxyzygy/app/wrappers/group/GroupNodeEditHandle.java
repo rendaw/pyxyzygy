@@ -5,11 +5,12 @@ import com.zarbosoft.pyxyzygy.app.*;
 import com.zarbosoft.pyxyzygy.app.config.GroupNodeConfig;
 import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.ContentReplacer;
-import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.app.widgets.TitledPane;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
+import com.zarbosoft.pyxyzygy.app.wrappers.ToolMove;
+import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
 import com.zarbosoft.rendaw.common.Assertion;
-import javafx.beans.binding.Bindings;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.Group;
@@ -20,154 +21,158 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.zarbosoft.pyxyzygy.app.Misc.nodeFormFields;
+import static com.zarbosoft.pyxyzygy.app.Misc.separateFormField;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.pad;
 
 public class GroupNodeEditHandle extends EditHandle {
-	public final ContentReplacer<Node> toolPropReplacer;
-	protected List<Runnable> cleanup = new ArrayList<>();
-	Tool tool = null;
+  public final ContentReplacer<Node> toolPropReplacer;
+  protected List<Runnable> cleanup = new ArrayList<>();
+  protected List<BinderRoot> cleanup2 = new ArrayList<>();
+  Tool tool = null;
 
-	Group overlay;
+  Group overlay;
 
-	public GroupNodeWrapper wrapper;
+  public GroupNodeWrapper wrapper;
 
-	protected class ToolToggle extends HelperJFX.IconToggleButton {
-		private final String value;
+  public GroupNodeEditHandle(
+      ProjectContext context, Window window, final GroupNodeWrapper wrapper) {
+    this.wrapper = wrapper;
 
-		public ToolToggle(String icon, String hint, String value) {
-			super(icon, hint);
-			this.value = value;
-			selectedProperty().bind(Bindings.createBooleanBinding(() -> {
-				return value.equals(wrapper.config.tool.get());
-			}, wrapper.config.tool));
-		}
+    // Canvas overlay
+    overlay = new Group();
+    wrapper.canvasHandle.overlay.getChildren().add(overlay);
 
-		@Override
-		public void fire() {
-			wrapper.config.tool.set(value);
-		}
-	}
+    TitledPane toolProps = new TitledPane(null, null);
+    toolProps.visibleProperty().bind(toolProps.contentProperty().isNotNull());
+    this.toolPropReplacer =
+        new ContentReplacer<Node>() {
+          @Override
+          protected void innerSet(String title, Node content) {
+            toolProps.setText(title);
+            toolProps.setContent(content);
+          }
 
-	public GroupNodeEditHandle(
-			ProjectContext context, Window window, final GroupNodeWrapper wrapper
-	) {
-		this.wrapper = wrapper;
+          @Override
+          protected void innerClear() {
+            toolProps.setContent(null);
+          }
+        };
 
-		// Canvas overlay
-		overlay = new Group();
-		wrapper.canvasHandle.overlay.getChildren().add(overlay);
+    window.layerTabContent.set(this, pad(buildTab(context, window, toolProps)));
 
-		TitledPane toolProps = new TitledPane("Tool",null);
-		this.toolPropReplacer = new ContentReplacer<Node>() {
-			@Override
-			protected void innerSet(Node content) {
-				toolProps.setContent(content);
-			}
+    // Toolbar
+    window.toolBarChildren.set(this, createToolButtons());
 
-			@Override
-			protected void innerClear() {
-				toolProps.setContent(null);
-			}
-		};
+    wrapper.config.tool.addListener(
+        new ChangeListener<String>() {
+          {
+            changed(null, null, wrapper.config.tool.get());
+          }
 
-		window.layerTabContent.set(this, pad(buildTab(context, window,toolProps)));
+          @Override
+          public void changed(
+              ObservableValue<? extends String> observable, String oldValue, String newValue) {
+            if (tool != null) {
+              tool.remove(context, window);
+              tool = null;
+            }
+            if (newValue == null) return;
+            tool = createTool(context, window, newValue);
+          }
+        });
 
-		// Toolbar
-		window.toolBarChildren.set(this, createToolButtons());
+    cleanup.add(
+        () -> {
+          window.layerTabContent.clear(this);
+        });
+  }
 
-		wrapper.config.tool.addListener(new ChangeListener<String>() {
-			{
-				changed(null, null, wrapper.config.tool.get());
-			}
+  public VBox buildTab(ProjectContext context, Window window, TitledPane toolProps) {
+    VBox tabBox = new VBox();
+    tabBox
+        .getChildren()
+        .addAll(
+            new TitledPane(
+                "Layer",
+                new WidgetFormBuilder()
+                    .apply(b -> cleanup.add(nodeFormFields(context, b, wrapper)))
+                    .apply(b -> separateFormField(context, b, wrapper))
+                    .build()),
+            toolProps);
+    return tabBox;
+  }
 
-			@Override
-			public void changed(
-					ObservableValue<? extends String> observable, String oldValue, String newValue
-			) {
-				if (tool != null) {
-					tool.remove(context, window);
-					tool = null;
-				}
-				if (newValue == null)
-					return;
-				tool = createTool(context, window, newValue);
-			}
-		});
+  protected Tool createTool(ProjectContext context, Window window, String newValue) {
+    if (GroupNodeConfig.TOOL_MOVE.equals(newValue)) {
+      return new ToolMove(window, wrapper);
+    } else if (GroupNodeConfig.TOOL_LAYER_MOVE.equals(newValue)) {
+      return new ToolLayerMove(window, wrapper, this);
+    } else if (GroupNodeConfig.TOOL_STAMP.equals(newValue)) {
+      return new ToolStamp(context, window, wrapper, GroupNodeEditHandle.this);
+    } else throw new Assertion();
+  }
 
-		cleanup.add(() -> {
-			window.layerTabContent.clear(this);
-		});
-	}
+  protected List<Node> createToolButtons() {
+    return ImmutableList.of(
+        new Wrapper.ToolToggle(wrapper, "cursor-move16.png", "Move", GroupNodeConfig.TOOL_MOVE),
+        new Wrapper.ToolToggle(
+            wrapper, "cursor-layer-move.png", "Move layer", GroupNodeConfig.TOOL_LAYER_MOVE),
+        new Wrapper.ToolToggle(wrapper, "stamper16.png", "Stamp", GroupNodeConfig.TOOL_STAMP));
+  }
 
-	public VBox buildTab(ProjectContext context, Window window, TitledPane toolProps) {
-		VBox tabBox = new VBox();
-		tabBox.getChildren().addAll(
-				new TitledPane("Layer",
-						new WidgetFormBuilder().apply(b -> cleanup.add(nodeFormFields(context, b, wrapper))).build()
-				),
-				toolProps
-		);
-		return tabBox;
-	}
+  @Override
+  public void remove(ProjectContext context, Window window) {
+    if (tool != null) {
+      tool.remove(context, window);
+      tool = null;
+    }
+    if (wrapper.canvasHandle != null) wrapper.canvasHandle.overlay.getChildren().remove(overlay);
+    cleanup.forEach(c -> c.run());
+    cleanup2.forEach(c -> c.destroy());
+    window.layerTabContent.clear(this);
+    window.toolBarChildren.clear(this);
+  }
 
-	protected Tool createTool(ProjectContext context, Window window, String newValue) {
-		if (GroupNodeConfig.toolMove.equals(newValue)) {
-			return new ToolMove(window, wrapper);
-		} else if (GroupNodeConfig.toolStamp.equals(newValue)) {
-			return new ToolStamp(context, window, wrapper, GroupNodeEditHandle.this);
-		} else
-			throw new Assertion();
-	}
+  @Override
+  public Wrapper getWrapper() {
+    return wrapper;
+  }
 
-	protected List<Node> createToolButtons() {
-		return ImmutableList.of(new ToolToggle("cursor-move16.png", "Move", GroupNodeConfig.toolMove),
-				new ToolToggle("stamper16.png", "Stamp", GroupNodeConfig.toolStamp)
-		);
-	}
+  private Vector offset() {
+    return wrapper.node.offset();
+  }
 
-	@Override
-	public void remove(ProjectContext context, Window window) {
-		if (tool != null) {
-			tool.remove(context, window);
-			tool = null;
-		}
-		if (wrapper.canvasHandle != null)
-			wrapper.canvasHandle.overlay.getChildren().remove(overlay);
-		cleanup.forEach(c -> c.run());
-		window.layerTabContent.clear(this);
-		window.toolBarChildren.clear(this);
-	}
+  @Override
+  public void markStart(ProjectContext context, Window window, DoubleVector start) {
+    if (tool == null) return;
+    tool.markStart(
+        context,
+        window,
+        Window.toLocal(window.getSelectedForView(), wrapper.canvasHandle, start).minus(offset()),
+        start);
+  }
 
-	@Override
-	public Wrapper getWrapper() {
-		return wrapper;
-	}
+  @Override
+  public CanvasHandle getCanvas() {
+    return wrapper.canvasHandle;
+  }
 
-	@Override
-	public void markStart(ProjectContext context, Window window, DoubleVector start) {
-		if (tool == null)
-			return;
-		start = Window.toLocal(wrapper.canvasHandle, start);
-		tool.markStart(context, window, start);
-	}
+  @Override
+  public void mark(ProjectContext context, Window window, DoubleVector start, DoubleVector end) {
+    if (tool == null) return;
+    Vector offset = offset();
+    tool.mark(
+        context,
+        window,
+        Window.toLocal(window.getSelectedForView(), wrapper.canvasHandle, start).minus(offset),
+        Window.toLocal(window.getSelectedForView(), wrapper.canvasHandle, end).minus(offset),
+        start,
+        end);
+  }
 
-	@Override
-	public CanvasHandle getCanvas() {
-		return wrapper.canvasHandle;
-	}
-
-	@Override
-	public void mark(ProjectContext context, Window window, DoubleVector start, DoubleVector end) {
-		if (tool == null)
-			return;
-		start = Window.toLocal(wrapper.canvasHandle, start);
-		end = Window.toLocal(wrapper.canvasHandle, end);
-		tool.mark(context, window, start, end);
-	}
-
-	@Override
-	public void cursorMoved(ProjectContext context, Window window, DoubleVector vector) {
-		vector = Window.toLocal(wrapper.canvasHandle, vector);
-		tool.cursorMoved(context, window, vector);
-	}
+  @Override
+  public void cursorMoved(ProjectContext context, Window window, DoubleVector vector) {
+    vector = Window.toLocal(window.getSelectedForView(), wrapper.canvasHandle, vector);
+    tool.cursorMoved(context, window, vector);
+  }
 }

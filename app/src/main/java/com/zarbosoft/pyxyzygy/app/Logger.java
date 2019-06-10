@@ -17,62 +17,81 @@ import static com.zarbosoft.rendaw.common.Common.sublist;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 
 public abstract class Logger {
-	public static class File extends Logger {
-		final PrintStream stream;
+  public abstract void flush();
 
-		File(AppDirs appDirs) {
-			stream = uncheck(() -> {
-				Path logRoot = appDirs.user_log_dir(true);
-				Files.createDirectories(logRoot);
-				List<Path> oldLogs = Files
-						.list(logRoot)
-						.sorted(new ChainComparator<Path>().greaterFirst(Path::toString).build())
-						.collect(Collectors.toList());
-				if (oldLogs.size() > 10)
-					sublist(oldLogs, 10 - oldLogs.size()).forEach(p -> uncheck(() -> Files.delete(p)));
-				return new PrintStream(Files.newOutputStream(logRoot.resolve(LocalDateTime
-						.now()
-						.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME).replaceAll("[:]","_") + ".txt")));
-			});
-		}
+  public static class File extends Logger {
+    final PrintStream stream;
 
-		public void write(String format, Object... args1) {
-			Object[] args = Arrays.copyOf(args1, args1.length + 1);
-			args[args.length - 1] = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-			stream.format("[!] %s: " + format + "\n", args);
-		}
+    File(AppDirs appDirs) {
+      stream =
+          uncheck(
+              () -> {
+                Path logRoot = appDirs.user_log_dir(true);
+                Files.createDirectories(logRoot);
+                List<Path> oldLogs =
+                    Files.list(logRoot)
+                        .sorted(new ChainComparator<Path>().greaterFirst(Path::toString).build())
+                        .collect(Collectors.toList());
+                if (oldLogs.size() > 10)
+                  sublist(oldLogs, 10 - oldLogs.size())
+                      .forEach(p -> uncheck(() -> Files.delete(p)));
+                return new PrintStream(
+                    Files.newOutputStream(
+                        logRoot.resolve(
+                            LocalDateTime.now()
+                                    .format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                                    .replaceAll("[:]", "_")
+                                + ".txt")));
+              });
+    }
 
-		public void writeException(Throwable e, String format, Object... args1) {
-			Object[] args = Arrays.copyOf(args1, args1.length + 1);
-			args[args.length - 1] = Throwables.getStackTraceAsString(e);
-			write(format + "\n%s", args);
-			stream.flush();
-		}
-	}
+    public void write(String format, Object... args1) {
+      Object[] args = Arrays.copyOf(args1, args1.length + 1);
+      args[args.length - 1] = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+      stream.format("[!] %s: " + format + "\n", args);
+    }
 
-	public static class TerminalPlusFile extends File {
-		TerminalPlusFile(AppDirs appDirs) {
-			super(appDirs);
-		}
+    public void writeException(Throwable e, String format, Object... args1) {
+      Object[] args = Arrays.copyOf(args1, args1.length + 1);
+      args[args.length - 1] = Throwables.getStackTraceAsString(e);
+      write(format + "\n%s", args);
+      stream.flush();
+    }
 
-		@Override
-		public void write(String format, Object... args) {
-			System.out.format(format, args);
-			super.write(format, args);
-		}
+    @Override
+    public void flush() {
+      stream.flush();
+    }
+  }
 
-		@Override
-		public void writeException(Throwable e, String format, Object... args1) {
-			System.out.flush();
-			Object[] args = Arrays.copyOf(args1, args1.length + 1);
-			args[args.length - 1] = Throwables.getStackTraceAsString(e);
-			System.err.format(format + "\n%s", args);
-			System.err.flush();
-			super.writeException(e, format, args1);
-		}
-	}
+  public static class TerminalPlusFile extends File {
+    TerminalPlusFile(AppDirs appDirs) {
+      super(appDirs);
+    }
 
-	public abstract void write(String format, Object... args);
+    @Override
+    public void write(String format, Object... args) {
+      System.out.format(format + "\n", args);
+      super.write(format, args);
+    }
 
-	public abstract void writeException(Throwable e, String format, Object... args);
+    @Override
+    public void writeException(Throwable e, String format, Object... args1) {
+      System.out.flush();
+      Object[] args = Arrays.copyOf(args1, args1.length + 1);
+      args[args.length - 1] = Throwables.getStackTraceAsString(e);
+      System.err.format(format + "\n%s\n", args);
+      System.err.flush();
+      super.writeException(e, format, args1);
+    }
+
+    @Override
+    public void flush() {
+      System.out.flush();
+    }
+  }
+
+  public abstract void write(String format, Object... args);
+
+  public abstract void writeException(Throwable e, String format, Object... args);
 }

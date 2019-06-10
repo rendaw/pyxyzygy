@@ -10,17 +10,17 @@ import java.nio.file.Paths;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 
 public abstract class TaskBase extends Task {
-	public Path path;
+  public Path path;
 
-	public void setPath(final String path) {
-		this.path = Paths.get(path);
-	}
+  public void setPath(final String path) {
+    this.path = Paths.get(path);
+  }
 
-	@Override
-	public void execute() throws BuildException {
-		uncheck(() -> Files.createDirectories(path));
-		run();
-	}
+  @Override
+  public void execute() throws BuildException {
+    uncheck(() -> Files.createDirectories(path));
+    run();
+  }
 
-	public abstract void run();
+  public abstract void run();
 }

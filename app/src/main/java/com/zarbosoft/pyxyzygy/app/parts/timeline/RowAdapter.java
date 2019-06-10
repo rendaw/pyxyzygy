@@ -1,50 +1,58 @@
 package com.zarbosoft.pyxyzygy.app.parts.timeline;
 
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.WidgetHandle;
 import com.zarbosoft.pyxyzygy.app.Window;
+import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
 import javafx.beans.value.ObservableObjectValue;
 import javafx.beans.value.ObservableValue;
+import javafx.scene.control.TreeItem;
 import javafx.scene.image.Image;
 
-public abstract class RowAdapter {
-	public abstract ObservableValue<String> getName();
+public abstract class RowAdapter extends TreeItem<RowAdapter> {
+  public RowAdapter() {
+    this.setValue(this);
+    this.setExpanded(true);
+  }
 
-	public abstract boolean hasFrames();
+  @Override
+  public String toString() {
+    return String.format("(Row adapter for %s)", getData());
+  }
 
-	public abstract boolean createFrame(
-			ProjectContext context, Window window, ChangeStepBuilder change, int outer
-	);
+  public abstract ObservableValue<String> getName();
 
-	public abstract ObservableObjectValue<Image> getStateImage();
+  public abstract boolean hasFrames();
 
-	public abstract void deselected();
+  public abstract boolean hasNormalFrames();
 
-	public abstract void selected();
+  public abstract boolean createFrame(
+      ProjectContext context, Window window, ChangeStepBuilder change, int outer);
 
-	public abstract boolean duplicateFrame(
-			ProjectContext context, Window window, ChangeStepBuilder change, int outer
-	);
+  public abstract ObservableObjectValue<Image> getStateImage();
 
-	public abstract WidgetHandle createRowWidget(ProjectContext context, Window window);
+  public abstract boolean duplicateFrame(
+      ProjectContext context, Window window, ChangeStepBuilder change, int outer);
 
-	/**
-	 * @param context
-	 * @param window
-	 * @return Maximum frame in this row
-	 */
-	public abstract int updateTime(ProjectContext context, Window window);
+  public abstract WidgetHandle createRowWidget(ProjectContext context, Window window);
 
-	public abstract void updateFrameMarker(ProjectContext context, Window window);
+  /**
+   * @param context
+   * @param window
+   * @return Maximum frame in this row
+   */
+  public abstract int updateTime(ProjectContext context, Window window);
 
-	public abstract void remove(ProjectContext context);
+  public abstract void updateFrameMarker(ProjectContext context, Window window);
 
-	public abstract boolean frameAt(Window window, int outer);
+  public abstract void remove(ProjectContext context);
 
-	/**
-	 * Only called if hasFrames (unique data for describing a change)
-	 * @return
-	 */
-	public abstract Object getData();
+  public abstract boolean frameAt(Window window, int outer);
+
+  /**
+   * Only called if hasFrames (unique data for describing a change)
+   *
+   * @return
+   */
+  public abstract Object getData();
 }
