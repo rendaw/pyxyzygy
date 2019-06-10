@@ -36,6 +36,8 @@ import java.util.function.Supplier;
 import static com.zarbosoft.pyxyzygy.app.Misc.nodeFormFields;
 import static com.zarbosoft.pyxyzygy.app.Misc.separateFormField;
 import static com.zarbosoft.pyxyzygy.app.config.CameraNodeConfig.RenderMode.PNG_SEQUENCE;
+import static com.zarbosoft.pyxyzygy.app.wrappers.camera.CameraWrapper.getActualFrameRate;
+import static com.zarbosoft.pyxyzygy.app.wrappers.camera.CameraWrapper.getActualFrameTimeMs;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 import static org.jcodec.common.model.ColorSpace.RGB;
 
@@ -190,7 +192,8 @@ public class CameraEditHandle extends GroupNodeEditHandle {
               SequenceEncoder encoder =
                   SequenceEncoder.createSequenceEncoder(
                       dir.resolve(String.format("%s.webm", wrapper.config.renderName)).toFile(),
-                      (int) (node.frameRate() / 10.0));
+                    (int) getActualFrameRate(node)
+                  );
               Picture rgbPic = Picture.create(node.width() * scale, node.height() * scale, RGB);
               byte[] rgb = rgbPic.getPlaneData(0);
               continuation.run(
@@ -231,7 +234,7 @@ public class CameraEditHandle extends GroupNodeEditHandle {
 
                 ImageOptions options = new ImageOptions();
                 options.setDelay(
-                    TimeUnit.MICROSECONDS.convert(1, TimeUnit.SECONDS) * 10 / node.frameRate(),
+                  (long) (TimeUnit.MICROSECONDS.convert(1, TimeUnit.MILLISECONDS) * getActualFrameTimeMs(node)),
                     TimeUnit.MICROSECONDS);
 
                 Color[][] rgb = new Color[node.height() * scale][node.width() * scale];

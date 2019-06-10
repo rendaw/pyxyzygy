@@ -342,7 +342,7 @@ public class Structure {
           camera.initialOffsetSet(context, Vector.ZERO);
           camera.initialFrameStartSet(context, 0);
           camera.initialFrameLengthSet(context, 12);
-          camera.initialFrameRateSet(context, 120);
+          camera.initialFrameRateSet(context, 10);
           double cameraFactor = context.tileSize / 200.0;
           camera.initialHeightSet(context, (int) (240 * cameraFactor));
           camera.initialWidthSet(context, (int) (320 * cameraFactor));

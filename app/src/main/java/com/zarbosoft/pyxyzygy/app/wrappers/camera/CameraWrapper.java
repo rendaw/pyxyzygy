@@ -194,4 +194,12 @@ public class CameraWrapper extends GroupNodeWrapper {
             })
         .go();
   }
+
+  public static double getActualFrameRate(Camera camera) {
+    return camera.frameRate();
+  }
+
+  public static double getActualFrameTimeMs(Camera camera) {
+    return 1000.0 / camera.frameRate();
+  }
 }

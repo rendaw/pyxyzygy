@@ -60,6 +60,7 @@ import java.util.stream.Stream;
 import static com.zarbosoft.pyxyzygy.app.Global.logger;
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
+import static com.zarbosoft.pyxyzygy.app.wrappers.camera.CameraWrapper.getActualFrameTimeMs;
 import static com.zarbosoft.rendaw.common.Common.sublist;
 
 public class Timeline {
@@ -546,7 +547,9 @@ public class Timeline {
                             public PlayState updateState() {
                               Camera node = (Camera) ((CameraWrapper) edit).node;
                               return new PlayState(
-                                  1000 * 10 / node.frameRate(), node.frameStart(), node.frameLength());
+                                  (long) getActualFrameTimeMs(node),
+                                  node.frameStart(),
+                                  node.frameLength());
                             }
                           };
                     } else {
