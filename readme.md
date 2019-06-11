@@ -1,7 +1,8 @@
-# pyxyzygy
-### Heavenly Alignment of Pixels
+<img src="https://gitlab.com/rendaw/pyxyzygy/raw/experimental/itch/banner.svg" width="100%" alt="pyxyzygy: heavenly alignment of pixels">
 
-**pyxyzygy** is a pixel art and animation tool.  Get it at [https://rendaw.itch.io/pyxyzygy](https://rendaw.itch.io/pyxyzygy) or build it yourself.
+**pyxyzygy** is a pixel art and animation tool.
+
+Build it yourself or buy it at [https://rendaw.itch.io/pyxyzygy](https://rendaw.itch.io/pyxyzygy) to support the project.
 
 # GUI usage
 
