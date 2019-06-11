@@ -141,14 +141,14 @@ def main():
         out.write('#!/usr/bin/bash\n')
         out.write('cd bin/java\n')
         out.write(f'./java{exe_ext}')
-        for arg in args:
+        for arg in run_args:
             out.write(f' \\\n\t{arg}')
         out.write('\n')
     linux_run.chmod(0o755)
     with open(path / 'run.bat', 'w', newline='\r\n') as out:
         out.write('cd bin\\java\n')
         out.write(f'java{exe_ext}')
-        for arg in args:
+        for arg in run_args:
             out.write(f' ^\\\n\t\t{arg}')
         out.write('\n')
 
