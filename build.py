@@ -6,6 +6,8 @@ def main():
     import shutil
     import argparse
 
+    import toml
+
     root = (Path(__file__).parent).resolve()
 
     parser = argparse.ArgumentParser()
@@ -116,9 +118,40 @@ def main():
             '-p', '--strip-unneeded',
             path / 'java/lib/server/libjvm.so'
         ])
-    template('build/itch_manifest.toml', path / '.itch.toml', dict(
-        ext=exe_ext,
-    ))
+    run_args = [
+        '-p',
+        'modules',
+        '--add-opens',
+        'javafx.graphics/com.sun.prism=com.zarbosoft.pyxyzygy.nearestneighborimageview',  # noqa
+        '--add-exports=javafx.graphics/com.sun.javafx.sg.prism=com.zarbosoft.pyxyzygy.nearestneighborimageview',  # noqa
+        '--add-opens', 'javafx.controls/javafx.scene.control=com.zarbosoft.pyxyzygy.app',  # noqa
+        '--add-exports=javafx.graphics/com.sun.glass.ui=com.zarbosoft.pyxyzygy.app',  # noqa
+        '--add-opens', 'gifencoder/com.squareup.gifencoder=com.zarbosoft.pyxyzygy.app',  # noqa
+        f'-javaagent:..{os.sep}nearestneighborimageviewagent-1.0.0.jar',
+        '-m', 'com.zarbosoft.pyxyzygy.app/com.zarbosoft.pyxyzygy.app.GUIMain'
+    ]
+    with open(path / '.itch.toml', 'w') as out:
+        toml.dump({'actions': [{
+            'name': 'run',
+            'path': f'java/bin/java{exe_ext}',
+            'args': run_args
+        }]}, out)
+    linux_run = path / 'run.sh'
+    with open(linux_run, 'w') as out:
+        out.write('#!/usr/bin/bash\n')
+        out.write('cd bin/java\n')
+        out.write(f'./java{exe_ext}')
+        for arg in args:
+            out.write(f' \\\n\t{arg}')
+        out.write('\n')
+    linux_run.chmod(0o755)
+    with open(path / 'run.bat', 'w', newline='\r\n') as out:
+        out.write('cd bin\\java\n')
+        out.write(f'java{exe_ext}')
+        for arg in args:
+            out.write(f' ^\\\n\t\t{arg}')
+        out.write('\n')
+
     for b, ds, fs in os.walk(path):
         for f in fs:
             print(b, f)
