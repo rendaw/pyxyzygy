@@ -8,21 +8,15 @@ Build it yourself or buy it at [https://rendaw.itch.io/pyxyzygy](https://rendaw.
 
 <div><br></div>
 
-# GUI usage
+# Getting started
 
-Launch **pyxyzygy** from the **itch.io** client or from the installation root using the arguments in `build/itch_manifest.toml`.
+We recommend you launch **pyxyzygy** from the **itch.io** client but bat/sh launch scripts are included for your convenience.
 
-If you do not specify any arguments you will be prompted to choose or create a new project.  If you specify an existing project path as the first argument **pyxyzygy** will open it.  If you specify a path to a project directory that doesn't yet exist for the first argument followed by the image mode (`normal` or `pixel`) **pyxyzygy** will create and open it.
-
-### Additional hotkeys
-
-* `ctrl + click` - sample color from current node
-* `ctrl + shift + click` - sample merged color from campus
-* `shift + click` - draw line
+Read the illustrated [user guide](docs/mainwindow.md)!
 
 # CLI usage
 
-From the **itch.io** installation root (java reduced image) run:
+From the installation root run:
 
 ```
 ./java/bin/java -p modules -m com.zarbosoft.pyxyzygy.app/com.zarbosoft.pyxyzygy.app.CLIMain ARGUMENTS

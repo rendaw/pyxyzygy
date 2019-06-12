@@ -19,3 +19,9 @@ Information on
 * [Palette](palette_layer.md) layers
 * [True color](true_color_layer.md) layers
 * [Camera](camera_layer.md) layers
+
+## Mouse hotkeys
+
+* `ctrl + click` - sample color from current node
+* `ctrl + shift + click` - sample merged color from campus
+* `shift + click` - draw line
