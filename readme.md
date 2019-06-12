@@ -1,4 +1,4 @@
-<img src="https://gitlab.com/rendaw/pyxyzygy/raw/experimental/itch/banner.svg" width="100%" alt="pyxyzygy: heavenly alignment of pixels">
+<a name="readme"><img src="https://gitlab.com/rendaw/pyxyzygy/raw/experimental/itch/banner.svg" width="100%" alt="pyxyzygy: heavenly alignment of pixels">
 
 <div><br><br></div>
 
