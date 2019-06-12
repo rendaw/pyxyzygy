@@ -8,13 +8,13 @@ Build it yourself or buy it at [https://rendaw.itch.io/pyxyzygy](https://rendaw.
 
 <div><br></div>
 
-# Getting started
+# User guide
 
 We recommend you launch **pyxyzygy** from the **itch.io** client but bat/sh launch scripts are included for your convenience.
 
 Read the illustrated [user guide](docs/mainwindow.md)!
 
-# CLI usage
+# Automation
 
 From the installation root run:
 
