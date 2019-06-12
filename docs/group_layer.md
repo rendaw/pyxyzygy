@@ -8,7 +8,7 @@ A group layer combines other layers.  Within a group layers can be moved around 
 
 ![Toolbar](grouptoolbar.jpg)
 
-* **1** Move layer
+* **1** / Move layer
 
    Use this to move the current layer horizontally and verically in the current frame (all layers always have at least one frame).
 
@@ -20,7 +20,7 @@ A group layer combines other layers.  Within a group layers can be moved around 
 
    The origin of the layer selected to move will appear in the editor.
 
-* **2** Stamp
+* **2** / Stamp
 
    Stamp linked copies of a layer.  This is useful for rapidly placing tiles.
 
@@ -40,11 +40,11 @@ Each layer in a group has it's own frames.
 
 ![Group timeline](grouptimeline.jpg)
 
-* **1** Selected child layer
+* **1** / Selected child layer
 
    The dot indicates which layer is selected.  This is synchronized with the `move layer` layer list.
 
-* **2** Time frames
+* **2** / Time frames
 
    A time frame allows you to offset, add/remove time loops, or disable a child layer for a time period.  Use this for looping backgrounds, for example.
 
@@ -52,6 +52,6 @@ Each layer in a group has it's own frames.
 
    Drag the loop handle (**4**) to change the duration of the loop.  By default the handle is aligned with the start of the time period and indicates that there is no loop (time increases continuously from the start).
 
-* **5** Position frames
+* **5** / Position frames
 
    A position frame allows you to give a child layer different offsets at different times.  Use the move frame (**6**) tool to change the offset for the visible frame.

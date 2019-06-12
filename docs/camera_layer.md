@@ -14,7 +14,7 @@ Only camera-specific features are described here.
 
 ![Toolbar](cameratoolbar.jpg)
 
-* **1** Adjust window
+* **1** / Adjust window
 
    Click and drag to resize the camera window.
 
@@ -22,11 +22,11 @@ Only camera-specific features are described here.
 
 ![Camera settings](camerasettings.jpg)
 
-* **1** **2** Window width/height
+* **1** **2** / Window width/height
 
    You can adjust the window size numerically here.
 
-* **3** Render type
+* **3** / Render type
 
    What sort of render you want to make.
 
@@ -35,21 +35,21 @@ Only camera-specific features are described here.
    * WebM - render a WebM animation.
    * PNG Sequence - render a numbered PNG for each frame.
 
-* **4** Render path
+* **4** / Render path
 
    Where to output the rendered files
 
-* **5** Render name
+* **5** / Render name
 
    The base name of the rendered file.
 
    Don't add an extension - depending on the render type a number and extension will be added.
 
-* **6** Render scale
+* **6** / Render scale
 
    Scale the image up by this factor when rendering.  Useful for pixel art which is usually too small to see easily without zooming in on modern monitors.
 
-* **7** Render
+* **7** / Render
 
    Render the camera with the above settings.  Rendering only includes children of the camera.
 

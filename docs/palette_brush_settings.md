@@ -4,11 +4,11 @@
 
 ![Palette brush settings](palettebrushsettings.jpg)
 
-* **1** Name
+* **1** / Name
 
-* **2** Size (diameter)
+* **2** / Size (diameter)
 
-* **3** Use per-brush/global color
+* **3** / Use per-brush/global color
 
    When this is checked, if you select a new color only this brush's color is changed.
 

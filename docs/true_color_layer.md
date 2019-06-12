@@ -8,11 +8,11 @@ A true color layer has no palette, you're free to use any color you want.  It al
 
 ![Toolbar](truecolortoolbar.jpg)
 
-* **1** Select
+* **1** / Select
 
    Use this to copy, paste, and move sections of the canvas.
 
-* **2** Brushes
+* **2** / Brushes
 
    Each tool button shows the brush size and the selected color.
 

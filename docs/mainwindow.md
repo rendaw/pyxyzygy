@@ -11,16 +11,14 @@
 3. [Timeline](timeline_section.md)
    Tools for animation.
 
-## Layers
-
-Information on
+## Types of layers
 
 * [Group](group_layer.md) layers
 * [Palette](palette_layer.md) layers
 * [True color](true_color_layer.md) layers
 * [Camera](camera_layer.md) layers
 
-## Mouse hotkeys
+## Additional mouse hotkeys
 
 * `ctrl + click` - sample color from current node
 * `ctrl + shift + click` - sample merged color from campus
