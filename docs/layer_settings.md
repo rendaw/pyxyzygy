@@ -8,9 +8,13 @@ In the `Layer` tab:
 
 * **1** / The layer name
 
-* **2** / Toggle layer visibility.  When you're editing a layer, it is temporarily made visible even if this is unchecked.
+* **2** / Toggle layer visibility
+
+   When you're editing a layer, it is temporarily made visible even if this is unchecked.  Scenes (root layers) have no visibility toggle.
 
 * **3** / Opacity
+
+   Scenes (root layers) have no opacity setting.
 
 * **4** / Unlink layer
 

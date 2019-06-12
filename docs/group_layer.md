@@ -34,6 +34,10 @@ A group layer combines other layers.  Within a group layers can be moved around 
 
    Note that you can't stamp any parent of the current group - if you did you'd have an infinite loop.
 
+## Layer settings
+
+See [layer settings](layer_settings.md).
+
 ## Timeline
 
 Each layer in a group has it's own frames.
