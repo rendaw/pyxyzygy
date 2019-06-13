@@ -99,10 +99,15 @@ public class Window {
   public Structure structure;
   private BinderRoot rootTabWidth; // GC root
   private ChangeListener<? super Boolean> maxListener;
+  private TabPane leftTabs;
 
   public static HalfBinder<Number> effectiveWidthBinder(Node node) {
     return new PropertyHalfBinder<Bounds>(node.layoutBoundsProperty())
         .map(b -> opt(node.minWidth(0)));
+  }
+
+  public void showLayerTab() {
+    leftTabs.getSelectionModel().select(layerTab);
   }
 
   public static class Tab extends javafx.scene.control.Tab {
@@ -351,7 +356,7 @@ public class Window {
             })
         .forEach(context.hotkeys::register);
 
-    TabPane leftTabs = new TabPane();
+    leftTabs = new TabPane();
     leftTabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
     final Tab structureTab = new Tab("Project");
     final Tab configTab = new Tab("Settings");

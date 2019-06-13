@@ -87,6 +87,7 @@ public class ToolLayerMove extends Tool {
                   return layerList;
                 })
             .build());
+    window.showLayerTab();
   }
 
   @Override

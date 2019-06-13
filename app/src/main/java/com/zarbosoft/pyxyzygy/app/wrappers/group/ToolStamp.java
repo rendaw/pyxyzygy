@@ -112,8 +112,6 @@ public class ToolStamp extends Tool {
             context.project);
     tree.setRoot(mirror.tree.get());
     tree.setShowRoot(false);
-    ObjectMirror found = lookup.get(wrapper.config.stampSource.get());
-    if (found != null) tree.getSelectionModel().select(found.tree.get());
     ImageView stampOverlayImage = NearestNeighborImageView.create();
     stampOverlayImage.setOpacity(0.5);
     overlayGroup = new Group();
@@ -159,8 +157,16 @@ public class ToolStamp extends Tool {
                   return tree;
                 })
             .build());
+    window.showLayerTab();
     this.wrapper = wrapper;
     window.editorCursor.set(this, centerCursor("stamper32.png"));
+
+    ObjectMirror found = lookup.get(wrapper.config.stampSource.get());
+    if (found != null) tree.getSelectionModel().select(found.tree.get());
+    else
+      lookup.values().stream()
+          .findFirst()
+          .ifPresent(o -> tree.getSelectionModel().select(o.tree.get()));
   }
 
   @Override
