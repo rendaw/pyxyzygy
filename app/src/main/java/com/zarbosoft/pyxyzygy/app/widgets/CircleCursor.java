@@ -24,6 +24,7 @@ public class CircleCursor extends ImageCursor {
   }
 
   public static final ImageCursor create(double size) {
+    size = Math.max(2.0, size);
     Canvas canvas = new Canvas();
     canvas.setHeight(size + sumThickness + 1);
     canvas.setWidth(canvas.getHeight());
