@@ -10,7 +10,9 @@ In the `Layer` tab:
 
 * **2** / Toggle layer visibility
 
-   When you're editing a layer, it is temporarily made visible even if this is unchecked.  Scenes (root layers) have no visibility toggle.
+   Note!  The layer won't disappear until you select another layer to edit.  Layers are always visible when you're editing them.
+
+   Scenes (root layers) have no visibility toggle.
 
 * **3** / Opacity
 

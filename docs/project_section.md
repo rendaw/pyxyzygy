@@ -60,4 +60,6 @@ The two controls below the toolbar allow you to quickly change layer visibility.
 
 * **10** / Toggle layer visibility
 
+   Note!  A layer will only disappear when you deselect it.  Selected layers are always visible.
+
 * **11** / Change layer opacity

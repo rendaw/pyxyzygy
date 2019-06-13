@@ -24,7 +24,7 @@
 
 * **5** / Center view
 
-   Since all layers are infinitely large, if you get lost press this button to go back to the origin.
+   Since the canvas is infinitely large, if you get lost press this button to scroll back to the origin.
 
 * **6** / Menu
 
