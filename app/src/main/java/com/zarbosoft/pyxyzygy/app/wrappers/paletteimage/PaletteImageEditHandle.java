@@ -332,7 +332,7 @@ public class PaletteImageEditHandle extends EditHandle {
                 wrapper, "cursor-frame-move.png", "Move frame contents", TOOL_FRAME_MOVE)));
 
     // Brushes
-    MenuItem menuNew = new MenuItem("New");
+    MenuItem menuNew = new MenuItem("New brush");
     menuNew.setOnAction(
         e -> {
           PaletteBrush brush = new PaletteBrush();
@@ -343,7 +343,7 @@ public class PaletteImageEditHandle extends EditHandle {
             setBrush(0);
           }
         });
-    MenuItem menuDelete = new MenuItem("Delete");
+    MenuItem menuDelete = new MenuItem("Delete brush");
     BooleanBinding brushSelected =
         Bindings.createBooleanBinding(
             () ->
@@ -364,7 +364,7 @@ public class PaletteImageEditHandle extends EditHandle {
             setBrush(Math.max(0, index - 1));
           }
         });
-    MenuItem menuLeft = new MenuItem("Move left");
+    MenuItem menuLeft = new MenuItem("Move brush left");
     menuLeft.disableProperty().bind(brushSelected);
     menuLeft.setOnAction(
         e -> {
@@ -374,7 +374,7 @@ public class PaletteImageEditHandle extends EditHandle {
           GUILaunch.profileConfig.paletteBrushes.remove(index);
           GUILaunch.profileConfig.paletteBrushes.add(index - 1, brush);
         });
-    MenuItem menuRight = new MenuItem("Move right");
+    MenuItem menuRight = new MenuItem("Move brush right");
     menuRight.disableProperty().bind(brushSelected);
     menuRight.setOnAction(
         e -> {

@@ -46,7 +46,8 @@ import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 
 public class Window {
-  public List<FrameMapEntry> timeMap; // Visual time map - how time map between edit and view is visualized
+  public List<FrameMapEntry>
+      timeMap; // Visual time map - how time map between edit and view is visualized
   public ManualHalfBinder<Wrapper> selectedForEditWrapperEnabledBinder = new ManualHalfBinder<>();
   public ManualHalfBinder<EditHandle> selectedForEditOriginBinder = new ManualHalfBinder<>();
   public ManualHalfBinder<EditHandle> selectedForEditOpacityBinder = new ManualHalfBinder<>();
@@ -428,14 +429,17 @@ public class Window {
     menuButton.disableProperty().bind(Bindings.isEmpty(menuButton.getItems()));
     menuChildren =
         new ChildrenReplacer<MenuItem>() {
+          private List<MenuItem> was;
+
           @Override
           protected void innerSet(String title, List<MenuItem> content) {
+            was = content;
             menuButton.getItems().addAll(content);
           }
 
           @Override
           protected void innerClear() {
-            menuButton.getItems().clear();
+            if (was != null) menuButton.getItems().removeAll(was);
           }
         };
 
@@ -455,6 +459,20 @@ public class Window {
             toolbarExtra.getChildren().clear();
           }
         };
+
+    MenuItem undoButton = new MenuItem("Undo");
+    undoButton.disableProperty().bind(Bindings.isEmpty(context.history.undoHistory));
+    undoButton.setOnAction(
+        e -> {
+          context.undo();
+        });
+    MenuItem redoButton = new MenuItem("Redo");
+    redoButton.disableProperty().bind(Bindings.isEmpty(context.history.redoHistory));
+    redoButton.setOnAction(
+        e -> {
+          context.redo();
+        });
+    menuButton.getItems().addAll(undoButton, redoButton, new SeparatorMenuItem());
 
     toolBar = new ToolBar();
     toolBar.getItems().addAll(toolbarExtra, menuSpring, zoomBox, resetScroll, menuButton);
@@ -896,8 +914,8 @@ public class Window {
     textArea.setMaxWidth(Double.MAX_VALUE);
     textArea.setMaxHeight(Double.MAX_VALUE);
     dialog(message)
-      .addContent(new TitledPane("Trace", textArea))
-      .addAction(ButtonType.OK, true, () -> true)
-      .go();
+        .addContent(new TitledPane("Trace", textArea))
+        .addAction(ButtonType.OK, true, () -> true)
+        .go();
   }
 }

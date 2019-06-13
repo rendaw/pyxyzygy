@@ -10,11 +10,14 @@ import com.zarbosoft.pyxyzygy.seed.model.Change;
 import com.zarbosoft.pyxyzygy.seed.model.ChangeStep;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.WeakCache;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -27,8 +30,8 @@ public class History {
   private final ProjectContext context;
   private final WeakCache<ChangeStep.CacheId, ChangeStep> stepLookup =
       new WeakCache<>(c -> c.cacheId);
-  public final List<ChangeStep.CacheId> undoHistory;
-  public final List<ChangeStep.CacheId> redoHistory;
+  public final ObservableList<ChangeStep.CacheId> undoHistory;
+  public final ObservableList<ChangeStep.CacheId> redoHistory;
   public ChangeStep changeStep;
   private boolean inChange = false;
 
@@ -42,14 +45,14 @@ public class History {
       if (changeStep == null)
         changeStep = new ChangeStep(new ChangeStep.CacheId(context.nextId++));
     }
-    this.undoHistory =
+    this.undoHistory = FXCollections.observableArrayList((Collection)
         undoHistory.stream()
             .map(i -> new ChangeStep.CacheId(i))
-            .collect(Collectors.toCollection(ArrayList::new));
-    this.redoHistory =
+            .collect(Collectors.toCollection(ArrayList::new)));
+    this.redoHistory = FXCollections.observableArrayList((Collection)
         redoHistory.stream()
             .map(i -> new ChangeStep.CacheId(i))
-            .collect(Collectors.toCollection(ArrayList::new));
+            .collect(Collectors.toCollection(ArrayList::new)));
     if (activeChange == null) context.setDirty(changeStep);
   }
 

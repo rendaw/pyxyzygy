@@ -186,7 +186,7 @@ public class TrueColorImageEditHandle extends EditHandle {
                 wrapper, "cursor-frame-move.png", "Move frame contents", TOOL_FRAME_MOVE)));
 
     // Brushes
-    MenuItem menuNew = new MenuItem("New");
+    MenuItem menuNew = new MenuItem("New brush");
     menuNew.setOnAction(
         e -> {
           TrueColorBrush brush = new TrueColorBrush();
@@ -200,7 +200,7 @@ public class TrueColorImageEditHandle extends EditHandle {
             setBrush(0);
           }
         });
-    MenuItem menuDelete = new MenuItem("Delete");
+    MenuItem menuDelete = new MenuItem("Delete brush");
     BooleanBinding brushSelected =
         Bindings.createBooleanBinding(
             () ->
@@ -221,7 +221,7 @@ public class TrueColorImageEditHandle extends EditHandle {
             setBrush(Math.max(0, index - 1));
           }
         });
-    MenuItem menuLeft = new MenuItem("Move left");
+    MenuItem menuLeft = new MenuItem("Move brush left");
     menuLeft.disableProperty().bind(brushSelected);
     menuLeft.setOnAction(
         e -> {
@@ -231,7 +231,7 @@ public class TrueColorImageEditHandle extends EditHandle {
           GUILaunch.profileConfig.trueColorBrushes.remove(index);
           GUILaunch.profileConfig.trueColorBrushes.add(index - 1, brush);
         });
-    MenuItem menuRight = new MenuItem("Move right");
+    MenuItem menuRight = new MenuItem("Move brush right");
     menuRight.disableProperty().bind(brushSelected);
     menuRight.setOnAction(
         e -> {
