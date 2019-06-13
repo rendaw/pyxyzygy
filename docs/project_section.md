@@ -1,4 +1,4 @@
-[top](mainwindow.md)
+[top](userguide.md)
 
 # Project section
 
@@ -36,7 +36,7 @@ The toolbar at the top contains all the buttons for modifying the project struct
 
 * **4** / Add a layer or duplicate a layer
 
-   See information on layers [here](mainwindow.md#layers).
+   See information on layers [here](userguide.md#layers).
 
 * **5** / Duplicate a layer
 

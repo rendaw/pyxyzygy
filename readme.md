@@ -12,7 +12,7 @@ Build it yourself or buy it at [https://rendaw.itch.io/pyxyzygy](https://rendaw.
 
 We recommend you launch **pyxyzygy** from the **itch.io** client but bat/sh launch scripts are included for your convenience.
 
-Read the illustrated [user guide](docs/mainwindow.md)!
+Read the illustrated [user guide](docs/userguide.md)!
 
 # Automation
 

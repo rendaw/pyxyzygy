@@ -1,4 +1,4 @@
-[top](mainwindow.md)
+[top](userguide.md)
 
 # Editor section
 
@@ -16,7 +16,7 @@
 
 * **3** / Other tools
 
-   The tools displayed here depend on the type of the layer you're currently editing.  See information on layers [here](mainwindow.md#layers).
+   The tools displayed here depend on the type of the layer you're currently editing.  See information on layers [here](userguide.md#layers).
 
 * **4** / Zoom
 

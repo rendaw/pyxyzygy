@@ -1,4 +1,4 @@
-[top](mainwindow.md)
+[top](userguide.md)
 
 # Group layer
 
