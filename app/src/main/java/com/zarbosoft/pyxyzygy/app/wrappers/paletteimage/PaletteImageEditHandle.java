@@ -344,16 +344,16 @@ public class PaletteImageEditHandle extends EditHandle {
           }
         });
     MenuItem menuDelete = new MenuItem("Delete brush");
-    BooleanBinding brushSelected =
+    BooleanBinding brushNotSelected =
         Bindings.createBooleanBinding(
             () ->
-                wrapper.config.tool.get() == PaletteImageNodeConfig.TOOL_BRUSH
-                    && Range.closedOpen(0, GUILaunch.profileConfig.paletteBrushes.size())
+                wrapper.config.tool.get() != PaletteImageNodeConfig.TOOL_BRUSH
+                    || !Range.closedOpen(0, GUILaunch.profileConfig.paletteBrushes.size())
                         .contains(wrapper.config.brush.get()),
             GUILaunch.profileConfig.paletteBrushes,
             wrapper.config.tool,
             wrapper.config.brush);
-    menuDelete.disableProperty().bind(brushSelected);
+    menuDelete.disableProperty().bind(brushNotSelected);
     menuDelete.setOnAction(
         e -> {
           int index = GUILaunch.profileConfig.paletteBrushes.indexOf(wrapper.config.brush.get());
@@ -365,24 +365,28 @@ public class PaletteImageEditHandle extends EditHandle {
           }
         });
     MenuItem menuLeft = new MenuItem("Move brush left");
-    menuLeft.disableProperty().bind(brushSelected);
+    menuLeft.disableProperty().bind(brushNotSelected);
     menuLeft.setOnAction(
         e -> {
           int index = wrapper.config.brush.get();
-          PaletteBrush brush = GUILaunch.profileConfig.paletteBrushes.get(index);
           if (index == 0) return;
+          PaletteBrush brush = GUILaunch.profileConfig.paletteBrushes.get(index);
           GUILaunch.profileConfig.paletteBrushes.remove(index);
-          GUILaunch.profileConfig.paletteBrushes.add(index - 1, brush);
+          int newIndex = index - 1;
+          GUILaunch.profileConfig.paletteBrushes.add(newIndex, brush);
+          setBrush(newIndex);
         });
     MenuItem menuRight = new MenuItem("Move brush right");
-    menuRight.disableProperty().bind(brushSelected);
+    menuRight.disableProperty().bind(brushNotSelected);
     menuRight.setOnAction(
         e -> {
-          int index = GUILaunch.profileConfig.paletteBrushes.indexOf(wrapper.config.brush.get());
-          PaletteBrush brush = GUILaunch.profileConfig.paletteBrushes.get(index);
+          int index = wrapper.config.brush.get();
           if (index == GUILaunch.profileConfig.paletteBrushes.size() - 1) return;
+          PaletteBrush brush = GUILaunch.profileConfig.paletteBrushes.get(index);
           GUILaunch.profileConfig.paletteBrushes.remove(index);
-          GUILaunch.profileConfig.paletteBrushes.add(index + 1, brush);
+          int newIndex = index + 1;
+          GUILaunch.profileConfig.paletteBrushes.add(newIndex, brush);
+          setBrush(newIndex);
         });
     window.menuChildren.set(this, ImmutableList.of(menuNew, menuDelete, menuLeft, menuRight));
 

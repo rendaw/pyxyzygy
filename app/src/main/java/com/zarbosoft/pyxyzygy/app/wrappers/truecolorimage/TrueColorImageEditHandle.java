@@ -201,16 +201,16 @@ public class TrueColorImageEditHandle extends EditHandle {
           }
         });
     MenuItem menuDelete = new MenuItem("Delete brush");
-    BooleanBinding brushSelected =
+    BooleanBinding brushNotSelected =
         Bindings.createBooleanBinding(
             () ->
-                wrapper.config.tool.get() == TrueColorImageNodeConfig.TOOL_BRUSH
-                    && Range.closedOpen(0, GUILaunch.profileConfig.trueColorBrushes.size())
+                wrapper.config.tool.get() != TrueColorImageNodeConfig.TOOL_BRUSH
+                    || !Range.closedOpen(0, GUILaunch.profileConfig.trueColorBrushes.size())
                         .contains(wrapper.config.brush.get()),
             GUILaunch.profileConfig.trueColorBrushes,
             wrapper.config.tool,
             wrapper.config.brush);
-    menuDelete.disableProperty().bind(brushSelected);
+    menuDelete.disableProperty().bind(brushNotSelected);
     menuDelete.setOnAction(
         e -> {
           int index = GUILaunch.profileConfig.trueColorBrushes.indexOf(wrapper.config.brush.get());
@@ -222,24 +222,28 @@ public class TrueColorImageEditHandle extends EditHandle {
           }
         });
     MenuItem menuLeft = new MenuItem("Move brush left");
-    menuLeft.disableProperty().bind(brushSelected);
+    menuLeft.disableProperty().bind(brushNotSelected);
     menuLeft.setOnAction(
         e -> {
           int index = wrapper.config.brush.get();
-          TrueColorBrush brush = GUILaunch.profileConfig.trueColorBrushes.get(index);
           if (index == 0) return;
+          TrueColorBrush brush = GUILaunch.profileConfig.trueColorBrushes.get(index);
           GUILaunch.profileConfig.trueColorBrushes.remove(index);
-          GUILaunch.profileConfig.trueColorBrushes.add(index - 1, brush);
+          int newIndex = index - 1;
+          GUILaunch.profileConfig.trueColorBrushes.add(newIndex, brush);
+          setBrush(newIndex);
         });
     MenuItem menuRight = new MenuItem("Move brush right");
-    menuRight.disableProperty().bind(brushSelected);
+    menuRight.disableProperty().bind(brushNotSelected);
     menuRight.setOnAction(
         e -> {
-          int index = GUILaunch.profileConfig.trueColorBrushes.indexOf(wrapper.config.brush.get());
-          TrueColorBrush brush = GUILaunch.profileConfig.trueColorBrushes.get(index);
+          int index = wrapper.config.brush.get();
           if (index == GUILaunch.profileConfig.trueColorBrushes.size() - 1) return;
+          TrueColorBrush brush = GUILaunch.profileConfig.trueColorBrushes.get(index);
           GUILaunch.profileConfig.trueColorBrushes.remove(index);
-          GUILaunch.profileConfig.trueColorBrushes.add(index + 1, brush);
+          int newIndex = index + 1;
+          GUILaunch.profileConfig.trueColorBrushes.add(newIndex, brush);
+          setBrush(newIndex);
         });
 
     window.menuChildren.set(this, ImmutableList.of(menuNew, menuDelete, menuLeft, menuRight));
