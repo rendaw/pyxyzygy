@@ -20,4 +20,6 @@ public abstract class ProjectContextBase extends ProjectContext {
     changesDir = path.resolve("changes");
     tileDir = path.resolve("tiles");
   }
+
+  public abstract void close();
 }

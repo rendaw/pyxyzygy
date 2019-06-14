@@ -31,7 +31,7 @@ public abstract class NodeConfig {
   public final SimpleObjectProperty<Integer> previewStart = new SimpleObjectProperty<>(0);
 
   @Configuration(optional = true)
-  public final SimpleObjectProperty<Integer> previewLength = new SimpleObjectProperty<>(1);
+  public final SimpleObjectProperty<Integer> previewLength = new SimpleObjectProperty<>(10);
 
   @Configuration(optional = true)
   public final SimpleObjectProperty<Integer> previewRate = new SimpleObjectProperty<>(10);

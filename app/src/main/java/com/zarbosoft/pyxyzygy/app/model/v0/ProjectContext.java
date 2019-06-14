@@ -46,6 +46,7 @@ import static com.zarbosoft.rendaw.common.Common.uncheck;
 public class ProjectContext extends ProjectContextBase implements Dirtyable {
   public static final String version = "v0";
   public static Map<String, Image> iconCache = new HashMap<>();
+  private final Runnable shutdown;
   public Project project;
   public RootProjectConfig config;
   public int tileSize;
@@ -398,15 +399,20 @@ public class ProjectContext extends ProjectContextBase implements Dirtyable {
           Files.createDirectories(changesDir);
           Files.createDirectories(tileDir);
         });
-    Global.shutdown.add(
-        () -> {
-          Timer timer = flushTimer.getAndSet(null);
-          if (timer != null) timer.cancel();
-          flushAll();
-        });
+    this.shutdown = () -> flushAll();
+    Global.shutdown.add(shutdown);
+  }
+
+  @Override
+  public void close() {
+    Global.shutdown.remove(shutdown);
+    flushAll();
   }
 
   private void flushAll() {
+    Timer timer = flushTimer.getAndSet(null);
+    if (timer != null) timer.cancel();
+
     Lock readLock = lock.readLock();
     Iterator<Map.Entry<Dirtyable, Object>> i = dirty.entrySet().iterator();
     while (i.hasNext()) {

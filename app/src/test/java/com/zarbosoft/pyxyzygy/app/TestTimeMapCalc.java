@@ -24,6 +24,9 @@ public class TestTimeMapCalc {
 
         @Override
         public void clearHistory() {}
+
+        @Override
+        public void close() {}
       };
 
   private static GroupTimeFrame inner(int length, int offset, int loop) {

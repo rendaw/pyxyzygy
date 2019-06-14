@@ -368,8 +368,9 @@ public class GUILaunch extends Application {
                       t ->
                           uncheck(
                               () -> {
-                                Files.createDirectory(cwd.get().resolve(t));
-                                refresh();
+                                Path newPath = cwd.get().resolve(t);
+                                Files.createDirectory(newPath);
+                                cwd.set(newPath);
                               }));
             });
         ToolBar toolbar = new ToolBar();

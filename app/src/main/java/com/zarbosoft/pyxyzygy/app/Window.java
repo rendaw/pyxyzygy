@@ -722,6 +722,7 @@ public class Window {
                 : e -> {
                   e.consume();
                   GUILaunch.selectProject(primaryStage);
+                  context.close();
                 })
             : e -> {});
     primaryStage

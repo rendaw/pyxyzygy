@@ -71,6 +71,8 @@ public class Global {
     out.project = Project.create(out);
     initialize.accept(out);
     out.project.incRef(out); // Never delete project
+    out.setDirty(out.history.changeStep);
+    out.setDirty(out);
     return out;
   }
 
