@@ -16,11 +16,11 @@
 
 * **2** **3** **4** / Preview/render time span
 
-   Adjust **2** / this to change where to loop when previewing the currently shown scene tree.  On a Camera layer this is how you adjust what to render when exporting.
+   Adjust **2** this to change where to loop when previewing the currently shown scene tree.  On a Camera layer this is how you adjust what to render when exporting.
 
-   **3** / is the frame rate.
+   **3** is the frame rate.
 
-   **4** / toggles preview.  When previewing, layer ghosts are disabled.  You can also toggle preview by pressing `space` in the editor.
+   **4** toggles preview.  When previewing, layer ghosts are disabled.  You can also toggle preview by pressing `space` in the editor.
 
 * **5** / Frames
 
