@@ -45,6 +45,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -224,7 +225,7 @@ public class GUILaunch extends Application {
         listLayout.setSpacing(3);
         listLayout.getChildren().addAll(list, listButtons);
 
-        Button open = new Button("Select", new ImageView(icon("folder-outline.png")));
+        Button open = new Button("Select", new ImageView(icon("folder-open-outline.png")));
         open.disableProperty().bind(list.getSelectionModel().selectedItemProperty().isNull());
         open.setOnAction(
             e -> {
@@ -291,7 +292,6 @@ public class GUILaunch extends Application {
       private final BinderRoot rootChoice; // GC root
 
       public Image directoryImage = icon("folder.png");
-      public Image projectImage = icon("folder-outline.png");
       final SimpleObjectProperty<Path> cwd = new SimpleObjectProperty<>();
       final Map<Path, ChooserEntry> entries = new HashMap<>();
       private final ListView<ChooserEntry> list;
@@ -320,6 +320,64 @@ public class GUILaunch extends Application {
             });
         SimpleObjectProperty<Path> resolvedPath = new SimpleObjectProperty<>();
 
+        BooleanBinding pathExists =
+            Bindings.createBooleanBinding(() -> Files.exists(resolvedPath.get()), resolvedPath);
+        BooleanBinding pathIsProject =
+            Bindings.createBooleanBinding(
+                () -> {
+                  Path check = resolvedPath.get().resolve("project.luxem");
+                  return Files.exists(check);
+                },
+                resolvedPath);
+
+        SimpleObjectProperty<CreateMode> createMode = profileConfig.newProjectNormalMode;
+
+        Runnable enterPath =
+            () -> {
+              if (!Files.isDirectory(resolvedPath.get())) return;
+              cwd.set(resolvedPath.get());
+            };
+        Runnable newResolvedPath =
+            () -> {
+              try {
+                newProject(primaryStage, resolvedPath.get(), createMode.get());
+              } catch (Exception e) {
+                logger.writeException(e, "Error creating new project");
+                HelperJFX.exceptionPopup(
+                    null,
+                    e,
+                    "Error creating new project",
+                    "An error occurred while trying to create the project.\n"
+                        + "\n"
+                        + "Make sure you have permission to write to the project directory.");
+              }
+            };
+        Runnable openResolvedPath =
+            () -> {
+              try {
+                openProject(primaryStage, resolvedPath.get());
+              } catch (Exception e) {
+                logger.writeException(e, "Error opening project");
+                HelperJFX.exceptionPopup(
+                    null,
+                    e,
+                    "Error opening project",
+                    "An error occurred while trying to open the project.\n"
+                        + "\n"
+                        + "Make sure you have permission to read and write to the project directory and all the files within.");
+              }
+            };
+        Runnable defaultActSelection =
+            () -> {
+              if (!pathExists.get()) {
+                newResolvedPath.run();
+              } else if (pathIsProject.get()) {
+                openResolvedPath.run();
+              } else {
+                enterPath.run();
+              }
+            };
+
         Label explanation = new Label("Select an existing project directory or create a new one.");
         explanation.setPadding(new Insets(4));
         explanation.setWrapText(true);
@@ -331,8 +389,7 @@ public class GUILaunch extends Application {
         TextField text = new TextField();
         text.setOnAction(
             e -> {
-              if (!Files.isDirectory(resolvedPath.get())) return;
-              cwd.set(resolvedPath.get());
+              enterPath.run();
             });
         HBox.setHgrow(text, Priority.ALWAYS);
         HBox hereLayout = new HBox();
@@ -375,6 +432,7 @@ public class GUILaunch extends Application {
             });
         ToolBar toolbar = new ToolBar();
         toolbar.getItems().addAll(up, refresh, space, createDirectory);
+
         list = new ListView<>();
         list.setCellFactory(
             new Callback<ListView<ChooserEntry>, ListCell<ChooserEntry>>() {
@@ -389,7 +447,7 @@ public class GUILaunch extends Application {
                         MouseEvent.MOUSE_CLICKED,
                         e -> {
                           if (e.getClickCount() == 2) {
-                            cwd.set(getItem().path);
+                            defaultActSelection.run();
                           }
                         });
                   }
@@ -403,7 +461,7 @@ public class GUILaunch extends Application {
                     } else {
                       setText(entry.path.getFileName().toString());
                       if (entry.isDirectory) {
-                        if (entry.isProject) icon.setImage(projectImage);
+                        if (entry.isProject) icon.setImage(null);
                         else icon.setImage(directoryImage);
                         setDisable(false);
                       } else {
@@ -420,60 +478,70 @@ public class GUILaunch extends Application {
         listLayout.getChildren().addAll(toolbar, list);
 
         RadioButton newNormal = new RadioButton("Normal");
-        newNormal.setUserData(CreateMode.normal);
         RadioButton newPixel = new RadioButton("Pixel");
-        newPixel.setUserData(CreateMode.pixel);
-        ToggleGroup modeGroup = new ToggleGroup();
-        modeGroup
-            .selectedToggleProperty()
-            .addListener(
-                (observable, oldValue, newValue) ->
-                    profileConfig.newProjectNormalMode = (CreateMode) newValue.getUserData());
-        modeGroup.getToggles().addAll(newNormal, newPixel);
-        switch (profileConfig.newProjectNormalMode) {
-          case normal:
-            modeGroup.selectToggle(newNormal);
-            break;
-          case pixel:
-            modeGroup.selectToggle(newPixel);
-            break;
-          default:
-            throw new Assertion();
-        }
+        new ToggleGroup() {
+          BinderRoot toggleRoot;
+
+          {
+            getToggles().addAll(newNormal, newPixel);
+            toggleRoot =
+                CustomBinding.bindBidirectional(
+                    new PropertyBinder<>(createMode),
+                    new Binder<CreateMode>() {
+                      public CreateMode convert(Toggle v) {
+                        if (v == newNormal) return CreateMode.normal;
+                        if (v == newPixel) return CreateMode.pixel;
+                        if (v == null) return null;
+                        throw new Assertion();
+                      }
+
+                      @Override
+                      public BinderRoot addListener(Consumer<CreateMode> listener) {
+                        final ChangeListener<Toggle> inner =
+                            (observable, oldValue, newValue) -> {
+                              listener.accept(convert(newValue));
+                            };
+                        selectedToggleProperty().addListener(inner);
+                        inner.changed(null, null, selectedToggleProperty().getValue());
+                        return new SimpleBinderRoot(this, inner);
+                      }
+
+                      @Override
+                      public void removeRoot(Object key) {
+                        selectedToggleProperty()
+                            .removeListener((ChangeListener<? super Toggle>) key);
+                      }
+
+                      @Override
+                      public Optional<CreateMode> get() {
+                        return Optional.ofNullable(convert(selectedToggleProperty().get()));
+                      }
+
+                      @Override
+                      public void set(CreateMode v) {
+                        switch (v) {
+                          case normal:
+                            selectToggle(newNormal);
+                            break;
+                          case pixel:
+                            selectToggle(newPixel);
+                            break;
+                          default:
+                            throw new Assertion();
+                        }
+                      }
+                    });
+          }
+        };
         Button create = new Button("New", new ImageView(icon("folder-plus-outline.png")));
         create.setOnAction(
             ev -> {
-              try {
-                newProject(
-                    primaryStage,
-                    resolvedPath.get(),
-                    (CreateMode) modeGroup.getSelectedToggle().getUserData());
-              } catch (Exception e) {
-                logger.writeException(e, "Error creating new project");
-                HelperJFX.exceptionPopup(
-                    null,
-                    e,
-                    "Error creating new project",
-                    "An error occurred while trying to create the project.\n"
-                        + "\n"
-                        + "Make sure you have permission to write to the project directory.");
-              }
+              newResolvedPath.run();
             });
-        Button open = new Button("Open", new ImageView(projectImage));
+        Button open = new Button("Open", new ImageView(icon("folder-open-outline.png")));
         open.setOnAction(
             ev -> {
-              try {
-                openProject(primaryStage, resolvedPath.get());
-              } catch (Exception e) {
-                logger.writeException(e, "Error opening project");
-                HelperJFX.exceptionPopup(
-                    null,
-                    e,
-                    "Error opening project",
-                    "An error occurred while trying to open the project.\n"
-                        + "\n"
-                        + "Make sure you have permission to read and write to the project directory and all the files within.");
-              }
+              openResolvedPath.run();
             });
         Button cancel = new Button("Cancel");
         cancel.setOnAction(
@@ -495,8 +563,7 @@ public class GUILaunch extends Application {
             KeyEvent.KEY_PRESSED,
             e -> {
               if (e.getCode() == KeyCode.ENTER) {
-                if (!create.isDisable()) create.fire();
-                if (!open.isDisable()) open.fire();
+                defaultActSelection.run();
                 return;
               }
               if (e.getCode() == KeyCode.ESCAPE) {
@@ -520,19 +587,10 @@ public class GUILaunch extends Application {
             Bindings.createObjectBinding(
                 () -> cwd.get().resolve(text.getText()), cwd, text.textProperty()));
         here.textProperty().bind(cwd.asString().concat("/"));
-        BooleanBinding createBinding =
-            Bindings.createBooleanBinding(() -> Files.exists(resolvedPath.get()), resolvedPath);
-        newNormal.disableProperty().bind(createBinding);
-        newPixel.disableProperty().bind(createBinding);
-        create.disableProperty().bind(createBinding);
-        open.disableProperty()
-            .bind(
-                Bindings.createBooleanBinding(
-                    () -> {
-                      Path check = resolvedPath.get().resolve("project.luxem");
-                      return !Files.exists(check);
-                    },
-                    resolvedPath));
+        newNormal.disableProperty().bind(pathExists);
+        newPixel.disableProperty().bind(pathExists);
+        create.disableProperty().bind(pathExists);
+        open.disableProperty().bind(pathIsProject.not());
         list.getSelectionModel().clearSelection();
         list.getSelectionModel().select(0);
       }

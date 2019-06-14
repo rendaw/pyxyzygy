@@ -721,8 +721,8 @@ public class Window {
                 ? e -> Global.shutdown()
                 : e -> {
                   e.consume();
-                  GUILaunch.selectProject(primaryStage);
                   context.close();
+                  GUILaunch.selectProject(primaryStage);
                 })
             : e -> {});
     primaryStage

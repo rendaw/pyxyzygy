@@ -35,7 +35,7 @@ public class RootProfileConfig extends ConfigBase {
   @Configuration public Map<String, Hotkeys.Hotkey> hotkeys = new HashMap<>();
 
   @Configuration(optional = true)
-  public CreateMode newProjectNormalMode = CreateMode.normal;
+  public SimpleObjectProperty<CreateMode> newProjectNormalMode = new SimpleObjectProperty<>(CreateMode.normal);
 
   @Configuration(optional = true)
   public final SimpleBooleanProperty showOrigin = new SimpleBooleanProperty(false);
