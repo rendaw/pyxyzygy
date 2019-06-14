@@ -28,7 +28,7 @@
 
 * **6** / Add frame
 
-   This creates a new empty frame at the current time.
+   This creates a new empty frame at the current time.  If there's already a frame at the current time, this creates a frame at the current time and pushes the current frame back.
 
 * **7** / Duplicate frame
 
