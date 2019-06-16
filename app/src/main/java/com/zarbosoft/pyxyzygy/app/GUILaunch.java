@@ -642,99 +642,106 @@ public class GUILaunch extends Application {
                   primaryStage, e, "Unexpected error", "An unexpected error occurred.");
             });
 
-    // Error early if JNI config is broken
-    new com.zarbosoft.pyxyzygy.core.mynativeJNI();
+    try {
+      // Error early if JNI config is broken
+      new com.zarbosoft.pyxyzygy.core.mynativeJNI();
 
-    // Set up stage
-    primaryStage.getIcons().addAll(GUILaunch.appIcons);
+      // Set up stage
+      primaryStage.getIcons().addAll(GUILaunch.appIcons);
 
-    // Load global config
-    globalConfig =
-        ConfigBase.deserialize(
-            new TypeInfo(RootGlobalConfig.class),
-            configDir.resolve("profiles.luxem"),
-            () -> {
-              RootGlobalConfig config = new RootGlobalConfig();
-              RootGlobalConfig.Profile profile = new RootGlobalConfig.Profile();
-              profile.id = config.nextId++;
-              profile.name.set("Default");
-              config.profiles.add(profile);
-              return config;
-            });
-    globalConfig.cacheSize.addListener(
-        new ChangeListener<Number>() {
-          {
-            changed(null, null, globalConfig.cacheSize.get());
-          }
+      // Load global config
+      globalConfig =
+          ConfigBase.deserialize(
+              new TypeInfo(RootGlobalConfig.class),
+              configDir.resolve("profiles.luxem"),
+              () -> {
+                RootGlobalConfig config = new RootGlobalConfig();
+                RootGlobalConfig.Profile profile = new RootGlobalConfig.Profile();
+                profile.id = config.nextId++;
+                profile.name.set("Default");
+                config.profiles.add(profile);
+                return config;
+              });
+      globalConfig.cacheSize.addListener(
+          new ChangeListener<Number>() {
+            {
+              changed(null, null, globalConfig.cacheSize.get());
+            }
 
-          @Override
-          public void changed(
-              ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
-            imageCache =
-                CacheBuilder.newBuilder()
-                    .recordStats()
-                    .maximumWeight(newValue.intValue())
-                    .weigher(
-                        (Weigher<Integer, Image>)
-                            (key, value) ->
-                                (int) (value.getWidth() * value.getHeight() * 4 / 1024 / 1024))
-                    .build();
-          }
-        });
-    Timer cacheStatsTimer = new Timer();
-    TimerTask cacheStatsTask =
-        new TimerTask() {
-          @Override
-          public void run() {
-            logger.write("Cache stats:\n%s", imageCache.stats());
-          }
-        };
-    cacheStatsTimer.scheduleAtFixedRate(cacheStatsTask, 0, 1000 * 60 * 5);
-    shutdown.add(
-        () -> {
-          cacheStatsTimer.cancel();
-          cacheStatsTask.run();
-        });
+            @Override
+            public void changed(
+                ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+              imageCache =
+                  CacheBuilder.newBuilder()
+                      .recordStats()
+                      .maximumWeight(newValue.intValue())
+                      .weigher(
+                          (Weigher<Integer, Image>)
+                              (key, value) ->
+                                  (int) (value.getWidth() * value.getHeight() * 4 / 1024 / 1024))
+                      .build();
+            }
+          });
+      Timer cacheStatsTimer = new Timer();
+      TimerTask cacheStatsTask =
+          new TimerTask() {
+            @Override
+            public void run() {
+              logger.write("Cache stats:\n%s", imageCache.stats());
+            }
+          };
+      cacheStatsTimer.scheduleAtFixedRate(cacheStatsTask, 0, 1000 * 60 * 5);
+      shutdown.add(
+          () -> {
+            cacheStatsTimer.cancel();
+            cacheStatsTask.run();
+          });
 
-    // Load profile
-    Optional.ofNullable(getParameters().getNamed().get("profile-id"))
-        .map(s -> Long.parseLong(s))
-        .flatMap(
-            id -> globalConfig.profiles.stream().filter(p -> Objects.equals(id, p.id)).findFirst())
-        .or(
-            () ->
-                Optional.ofNullable(getParameters().getNamed().get("profile"))
-                    .flatMap(
-                        name ->
-                            globalConfig.profiles.stream()
-                                .filter(p -> name.equals(p.name.get()))
-                                .findFirst()))
-        .ifPresentOrElse(
-            p -> {
-              loadProfile(p.id);
-              Global.fixedProfile = true;
-              if (getParameters().getUnnamed().isEmpty()) {
-                selectProject(primaryStage);
-              } else {
-                Global.fixedProject = true;
-                Path path = Paths.get(this.getParameters().getUnnamed().get(0));
-                if (Files.exists(path)) {
-                  if (Files.exists(path.resolve("project.luxem"))) {
-                    openProject(primaryStage, path);
-                  } else {
-                    throw new IllegalArgumentException(
-                        String.format("Directory is not a project", path));
-                  }
+      // Load profile
+      Optional.ofNullable(getParameters().getNamed().get("profile-id"))
+          .map(s -> Long.parseLong(s))
+          .flatMap(
+              id ->
+                  globalConfig.profiles.stream().filter(p -> Objects.equals(id, p.id)).findFirst())
+          .or(
+              () ->
+                  Optional.ofNullable(getParameters().getNamed().get("profile"))
+                      .flatMap(
+                          name ->
+                              globalConfig.profiles.stream()
+                                  .filter(p -> name.equals(p.name.get()))
+                                  .findFirst()))
+          .ifPresentOrElse(
+              p -> {
+                loadProfile(p.id);
+                Global.fixedProfile = true;
+                if (getParameters().getUnnamed().isEmpty()) {
+                  selectProject(primaryStage);
                 } else {
-                  CreateMode createMode =
-                      CreateMode.valueOf(this.getParameters().getUnnamed().get(1));
-                  newProject(primaryStage, path, createMode);
+                  Global.fixedProject = true;
+                  Path path = Paths.get(this.getParameters().getUnnamed().get(0));
+                  if (Files.exists(path)) {
+                    if (Files.exists(path.resolve("project.luxem"))) {
+                      openProject(primaryStage, path);
+                    } else {
+                      throw new IllegalArgumentException(
+                          String.format("Directory is not a project", path));
+                    }
+                  } else {
+                    CreateMode createMode =
+                        CreateMode.valueOf(this.getParameters().getUnnamed().get(1));
+                    newProject(primaryStage, path, createMode);
+                  }
                 }
-              }
-            },
-            () -> {
-              selectProfile(primaryStage);
-            });
+              },
+              () -> {
+                selectProfile(primaryStage);
+              });
+    } catch (Exception e) {
+      logger.writeException(e, "Uncaught error");
+      HelperJFX.exceptionPopup(null, e, "Unexpected error", "An unexpected error occurred.");
+      shutdown();
+    }
   }
 
   private static void loadProfile(long id) {

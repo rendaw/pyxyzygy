@@ -262,7 +262,7 @@ public class Timeline {
                 selectedFrame.get().frame.clear(context, change);
               });
         });
-    left = HelperJFX.button("arrow-left.png", "Left");
+    left = HelperJFX.button("swap-left.png", "Left");
     left.disableProperty()
         .bind(
             Bindings.createBooleanBinding(
@@ -275,7 +275,7 @@ public class Timeline {
                 selectedFrame.get().frame.moveLeft(context, change);
               });
         });
-    right = HelperJFX.button("arrow-right.png", "Right");
+    right = HelperJFX.button("swap-right.png", "Right");
     right
         .disableProperty()
         .bind(
