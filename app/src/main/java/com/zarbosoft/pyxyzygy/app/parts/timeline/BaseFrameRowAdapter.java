@@ -35,7 +35,7 @@ public abstract class BaseFrameRowAdapter<N, F> extends RowAdapter {
     if (source == null) source = getFrameFinder().findFrame(getNode(), inner).frame;
     F newFrame = innerDuplicateFrame(context, source);
     if (previous.at != inner) return createFrame(context, change, inner, previous, newFrame);
-    else return createFrameInsert(context, change, previous.frameIndex, newFrame);
+    else return createFrame(context, change, inner + 1, previous, newFrame);
   }
 
   @Override
@@ -46,20 +46,7 @@ public abstract class BaseFrameRowAdapter<N, F> extends RowAdapter {
     FrameFinder.Result<F> previous = getFrameFinder().findFrame(getNode(), inner);
     F newFrame = innerCreateFrame(context, previous.frame);
     if (previous.at != inner) return createFrame(context, change, inner, previous, newFrame);
-    else return createFrameInsert(context, change, previous.frameIndex, newFrame);
-  }
-
-  private boolean createFrameInsert(
-      ProjectContext context, ChangeStepBuilder change, int frameIndex, F newFrame) {
-    setFrameInitialLength(context, newFrame, 1);
-    addFrame(change, frameIndex, newFrame);
-    row.ifPresent(
-        r ->
-            r.frames.stream()
-                .filter(f -> f.frame.id() == newFrame)
-                .findFirst()
-                .ifPresent(w -> timeline.select(w)));
-    return true;
+    else return createFrame(context, change, inner + 1, previous, newFrame);
   }
 
   protected abstract F innerDuplicateFrame(ProjectContext context, F source);
@@ -76,7 +63,8 @@ public abstract class BaseFrameRowAdapter<N, F> extends RowAdapter {
     if (getFrameLength(previous.frame) == NO_LENGTH) {
       setFrameInitialLength(context, newFrame, NO_LENGTH);
     } else {
-      setFrameInitialLength(context, newFrame, getFrameLength(previous.frame) - offset);
+      setFrameInitialLength(
+          context, newFrame, Math.max(1, getFrameLength(previous.frame) - offset));
     }
     setFrameLength(change, previous.frame, offset);
     addFrame(change, previous.frameIndex + 1, newFrame);

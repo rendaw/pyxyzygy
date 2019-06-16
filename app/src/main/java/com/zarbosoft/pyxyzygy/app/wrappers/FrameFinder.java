@@ -5,6 +5,9 @@ import com.zarbosoft.rendaw.common.Assertion;
 public abstract class FrameFinder<N, L> {
   public static class Result<L> {
     public final L frame;
+    /**
+     * Time from layer start
+     */
     public final int at;
     public final int frameIndex;
 
