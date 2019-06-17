@@ -19,8 +19,7 @@ import javafx.scene.layout.Region;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.function.Consumer;
 
 import static com.zarbosoft.rendaw.common.Common.uncheck;
@@ -42,17 +41,35 @@ public class Global {
       new AppDirs().set_appname(nameSymbol).set_appauthor("zarbosoft");
   public static final Path configDir = appDirs.user_config_dir();
   public static final Path configPath = configDir.resolve("config.luxem");
-  public static final String nameHuman = "pyxyzygy";
+  static final String nameHuman = "pyxyzygy";
 
   public static Logger logger;
-  public static final String trueColorLayerName = "True color layer";
-  public static final String paletteName = "Palette";
-  public static final String paletteLayerName = "Palette layer";
-  public static final String groupLayerName = "Group";
 
   public static List<Runnable> shutdown = new ArrayList<>();
   public static boolean fixedProfile = false;
   public static boolean fixedProject = false;
+  public static ResourceBundle localization;
+
+  static {
+    // Load localization
+    System.setProperty("java.util.PropertyResourceBundle.encoding","UTF-8"); // Just in case?
+    {
+      Locale locale1 = Locale.getDefault();
+      String locale0 = String.format("%s-%s", locale1.getLanguage(), locale1.getCountry());
+      String[] localeParts = locale0.split("-");
+      Locale locale = new Locale(localeParts[0], localeParts[1]);
+      try {
+        localization =
+          ResourceBundle.getBundle(
+            "com.zarbosoft.pyxyzygy.app.i18n.messages", locale);
+      } catch (MissingResourceException e) {
+        localization =
+          ResourceBundle.getBundle(
+            "com.zarbosoft.pyxyzygy.app.i18n.messages",
+            new Locale("en", "US"));
+      }
+    }
+  }
 
   public static void shutdown() {
     for (Runnable s : shutdown) s.run();
@@ -141,10 +158,14 @@ public class Global {
             Alert alert =
                 new Alert(
                     Alert.AlertType.ERROR,
-                    String.format("There were one or more errors while opening the project.\n\n%s attempted to fix them but in case it did so incorrectly we recommend you back up the project and re-open it.", nameHuman),
+                    String.format(
+                      localization.getString(
+                        "there.were.one.or.more.errors.while.opening.the.project.n.n.s.attempted.to.fix.them.but.in.case.it.did.so.incorrectly.we.recommend.you.back.up.the.project.and.re.open.it"),
+                      getNameHuman()
+                    ),
                     ButtonType.OK);
-            alert.setTitle(String.format("%s - error", Global.nameHuman));
-            alert.setHeaderText("Error opening project");
+            alert.setTitle(String.format(localization.getString("s.error"), Global.getNameHuman()));
+            alert.setHeaderText(localization.getString("error.opening.project"));
             alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
             alert.showAndWait();
           }
@@ -164,5 +185,25 @@ public class Global {
 
   public static Path projectPath(Path base) {
     return base.resolve("project.luxem");
+  }
+
+  public static String getNameHuman() {
+    return nameHuman;
+  }
+
+  public static String getTrueColorLayerName() {
+    return localization.getString("true.color.layer");
+  }
+
+  public static String getPaletteName() {
+    return localization.getString("palette");
+  }
+
+  public static String getPaletteLayerName() {
+    return localization.getString("palette.layer");
+  }
+
+  public static String getGroupLayerName() {
+    return localization.getString("group");
   }
 }

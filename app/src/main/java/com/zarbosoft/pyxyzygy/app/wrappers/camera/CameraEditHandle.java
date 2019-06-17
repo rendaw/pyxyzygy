@@ -1,7 +1,10 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.camera;
 
 import com.google.common.collect.ImmutableList;
-import com.squareup.gifencoder.*;
+import com.squareup.gifencoder.Color;
+import com.squareup.gifencoder.GifEncoder;
+import com.squareup.gifencoder.Image;
+import com.squareup.gifencoder.ImageOptions;
 import com.zarbosoft.pyxyzygy.app.Tool;
 import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.Wrapper;
@@ -15,7 +18,6 @@ import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyBinder;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeEditHandle;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeWrapper;
 import com.zarbosoft.pyxyzygy.core.model.v0.Camera;
-import com.zarbosoft.rendaw.common.Assertion;
 import javafx.scene.Node;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
@@ -33,6 +35,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
+import static com.zarbosoft.pyxyzygy.app.Global.localization;
 import static com.zarbosoft.pyxyzygy.app.Misc.nodeFormFields;
 import static com.zarbosoft.pyxyzygy.app.Misc.separateFormField;
 import static com.zarbosoft.pyxyzygy.app.config.CameraNodeConfig.RenderMode.PNG_SEQUENCE;
@@ -54,16 +57,16 @@ public class CameraEditHandle extends GroupNodeEditHandle {
         .getChildren()
         .addAll(
             new TitledPane(
-                "Layer",
+                localization.getString("layer"),
                 new WidgetFormBuilder()
                     .apply(b -> cleanup.add(nodeFormFields(context, b, wrapper)))
                     .apply(b -> separateFormField(context, b, wrapper))
                     .build()),
             new TitledPane(
-                "Camera",
+                localization.getString("camera"),
                 new WidgetFormBuilder()
                     .intSpinner(
-                        "Width",
+                        localization.getString("width"),
                         1,
                         99999,
                         s -> {
@@ -74,7 +77,7 @@ public class CameraEditHandle extends GroupNodeEditHandle {
                                       s.getValueFactory().valueProperty())));
                         })
                     .intSpinner(
-                        "Height",
+                        localization.getString("height"),
                         1,
                         99999,
                         s -> {
@@ -86,10 +89,10 @@ public class CameraEditHandle extends GroupNodeEditHandle {
                         })
                     .build()),
             new TitledPane(
-                "Render",
+                localization.getString("render"),
                 new WidgetFormBuilder()
                     .<CameraNodeConfig.RenderMode>dropDown(
-                        "Render type",
+                        localization.getString("render.type"),
                         d -> {
                           Supplier<ListCell<CameraNodeConfig.RenderMode>> cellSupplier =
                               () ->
@@ -122,7 +125,7 @@ public class CameraEditHandle extends GroupNodeEditHandle {
                                       wrapper.config.renderMode = newValue);
                         })
                     .chooseDirectory(
-                        "Render path",
+                        localization.getString("render.path"),
                         s -> {
                           s.setValue(wrapper.config.renderDir);
                           s.addListener(
@@ -130,7 +133,7 @@ public class CameraEditHandle extends GroupNodeEditHandle {
                                   wrapper.config.renderDir = newValue);
                         })
                     .text(
-                        "Render name",
+                        localization.getString("render.name"),
                         t -> {
                           t.setText(wrapper.config.renderName);
                           t.textProperty()
@@ -139,7 +142,7 @@ public class CameraEditHandle extends GroupNodeEditHandle {
                                       wrapper.config.renderName = newValue);
                         })
                     .intSpinner(
-                        "Render scale",
+                        localization.getString("render.scale"),
                         1,
                         50,
                         s -> {
@@ -149,7 +152,7 @@ public class CameraEditHandle extends GroupNodeEditHandle {
                         })
                     .button(
                         button -> {
-                          button.setText("Render");
+                          button.setText(localization.getString("render"));
                           button.setOnAction(
                               e ->
                                   uncheck(
@@ -192,8 +195,7 @@ public class CameraEditHandle extends GroupNodeEditHandle {
               SequenceEncoder encoder =
                   SequenceEncoder.createSequenceEncoder(
                       dir.resolve(String.format("%s.webm", wrapper.config.renderName)).toFile(),
-                    (int) getActualFrameRate(node)
-                  );
+                      (int) getActualFrameRate(node));
               Picture rgbPic = Picture.create(node.width() * scale, node.height() * scale, RGB);
               byte[] rgb = rgbPic.getPlaneData(0);
               continuation.run(
@@ -234,7 +236,9 @@ public class CameraEditHandle extends GroupNodeEditHandle {
 
                 ImageOptions options = new ImageOptions();
                 options.setDelay(
-                  (long) (TimeUnit.MICROSECONDS.convert(1, TimeUnit.MILLISECONDS) * getActualFrameTimeMs(node)),
+                    (long)
+                        (TimeUnit.MICROSECONDS.convert(1, TimeUnit.MILLISECONDS)
+                            * getActualFrameTimeMs(node)),
                     TimeUnit.MICROSECONDS);
 
                 Color[][] rgb = new Color[node.height() * scale][node.width() * scale];
@@ -281,10 +285,17 @@ public class CameraEditHandle extends GroupNodeEditHandle {
   protected List<Node> createToolButtons() {
     return ImmutableList.of(
         new Wrapper.ToolToggle(
-            wrapper, "cursor-move16.png", "Move layer", GroupNodeConfig.TOOL_MOVE),
+            wrapper,
+            "cursor-move16.png",
+            localization.getString("move.layer"),
+            GroupNodeConfig.TOOL_MOVE),
         new Wrapper.ToolToggle(
-            wrapper, "resize.png", "Resize viewport", CameraNodeConfig.TOOL_VIEWPORT),
-        new Wrapper.ToolToggle(wrapper, "stamper16.png", "Stamp", GroupNodeConfig.TOOL_STAMP));
+            wrapper,
+            "resize.png",
+            localization.getString("resize.viewport"),
+            CameraNodeConfig.TOOL_VIEWPORT),
+        new Wrapper.ToolToggle(
+            wrapper, "stamper16.png", localization.getString("stamp"), GroupNodeConfig.TOOL_STAMP));
   }
 
   @Override

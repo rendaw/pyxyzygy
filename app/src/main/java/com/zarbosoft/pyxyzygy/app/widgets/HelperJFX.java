@@ -38,6 +38,7 @@ import java.nio.IntBuffer;
 import java.text.DecimalFormat;
 import java.util.Optional;
 
+import static com.zarbosoft.pyxyzygy.app.Global.localization;
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.rendaw.common.Common.getResource;
 
@@ -395,7 +396,7 @@ public class HelperJFX {
       Stage stage, Throwable e, String message, String shortDescription) {
     Alert alert = new Alert(Alert.AlertType.ERROR);
     if (stage != null) alert.initOwner(stage);
-    alert.setTitle(String.format("%s - error", Global.nameHuman));
+    alert.setTitle(String.format(localization.getString("s.error"), Global.getNameHuman()));
     alert.setHeaderText(message);
     alert.setContentText(shortDescription);
     TextArea textArea = new TextArea(Throwables.getStackTraceAsString(e));

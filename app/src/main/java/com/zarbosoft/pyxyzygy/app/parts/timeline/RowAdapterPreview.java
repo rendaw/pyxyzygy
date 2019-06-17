@@ -15,6 +15,8 @@ import javafx.beans.value.ObservableValue;
 import javafx.scene.Node;
 import javafx.scene.image.Image;
 
+import static com.zarbosoft.pyxyzygy.app.Global.localization;
+
 public class RowAdapterPreview extends RowAdapter {
   private final NodeConfig config;
   private final Wrapper data;
@@ -29,7 +31,7 @@ public class RowAdapterPreview extends RowAdapter {
 
   @Override
   public ObservableValue<String> getName() {
-    return new SimpleStringProperty("Preview");
+    return new SimpleStringProperty(localization.getString("preview"));
   }
 
   @Override

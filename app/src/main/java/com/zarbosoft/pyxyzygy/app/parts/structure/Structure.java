@@ -45,8 +45,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.zarbosoft.pyxyzygy.app.Global.logger;
-import static com.zarbosoft.pyxyzygy.app.Global.opacityMax;
+import static com.zarbosoft.pyxyzygy.app.Global.*;
 import static com.zarbosoft.pyxyzygy.app.Misc.*;
 import static com.zarbosoft.pyxyzygy.app.Wrapper.TakesChildren.NONE;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.*;
@@ -70,21 +69,21 @@ public class Structure {
         new Hotkeys.Action(
             Hotkeys.Scope.STRUCTURE,
             "clear-lift",
-            "Clear lifting",
+            localization.getString("clear.lifting"),
             Hotkeys.Hotkey.create(KeyCode.ESCAPE, false, false, false)) {
           @Override
           public void run(ProjectContext context, Window window) {
             clearTagLifted();
           }
         },
-        new Hotkeys.Action(Hotkeys.Scope.STRUCTURE, "lift", "Lift", Global.cutHotkey) {
+        new Hotkeys.Action(Hotkeys.Scope.STRUCTURE, "lift", localization.getString("lift"), Global.cutHotkey) {
           @Override
           public void run(ProjectContext context, Window window) {
             lift();
           }
         },
         new Hotkeys.Action(
-            Hotkeys.Scope.STRUCTURE, "place-auto", "Paste linked", Global.pasteHotkey) {
+            Hotkeys.Scope.STRUCTURE, "place-auto", localization.getString("paste.linked"), Global.pasteHotkey) {
           @Override
           public void run(ProjectContext context, Window window) {
             context.change(
@@ -96,8 +95,7 @@ public class Structure {
         },
         new Hotkeys.Action(
             Hotkeys.Scope.STRUCTURE,
-            "duplicate",
-            "Unlinked duplicate",
+            "duplicate", localization.getString("unlinked.duplicate"),
             Hotkeys.Hotkey.create(KeyCode.D, true, false, false)) {
           @Override
           public void run(ProjectContext context, Window window) {
@@ -110,8 +108,7 @@ public class Structure {
         },
         new Hotkeys.Action(
             Hotkeys.Scope.STRUCTURE,
-            "link",
-            "Linked duplicate",
+            "link", localization.getString("linked.duplicate"),
             Hotkeys.Hotkey.create(KeyCode.L, true, false, false)) {
           @Override
           public void run(ProjectContext context, Window window) {
@@ -124,8 +121,7 @@ public class Structure {
         },
         new Hotkeys.Action(
             Hotkeys.Scope.STRUCTURE,
-            "delete",
-            "Delete",
+            "delete", localization.getString("delete"),
             Hotkeys.Hotkey.create(KeyCode.DELETE, false, false, false)) {
           @Override
           public void run(ProjectContext context, Window window) {
@@ -248,7 +244,7 @@ public class Structure {
                       window.selectForView(context, wrapper.getValue());
                     }
                   });
-              MenuItem setView = new MenuItem("Set View");
+              MenuItem setView = new MenuItem(localization.getString("set.view"));
               setView.disableProperty().bind(Bindings.isNull(wrapper));
               setView.setOnAction(
                   e -> {
@@ -334,11 +330,11 @@ public class Structure {
             }
           };
         });
-    MenuItem addCamera = new MenuItem("Add camera");
+    MenuItem addCamera = new MenuItem(localization.getString("add.camera"));
     addCamera.setOnAction(
         e -> {
           Camera camera = Camera.create(context);
-          camera.initialNameSet(context, context.namer.uniqueName("Camera"));
+          camera.initialNameSet(context, context.namer.uniqueName(localization.getString("camera")));
           camera.initialOffsetSet(context, Vector.ZERO);
           camera.initialFrameStartSet(context, 0);
           camera.initialFrameLengthSet(context, 12);
@@ -352,24 +348,24 @@ public class Structure {
                 c.project(context.project).topAdd(camera);
               });
         });
-    MenuItem addGroup = new MenuItem("Add group");
+    MenuItem addGroup = new MenuItem(localization.getString("add.group"));
     addGroup.setOnAction(
         e -> {
           GroupLayer group = GroupLayer.create(context);
           group.initialOffsetSet(context, Vector.ZERO);
-          group.initialNameSet(context, context.namer.uniqueName(Global.groupLayerName));
+          group.initialNameSet(context, context.namer.uniqueName(Global.getGroupLayerName()));
           context.change(
               null,
               c -> {
                 addNew(group, c);
               });
         });
-    MenuItem addImage = new MenuItem("Add true color layer");
+    MenuItem addImage = new MenuItem(localization.getString("add.true.color.layer"));
     addImage.setOnAction(
         e -> {
           TrueColorImageLayer image = TrueColorImageLayer.create(context);
           image.initialOffsetSet(context, Vector.ZERO);
-          image.initialNameSet(context, context.namer.uniqueName(Global.trueColorLayerName));
+          image.initialNameSet(context, context.namer.uniqueName(Global.getTrueColorLayerName()));
           TrueColorImageFrame frame = TrueColorImageFrame.create(context);
           frame.initialLengthSet(context, -1);
           frame.initialOffsetSet(context, new Vector(0, 0));
@@ -380,7 +376,7 @@ public class Structure {
                 addNew(image, c);
               });
         });
-    MenuItem addPalette = new MenuItem("Add palette layer");
+    MenuItem addPalette = new MenuItem(localization.getString("add.palette.layer"));
     addPalette.setOnAction(
         e -> {
           ObservableList<Optional<Palette>> source = FXCollections.observableArrayList();
@@ -395,14 +391,14 @@ public class Structure {
                     @Override
                     protected void updateItem(Optional<Palette> item, boolean empty) {
                       if (empty || item == null) setText("");
-                      else if (!item.isPresent()) setText("New palette...");
+                      else if (!item.isPresent()) setText(localization.getString("new.palette"));
                       else setText(item.get().name());
                       super.updateItem(item, empty);
                     }
                   });
           cb.setButtonCell(cb.getCellFactory().call(null));
           window
-              .dialog("Choose a palette for the new layer")
+              .dialog(localization.getString("choose.a.palette.for.the.new.layer"))
               .addContent(cb)
               .addAction(
                   ButtonType.OK,
@@ -416,7 +412,7 @@ public class Structure {
                           if (!palette0.isPresent()) {
                             palette = Palette.create(context);
                             palette.initialNameSet(
-                                context, context.namer.uniqueName(Global.paletteName));
+                                context, context.namer.uniqueName(Global.getPaletteName()));
                             palette.initialNextIdSet(context, 2);
                             PaletteColor transparent = PaletteColor.create(context);
                             transparent.initialIndexSet(context, 0);
@@ -435,7 +431,7 @@ public class Structure {
                           PaletteImageLayer image = PaletteImageLayer.create(context);
                           image.initialOffsetSet(context, Vector.ZERO);
                           image.initialNameSet(
-                              context, context.namer.uniqueName(Global.paletteLayerName));
+                              context, context.namer.uniqueName(Global.getPaletteLayerName()));
                           image.initialPaletteSet(context, palette);
                           PaletteImageFrame frame = PaletteImageFrame.create(context);
                           frame.initialLengthSet(context, -1);
@@ -454,14 +450,14 @@ public class Structure {
                   })
               .go();
         });
-    MenuItem importImage = new MenuItem("Import PNG");
+    MenuItem importImage = new MenuItem(localization.getString("import.png"));
     importImage.setOnAction(
         e -> {
           FileChooser fileChooser = new FileChooser();
           fileChooser.setInitialDirectory(new File(GUILaunch.profileConfig.importDir));
           fileChooser
               .getExtensionFilters()
-              .add(new FileChooser.ExtensionFilter("PNG Image", "*.png"));
+              .add(new FileChooser.ExtensionFilter(localization.getString("png.image"), "*.png"));
           Optional.ofNullable(fileChooser.showOpenDialog(window.stage))
               .map(f -> f.toPath())
               .ifPresent(
@@ -505,7 +501,8 @@ public class Structure {
                         });
                   });
         });
-    MenuItem duplicateButton = new MenuItem("Unlinked duplicate", new ImageView(icon("content-copy.png")));
+    MenuItem duplicateButton =
+        new MenuItem(localization.getString("unlinked.duplicate"), new ImageView(icon("content-copy.png")));
     duplicateButton
         .disableProperty()
         .bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedIndices()));
@@ -517,7 +514,7 @@ public class Structure {
                 duplicate(c);
               });
         });
-    MenuItem linkButton = new MenuItem("Linked duplicate", new ImageView(icon("link-plus.png")));
+    MenuItem linkButton = new MenuItem(localization.getString("linked.duplicate"), new ImageView(icon("link-plus.png")));
     linkButton
         .disableProperty()
         .bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedIndices()));
@@ -542,7 +539,7 @@ public class Structure {
             addCamera,
             new SeparatorMenuItem(),
             importImage);
-    Button mainDuplicateButton = HelperJFX.button("content-copy.png", "Duplicate");
+    Button mainDuplicateButton = HelperJFX.button("content-copy.png", localization.getString("duplicate"));
     mainDuplicateButton
         .disableProperty()
         .bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedIndices()));
@@ -554,7 +551,7 @@ public class Structure {
                 duplicate(c);
               });
         });
-    Button removeButton = HelperJFX.button("minus.png", "Remove");
+    Button removeButton = HelperJFX.button("minus.png", localization.getString("remove"));
     removeButton
         .disableProperty()
         .bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedIndices()));
@@ -566,7 +563,7 @@ public class Structure {
                 delete(context, c);
               });
         });
-    Button moveUpButton = HelperJFX.button("arrow-up.png", "Move up");
+    Button moveUpButton = HelperJFX.button("arrow-up.png", localization.getString("move.up"));
     moveUpButton
         .disableProperty()
         .bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedItems()));
@@ -597,7 +594,7 @@ public class Structure {
                 }
               });
         });
-    Button moveDownButton = HelperJFX.button("arrow-down.png", "Move down");
+    Button moveDownButton = HelperJFX.button("arrow-down.png", localization.getString("move.down"));
     moveDownButton
         .disableProperty()
         .bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedItems()));
@@ -629,13 +626,13 @@ public class Structure {
                 }
               });
         });
-    MenuItem cutButton = new MenuItem("Lift");
+    MenuItem cutButton = new MenuItem(localization.getString("lift"));
     cutButton.disableProperty().bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedItems()));
     cutButton.setOnAction(
         e -> {
           lift();
         });
-    MenuItem linkBeforeButton = new MenuItem("Place before");
+    MenuItem linkBeforeButton = new MenuItem(localization.getString("place.before"));
     linkBeforeButton.disableProperty().bind(Bindings.isEmpty(taggedLifted));
     linkBeforeButton.setOnAction(
         e -> {
@@ -645,7 +642,7 @@ public class Structure {
                 placeBefore(c);
               });
         });
-    MenuItem linkInButton = new MenuItem("Place in");
+    MenuItem linkInButton = new MenuItem(localization.getString("place.in"));
     linkInButton.disableProperty().bind(Bindings.isEmpty(taggedLifted));
     linkInButton.setOnAction(
         e -> {
@@ -655,7 +652,7 @@ public class Structure {
                 placeIn(c);
               });
         });
-    MenuItem linkAfterButton = new MenuItem("Place after");
+    MenuItem linkAfterButton = new MenuItem(localization.getString("place.after"));
     linkAfterButton.disableProperty().bind(Bindings.isEmpty(taggedLifted));
     linkAfterButton.setOnAction(
         e -> {
@@ -665,7 +662,7 @@ public class Structure {
                 placeAfter(c);
               });
         });
-    MenuItem unlinkButton = new MenuItem("Unlink");
+    MenuItem unlinkButton = new MenuItem(localization.getString("unlink"));
     unlinkButton
         .disableProperty()
         .bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedItems()));
@@ -751,7 +748,7 @@ public class Structure {
           CustomBinding.bind(
               opacityBox.disableProperty(), groupChildBinder.map(e -> opt(e == null)));
 
-      ToggleButton enabled = HelperJFX.toggleButton("eye.png", "Enabled");
+      ToggleButton enabled = HelperJFX.toggleButton("eye.png", localization.getString("enabled"));
       opacityEnabledGraphicRoot =
           CustomBinding.bind(
               enabled.getGraphic().opacityProperty(),
@@ -857,7 +854,9 @@ public class Structure {
 
   private static Wrapper findNode(TreeItem<Wrapper> root, List<Integer> path) {
     if (path.isEmpty()) return root.getValue();
-    return findNode(root.getChildren().get(Math.min(root.getChildren().size() - 1, path.get(0))), sublist(path, 1));
+    return findNode(
+        root.getChildren().get(Math.min(root.getChildren().size() - 1, path.get(0))),
+        sublist(path, 1));
   }
 
   private void delete(ProjectContext context, ChangeStepBuilder change) {

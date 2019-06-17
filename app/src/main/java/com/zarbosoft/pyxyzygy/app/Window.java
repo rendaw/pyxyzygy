@@ -40,8 +40,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.zarbosoft.pyxyzygy.app.Global.logger;
-import static com.zarbosoft.pyxyzygy.app.Global.nameHuman;
+import static com.zarbosoft.pyxyzygy.app.Global.*;
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 
@@ -323,8 +322,8 @@ public class Window {
               textArea.setWrapText(true);
               textArea.setMaxWidth(Double.MAX_VALUE);
               textArea.setMaxHeight(Double.MAX_VALUE);
-              dialog("An unexpected error occurred")
-                  .addContent(new TitledPane("Trace", textArea))
+              dialog(localization.getString("an.unexpected.error.occurred1"))
+                  .addContent(new TitledPane(localization.getString("trace"), textArea))
                   .addAction(ButtonType.OK, true, () -> true)
                   .go();
             });
@@ -336,7 +335,7 @@ public class Window {
             new Hotkeys.Action(
                 Hotkeys.Scope.GLOBAL,
                 "undo",
-                "Undo",
+                localization.getString("undo"),
                 Hotkeys.Hotkey.create(KeyCode.Z, true, false, false)) {
               @Override
               public void run(ProjectContext context, Window window) {
@@ -346,7 +345,7 @@ public class Window {
             new Hotkeys.Action(
                 Hotkeys.Scope.GLOBAL,
                 "redo",
-                "Redo",
+                localization.getString("redo"),
                 Hotkeys.Hotkey.create(KeyCode.Y, true, false, false)) {
 
               @Override
@@ -358,9 +357,9 @@ public class Window {
 
     leftTabs = new TabPane();
     leftTabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
-    final Tab structureTab = new Tab("Project");
-    final Tab configTab = new Tab("Settings");
-    layerTab = new Tab("Layer");
+    final Tab structureTab = new Tab(localization.getString("project"));
+    final Tab configTab = new Tab(localization.getString("settings"));
+    layerTab = new Tab(localization.getString("layer"));
     layerTab.disableProperty().bind(layerTab.contentProperty().isNull());
     leftTabs.getTabs().addAll(structureTab, layerTab, configTab);
     this.rootTabWidth =
@@ -406,7 +405,9 @@ public class Window {
     menuSpring.setMinWidth(1);
     HBox.setHgrow(menuSpring, Priority.ALWAYS);
 
-    Button resetScroll = HelperJFX.button("image-filter-center-focus-weak.png", "Recenter view");
+    Button resetScroll =
+        HelperJFX.button(
+            "image-filter-center-focus-weak.png", localization.getString("recenter.view"));
     resetScroll.setOnAction(
         e -> {
           editor.updateScroll(context, DoubleVector.zero);
@@ -465,13 +466,13 @@ public class Window {
           }
         };
 
-    MenuItem undoButton = new MenuItem("Undo");
+    MenuItem undoButton = new MenuItem(localization.getString("undo"));
     undoButton.disableProperty().bind(Bindings.isEmpty(context.history.undoHistory));
     undoButton.setOnAction(
         e -> {
           context.undo();
         });
-    MenuItem redoButton = new MenuItem("Redo");
+    MenuItem redoButton = new MenuItem(localization.getString("redo"));
     redoButton.disableProperty().bind(Bindings.isEmpty(context.history.redoHistory));
     redoButton.setOnAction(
         e -> {
@@ -501,10 +502,10 @@ public class Window {
         .getChildren()
         .addAll(
             new TitledPane(
-                "Profile",
+                localization.getString("profile"),
                 new WidgetFormBuilder()
                     .twoLine(
-                        "Background color",
+                        localization.getString("background.color"),
                         () -> {
                           TrueColorPicker w = new TrueColorPicker();
                           w.colorProxyProperty.set(
@@ -517,7 +518,7 @@ public class Window {
                           return w;
                         })
                     .twoLine(
-                        "Ghost previous color",
+                        localization.getString("ghost.previous.color"),
                         () -> {
                           TrueColorPicker w = new TrueColorPicker();
                           w.colorProxyProperty.set(
@@ -530,7 +531,7 @@ public class Window {
                           return w;
                         })
                     .twoLine(
-                        "Ghost next color",
+                        localization.getString("ghost.next.color"),
                         () -> {
                           TrueColorPicker w = new TrueColorPicker();
                           w.colorProxyProperty.set(
@@ -543,7 +544,7 @@ public class Window {
                           return w;
                         })
                     .intSpinner(
-                        "Max undo",
+                        localization.getString("max.undo"),
                         1,
                         100000,
                         spinner -> {
@@ -557,10 +558,12 @@ public class Window {
                         })
                     .button(
                         button -> {
-                          button.setText("Clear undo/redo");
+                          button.setText(localization.getString("clear.undo.redo"));
                           button.setOnAction(
                               e -> {
-                                dialog("Are you sure you wish to clear undo/redo?")
+                                dialog(
+                                        localization.getString(
+                                            "are.you.sure.you.wish.to.clear.undo.redo"))
                                     .addAction(
                                         ButtonType.OK,
                                         false,
@@ -573,14 +576,14 @@ public class Window {
                               });
                         })
                     .check(
-                        "Show origin",
+                        localization.getString("show.origin"),
                         checkBox -> {
                           checkBox
                               .selectedProperty()
                               .bindBidirectional(GUILaunch.profileConfig.showOrigin);
                         })
                     .check(
-                        "Show timeline",
+                        localization.getString("show.timeline"),
                         checkBox -> {
                           checkBox
                               .selectedProperty()
@@ -588,10 +591,10 @@ public class Window {
                         })
                     .build()),
             new TitledPane(
-                "Global",
+                localization.getString("global"),
                 new WidgetFormBuilder()
                     .intSpinner(
-                        "Tile cache (Mb)",
+                        localization.getString("tile.cache.mb"),
                         0,
                         1024 * 16,
                         spinner -> {
@@ -607,17 +610,19 @@ public class Window {
                         })
                     .build()),
             new TitledPane(
-                "Hotkeys",
+                localization.getString("hotkeys"),
                 ((Supplier<Node>)
                         () -> {
-                          TableColumn<Hotkeys.Action, String> scope = new TableColumn("Scope");
+                          TableColumn<Hotkeys.Action, String> scope =
+                              new TableColumn(localization.getString("scope"));
                           scope.setCellValueFactory(
                               param -> new SimpleStringProperty(param.getValue().scope.name()));
                           TableColumn<Hotkeys.Action, String> description =
-                              new TableColumn("Description");
+                              new TableColumn(localization.getString("description"));
                           description.setCellValueFactory(
                               param -> new SimpleStringProperty(param.getValue().description));
-                          TableColumn<Hotkeys.Action, String> key = new TableColumn("Key");
+                          TableColumn<Hotkeys.Action, String> key =
+                              new TableColumn(localization.getString("key"));
                           key.setCellValueFactory(param -> param.getValue().key.asString());
                           TableView<Hotkeys.Action> table = new TableView<>();
                           table.getColumns().addAll(scope, description, key);
@@ -920,7 +925,7 @@ public class Window {
     textArea.setMaxWidth(Double.MAX_VALUE);
     textArea.setMaxHeight(Double.MAX_VALUE);
     dialog(message)
-        .addContent(new TitledPane("Trace", textArea))
+        .addContent(new TitledPane(localization.getString("trace"), textArea))
         .addAction(ButtonType.OK, true, () -> true)
         .go();
   }

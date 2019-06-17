@@ -27,6 +27,8 @@ import javafx.scene.shape.StrokeType;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 
+import static com.zarbosoft.pyxyzygy.app.Global.localization;
+
 public class CameraWrapper extends GroupNodeWrapper {
   public final SimpleIntegerProperty width = new SimpleIntegerProperty(0);
   public final SimpleIntegerProperty height = new SimpleIntegerProperty(0);
@@ -142,7 +144,7 @@ public class CameraWrapper extends GroupNodeWrapper {
       int start,
       int end,
       int scale) {
-    Window.DialogBuilder builder = window.dialog("Rendering");
+    Window.DialogBuilder builder = window.dialog(localization.getString("rendering"));
     ProgressBar progress = new ProgressBar();
     AtomicBoolean cancel = new AtomicBoolean(false);
     new Thread(
@@ -177,7 +179,9 @@ public class CameraWrapper extends GroupNodeWrapper {
                 Platform.runLater(
                     () ->
                         window.error(
-                            e, "Error while rendering", "Encountered an error while rendering."));
+                            e,
+                            localization.getString("error.while.rendering"),
+                            localization.getString("encountered.an.error.while.rendering")));
               } finally {
                 Platform.runLater(() -> builder.close());
               }

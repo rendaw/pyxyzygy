@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static com.zarbosoft.pyxyzygy.app.Global.localization;
+
 class RowAdapterPaletteImageNode extends BaseFrameRowAdapter<PaletteImageLayer, PaletteImageFrame> {
   private final PaletteImageLayer node;
 
@@ -54,7 +56,7 @@ class RowAdapterPaletteImageNode extends BaseFrameRowAdapter<PaletteImageLayer, 
 
   @Override
   public ObservableValue<String> getName() {
-    return new SimpleStringProperty("Frames");
+    return new SimpleStringProperty(localization.getString("frames"));
   }
 
   @Override

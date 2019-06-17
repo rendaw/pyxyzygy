@@ -23,6 +23,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.zarbosoft.pyxyzygy.app.Global.localization;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 
 public class Misc {
@@ -61,7 +62,7 @@ public class Misc {
         }
 
         builder.text(
-            "Name",
+            localization.getString("name"),
             t -> {
               this.nameCleanup =
                   CustomBinding.bindBidirectional(
@@ -77,7 +78,7 @@ public class Misc {
 
         if (groupChildWrapper != null) {
           builder.check(
-              "Enabled",
+              localization.getString("enabled"),
               cb -> {
                 enabledCleanup =
                     CustomBinding.bindBidirectional(
@@ -91,7 +92,7 @@ public class Misc {
                         new PropertyBinder<>(cb.selectedProperty()));
               });
           builder.slider(
-              "Opacity",
+              localization.getString("opacity"),
               0,
               Global.opacityMax,
               slider -> {
@@ -138,7 +139,7 @@ public class Misc {
         build ->
             build.button(
                 b -> {
-                  b.setText("Layer");
+                  b.setText(localization.getString("layer"));
                   b.setGraphic(new ImageView(icon("link-off.png")));
                   b.setTooltip(new Tooltip("Make layer unique"));
                   b.setOnAction(e -> context.change(null, c -> separate(context, c, wrapper)));

@@ -13,6 +13,8 @@ import java.io.File;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import static com.zarbosoft.pyxyzygy.app.Global.localization;
+
 public class WidgetFormBuilder {
   GridPane gridPane = new GridPane();
   int row = 0;
@@ -112,7 +114,7 @@ public class WidgetFormBuilder {
     pathLabel.setMinWidth(0);
     pathLabel.textProperty().bind(Bindings.concat(path));
     HBox.setHgrow(pathLabel, Priority.ALWAYS);
-    Button button = new Button("Choose...");
+    Button button = new Button(localization.getString("choose"));
     button.setOnAction(
         e -> {
           DirectoryChooser chooser = new DirectoryChooser();

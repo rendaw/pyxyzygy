@@ -18,6 +18,8 @@ import javafx.scene.input.*;
 import javafx.scene.layout.*;
 import javafx.scene.shape.Rectangle;
 
+import static com.zarbosoft.pyxyzygy.app.Global.localization;
+
 public class Editor {
   private final com.zarbosoft.pyxyzygy.app.Window window;
   private final VBox layout;
@@ -34,7 +36,7 @@ public class Editor {
         new Hotkeys.Action(
             Hotkeys.Scope.CANVAS,
             "flip-horizontal",
-            "View horizontal flip",
+            localization.getString("view.horizontal.flip"),
             Hotkeys.Hotkey.create(KeyCode.H, false, false, false)) {
           @Override
           public void run(ProjectContext context, Window window) {
@@ -49,7 +51,7 @@ public class Editor {
         new Hotkeys.Action(
             Hotkeys.Scope.CANVAS,
             "flip-vertical",
-            "View vertical flip",
+            localization.getString("view.vertical.flip"),
             Hotkeys.Hotkey.create(KeyCode.V, false, false, false)) {
           @Override
           public void run(ProjectContext context, Window window) {
@@ -64,7 +66,7 @@ public class Editor {
         new Hotkeys.Action(
             Hotkeys.Scope.CANVAS,
             "max-editor",
-            "Maximize canvas",
+            localization.getString("maximize.canvas"),
             Hotkeys.Hotkey.create(KeyCode.TAB, false, false, false)) {
           @Override
           public void run(ProjectContext context, Window window) {
@@ -74,7 +76,7 @@ public class Editor {
         new Hotkeys.Action(
             Hotkeys.Scope.CANVAS,
             "ghost-previous",
-            "Previous frame ghost",
+            localization.getString("previous.frame.ghost"),
             Hotkeys.Hotkey.create(KeyCode.B, false, false, false)) {
           @Override
           public void run(ProjectContext context, Window window) {
@@ -86,7 +88,7 @@ public class Editor {
         new Hotkeys.Action(
             Hotkeys.Scope.CANVAS,
             "ghost-next",
-            "Next frame ghost",
+            localization.getString("next.frame.ghost"),
             Hotkeys.Hotkey.create(KeyCode.N, false, false, false)) {
           @Override
           public void run(ProjectContext context, Window window) {
@@ -98,9 +100,8 @@ public class Editor {
         new Hotkeys.Action(
             Hotkeys.Scope.CANVAS,
             "view-top",
-            "View top",
+            localization.getString("view.top"),
             Hotkeys.Hotkey.create(KeyCode.T, false, false, false)) {
-
           @Override
           public void run(ProjectContext context, Window window) {
             Wrapper at = window.getSelectedForView().getWrapper();
@@ -115,9 +116,8 @@ public class Editor {
         new Hotkeys.Action(
             Hotkeys.Scope.CANVAS,
             "view-up",
-            "View up",
+            localization.getString("view.up"),
             Hotkeys.Hotkey.create(KeyCode.P, false, false, false)) {
-
           @Override
           public void run(ProjectContext context, Window window) {
             Wrapper at = window.getSelectedForView().getWrapper();
@@ -133,47 +133,46 @@ public class Editor {
         new Hotkeys.Action(
             Hotkeys.Scope.CANVAS,
             "view-selected",
-            "View selected",
+            localization.getString("view.selected"),
             Hotkeys.Hotkey.create(KeyCode.E, false, false, false)) {
-
           @Override
           public void run(ProjectContext context, Window window) {
             window.selectForView(context, window.getSelectedForEdit().getWrapper());
           }
         },
         new Hotkeys.Action(
-          Hotkeys.Scope.CANVAS,
-          "previous-frame",
-          "Previous frame",
-          Hotkeys.Hotkey.create(KeyCode.LEFT, false, false, false)) {
+            Hotkeys.Scope.CANVAS,
+            "previous-frame",
+            localization.getString("previous.frame"),
+            Hotkeys.Hotkey.create(KeyCode.LEFT, false, false, false)) {
           @Override
           public void run(ProjectContext context, Window window) {
             CanvasHandle edit = window.getSelectedForEdit().getCanvas();
-            if (edit == null)return;
+            if (edit == null) return;
             int prev = edit.previousFrame.get();
             if (prev == -1) prev = 0;
             window.timeline.frame.set(prev);
           }
         },
         new Hotkeys.Action(
-          Hotkeys.Scope.CANVAS,
-          "next-frame",
-          "Next frame",
-          Hotkeys.Hotkey.create(KeyCode.RIGHT, false, false, false)) {
+            Hotkeys.Scope.CANVAS,
+            "next-frame",
+            localization.getString("next.frame"),
+            Hotkeys.Hotkey.create(KeyCode.RIGHT, false, false, false)) {
           @Override
           public void run(ProjectContext context, Window window) {
             CanvasHandle edit = window.getSelectedForEdit().getCanvas();
-            if (edit == null)return;
+            if (edit == null) return;
             int next = edit.nextFrame.get();
             if (next == -1) next = 0;
             window.timeline.frame.set(next);
           }
         },
         new Hotkeys.Action(
-          Hotkeys.Scope.CANVAS,
-          "play-toggle",
-          "Play/pause",
-          Hotkeys.Hotkey.create(KeyCode.SPACE, false, false, false)) {
+            Hotkeys.Scope.CANVAS,
+            "play-toggle",
+            localization.getString("play.pause"),
+            Hotkeys.Hotkey.create(KeyCode.SPACE, false, false, false)) {
           @Override
           public void run(ProjectContext context, Window window) {
             window.timeline.togglePlaying();

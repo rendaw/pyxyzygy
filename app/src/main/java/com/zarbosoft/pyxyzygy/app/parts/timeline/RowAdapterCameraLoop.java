@@ -15,6 +15,8 @@ import javafx.beans.value.ObservableValue;
 import javafx.scene.Node;
 import javafx.scene.image.Image;
 
+import static com.zarbosoft.pyxyzygy.app.Global.localization;
+
 public class RowAdapterCameraLoop extends RowAdapter {
   private final Camera node;
   RowTimeRangeWidget widget = null;
@@ -27,7 +29,7 @@ public class RowAdapterCameraLoop extends RowAdapter {
 
   @Override
   public ObservableValue<String> getName() {
-    return new SimpleStringProperty("Time cut");
+    return new SimpleStringProperty(localization.getString("time.cut"));
   }
 
   @Override

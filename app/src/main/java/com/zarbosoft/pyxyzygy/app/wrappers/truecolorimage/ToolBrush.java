@@ -31,6 +31,7 @@ import javafx.scene.paint.Color;
 
 import java.util.Optional;
 
+import static com.zarbosoft.pyxyzygy.app.Global.localization;
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.pad;
 
@@ -52,13 +53,13 @@ public class ToolBrush extends BaseToolBrush<TrueColorImageFrame, TrueColorImage
         this,
         pad(
             new WidgetFormBuilder()
-                .text("Name", t -> t.textProperty().bindBidirectional(brush.name))
+                .text(localization.getString("name"), t -> t.textProperty().bindBidirectional(brush.name))
                 .span(
                     () -> {
                       return colorPicker;
                     })
                 .check(
-                    "Use brush color",
+                  localization.getString("use.brush.color"),
                     widget -> {
                       widget.selectedProperty().bindBidirectional(brush.useColor);
                       widget
@@ -102,7 +103,7 @@ public class ToolBrush extends BaseToolBrush<TrueColorImageFrame, TrueColorImage
                               });
                     })
                 .custom(
-                    "Size",
+                  localization.getString("size"),
                     () -> {
                       Pair<Node, SimpleObjectProperty<Integer>> brushSize =
                           HelperJFX.nonlinearSlider(10, 2000, 1, 10);
@@ -110,19 +111,19 @@ public class ToolBrush extends BaseToolBrush<TrueColorImageFrame, TrueColorImage
                       return brushSize.first;
                     })
                 .slider(
-                    "Blend",
+                  localization.getString("blend"),
                     1,
                     1000,
                     s -> {
                       s.valueProperty().bindBidirectional(brush.blend);
                     })
                 .check(
-                    "Hard",
+                  localization.getString("hard"),
                     checkBox -> {
                       checkBox.selectedProperty().bindBidirectional(brush.hard);
                     })
                 .check(
-                    "Aligned",
+                  localization.getString("aligned"),
                     checkBox -> {
                       checkBox.selectedProperty().bindBidirectional(brush.aligned);
                     })

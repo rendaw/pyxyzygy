@@ -40,6 +40,11 @@ import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -75,7 +80,7 @@ public class GUILaunch extends Application {
       // Hack because JavaFX was designed by sea sponges
       Class glassAppClass = getClass().getClassLoader().loadClass("com.sun.glass.ui.Application");
       Object glassApp = glassAppClass.getDeclaredMethod("GetApplication").invoke(null);
-      glassApp.getClass().getMethod("setName", String.class).invoke(glassApp, nameHuman);
+      glassApp.getClass().getMethod("setName", String.class).invoke(glassApp, getNameHuman());
     } catch (Exception e) {
       logger.writeException(e, "Failed to set application name - ignore if not on Linux.");
     }
@@ -145,18 +150,19 @@ public class GUILaunch extends Application {
         DoubleHalfBinder<ObservableList<RootGlobalConfig.Profile>, Number> listBinder =
             new DoubleHalfBinder<>(new ListPropertyHalfBinder<>(list.getItems()), listIndexBinder);
 
-        Button newProfile = HelperJFX.button("plus.png", "New profile");
+        Button newProfile = HelperJFX.button("plus.png", localization.getString("new.profile"));
         newProfile.setFocusTraversable(false);
         newProfile.setOnAction(
             e -> {
               RootGlobalConfig.Profile profile1 = new RootGlobalConfig.Profile();
-              profile1.name.set(profileNames.uniqueName("New Profile"));
+              profile1.name.set(profileNames.uniqueName(localization.getString("new.profile1")));
               profile1.id = globalConfig.nextId++;
               list.getItems().add(profile1);
               list.getSelectionModel().clearSelection();
               list.getSelectionModel().select(profile1);
             });
-        Button deleteProfile = HelperJFX.button("minus.png", "Delete profile");
+        Button deleteProfile =
+            HelperJFX.button("minus.png", localization.getString("delete.profile"));
         deleteProfile.setFocusTraversable(false);
         deleteProfile
             .disableProperty()
@@ -165,17 +171,20 @@ public class GUILaunch extends Application {
             e -> {
               RootGlobalConfig.Profile profile1 = list.getSelectionModel().getSelectedItem();
               Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-              confirm.setTitle("Delete " + profile1.name);
+              confirm.setTitle(String.format(localization.getString("delete.s"), profile1.name));
               confirm.setHeaderText(
-                  "Are you sure you want to delete profile " + profile1.name + "?");
-              confirm.setContentText("Deleting the profile will also delete all its brushes.");
+                  String.format(
+                      localization.getString("are.you.sure.you.want.to.delete.profile.s"),
+                      profile1.name));
+              confirm.setContentText(
+                  localization.getString("deleting.the.profile.will.also.delete.all.its.brushes"));
               Optional<ButtonType> result = confirm.showAndWait();
               if (!result.isPresent() || result.get() != ButtonType.OK) {
                 return;
               }
               list.getItems().remove(profile1);
             });
-        Button moveUpButton = HelperJFX.button("arrow-up.png", "Move up");
+        Button moveUpButton = HelperJFX.button("arrow-up.png", localization.getString("move.up"));
         rootMoveUp =
             CustomBinding.bind(
                 moveUpButton.disableProperty(), listIndexBinder.map(i -> opt(i.intValue() < 1)));
@@ -187,7 +196,8 @@ public class GUILaunch extends Application {
               list.getItems().add(i - 1, profile);
               list.getSelectionModel().clearAndSelect(i - 1);
             });
-        Button moveDownButton = HelperJFX.button("arrow-down.png", "Move down");
+        Button moveDownButton =
+            HelperJFX.button("arrow-down.png", localization.getString("move.down"));
         rootMoveDown =
             CustomBinding.bind(
                 moveDownButton.disableProperty(),
@@ -201,7 +211,8 @@ public class GUILaunch extends Application {
               list.getItems().add(i + 1, profile);
               list.getSelectionModel().clearAndSelect(i + 1);
             });
-        Button renameProfile = HelperJFX.button("textbox.png", "Rename profile");
+        Button renameProfile =
+            HelperJFX.button("textbox.png", localization.getString("rename.profile"));
         renameProfile.setFocusTraversable(false);
         renameProfile
             .disableProperty()
@@ -210,9 +221,10 @@ public class GUILaunch extends Application {
             e -> {
               RootGlobalConfig.Profile profile1 = list.getSelectionModel().getSelectedItem();
               TextInputDialog dialog = new TextInputDialog(profile1.name.get());
-              dialog.setTitle("Rename profile");
-              dialog.setHeaderText(String.format("Rename profile %s", profile1.name));
-              dialog.setContentText("Profile name:");
+              dialog.setTitle(localization.getString("rename.profile"));
+              dialog.setHeaderText(
+                  String.format(localization.getString("rename.profile.s"), profile1.name));
+              dialog.setContentText(localization.getString("profile.name"));
               dialog.showAndWait().ifPresent(name -> profile1.name.setValue(name));
             });
         VBox listButtons = new VBox();
@@ -225,14 +237,16 @@ public class GUILaunch extends Application {
         listLayout.setSpacing(3);
         listLayout.getChildren().addAll(list, listButtons);
 
-        Button open = new Button("Select", new ImageView(icon("folder-open-outline.png")));
+        Button open =
+            new Button(
+                localization.getString("select"), new ImageView(icon("folder-open-outline.png")));
         open.disableProperty().bind(list.getSelectionModel().selectedItemProperty().isNull());
         open.setOnAction(
             e -> {
               select();
             });
         open.setDefaultButton(true);
-        Button cancel = new Button("Cancel");
+        Button cancel = new Button(localization.getString("cancel"));
         cancel.setOnAction(
             e -> {
               Global.shutdown();
@@ -271,7 +285,7 @@ public class GUILaunch extends Application {
 
     HelperJFX.switchStage(
         primaryStage,
-        String.format("%s - Choose profile", Global.nameHuman),
+        String.format(localization.getString("s.choose.profile"), Global.getNameHuman()),
         new ProfileDialog(),
         false,
         e -> {
@@ -346,10 +360,9 @@ public class GUILaunch extends Application {
                 HelperJFX.exceptionPopup(
                     null,
                     e,
-                    "Error creating new project",
-                    "An error occurred while trying to create the project.\n"
-                        + "\n"
-                        + "Make sure you have permission to write to the project directory.");
+                    localization.getString("error.creating.new.project"),
+                    localization.getString(
+                        "an.error.occurred.while.trying.to.create.the.project.n.nmake.sure.you.have.permission.to.write.to.the.project.directory"));
               }
             };
         Runnable openResolvedPath =
@@ -361,10 +374,9 @@ public class GUILaunch extends Application {
                 HelperJFX.exceptionPopup(
                     null,
                     e,
-                    "Error opening project",
-                    "An error occurred while trying to open the project.\n"
-                        + "\n"
-                        + "Make sure you have permission to read and write to the project directory and all the files within.");
+                    localization.getString("error.opening.project"),
+                    localization.getString(
+                        "an.error.occurred.while.trying.to.open.the.project.n.nmake.sure.you.have.permission.to.read.and.write.to.the.project.directory.and.all.the.files.within"));
               }
             };
         Runnable defaultActSelection =
@@ -378,7 +390,9 @@ public class GUILaunch extends Application {
               }
             };
 
-        Label explanation = new Label("Select an existing project directory or create a new one.");
+        Label explanation =
+            new Label(
+                localization.getString("select.an.existing.project.directory.or.create.a.new.one"));
         explanation.setPadding(new Insets(4));
         explanation.setWrapText(true);
         explanation.setMinWidth(50);
@@ -398,14 +412,14 @@ public class GUILaunch extends Application {
         hereLayout.setPadding(new Insets(4));
         hereLayout.getChildren().addAll(here, text);
 
-        Button up = HelperJFX.button("arrow-up.png", "Leave directory");
+        Button up = HelperJFX.button("arrow-up.png", localization.getString("leave.directory"));
         up.setOnAction(
             e -> {
               Path parent = cwd.get().getParent();
               if (parent == null) return;
               cwd.set(parent);
             });
-        Button refresh = HelperJFX.button("refresh.png", "Refresh");
+        Button refresh = HelperJFX.button("refresh.png", localization.getString("refresh"));
         refresh.setOnAction(
             e -> {
               refresh();
@@ -413,12 +427,13 @@ public class GUILaunch extends Application {
         Region space = new Region();
         space.setMaxWidth(Double.MAX_VALUE);
         HBox.setHgrow(space, Priority.ALWAYS);
-        Button createDirectory = HelperJFX.button("folder-plus.png", "Create directory");
+        Button createDirectory =
+            HelperJFX.button("folder-plus.png", localization.getString("create.directory"));
         createDirectory.setOnAction(
             e -> {
-              TextInputDialog dialog = new TextInputDialog("New Folder");
-              dialog.setTitle("Directory name");
-              dialog.setContentText("Enter a name for the directory");
+              TextInputDialog dialog = new TextInputDialog(localization.getString("new.folder"));
+              dialog.setTitle(localization.getString("directory.name"));
+              dialog.setContentText(localization.getString("enter.a.name.for.the.directory"));
               dialog
                   .showAndWait()
                   .ifPresent(
@@ -477,8 +492,8 @@ public class GUILaunch extends Application {
         VBox listLayout = new VBox();
         listLayout.getChildren().addAll(toolbar, list);
 
-        RadioButton newNormal = new RadioButton("Normal");
-        RadioButton newPixel = new RadioButton("Pixel");
+        RadioButton newNormal = new RadioButton(localization.getString("normal"));
+        RadioButton newPixel = new RadioButton(localization.getString("pixel"));
         new ToggleGroup() {
           BinderRoot toggleRoot;
 
@@ -533,17 +548,21 @@ public class GUILaunch extends Application {
                     });
           }
         };
-        Button create = new Button("New", new ImageView(icon("folder-plus-outline.png")));
+        Button create =
+            new Button(
+                localization.getString("new"), new ImageView(icon("folder-plus-outline.png")));
         create.setOnAction(
             ev -> {
               newResolvedPath.run();
             });
-        Button open = new Button("Open", new ImageView(icon("folder-open-outline.png")));
+        Button open =
+            new Button(
+                localization.getString("open"), new ImageView(icon("folder-open-outline.png")));
         open.setOnAction(
             ev -> {
               openResolvedPath.run();
             });
-        Button cancel = new Button("Cancel");
+        Button cancel = new Button(localization.getString("cancel"));
         cancel.setOnAction(
             e -> {
               cancelResponse.run();
@@ -621,7 +640,7 @@ public class GUILaunch extends Application {
     }
     HelperJFX.switchStage(
         primaryStage,
-        String.format("%s - Choose project", Global.nameHuman),
+        String.format(localization.getString("s.choose.project"), Global.getNameHuman()),
         new ProjectDialog(),
         false,
         e -> {
@@ -632,14 +651,18 @@ public class GUILaunch extends Application {
 
   @Override
   public void start(Stage primaryStage) throws Exception {
+
     // Set up logging
     logger = new Logger.TerminalPlusFile(appDirs);
     Thread.currentThread()
         .setUncaughtExceptionHandler(
             (thread, e) -> {
-              logger.writeException(e, "Uncaught error");
+              logger.writeException(e, localization.getString("uncaught.error"));
               HelperJFX.exceptionPopup(
-                  primaryStage, e, "Unexpected error", "An unexpected error occurred.");
+                  primaryStage,
+                  e,
+                  localization.getString("unexpected.error"),
+                  localization.getString("an.unexpected.error.occurred"));
             });
 
     try {
@@ -658,7 +681,7 @@ public class GUILaunch extends Application {
                 RootGlobalConfig config = new RootGlobalConfig();
                 RootGlobalConfig.Profile profile = new RootGlobalConfig.Profile();
                 profile.id = config.nextId++;
-                profile.name.set("Default");
+                profile.name.set(localization.getString("default"));
                 config.profiles.add(profile);
                 return config;
               });
@@ -739,7 +762,11 @@ public class GUILaunch extends Application {
               });
     } catch (Exception e) {
       logger.writeException(e, "Uncaught error");
-      HelperJFX.exceptionPopup(null, e, "Unexpected error", "An unexpected error occurred.");
+      HelperJFX.exceptionPopup(
+          null,
+          e,
+          localization.getString("unexpected.error"),
+          localization.getString("an.unexpected.error.occurred"));
       shutdown();
     }
   }
@@ -753,13 +780,13 @@ public class GUILaunch extends Application {
               RootProfileConfig config = new RootProfileConfig();
               {
                 TrueColorBrush transparentBrush = new TrueColorBrush();
-                transparentBrush.name.set("Transparent");
+                transparentBrush.name.set(localization.getString("erase"));
                 transparentBrush.size.set(50);
                 transparentBrush.blend.set(blendMax);
                 transparentBrush.color.set(TrueColor.fromJfx(Color.TRANSPARENT));
                 transparentBrush.useColor.set(true);
                 TrueColorBrush defaultBrush = new TrueColorBrush();
-                defaultBrush.name.set("Default");
+                defaultBrush.name.set(localization.getString("default"));
                 defaultBrush.size.set(10);
                 defaultBrush.blend.set(blendMax);
                 defaultBrush.color.set(TrueColor.fromJfx(Color.BLACK));
@@ -768,12 +795,12 @@ public class GUILaunch extends Application {
               }
               {
                 PaletteBrush transparentBrush = new PaletteBrush();
-                transparentBrush.name.set("Transparent");
+                transparentBrush.name.set(localization.getString("erase"));
                 transparentBrush.size.set(50);
                 transparentBrush.paletteOffset.set(0);
                 transparentBrush.useColor.set(true);
                 PaletteBrush defaultBrush = new PaletteBrush();
-                defaultBrush.name.set("Default");
+                defaultBrush.name.set(localization.getString("default"));
                 defaultBrush.size.set(10);
                 defaultBrush.useColor.set(false);
                 config.paletteBrushes.addAll(transparentBrush, defaultBrush);
@@ -812,7 +839,7 @@ public class GUILaunch extends Application {
                         TrueColorImageLayer trueColorImageNode =
                             TrueColorImageLayer.create(context);
                         trueColorImageNode.initialNameSet(
-                            context, context.namer.uniqueName(Global.trueColorLayerName));
+                            context, context.namer.uniqueName(Global.getTrueColorLayerName()));
                         trueColorImageNode.initialOffsetSet(context, Vector.ZERO);
                         TrueColorImageFrame trueColorImageFrame =
                             TrueColorImageFrame.create(context);
@@ -827,7 +854,7 @@ public class GUILaunch extends Application {
                       {
                         Palette palette = Palette.create(context);
                         palette.initialNameSet(
-                            context, context.namer.uniqueName(Global.paletteName));
+                            context, context.namer.uniqueName(Global.getPaletteName()));
                         palette.initialNextIdSet(context, 2);
                         PaletteColor transparent = PaletteColor.create(context);
                         transparent.initialIndexSet(context, 0);
@@ -841,7 +868,7 @@ public class GUILaunch extends Application {
                         PaletteImageLayer paletteImageNode = PaletteImageLayer.create(context);
                         paletteImageNode.initialPaletteSet(context, palette);
                         paletteImageNode.initialNameSet(
-                            context, context.namer.uniqueName(Global.paletteLayerName));
+                            context, context.namer.uniqueName(Global.getPaletteLayerName()));
                         paletteImageNode.initialOffsetSet(context, Vector.ZERO);
                         PaletteImageFrame paletteImageFrame = PaletteImageFrame.create(context);
                         paletteImageFrame.initialLengthSet(context, -1);
@@ -856,7 +883,7 @@ public class GUILaunch extends Application {
                   }
 
                   GroupLayer groupNode = GroupLayer.create(context);
-                  groupNode.initialNameSet(context, context.namer.uniqueName(groupLayerName));
+                  groupNode.initialNameSet(context, context.namer.uniqueName(getGroupLayerName()));
                   groupNode.initialOffsetSet(context, Vector.ZERO);
                   groupNode.initialChildrenAdd(context, ImmutableList.of(groupChild));
 
@@ -877,9 +904,10 @@ public class GUILaunch extends Application {
     if (rawContext.needsMigrate()) {
       Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
       confirm.initOwner(primaryStage);
-      confirm.setTitle("Clear Project History");
-      confirm.setHeaderText("Opening this project will clear it's history (undo/redo) data.");
-      confirm.setContentText("Back up your project before proceeding.");
+      confirm.setTitle(localization.getString("clear.project.history"));
+      confirm.setHeaderText(
+          localization.getString("opening.this.project.will.clear.it.s.history.undo.redo.data"));
+      confirm.setContentText(localization.getString("back.up.your.project.before.proceeding"));
       Optional<ButtonType> result = confirm.showAndWait();
       if (!result.isPresent() || result.get() != ButtonType.OK) {
         Global.shutdown();

@@ -20,6 +20,7 @@ import javafx.scene.layout.VBox;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.zarbosoft.pyxyzygy.app.Global.localization;
 import static com.zarbosoft.pyxyzygy.app.Misc.nodeFormFields;
 import static com.zarbosoft.pyxyzygy.app.Misc.separateFormField;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.pad;
@@ -93,7 +94,7 @@ public class GroupNodeEditHandle extends EditHandle {
         .getChildren()
         .addAll(
             new TitledPane(
-                "Layer",
+                localization.getString("layer"),
                 new WidgetFormBuilder()
                     .apply(b -> cleanup.add(nodeFormFields(context, b, wrapper)))
                     .apply(b -> separateFormField(context, b, wrapper))
@@ -114,10 +115,18 @@ public class GroupNodeEditHandle extends EditHandle {
 
   protected List<Node> createToolButtons() {
     return ImmutableList.of(
-        new Wrapper.ToolToggle(wrapper, "cursor-move16.png", "Move", GroupNodeConfig.TOOL_MOVE),
         new Wrapper.ToolToggle(
-            wrapper, "cursor-layer-move.png", "Move layer", GroupNodeConfig.TOOL_LAYER_MOVE),
-        new Wrapper.ToolToggle(wrapper, "stamper16.png", "Stamp", GroupNodeConfig.TOOL_STAMP));
+            wrapper,
+            "cursor-move16.png",
+            localization.getString("move"),
+            GroupNodeConfig.TOOL_MOVE),
+        new Wrapper.ToolToggle(
+            wrapper,
+            "cursor-layer-move.png",
+            localization.getString("move.layer"),
+            GroupNodeConfig.TOOL_LAYER_MOVE),
+        new Wrapper.ToolToggle(
+            wrapper, "stamper16.png", localization.getString("stamp"), GroupNodeConfig.TOOL_STAMP));
   }
 
   @Override

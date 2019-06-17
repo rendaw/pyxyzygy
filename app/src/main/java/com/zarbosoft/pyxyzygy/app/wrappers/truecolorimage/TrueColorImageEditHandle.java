@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import static com.zarbosoft.pyxyzygy.app.Global.localization;
 import static com.zarbosoft.pyxyzygy.app.Global.pasteHotkey;
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.pyxyzygy.app.Misc.separateFormField;
@@ -86,7 +87,7 @@ public class TrueColorImageEditHandle extends EditHandle {
     actions =
         Streams.concat(
                 Stream.of(
-                    new Hotkeys.Action(Hotkeys.Scope.CANVAS, "paste", "Paste", pasteHotkey) {
+                    new Hotkeys.Action(Hotkeys.Scope.CANVAS, "paste", localization.getString("paste"), pasteHotkey) {
                       @Override
                       public void run(ProjectContext context, Window window) {
                         wrapper.config.tool.set(TOOL_SELECT);
@@ -95,8 +96,7 @@ public class TrueColorImageEditHandle extends EditHandle {
                     },
                     new Hotkeys.Action(
                         Hotkeys.Scope.CANVAS,
-                        "last-brush",
-                        "Last brush",
+                        "last-brush", localization.getString("last.brush"),
                         Hotkeys.Hotkey.create(KeyCode.SPACE, false, false, false)) {
                       @Override
                       public void run(ProjectContext context, Window window) {
@@ -112,8 +112,7 @@ public class TrueColorImageEditHandle extends EditHandle {
                     },
                     new Hotkeys.Action(
                         Hotkeys.Scope.CANVAS,
-                        "select",
-                        "Select",
+                        "select", localization.getString("select"),
                         Hotkeys.Hotkey.create(KeyCode.S, false, false, false)) {
                       @Override
                       public void run(ProjectContext context, Window window) {
@@ -122,8 +121,7 @@ public class TrueColorImageEditHandle extends EditHandle {
                     },
                     new Hotkeys.Action(
                         Hotkeys.Scope.CANVAS,
-                        "move",
-                        "Move layer",
+                        "move", localization.getString("move.layer"),
                         Hotkeys.Hotkey.create(KeyCode.M, false, false, false)) {
                       @Override
                       public void run(ProjectContext context, Window window) {
@@ -132,8 +130,7 @@ public class TrueColorImageEditHandle extends EditHandle {
                     },
                     new Hotkeys.Action(
                         Hotkeys.Scope.CANVAS,
-                        "move-frame",
-                        "Move frame contents",
+                        "move-frame", localization.getString("move.frame.contents"),
                         Hotkeys.Hotkey.create(KeyCode.F, false, false, false)) {
                       @Override
                       public void run(ProjectContext context, Window window) {
@@ -157,7 +154,7 @@ public class TrueColorImageEditHandle extends EditHandle {
                             new Hotkeys.Action(
                                 Hotkeys.Scope.CANVAS,
                                 String.format("brush-%s", p.first + 1),
-                                String.format("Brush %s", p.first + 1),
+                                String.format(localization.getString("brush.s"), p.first + 1),
                                 Hotkeys.Hotkey.create(p.second, false, false, false)) {
                               @Override
                               public void run(ProjectContext context, Window window) {
@@ -175,22 +172,22 @@ public class TrueColorImageEditHandle extends EditHandle {
     wrapper.canvasHandle.overlay.getChildren().add(overlay);
 
     Wrapper.ToolToggle move =
-        new Wrapper.ToolToggle(wrapper, "cursor-move16.png", "Move layer", TOOL_MOVE);
+        new Wrapper.ToolToggle(wrapper, "cursor-move16.png", localization.getString("move.layer"), TOOL_MOVE);
     Wrapper.ToolToggle select =
-        new Wrapper.ToolToggle(wrapper, "select.png", "Select", TOOL_SELECT);
+        new Wrapper.ToolToggle(wrapper, "select.png", localization.getString("select"), TOOL_SELECT);
 
     window.timeline.toolBoxContents.set(
         this,
         ImmutableList.of(
             new Wrapper.ToolToggle(
-                wrapper, "cursor-frame-move.png", "Move frame contents", TOOL_FRAME_MOVE)));
+                wrapper, "cursor-frame-move.png", localization.getString("move.frame.contents"), TOOL_FRAME_MOVE)));
 
     // Brushes
-    MenuItem menuNew = new MenuItem("New brush");
+    MenuItem menuNew = new MenuItem(localization.getString("new.brush"));
     menuNew.setOnAction(
         e -> {
           TrueColorBrush brush = new TrueColorBrush();
-          brush.name.set(context.namer.uniqueName("New brush"));
+          brush.name.set(context.namer.uniqueName(localization.getString("new.brush")));
           brush.useColor.set(true);
           brush.color.set(TrueColor.rgba(0, 0, 0, 255));
           brush.blend.set(1000);
@@ -200,7 +197,7 @@ public class TrueColorImageEditHandle extends EditHandle {
             setBrush(0);
           }
         });
-    MenuItem menuDelete = new MenuItem("Delete brush");
+    MenuItem menuDelete = new MenuItem(localization.getString("delete.brush"));
     BooleanBinding brushNotSelected =
         Bindings.createBooleanBinding(
             () ->
@@ -221,7 +218,7 @@ public class TrueColorImageEditHandle extends EditHandle {
             setBrush(Math.max(0, index - 1));
           }
         });
-    MenuItem menuLeft = new MenuItem("Move brush left");
+    MenuItem menuLeft = new MenuItem(localization.getString("move.brush.left"));
     menuLeft.disableProperty().bind(brushNotSelected);
     menuLeft.setOnAction(
         e -> {
@@ -233,7 +230,7 @@ public class TrueColorImageEditHandle extends EditHandle {
           GUILaunch.profileConfig.trueColorBrushes.add(newIndex, brush);
           setBrush(newIndex);
         });
-    MenuItem menuRight = new MenuItem("Move brush right");
+    MenuItem menuRight = new MenuItem(localization.getString("move.brush.right"));
     menuRight.disableProperty().bind(brushNotSelected);
     menuRight.setOnAction(
         e -> {
@@ -281,12 +278,12 @@ public class TrueColorImageEditHandle extends EditHandle {
         .getChildren()
         .addAll(
             new TitledPane(
-                "Layer",
+              localization.getString("layer"),
                 new WidgetFormBuilder()
                     .apply(b -> cleanup.add(Misc.nodeFormFields(context, b, wrapper)))
                     .apply(b -> separateFormField(context, b, wrapper))
                     .build()),
-            toolPane = new TitledPane("Tool", null));
+            toolPane = new TitledPane(localization.getString("tool"), null));
     window.layerTabContent.set(this, pad(tabBox));
 
     wrapper.config.tool.addListener(

@@ -17,6 +17,7 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.SelectionMode;
 import javafx.util.Callback;
 
+import static com.zarbosoft.pyxyzygy.app.Global.localization;
 import static com.zarbosoft.pyxyzygy.app.Misc.*;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.centerCursor;
 
@@ -80,7 +81,7 @@ public class ToolLayerMove extends Tool {
       layerList.getSelectionModel().select(0);
     editHandle.toolPropReplacer.set(
         this,
-        "Move layer",
+        localization.getString("move.layer"),
         new WidgetFormBuilder()
             .span(
                 () -> {

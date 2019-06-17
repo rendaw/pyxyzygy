@@ -57,6 +57,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.zarbosoft.pyxyzygy.app.Global.localization;
 import static com.zarbosoft.pyxyzygy.app.Global.logger;
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
@@ -188,7 +189,7 @@ public class Timeline {
         };
     scrub.addEventFilter(MouseEvent.MOUSE_CLICKED, mouseEventEventHandler);
     scrub.addEventFilter(MouseEvent.MOUSE_DRAGGED, mouseEventEventHandler);
-    add = HelperJFX.button("plus.png", "Add");
+    add = HelperJFX.button("plus.png", localization.getString("add"));
     BooleanBinding hasNoFrames =
         Bindings.createBooleanBinding(
             () -> {
@@ -217,7 +218,7 @@ public class Timeline {
                     .findFirst();
               });
         });
-    duplicate = HelperJFX.button("content-copy.png", "Duplicate");
+    duplicate = HelperJFX.button("content-copy.png", localization.getString("duplicate"));
     duplicate.disableProperty().bind(hasNoFrames);
     duplicate.setOnAction(
         e -> {
@@ -236,7 +237,7 @@ public class Timeline {
                     .findFirst();
               });
         });
-    remove = HelperJFX.button("minus.png", "Remove");
+    remove = HelperJFX.button("minus.png", localization.getString("remove"));
     remove
         .disableProperty()
         .bind(
@@ -251,7 +252,7 @@ public class Timeline {
                 selectedFrame.get().frame.remove(context, change);
               });
         });
-    clear = HelperJFX.button("eraser-variant.png", "Clear");
+    clear = HelperJFX.button("eraser-variant.png", localization.getString("clear"));
     clear.disableProperty().bind(selectedFrame.isNull());
     clear.setOnAction(
         e -> {
@@ -262,7 +263,7 @@ public class Timeline {
                 selectedFrame.get().frame.clear(context, change);
               });
         });
-    left = HelperJFX.button("swap-left.png", "Left");
+    left = HelperJFX.button("swap-left.png", localization.getString("left"));
     left.disableProperty()
         .bind(
             Bindings.createBooleanBinding(
@@ -275,7 +276,7 @@ public class Timeline {
                 selectedFrame.get().frame.moveLeft(context, change);
               });
         });
-    right = HelperJFX.button("swap-right.png", "Right");
+    right = HelperJFX.button("swap-right.png", localization.getString("right"));
     right
         .disableProperty()
         .bind(
@@ -293,7 +294,7 @@ public class Timeline {
               });
         });
     ToggleButton onionLeft = new ToggleButton(null, new ImageView(icon("onion-left.png")));
-    onionLeft.setTooltip(new Tooltip("Show previous frame ghost"));
+    onionLeft.setTooltip(new Tooltip(localization.getString("show.previous.frame.ghost")));
     rootOnionLeftToggle =
         CustomBinding.bindBidirectional(
             new IndirectBinder<Boolean>(
@@ -301,7 +302,7 @@ public class Timeline {
                 e -> Optional.ofNullable(e).map(e1 -> e1.getWrapper().getConfig().onionLeft)),
             new PropertyBinder<Boolean>(onionLeft.selectedProperty()));
     ToggleButton onionRight = new ToggleButton(null, new ImageView(icon("onion-right.png")));
-    onionRight.setTooltip(new Tooltip("Show next frame ghost"));
+    onionRight.setTooltip(new Tooltip(localization.getString("show.next.frame.ghost")));
     rootOnionRightToggle =
         CustomBinding.bindBidirectional(
             new IndirectBinder<Boolean>(
@@ -353,7 +354,7 @@ public class Timeline {
 
     Button previewPlay = new Button();
     previewPlay.setGraphic(new ImageView());
-    Tooltip.install(previewPlay, new Tooltip("Play/stop"));
+    Tooltip.install(previewPlay, new Tooltip(localization.getString("play.stop")));
     previewPlay.setOnAction(
         e -> {
           togglePlaying();
@@ -673,7 +674,7 @@ public class Timeline {
 
             @Override
             public ObservableValue<String> getName() {
-              return new SimpleStringProperty("Layers");
+              return new SimpleStringProperty(localization.getString("layers"));
             }
 
             @Override

@@ -49,6 +49,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.zarbosoft.pyxyzygy.app.Global.localization;
 import static com.zarbosoft.pyxyzygy.app.Global.pasteHotkey;
 import static com.zarbosoft.pyxyzygy.app.Misc.*;
 import static com.zarbosoft.pyxyzygy.app.config.NodeConfig.TOOL_MOVE;
@@ -233,7 +234,11 @@ public class PaletteImageEditHandle extends EditHandle {
     actions =
         Streams.concat(
                 Stream.of(
-                    new Hotkeys.Action(Hotkeys.Scope.CANVAS, "paste", "Paste", pasteHotkey) {
+                    new Hotkeys.Action(
+                        Hotkeys.Scope.CANVAS,
+                        "paste",
+                        localization.getString("paste"),
+                        pasteHotkey) {
                       @Override
                       public void run(ProjectContext context, Window window) {
                         wrapper.config.tool.set(PaletteImageNodeConfig.TOOL_SELECT);
@@ -243,7 +248,7 @@ public class PaletteImageEditHandle extends EditHandle {
                     new Hotkeys.Action(
                         Hotkeys.Scope.CANVAS,
                         "last-brush",
-                        "Last brush",
+                        localization.getString("last.brush"),
                         Hotkeys.Hotkey.create(KeyCode.SPACE, false, false, false)) {
                       @Override
                       public void run(ProjectContext context, Window window) {
@@ -260,7 +265,7 @@ public class PaletteImageEditHandle extends EditHandle {
                     new Hotkeys.Action(
                         Hotkeys.Scope.CANVAS,
                         "select",
-                        "Select",
+                        localization.getString("select"),
                         Hotkeys.Hotkey.create(KeyCode.S, false, false, false)) {
                       @Override
                       public void run(ProjectContext context, Window window) {
@@ -270,7 +275,7 @@ public class PaletteImageEditHandle extends EditHandle {
                     new Hotkeys.Action(
                         Hotkeys.Scope.CANVAS,
                         "move",
-                        "Move layer",
+                        localization.getString("move.layer"),
                         Hotkeys.Hotkey.create(KeyCode.M, false, false, false)) {
                       @Override
                       public void run(ProjectContext context, Window window) {
@@ -280,7 +285,7 @@ public class PaletteImageEditHandle extends EditHandle {
                     new Hotkeys.Action(
                         Hotkeys.Scope.CANVAS,
                         "move-frame",
-                        "Move frame contents",
+                        localization.getString("move.frame.contents"),
                         Hotkeys.Hotkey.create(KeyCode.F, false, false, false)) {
                       @Override
                       public void run(ProjectContext context, Window window) {
@@ -304,7 +309,7 @@ public class PaletteImageEditHandle extends EditHandle {
                             new Hotkeys.Action(
                                 Hotkeys.Scope.CANVAS,
                                 String.format("brush-%s", p.first + 1),
-                                String.format("Brush %s", p.first + 1),
+                                String.format(localization.getString("brush.s"), p.first + 1),
                                 Hotkeys.Hotkey.create(p.second, false, false, false)) {
                               @Override
                               public void run(ProjectContext context, Window window) {
@@ -321,29 +326,34 @@ public class PaletteImageEditHandle extends EditHandle {
     overlay = wrapper.canvasHandle.overlay;
 
     Wrapper.ToolToggle move =
-        new Wrapper.ToolToggle(wrapper, "cursor-move16.png", "Move layer", TOOL_MOVE);
+        new Wrapper.ToolToggle(
+            wrapper, "cursor-move16.png", localization.getString("move.layer"), TOOL_MOVE);
     Wrapper.ToolToggle select =
-        new Wrapper.ToolToggle(wrapper, "select.png", "Select", TOOL_SELECT);
+        new Wrapper.ToolToggle(
+            wrapper, "select.png", localization.getString("select"), TOOL_SELECT);
 
     window.timeline.toolBoxContents.set(
         this,
         ImmutableList.of(
             new Wrapper.ToolToggle(
-                wrapper, "cursor-frame-move.png", "Move frame contents", TOOL_FRAME_MOVE)));
+                wrapper,
+                "cursor-frame-move.png",
+                localization.getString("move.frame.contents"),
+                TOOL_FRAME_MOVE)));
 
     // Brushes
-    MenuItem menuNew = new MenuItem("New brush");
+    MenuItem menuNew = new MenuItem(localization.getString("new.brush"));
     menuNew.setOnAction(
         e -> {
           PaletteBrush brush = new PaletteBrush();
-          brush.name.set(context.namer.uniqueName("New brush"));
+          brush.name.set(context.namer.uniqueName(localization.getString("new.brush")));
           brush.size.set(20);
           GUILaunch.profileConfig.paletteBrushes.add(brush);
           if (GUILaunch.profileConfig.paletteBrushes.size() == 1) {
             setBrush(0);
           }
         });
-    MenuItem menuDelete = new MenuItem("Delete brush");
+    MenuItem menuDelete = new MenuItem(localization.getString("delete.brush"));
     BooleanBinding brushNotSelected =
         Bindings.createBooleanBinding(
             () ->
@@ -364,7 +374,7 @@ public class PaletteImageEditHandle extends EditHandle {
             setBrush(Math.max(0, index - 1));
           }
         });
-    MenuItem menuLeft = new MenuItem("Move brush left");
+    MenuItem menuLeft = new MenuItem(localization.getString("move.brush.left"));
     menuLeft.disableProperty().bind(brushNotSelected);
     menuLeft.setOnAction(
         e -> {
@@ -376,7 +386,7 @@ public class PaletteImageEditHandle extends EditHandle {
           GUILaunch.profileConfig.paletteBrushes.add(newIndex, brush);
           setBrush(newIndex);
         });
-    MenuItem menuRight = new MenuItem("Move brush right");
+    MenuItem menuRight = new MenuItem(localization.getString("move.brush.right"));
     menuRight.disableProperty().bind(brushNotSelected);
     menuRight.setOnAction(
         e -> {
@@ -555,16 +565,17 @@ public class PaletteImageEditHandle extends EditHandle {
         .getChildren()
         .addAll(
             new TitledPane(
-                "Layer",
+                localization.getString("layer"),
                 new WidgetFormBuilder()
                     .apply(b -> cleanup.add(Misc.nodeFormFields(context, b, wrapper)))
                     .buttons(
                         bb ->
                             bb.button(
                                     b -> {
-                                      b.setText("Layer");
+                                      b.setText(localization.getString("layer"));
                                       b.setGraphic(new ImageView(icon("link-off.png")));
-                                      b.setTooltip(new Tooltip("Make layer unique"));
+                                      b.setTooltip(
+                                          new Tooltip(localization.getString("make.layer.unique")));
                                       b.setOnAction(
                                           e ->
                                               context.change(
@@ -572,9 +583,11 @@ public class PaletteImageEditHandle extends EditHandle {
                                     })
                                 .button(
                                     b -> {
-                                      b.setText("Palette");
+                                      b.setText(localization.getString("palette"));
                                       b.setGraphic(new ImageView(icon("link-off.png")));
-                                      b.setTooltip(new Tooltip("Make palette unique"));
+                                      b.setTooltip(
+                                          new Tooltip(
+                                              localization.getString("make.palette.unique")));
                                       b.setOnAction(
                                           e ->
                                               context.change(
@@ -621,10 +634,10 @@ public class PaletteImageEditHandle extends EditHandle {
                                     }))
                     .build()),
             new TitledPane(
-                "Palette",
+                localization.getString("palette"),
                 new WidgetFormBuilder()
                     .text(
-                        "Name",
+                        localization.getString("name"),
                         t -> {
                           cleanup2.add(
                               CustomBinding.bindBidirectional(
@@ -697,9 +710,11 @@ public class PaletteImageEditHandle extends EditHandle {
                         })
                     .span(
                         () -> {
-                          Button add = HelperJFX.button("plus.png", "New color");
+                          Button add =
+                              HelperJFX.button("plus.png", localization.getString("new.color"));
                           Button addSeparator =
-                              HelperJFX.button("circle-medium.png", "New separator");
+                              HelperJFX.button(
+                                  "circle-medium.png", localization.getString("new.separator"));
                           ToggleButton merge =
                               new ToggleButton(null, new ImageView(icon("minus.png"))) {
                                 @Override
@@ -724,9 +739,12 @@ public class PaletteImageEditHandle extends EditHandle {
                                   }
                                 }
                               };
-                          merge.setTooltip(new Tooltip("Merge colors"));
-                          Button moveUp = HelperJFX.button("arrow-up.png", "Move back");
-                          Button moveDown = HelperJFX.button("arrow-down.png", "Move next");
+                          merge.setTooltip(new Tooltip(localization.getString("merge.colors")));
+                          Button moveUp =
+                              HelperJFX.button("arrow-up.png", localization.getString("move.back"));
+                          Button moveDown =
+                              HelperJFX.button(
+                                  "arrow-down.png", localization.getString("move.next"));
 
                           VBox tools = new VBox();
                           tools.setSpacing(3);
@@ -833,7 +851,7 @@ public class PaletteImageEditHandle extends EditHandle {
                           return layout;
                         })
                     .build()),
-            toolPane = new TitledPane("Tool", null));
+            toolPane = new TitledPane(localization.getString("tool"), null));
     window.layerTabContent.set(this, pad(tabBox));
 
     wrapper.config.tool.addListener(

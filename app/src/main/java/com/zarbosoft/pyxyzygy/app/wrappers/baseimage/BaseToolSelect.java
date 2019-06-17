@@ -26,8 +26,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.StrokeType;
 
-import static com.zarbosoft.pyxyzygy.app.Global.copyHotkey;
-import static com.zarbosoft.pyxyzygy.app.Global.cutHotkey;
+import static com.zarbosoft.pyxyzygy.app.Global.*;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.pad;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
@@ -139,7 +138,7 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
           new Hotkeys.Action(
               Hotkeys.Scope.CANVAS,
               "cancel",
-              "Cancel",
+              localization.getString("cancel"),
               Hotkeys.Hotkey.create(KeyCode.ESCAPE, false, false, false)) {
             @Override
             public void run(ProjectContext context, Window window) {
@@ -149,7 +148,7 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
           new Hotkeys.Action(
               Hotkeys.Scope.CANVAS,
               "place",
-              "Place",
+              localization.getString("place"),
               Hotkeys.Hotkey.create(KeyCode.ENTER, false, false, true)) {
             @Override
             public void run(ProjectContext context, Window window) {
@@ -160,7 +159,8 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
                   });
             }
           },
-          new Hotkeys.Action(Hotkeys.Scope.CANVAS, "cut", "Cut", cutHotkey) {
+          new Hotkeys.Action(
+              Hotkeys.Scope.CANVAS, "cut", localization.getString("cut"), cutHotkey) {
             @Override
             public void run(ProjectContext context, Window window) {
               context.change(
@@ -170,7 +170,8 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
                   });
             }
           },
-          new Hotkeys.Action(Hotkeys.Scope.CANVAS, "copy", "copy", copyHotkey) {
+          new Hotkeys.Action(
+              Hotkeys.Scope.CANVAS, "copy", localization.getString("copy"), copyHotkey) {
             @Override
             public void run(ProjectContext context, Window window) {
               copy();
@@ -220,7 +221,7 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
                       u ->
                           u.button(
                                   b -> {
-                                    b.setText("Place");
+                                    b.setText(localization.getString("place"));
                                     b.setGraphic(new ImageView(icon("arrow-collapse-down16.png")));
                                     b.setOnAction(
                                         e -> {
@@ -233,7 +234,7 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
                                   })
                               .button(
                                   b -> {
-                                    b.setText("Clear");
+                                    b.setText(localization.getString("clear"));
                                     b.setGraphic(new ImageView(icon("eraser-variant.png")));
                                     b.setOnAction(
                                         e -> {
@@ -247,7 +248,7 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
                                   })
                               .button(
                                   b -> {
-                                    b.setText("Cut");
+                                    b.setText(localization.getString("cut"));
                                     b.setGraphic(new ImageView(icon("content-cut.png")));
                                     b.setOnAction(
                                         e ->
@@ -262,7 +263,7 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
                                   })
                               .button(
                                   b -> {
-                                    b.setText("Copy");
+                                    b.setText(localization.getString("copy"));
                                     b.setGraphic(new ImageView(icon("content-copy.png")));
                                     b.setOnAction(
                                         e -> {
@@ -272,7 +273,7 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
                   .separator()
                   .button(
                       b -> {
-                        b.setText("Cancel");
+                        b.setText(localization.getString("cancel"));
                         b.setOnAction(
                             e -> {
                               setState(context, new StateCreate(context, window));
@@ -365,7 +366,7 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
           new Hotkeys.Action(
               Hotkeys.Scope.CANVAS,
               "cancel",
-              "Cancel",
+              localization.getString("cancel"),
               Hotkeys.Hotkey.create(KeyCode.ESCAPE, false, false, false)) {
             @Override
             public void run(ProjectContext context, Window window) {
@@ -375,14 +376,15 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
           new Hotkeys.Action(
               Hotkeys.Scope.CANVAS,
               "lift",
-              "Lift",
+              localization.getString("lift"),
               Hotkeys.Hotkey.create(KeyCode.ENTER, false, false, false)) {
             @Override
             public void run(ProjectContext context, Window window) {
               lift(context, window);
             }
           },
-          new Hotkeys.Action(Hotkeys.Scope.CANVAS, "cut", "Cut", cutHotkey) {
+          new Hotkeys.Action(
+              Hotkeys.Scope.CANVAS, "cut", localization.getString("cut"), cutHotkey) {
             @Override
             public void run(ProjectContext context, Window window) {
               context.change(
@@ -392,7 +394,8 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
                   });
             }
           },
-          new Hotkeys.Action(Hotkeys.Scope.CANVAS, "copy", "Copy", copyHotkey) {
+          new Hotkeys.Action(
+              Hotkeys.Scope.CANVAS, "copy", localization.getString("copy"), copyHotkey) {
             @Override
             public void run(ProjectContext context, Window window) {
               copy(context);
@@ -590,7 +593,7 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
                       g ->
                           g.button(
                                   b -> {
-                                    b.setText("Lift");
+                                    b.setText(localization.getString("lift"));
                                     b.setGraphic(new ImageView(icon("arrow-expand-up.png")));
                                     b.setOnAction(
                                         e -> {
@@ -599,7 +602,7 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
                                   })
                               .button(
                                   b -> {
-                                    b.setText("Clear");
+                                    b.setText(localization.getString("clear"));
                                     b.setGraphic(new ImageView(icon("eraser-variant.png")));
                                     b.setOnAction(
                                         e -> {
@@ -614,7 +617,7 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
                       g ->
                           g.button(
                                   b -> {
-                                    b.setText("Cut");
+                                    b.setText(localization.getString("cut"));
                                     b.setGraphic(new ImageView(icon("content-cut.png")));
                                     b.setOnAction(
                                         e ->
@@ -629,7 +632,7 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
                                   })
                               .button(
                                   b -> {
-                                    b.setText("Copy");
+                                    b.setText(localization.getString("copy"));
                                     b.setGraphic(new ImageView(icon("content-copy.png")));
                                     b.setOnAction(
                                         e -> {
@@ -639,7 +642,7 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
                   .separator()
                   .button(
                       b -> {
-                        b.setText("Cancel");
+                        b.setText(localization.getString("cancel"));
                         b.setOnAction(
                             e -> {
                               cancel(context, window);

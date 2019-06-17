@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.zarbosoft.pyxyzygy.app.Global.localization;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.centerCursor;
 
 public class ToolStamp extends Tool {
@@ -150,7 +151,7 @@ public class ToolStamp extends Tool {
         (observable, oldValue, newValue) -> updateStampImage.run());
     editHandle.toolPropReplacer.set(
         this,
-        "Stamp",
+        localization.getString("stamp"),
         new WidgetFormBuilder()
             .span(
                 () -> {

@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static com.zarbosoft.pyxyzygy.app.Global.localization;
+
 class RowAdapterTrueColorImageNode
     extends BaseFrameRowAdapter<TrueColorImageLayer, TrueColorImageFrame> {
   private final TrueColorImageLayer node;
@@ -35,7 +37,7 @@ class RowAdapterTrueColorImageNode
 
   @Override
   public ObservableValue<String> getName() {
-    return new SimpleStringProperty("Frames");
+    return new SimpleStringProperty(localization.getString("frames"));
   }
 
   @Override
