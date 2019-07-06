@@ -21,7 +21,8 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public abstract class BaseImageNodeWrapper<N extends ProjectLayer, F extends ProjectObject, T extends ProjectObject, L>
+public abstract class BaseImageNodeWrapper<
+        N extends ProjectLayer, F extends ProjectObject, T extends ProjectObject, L>
     extends Wrapper {
   public final N node;
   private final Wrapper parent;
@@ -99,27 +100,28 @@ public abstract class BaseImageNodeWrapper<N extends ProjectLayer, F extends Pro
 
   /**
    * Draw tile onto gc at the given position (just forward to TrueColorImage.compose)
-   *  @param context
+   *
+   * @param context
    * @param gc
    * @param tile
    * @param x
    * @param y
    */
-  public abstract void renderCompose(
-    Context context, TrueColorImage gc, T tile, int x, int y);
+  public abstract void renderCompose(Context context, TrueColorImage gc, T tile, int x, int y);
 
   public abstract void imageCompose(L image, L other, int x, int y);
 
   /**
    * Replace tiles with data from unit-multiple size image
-   *  @param context
+   *
+   * @param context
    * @param change
    * @param frame
    * @param unitBounds
    * @param image
    */
   public abstract void drop(
-    Context context, ChangeStepBuilder change, F frame, Rectangle unitBounds, L image);
+      Context context, ChangeStepBuilder change, F frame, Rectangle unitBounds, L image);
 
   /**
    * Create single image from tile data. Unit bounds is bounds / tileSize - as argument to avoid
@@ -160,10 +162,10 @@ public abstract class BaseImageNodeWrapper<N extends ProjectLayer, F extends Pro
   public abstract void dump(L image, String name);
 
   public void modify(
-    Context context,
-    ChangeStepBuilder change,
-    DoubleRectangle bounds,
-    DoubleModifyCallback<L> modify) {
+      Context context,
+      ChangeStepBuilder change,
+      DoubleRectangle bounds,
+      DoubleModifyCallback<L> modify) {
     Rectangle unitBounds = bounds.divideContains(context.project.tileSize());
     Rectangle outerBounds = unitBounds.multiply(context.project.tileSize());
     L canvas = grab(context, unitBounds, outerBounds);
@@ -172,10 +174,7 @@ public abstract class BaseImageNodeWrapper<N extends ProjectLayer, F extends Pro
   }
 
   public void modify(
-    Context context,
-    ChangeStepBuilder change,
-    Rectangle bounds,
-    IntModifyCallback<L> modify) {
+      Context context, ChangeStepBuilder change, Rectangle bounds, IntModifyCallback<L> modify) {
     Rectangle unitBounds = bounds.divideContains(context.project.tileSize());
     Rectangle outerBounds = unitBounds.multiply(context.project.tileSize());
     L canvas = grab(context, unitBounds, outerBounds);

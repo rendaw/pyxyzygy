@@ -123,20 +123,20 @@ public class History {
     clearRedo();
     inChange = true;
     context.lock.writeLock().lock();
-    ChangeStep changeStep = new ChangeStep(this.changeStep.cacheId);
+    ChangeStep partial = new ChangeStep(this.changeStep.cacheId);
     try {
-      cb.accept(changeStep);
+      cb.accept(partial);
     } catch (RuntimeException e) {
-      changeStep.apply(context).remove(context); // Undo partial change
+      partial.apply(context).remove(context); // Undo partial change
       context.debugCheckRefs();
       throw e;
     } finally {
       context.lock.writeLock().unlock();
       inChange = false;
     }
-    for (Change change1 : changeStep.changes) changeStep.add(context, change1);
+    for (Change change1 : partial.changes) this.changeStep.add(context, change1);
     context.debugCheckRefs();
-    context.committer.setDirty(changeStep);
+    context.committer.setDirty(this.changeStep);
     context.committer.setDirty(context);
   }
 

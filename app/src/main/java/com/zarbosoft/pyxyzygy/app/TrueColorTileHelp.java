@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 
 public class TrueColorTileHelp {
-  private static Cache<Long, TileData> cache =
+  public static Cache<Long, TileData> cache =
     CacheBuilder.newBuilder().concurrencyLevel(1).weakValues().build();
 
   private static Path path(ModelBase context, TrueColorTile tile) {

@@ -12,6 +12,7 @@
 
 #include "gzutil.hxx"
 
+static long allocated = 0;
 static int const channels = 4;
 static int16_t const paletteVersion = 4;
 
@@ -113,6 +114,10 @@ static inline void tint(uint8_t *dest, uint8_t const * const source, c_t const *
 	for (int i = 0; i < channels - 1; ++i)
 		dest[i] = ((source[i] + colors[i]) * 0x80u) >> 8u;
 	dest[3] = source[3];
+}
+
+long get_allocated() {
+	return allocated;
 }
 
 ROBytes::ROBytes(size_t const size, uint8_t const * const data) : size(size), data(data) {
@@ -451,10 +456,12 @@ static inline void replace(uint8_t *dest, size_t const unitStride, c_t const d_w
 
 PaletteImage::PaletteImage(l_t w, l_t h, p_t * const pixels) :
    	w(w), h(h), pixels(pixels) {
+	allocated += sizeof(p_t) * w * h;
 }
 
 PaletteImage::~PaletteImage() {
 	delete [] pixels;
+	allocated -= sizeof(p_t) * w * h;
 }
 
 PaletteImage * PaletteImage::create(l_t w, l_t h) {
@@ -611,10 +618,12 @@ void PaletteImage::compose(PaletteImage const & source, int32_t x, int32_t y) {
 
 TrueColorImage::TrueColorImage(l_t w, l_t h, uint8_t * const pixels) :
    	w(w), h(h), pixels(pixels) {
+	allocated += sizeof(c_t) * w * h;
 }
 
 TrueColorImage::~TrueColorImage() {
 	delete [] pixels;
+	allocated -= sizeof(c_t) * w * h;
 }
 
 TrueColorImage * TrueColorImage::create(l_t w, l_t h) {

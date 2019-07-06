@@ -71,6 +71,8 @@
 #include <cstdint>
 #include <stdexcept>
 
+long get_allocated();
+
 struct ROBytes {
 	size_t const size;
 	uint8_t const * data;

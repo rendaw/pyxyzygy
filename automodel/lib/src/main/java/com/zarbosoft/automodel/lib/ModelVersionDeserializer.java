@@ -105,11 +105,13 @@ public abstract class ModelVersionDeserializer extends StackReader.RecordState
   public Object get() {
     finishers.forEach(finisher -> finisher.finish(this));
     final ModelBase out = generate();
-    out.root = getObject(0L);
+    out.root = out.objectMap.values().stream().filter(o -> o.getClass() == rootType()).findFirst().get();
     boolean fixed = out.debugCheckRefsFix();
     out.debugCheckRefs();
     return new ModelBase.DeserializeResult(fixed, out);
   }
+
+public abstract Class rootType();
 
   public abstract static class Finisher {
     public abstract void finish(ModelVersionDeserializer context);

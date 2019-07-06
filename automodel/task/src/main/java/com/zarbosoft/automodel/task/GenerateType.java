@@ -57,7 +57,14 @@ class GenerateType {
 
     GenerateTypeChangeBuilder generateTypeChangeBuilder =
         new GenerateTypeChangeBuilder(object, changeStepSpec);
-    final CodeBlock.Builder cloneSerialize = CodeBlock.builder();
+    AutoField refCount = new AutoField(null, "refCount", AutoType.integer);
+    AutoField id = new AutoField(null, "id", AutoType.lon);
+    final CodeBlock.Builder cloneSerialize =
+        CodeBlock.builder()
+            .add("writer.type(\"$L\");\n", object.name)
+            .add("writer.recordBegin();\n")
+            .add(refCount.generateSerialize())
+            .add(id.generateSerialize());
     final GenerateDeserializer generateDeserializer =
         new GenerateDeserializer(true)
             .addFinish(
@@ -67,8 +74,8 @@ class GenerateType {
                         Assertion.class)
                     .add("context.objectMap.put(out.id(), out);\n")
                     .build());
-    generateDeserializer.add(new AutoField(null, "refCount", AutoType.integer));
-    generateDeserializer.add(new AutoField(null, "id", AutoType.lon));
+    generateDeserializer.add(refCount);
+    generateDeserializer.add(id);
     CodeBlock.Builder walkCode = CodeBlock.builder();
 
     for (AutoField sourceField : object.allFields()) {

@@ -32,7 +32,7 @@ public class AutoField {
   }
 
   public CodeBlock generateSerialize() {
-    return type.generateSerializeCode(name);
+    return CodeBlock.of("writer.key($S);\n$L", name, type.generateSerializeCode(name));
   }
 
   public AutoType.DeserializeCodeBuilt generateDeserializerCode(boolean lazyFinish) {

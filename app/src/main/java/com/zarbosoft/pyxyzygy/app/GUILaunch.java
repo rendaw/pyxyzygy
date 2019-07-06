@@ -111,6 +111,7 @@ import static com.zarbosoft.pyxyzygy.app.Global.opacityMax;
 import static com.zarbosoft.pyxyzygy.app.Global.shutdown;
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
+import static com.zarbosoft.pyxyzygy.core.mynative.get_allocated;
 import static com.zarbosoft.rendaw.common.Common.atomicWrite;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 
@@ -752,11 +753,10 @@ public class GUILaunch extends Application {
               imageCache =
                   CacheBuilder.newBuilder()
                       .recordStats()
-                      .maximumWeight(newValue.intValue())
+                      .maximumWeight(newValue.intValue() * 1024 * 1024)
                       .weigher(
                           (Weigher<Integer, Image>)
-                              (key, value) ->
-                                  (int) (value.getWidth() * value.getHeight() * 4 / 1024 / 1024))
+                              (key, value) -> (int) (value.getWidth() * value.getHeight() * 4))
                       .build();
             }
           });
@@ -765,10 +765,18 @@ public class GUILaunch extends Application {
           new TimerTask() {
             @Override
             public void run() {
-              logger.write("Cache stats:\n%s", imageCache.stats());
+              logger.write("Cache stats:\nSize: %s\n%s", imageCache.size(), imageCache.stats());
+              logger.write(
+                  "True color tile flush cache: %s",
+                  TrueColorTileHelp.cache.size(), TrueColorTileHelp.cache.stats());
+              logger.write(
+                  "Palette tile flush cache: %s",
+                  PaletteTileHelp.cache.size(), PaletteTileHelp.cache.stats());
+              logger.write("Allocated (native image): %s", get_allocated());
             }
           };
-      cacheStatsTimer.scheduleAtFixedRate(cacheStatsTask, 0, 1000 * 60 * 5);
+      // cacheStatsTimer.scheduleAtFixedRate(cacheStatsTask, 0, 1000 * 60 * 5);
+      cacheStatsTimer.scheduleAtFixedRate(cacheStatsTask, 0, 1000);
       shutdown.add(
           () -> {
             cacheStatsTimer.cancel();

@@ -35,10 +35,6 @@ import static javax.lang.model.element.Modifier.PUBLIC;
 
 public class Helper {
 
-  public static String decideName(Class k) {
-    return k.getSimpleName();
-  }
-
   public static TypeName toPoet(TypeInfo type) {
     TypeName base = TypeName.get(type.type);
     if (type.parameters != null && type.parameters.length > 0) {

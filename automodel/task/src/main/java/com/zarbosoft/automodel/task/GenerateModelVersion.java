@@ -28,6 +28,7 @@ class GenerateModelVersion {
   static Method sigDeserializeObject =
       Helper.findMethod(ModelVersionDeserializer.class, "deserializeObject");
   static Method sigGenerateModel = Helper.findMethod(ModelVersionDeserializer.class, "generate");
+  static Method sigRootType = Helper.findMethod(ModelVersionDeserializer.class, "rootType");
   static Method sigNeedsMigrate = Helper.findMethod(ModelBase.class, "needsMigrate");
   static Method sigMigrate = Helper.findMethod(ModelBase.class, "migrate");
   static Constructor sigConstructor;
@@ -155,6 +156,8 @@ class GenerateModelVersion {
                         contextName,
                         poetForward(sigConstructor, ImmutableMap.of("vid", CodeBlock.of(""))))
                     .build())
+            .addMethod(
+                poetMethod(sigRootType).addCode("return $T.class;\n", version.root.genName).build())
             .build());
     write(path, changeStepBuilderName, changeStepBuilderSpec.builder.build());
 

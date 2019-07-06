@@ -44,7 +44,6 @@ import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Bounds;
-import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
@@ -76,7 +75,6 @@ import javafx.scene.layout.BorderStroke;
 import javafx.scene.layout.BorderStrokeStyle;
 import javafx.scene.layout.BorderWidths;
 import javafx.scene.layout.CornerRadii;
-import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
@@ -352,8 +350,8 @@ public class Window {
       selectedForEdit = wrapper.buildEditControls(context, this);
     }
     {
-      List<Integer> path = getPath(selectedForView.getWrapper().tree.get()).collect(Collectors.toList());
-      System.out.format("New view path: %s\n", path);
+      List<Integer> path =
+          getPath(selectedForView.getWrapper().tree.get()).collect(Collectors.toList());
       selectedForEdit.getWrapper().getConfig().viewPath = path;
     }
 
@@ -754,7 +752,7 @@ public class Window {
     context.config.maxCanvas.addListener(
         new ChangeListener<Boolean>() {
           {
-            changed(null, null, false);
+            changed(null, null, context.config.maxCanvas.get());
           }
 
           @Override
@@ -768,13 +766,14 @@ public class Window {
             }
           }
         });
-
-    generalLayout
-        .getDividers()
-        .get(0)
-        .positionProperty()
-        .addListener(
-            (observable, oldValue, newValue) -> context.config.tabsSplit = newValue.doubleValue());
+    if (!context.config.maxCanvas.get())
+      generalLayout
+          .getDividers()
+          .get(0)
+          .positionProperty()
+          .addListener(
+              (observable, oldValue, newValue) ->
+                  context.config.tabsSplit = newValue.doubleValue());
 
     scene.addEventFilter(
         KeyEvent.KEY_PRESSED,
