@@ -101,6 +101,7 @@ import static com.zarbosoft.pyxyzygy.app.Global.localization;
 import static com.zarbosoft.pyxyzygy.app.Global.nameHuman;
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
+import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.pad;
 
 public class Window {
   public List<FrameMapEntry>
@@ -110,6 +111,7 @@ public class Window {
   public ManualHalfBinder<EditHandle> selectedForEditOpacityBinder = new ManualHalfBinder<>();
   public ManualHalfBinder<EditHandle> selectedForEditFramerateBinder = new ManualHalfBinder<>();
   public ManualHalfBinder<EditHandle> selectedForEditOnionBinder = new ManualHalfBinder<>();
+  public ManualHalfBinder<EditHandle> selectedForEditCameraBorderBinder = new ManualHalfBinder<>();
   public ManualHalfBinder<EditHandle> selectedForEditPlayingBinder = new ManualHalfBinder<>();
   public ManualHalfBinder<EditHandle> selectedForEditTreeIconBinder = new ManualHalfBinder<>();
   private EditHandle selectedForEdit = null;
@@ -315,6 +317,7 @@ public class Window {
     selectedForEditOpacityBinder.clear();
     selectedForEditFramerateBinder.clear();
     selectedForEditOnionBinder.clear();
+    selectedForEditCameraBorderBinder.clear();
     selectedForEditPlayingBinder.clear();
     selectedForEditTreeIconBinder.clear();
 
@@ -348,6 +351,7 @@ public class Window {
     selectedForEditOpacityBinder.set(selectedForEdit);
     selectedForEditFramerateBinder.set(selectedForEdit);
     selectedForEditOnionBinder.set(selectedForEdit);
+    selectedForEditCameraBorderBinder.set(selectedForEdit);
     selectedForEditPlayingBinder.set(selectedForEdit);
     selectedForEditTreeIconBinder.set(selectedForEdit);
 
@@ -589,7 +593,7 @@ public class Window {
                               (observable, oldValue, newValue) ->
                                   GUILaunch.profileConfig.ghostPreviousColor.set(
                                       TrueColor.fromJfx(newValue)));
-                          GridPane.setHalignment(w, HPos.CENTER);
+                          //GridPane.setHalignment(w, HPos.CENTER);
                           return w;
                         })
                     .twoLine(
@@ -602,7 +606,7 @@ public class Window {
                               (observable, oldValue, newValue) ->
                                   GUILaunch.profileConfig.ghostNextColor.set(
                                       TrueColor.fromJfx(newValue)));
-                          GridPane.setHalignment(w, HPos.CENTER);
+                          GridPane.setHalignment(w, HPos.LEFT);
                           return w;
                         })
                     .intSpinner(
@@ -692,7 +696,7 @@ public class Window {
                           return table;
                         })
                     .get()));
-    configTab.setContent2(configLayout);
+    configTab.setContent2(pad(configLayout));
 
     SplitPane generalLayout = new SplitPane();
     generalLayout.setOrientation(Orientation.HORIZONTAL);

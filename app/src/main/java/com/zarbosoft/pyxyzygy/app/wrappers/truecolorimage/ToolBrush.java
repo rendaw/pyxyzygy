@@ -48,7 +48,6 @@ public class ToolBrush extends BaseToolBrush<TrueColorImageFrame, TrueColorImage
     this.editHandle = trueColorImageEditHandle;
     this.brush = brush;
     TrueColorPicker colorPicker = new TrueColorPicker();
-    GridPane.setHalignment(colorPicker, HPos.CENTER);
     editHandle.toolProperties.set(
         this,
         pad(

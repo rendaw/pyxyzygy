@@ -87,6 +87,9 @@ public class CameraEditHandle extends GroupNodeEditHandle {
                                   new PropertyBinder<Integer>(
                                       s.getValueFactory().valueProperty())));
                         })
+                  .check(localization.getString("show.border"), c -> {
+                    c.selectedProperty().bindBidirectional(wrapper.config.showBorder);
+                  })
                     .build()),
             new TitledPane(
                 localization.getString("render"),

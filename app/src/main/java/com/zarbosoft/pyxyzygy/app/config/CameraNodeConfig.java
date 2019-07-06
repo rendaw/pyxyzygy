@@ -3,11 +3,12 @@ package com.zarbosoft.pyxyzygy.app.config;
 import com.zarbosoft.interface1.Configuration;
 import com.zarbosoft.pyxyzygy.app.Context;
 import com.zarbosoft.pyxyzygy.app.Global;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 
 @Configuration(name = "camera")
 public class CameraNodeConfig extends GroupNodeConfig {
-  public static String TOOL_VIEWPORT = "viewport";
+  public final static String TOOL_VIEWPORT = "viewport";
 
   public CameraNodeConfig() {
     super();
@@ -59,4 +60,7 @@ public class CameraNodeConfig extends GroupNodeConfig {
 
   @Configuration(optional = true)
   public SimpleIntegerProperty renderScale = new SimpleIntegerProperty(1);
+
+  @Configuration(optional = true)
+  public SimpleBooleanProperty showBorder = new SimpleBooleanProperty(true);
 }

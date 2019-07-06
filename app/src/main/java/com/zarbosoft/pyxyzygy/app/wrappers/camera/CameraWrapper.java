@@ -9,9 +9,12 @@ import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.Wrapper;
 import com.zarbosoft.pyxyzygy.app.config.CameraNodeConfig;
 import com.zarbosoft.pyxyzygy.app.config.GroupNodeConfig;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.AnyHalfBinder;
 import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
 import com.zarbosoft.pyxyzygy.app.widgets.binding.CustomBinding;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.DoubleHalfBinder;
 import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyHalfBinder;
 import com.zarbosoft.pyxyzygy.app.widgets.binding.ScalarBinder;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeCanvasHandle;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeWrapper;
@@ -33,6 +36,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 
 import static com.zarbosoft.pyxyzygy.app.Global.localization;
+import static com.zarbosoft.pyxyzygy.app.Misc.opt;
+import static com.zarbosoft.pyxyzygy.app.config.CameraNodeConfig.TOOL_VIEWPORT;
+import static com.zarbosoft.pyxyzygy.app.config.NodeConfig.TOOL_MOVE;
 
 public class CameraWrapper extends GroupNodeWrapper {
   public final SimpleIntegerProperty width = new SimpleIntegerProperty(0);
@@ -81,7 +87,8 @@ public class CameraWrapper extends GroupNodeWrapper {
   public CanvasHandle buildCanvas(Context context, Window window, CanvasHandle parent) {
     if (canvasHandle == null) {
       class CameraCanvasHandle extends GroupNodeCanvasHandle {
-        Rectangle cameraBorder;
+        private final BinderRoot showBorderRoot; // GC root
+        private Rectangle cameraBorder;
 
         public CameraCanvasHandle(Context context, Window window, GroupNodeWrapper wrapper) {
           super(context, window, wrapper);
@@ -96,6 +103,27 @@ public class CameraWrapper extends GroupNodeWrapper {
           cameraBorder.heightProperty().bind(height);
           cameraBorder.layoutXProperty().bind(width.divide(2).negate());
           cameraBorder.layoutYProperty().bind(height.divide(2).negate());
+          showBorderRoot =
+              CustomBinding.bind(
+                  cameraBorder.visibleProperty(),
+                  new AnyHalfBinder(
+                      new PropertyHalfBinder<>(config.showBorder),
+                      new DoubleHalfBinder<Boolean, Boolean>(
+                              new PropertyHalfBinder<>(config.tool)
+                                  .map(
+                                      s -> {
+                                        switch (s) {
+                                          case TOOL_MOVE:
+                                            return opt(true);
+                                          case TOOL_VIEWPORT:
+                                            return opt(true);
+                                          default:
+                                            return opt(false);
+                                        }
+                                      }),
+                              window.selectedForEditOnionBinder.map(
+                                  s -> opt(s.getWrapper() == wrapper)))
+                          .map((tool, selected) -> opt(tool && selected))));
           overlay.getChildren().addAll(cameraBorder);
         }
 
@@ -131,24 +159,24 @@ public class CameraWrapper extends GroupNodeWrapper {
   }
 
   public void render(
-    Context context,
-    Window window,
-    Common.UncheckedConsumer<Common.UncheckedConsumer<BiConsumer<Integer, TrueColorImage>>>
+      Context context,
+      Window window,
+      Common.UncheckedConsumer<Common.UncheckedConsumer<BiConsumer<Integer, TrueColorImage>>>
           thread,
-    int scale) {
+      int scale) {
     Camera node = (Camera) this.node;
     render(
         context, window, thread, node.frameStart(), node.frameStart() + node.frameLength(), scale);
   }
 
   public void render(
-    Context context,
-    Window window,
-    Common.UncheckedConsumer<Common.UncheckedConsumer<BiConsumer<Integer, TrueColorImage>>>
+      Context context,
+      Window window,
+      Common.UncheckedConsumer<Common.UncheckedConsumer<BiConsumer<Integer, TrueColorImage>>>
           thread,
-    int start,
-    int end,
-    int scale) {
+      int start,
+      int end,
+      int scale) {
     Window.DialogBuilder builder = window.dialog(localization.getString("rendering"));
     ProgressBar progress = new ProgressBar();
     AtomicBoolean cancel = new AtomicBoolean(false);

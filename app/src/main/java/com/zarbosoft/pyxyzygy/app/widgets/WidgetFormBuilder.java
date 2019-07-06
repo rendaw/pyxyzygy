@@ -5,8 +5,19 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.HPos;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
-import javafx.scene.control.*;
-import javafx.scene.layout.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.Slider;
+import javafx.scene.control.Spinner;
+import javafx.scene.control.SpinnerValueFactory;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.stage.DirectoryChooser;
 
 import java.io.File;
@@ -145,7 +156,9 @@ public class WidgetFormBuilder {
   }
 
   public WidgetFormBuilder span(Supplier<Node> supplier) {
-    gridPane.add(supplier.get(), 0, row++, 2, 1);
+    Node node = supplier.get();
+    GridPane.setHalignment(node, HPos.CENTER);
+    gridPane.add(node, 0, row++, 2, 1);
     return this;
   }
 
@@ -175,12 +188,10 @@ public class WidgetFormBuilder {
   }
 
   public WidgetFormBuilder section(String title) {
-    return span(
-        () -> {
-          Label s = new Label(title);
-          s.getStyleClass().add("h2");
-          return s;
-        });
+    Label s = new Label(title);
+    s.getStyleClass().add("h2");
+    gridPane.add(s, 0, row++, 2, 1);
+    return this;
   }
 
   public WidgetFormBuilder twoLine(String name, Supplier<Node> cb) {

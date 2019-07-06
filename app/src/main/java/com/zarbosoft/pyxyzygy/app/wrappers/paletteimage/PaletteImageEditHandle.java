@@ -724,7 +724,6 @@ public class PaletteImageEditHandle extends EditHandle {
                                       .map(
                                           (tool, second) ->
                                               opt(second || !TOOL_BRUSH.equals(tool))));
-                          GridPane.setHalignment(colorPicker, HPos.CENTER);
                           colorPickerCleanup =
                               CustomBinding.bindBidirectional(
                                   new IndirectBinder<TrueColor>(
