@@ -1,7 +1,7 @@
 package com.zarbosoft.pyxyzygy.app.widgets.binding;
 
-import com.zarbosoft.pyxyzygy.core.model.v0.ProjectObject;
-import com.zarbosoft.pyxyzygy.seed.model.Listener;
+import com.zarbosoft.automodel.lib.Listener;
+import com.zarbosoft.automodel.lib.ProjectObject;
 import com.zarbosoft.rendaw.common.Assertion;
 
 import java.lang.reflect.Method;

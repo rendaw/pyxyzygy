@@ -5,19 +5,19 @@ import com.squareup.gifencoder.Color;
 import com.squareup.gifencoder.GifEncoder;
 import com.squareup.gifencoder.Image;
 import com.squareup.gifencoder.ImageOptions;
+import com.zarbosoft.pyxyzygy.app.Context;
 import com.zarbosoft.pyxyzygy.app.Tool;
 import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.Wrapper;
 import com.zarbosoft.pyxyzygy.app.config.CameraNodeConfig;
 import com.zarbosoft.pyxyzygy.app.config.GroupNodeConfig;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.TitledPane;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
 import com.zarbosoft.pyxyzygy.app.widgets.binding.CustomBinding;
 import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyBinder;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeEditHandle;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeWrapper;
-import com.zarbosoft.pyxyzygy.core.model.v0.Camera;
+import com.zarbosoft.pyxyzygy.core.model.latest.Camera;
 import javafx.scene.Node;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
@@ -45,12 +45,12 @@ import static com.zarbosoft.rendaw.common.Common.uncheck;
 import static org.jcodec.common.model.ColorSpace.RGB;
 
 public class CameraEditHandle extends GroupNodeEditHandle {
-  public CameraEditHandle(ProjectContext context, Window window, GroupNodeWrapper wrapper) {
+  public CameraEditHandle(Context context, Window window, GroupNodeWrapper wrapper) {
     super(context, window, wrapper);
   }
 
   @Override
-  public VBox buildTab(ProjectContext context, Window window, TitledPane toolProps) {
+  public VBox buildTab(Context context, Window window, TitledPane toolProps) {
     CameraWrapper wrapper = (CameraWrapper) this.wrapper;
     VBox tabBox = new VBox();
     tabBox
@@ -165,7 +165,7 @@ public class CameraEditHandle extends GroupNodeEditHandle {
     return tabBox;
   }
 
-  private static void render(ProjectContext context, Window window, CameraWrapper wrapper)
+  private static void render(Context context, Window window, CameraWrapper wrapper)
       throws IOException, NoSuchMethodException {
     Camera node = (Camera) wrapper.node;
     Path dir = Paths.get(wrapper.config.renderDir);
@@ -299,14 +299,14 @@ public class CameraEditHandle extends GroupNodeEditHandle {
   }
 
   @Override
-  protected Tool createTool(ProjectContext context, Window window, String newValue) {
+  protected Tool createTool(Context context, Window window, String newValue) {
     if (CameraNodeConfig.TOOL_VIEWPORT.equals(newValue)) {
       return new ToolViewport((CameraWrapper) wrapper);
     } else return super.createTool(context, window, newValue);
   }
 
   @Override
-  public void remove(ProjectContext context, Window window) {
+  public void remove(Context context, Window window) {
     super.remove(context, window);
     cleanup2.forEach(c -> c.destroy());
   }

@@ -1,14 +1,14 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.paletteimage;
 
+import com.zarbosoft.pyxyzygy.app.Context;
 import com.zarbosoft.pyxyzygy.app.Window;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.BaseToolSelect;
 import com.zarbosoft.pyxyzygy.core.PaletteImage;
-import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
-import com.zarbosoft.pyxyzygy.core.model.v0.PaletteImageFrame;
-import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
-import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
+import com.zarbosoft.pyxyzygy.core.model.latest.ChangeStepBuilder;
+import com.zarbosoft.pyxyzygy.core.model.latest.PaletteImageFrame;
+import com.zarbosoft.pyxyzygy.seed.Rectangle;
+import com.zarbosoft.pyxyzygy.seed.Vector;
 import com.zarbosoft.rendaw.common.Pair;
 import javafx.scene.Node;
 import javafx.scene.image.Image;
@@ -78,7 +78,7 @@ public class ToolSelect extends BaseToolSelect<PaletteImageFrame, PaletteImage> 
   }
 
   @Override
-  public void clear(ProjectContext context, ChangeStepBuilder change, Rectangle bounds) {
+  public void clear(Context context, ChangeStepBuilder change, Rectangle bounds) {
     editHandle.wrapper.canvasHandle.clear(context, change, bounds);
   }
 
@@ -92,7 +92,7 @@ public class ToolSelect extends BaseToolSelect<PaletteImageFrame, PaletteImage> 
   }
 
   @Override
-  protected Pair<PaletteImage, Vector> uncopy(ProjectContext context) {
+  protected Pair<PaletteImage, Vector> uncopy(Context context) {
     PaletteImage out;
     out =
         Optional.ofNullable(Clipboard.getSystemClipboard().getContent(dataFormat))

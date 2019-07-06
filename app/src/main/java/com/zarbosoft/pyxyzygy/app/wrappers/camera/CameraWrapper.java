@@ -1,9 +1,14 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.camera;
 
-import com.zarbosoft.pyxyzygy.app.*;
+import com.zarbosoft.automodel.lib.History;
+import com.zarbosoft.pyxyzygy.app.CanvasHandle;
+import com.zarbosoft.pyxyzygy.app.Context;
+import com.zarbosoft.pyxyzygy.app.EditHandle;
+import com.zarbosoft.pyxyzygy.app.Render;
+import com.zarbosoft.pyxyzygy.app.Window;
+import com.zarbosoft.pyxyzygy.app.Wrapper;
 import com.zarbosoft.pyxyzygy.app.config.CameraNodeConfig;
 import com.zarbosoft.pyxyzygy.app.config.GroupNodeConfig;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
 import com.zarbosoft.pyxyzygy.app.widgets.binding.CustomBinding;
 import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyBinder;
@@ -11,8 +16,8 @@ import com.zarbosoft.pyxyzygy.app.widgets.binding.ScalarBinder;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeCanvasHandle;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeWrapper;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
-import com.zarbosoft.pyxyzygy.core.model.v0.Camera;
-import com.zarbosoft.pyxyzygy.core.model.v0.ProjectLayer;
+import com.zarbosoft.pyxyzygy.core.model.latest.Camera;
+import com.zarbosoft.pyxyzygy.core.model.latest.ProjectLayer;
 import com.zarbosoft.rendaw.common.Common;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
@@ -35,12 +40,12 @@ public class CameraWrapper extends GroupNodeWrapper {
   private final BinderRoot cleanupWidth;
   private final BinderRoot cleanupHeight;
   public boolean adjustViewport = false;
-  private ProjectContext.Tuple actionWidthChange = new ProjectContext.Tuple(this, "width");
-  private ProjectContext.Tuple actionHeightChange = new ProjectContext.Tuple(this, "height");
+  private History.Tuple actionWidthChange = new History.Tuple(this, "width");
+  private History.Tuple actionHeightChange = new History.Tuple(this, "height");
 
   public CameraNodeConfig config;
 
-  public CameraWrapper(ProjectContext context, Wrapper parent, int parentIndex, Camera node) {
+  public CameraWrapper(Context context, Wrapper parent, int parentIndex, Camera node) {
     super(context, parent, parentIndex, node);
     cleanupWidth =
         CustomBinding.bindBidirectional(
@@ -59,26 +64,26 @@ public class CameraWrapper extends GroupNodeWrapper {
   }
 
   @Override
-  protected GroupNodeConfig initConfig(ProjectContext context, long id) {
+  protected GroupNodeConfig initConfig(Context context, long id) {
     return this.config =
         (CameraNodeConfig)
             context.config.nodes.computeIfAbsent(id, id1 -> new CameraNodeConfig(context));
   }
 
   @Override
-  public void remove(ProjectContext context) {
+  public void remove(Context context) {
     cleanupWidth.destroy();
     cleanupHeight.destroy();
     super.remove(context);
   }
 
   @Override
-  public CanvasHandle buildCanvas(ProjectContext context, Window window, CanvasHandle parent) {
+  public CanvasHandle buildCanvas(Context context, Window window, CanvasHandle parent) {
     if (canvasHandle == null) {
       class CameraCanvasHandle extends GroupNodeCanvasHandle {
         Rectangle cameraBorder;
 
-        public CameraCanvasHandle(ProjectContext context, Window window, GroupNodeWrapper wrapper) {
+        public CameraCanvasHandle(Context context, Window window, GroupNodeWrapper wrapper) {
           super(context, window, wrapper);
           cameraBorder = new Rectangle();
           cameraBorder.strokeWidthProperty().bind(Bindings.divide(1.0, window.editor.zoomFactor));
@@ -95,7 +100,7 @@ public class CameraWrapper extends GroupNodeWrapper {
         }
 
         @Override
-        public void remove(ProjectContext context, Wrapper excludeSubtree) {
+        public void remove(Context context, Wrapper excludeSubtree) {
           cameraBorder = null;
           super.remove(context, excludeSubtree);
         }
@@ -107,43 +112,43 @@ public class CameraWrapper extends GroupNodeWrapper {
   }
 
   @Override
-  public ProjectLayer separateClone(ProjectContext context) {
-    Camera clone = Camera.create(context);
+  public ProjectLayer separateClone(Context context) {
+    Camera clone = Camera.create(context.model);
     cloneSet(context, clone);
     Camera node = (Camera) this.node;
-    clone.initialOffsetSet(context, node.offset());
-    clone.initialWidthSet(context, node.width());
-    clone.initialHeightSet(context, node.height());
-    clone.initialFrameRateSet(context, node.frameRate());
-    clone.initialFrameStartSet(context, node.frameStart());
-    clone.initialFrameLengthSet(context, node.frameLength());
+    clone.initialOffsetSet(context.model, node.offset());
+    clone.initialWidthSet(context.model, node.width());
+    clone.initialHeightSet(context.model, node.height());
+    clone.initialFrameRateSet(context.model, node.frameRate());
+    clone.initialFrameStartSet(context.model, node.frameStart());
+    clone.initialFrameLengthSet(context.model, node.frameLength());
     return clone;
   }
 
   @Override
-  public EditHandle buildEditControls(ProjectContext context, Window window) {
+  public EditHandle buildEditControls(Context context, Window window) {
     return new CameraEditHandle(context, window, this);
   }
 
   public void render(
-      ProjectContext context,
-      Window window,
-      Common.UncheckedConsumer<Common.UncheckedConsumer<BiConsumer<Integer, TrueColorImage>>>
+    Context context,
+    Window window,
+    Common.UncheckedConsumer<Common.UncheckedConsumer<BiConsumer<Integer, TrueColorImage>>>
           thread,
-      int scale) {
+    int scale) {
     Camera node = (Camera) this.node;
     render(
         context, window, thread, node.frameStart(), node.frameStart() + node.frameLength(), scale);
   }
 
   public void render(
-      ProjectContext context,
-      Window window,
-      Common.UncheckedConsumer<Common.UncheckedConsumer<BiConsumer<Integer, TrueColorImage>>>
+    Context context,
+    Window window,
+    Common.UncheckedConsumer<Common.UncheckedConsumer<BiConsumer<Integer, TrueColorImage>>>
           thread,
-      int start,
-      int end,
-      int scale) {
+    int start,
+    int end,
+    int scale) {
     Window.DialogBuilder builder = window.dialog(localization.getString("rendering"));
     ProgressBar progress = new ProgressBar();
     AtomicBoolean cancel = new AtomicBoolean(false);
@@ -157,18 +162,18 @@ public class CameraWrapper extends GroupNodeWrapper {
                       for (int i = start; i < end; ++i) {
                         if (cancel.get()) return;
                         if (i != start) canvas.clear();
-                        context.lock.readLock().lock();
+                        context.model.lock.readLock().lock();
                         try {
                           Render.render(
                               context,
                               node,
                               canvas,
                               i,
-                              new com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle(
+                              new com.zarbosoft.pyxyzygy.seed.Rectangle(
                                   -width.get() / 2, -height.get() / 2, width.get(), height.get()),
                               1.0);
                         } finally {
-                          context.lock.readLock().unlock();
+                          context.model.lock.readLock().unlock();
                         }
                         frameConsumer.accept(i, scale == 1 ? canvas : canvas.scale(scale));
                         final double percent = ((double) (i - start)) / (end - start);

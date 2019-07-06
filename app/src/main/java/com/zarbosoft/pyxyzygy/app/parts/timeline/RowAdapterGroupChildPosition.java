@@ -1,15 +1,15 @@
 package com.zarbosoft.pyxyzygy.app.parts.timeline;
 
+import com.zarbosoft.automodel.lib.Listener;
+import com.zarbosoft.pyxyzygy.app.Context;
 import com.zarbosoft.pyxyzygy.app.WidgetHandle;
 import com.zarbosoft.pyxyzygy.app.Window;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.wrappers.FrameFinder;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupChildWrapper;
-import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
-import com.zarbosoft.pyxyzygy.core.model.v0.GroupChild;
-import com.zarbosoft.pyxyzygy.core.model.v0.GroupPositionFrame;
-import com.zarbosoft.pyxyzygy.seed.model.Listener;
-import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
+import com.zarbosoft.pyxyzygy.core.model.latest.ChangeStepBuilder;
+import com.zarbosoft.pyxyzygy.core.model.latest.GroupChild;
+import com.zarbosoft.pyxyzygy.core.model.latest.GroupPositionFrame;
+import com.zarbosoft.pyxyzygy.seed.Vector;
 import javafx.beans.value.ObservableObjectValue;
 import javafx.beans.value.ObservableValue;
 import javafx.beans.value.ObservableValueBase;
@@ -36,7 +36,7 @@ public class RowAdapterGroupChildPosition
   }
 
   @Override
-  public WidgetHandle createRowWidget(ProjectContext context, Window window) {
+  public WidgetHandle createRowWidget(Context context, Window window) {
     return new WidgetHandle() {
       private VBox layout;
       Runnable framesCleanup;
@@ -96,7 +96,7 @@ public class RowAdapterGroupChildPosition
   }
 
   @Override
-  public void remove(ProjectContext context) {}
+  public void remove(Context context) {}
 
   @Override
   protected void addFrame(ChangeStepBuilder change, int index, GroupPositionFrame frame) {
@@ -105,9 +105,9 @@ public class RowAdapterGroupChildPosition
 
   @Override
   protected GroupPositionFrame innerCreateFrame(
-      ProjectContext context, GroupPositionFrame previousFrame) {
-    GroupPositionFrame newFrame = GroupPositionFrame.create(context);
-    newFrame.initialOffsetSet(context, previousFrame.offset());
+    Context context, GroupPositionFrame previousFrame) {
+    GroupPositionFrame newFrame = GroupPositionFrame.create(context.model);
+    newFrame.initialOffsetSet(context.model, previousFrame.offset());
     return newFrame;
   }
 
@@ -118,8 +118,8 @@ public class RowAdapterGroupChildPosition
 
   @Override
   protected void setFrameInitialLength(
-      ProjectContext context, GroupPositionFrame frame, int length) {
-    frame.initialLengthSet(context, length);
+    Context context, GroupPositionFrame frame, int length) {
+    frame.initialLengthSet(context.model, length);
   }
 
   @Override
@@ -139,9 +139,9 @@ public class RowAdapterGroupChildPosition
 
   @Override
   protected GroupPositionFrame innerDuplicateFrame(
-      ProjectContext context, GroupPositionFrame source) {
-    GroupPositionFrame out = GroupPositionFrame.create(context);
-    out.initialOffsetSet(context, source.offset());
+    Context context, GroupPositionFrame source) {
+    GroupPositionFrame out = GroupPositionFrame.create(context.model);
+    out.initialOffsetSet(context.model, source.offset());
     return out;
   }
 

@@ -1,15 +1,20 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.group;
 
 import com.google.common.collect.ImmutableList;
-import com.zarbosoft.pyxyzygy.app.*;
+import com.zarbosoft.pyxyzygy.app.CanvasHandle;
+import com.zarbosoft.pyxyzygy.app.Context;
+import com.zarbosoft.pyxyzygy.app.DoubleVector;
+import com.zarbosoft.pyxyzygy.app.EditHandle;
+import com.zarbosoft.pyxyzygy.app.Tool;
+import com.zarbosoft.pyxyzygy.app.Window;
+import com.zarbosoft.pyxyzygy.app.Wrapper;
 import com.zarbosoft.pyxyzygy.app.config.GroupNodeConfig;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.ContentReplacer;
 import com.zarbosoft.pyxyzygy.app.widgets.TitledPane;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
 import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
 import com.zarbosoft.pyxyzygy.app.wrappers.ToolMove;
-import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
+import com.zarbosoft.pyxyzygy.seed.Vector;
 import com.zarbosoft.rendaw.common.Assertion;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -36,7 +41,7 @@ public class GroupNodeEditHandle extends EditHandle {
   public GroupNodeWrapper wrapper;
 
   public GroupNodeEditHandle(
-      ProjectContext context, Window window, final GroupNodeWrapper wrapper) {
+    Context context, Window window, final GroupNodeWrapper wrapper) {
     this.wrapper = wrapper;
 
     // Canvas overlay
@@ -88,7 +93,7 @@ public class GroupNodeEditHandle extends EditHandle {
         });
   }
 
-  public VBox buildTab(ProjectContext context, Window window, TitledPane toolProps) {
+  public VBox buildTab(Context context, Window window, TitledPane toolProps) {
     VBox tabBox = new VBox();
     tabBox
         .getChildren()
@@ -103,7 +108,7 @@ public class GroupNodeEditHandle extends EditHandle {
     return tabBox;
   }
 
-  protected Tool createTool(ProjectContext context, Window window, String newValue) {
+  protected Tool createTool(Context context, Window window, String newValue) {
     if (GroupNodeConfig.TOOL_MOVE.equals(newValue)) {
       return new ToolMove(window, wrapper);
     } else if (GroupNodeConfig.TOOL_LAYER_MOVE.equals(newValue)) {
@@ -130,7 +135,7 @@ public class GroupNodeEditHandle extends EditHandle {
   }
 
   @Override
-  public void remove(ProjectContext context, Window window) {
+  public void remove(Context context, Window window) {
     if (tool != null) {
       tool.remove(context, window);
       tool = null;
@@ -152,7 +157,7 @@ public class GroupNodeEditHandle extends EditHandle {
   }
 
   @Override
-  public void markStart(ProjectContext context, Window window, DoubleVector start) {
+  public void markStart(Context context, Window window, DoubleVector start) {
     if (tool == null) return;
     tool.markStart(
         context,
@@ -167,7 +172,7 @@ public class GroupNodeEditHandle extends EditHandle {
   }
 
   @Override
-  public void mark(ProjectContext context, Window window, DoubleVector start, DoubleVector end) {
+  public void mark(Context context, Window window, DoubleVector start, DoubleVector end) {
     if (tool == null) return;
     Vector offset = offset();
     tool.mark(
@@ -180,7 +185,7 @@ public class GroupNodeEditHandle extends EditHandle {
   }
 
   @Override
-  public void cursorMoved(ProjectContext context, Window window, DoubleVector vector) {
+  public void cursorMoved(Context context, Window window, DoubleVector vector) {
     vector = Window.toLocal(window.getSelectedForView(), wrapper.canvasHandle, vector);
     tool.cursorMoved(context, window, vector);
   }

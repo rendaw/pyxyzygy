@@ -1,12 +1,20 @@
 package com.zarbosoft.pyxyzygy.app;
 
+import com.zarbosoft.automodel.lib.Logger;
+import com.zarbosoft.automodel.lib.ModelBase;
+import com.zarbosoft.automodel.lib.ProjectObject;
 import com.zarbosoft.interface1.Configuration;
 import com.zarbosoft.luxem.write.RawWriter;
 import com.zarbosoft.pidgooncommand.Command;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
-import com.zarbosoft.pyxyzygy.core.model.v0.*;
-import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
+import com.zarbosoft.pyxyzygy.core.model.ModelVersions;
+import com.zarbosoft.pyxyzygy.core.model.latest.Camera;
+import com.zarbosoft.pyxyzygy.core.model.latest.GroupLayer;
+import com.zarbosoft.pyxyzygy.core.model.latest.Model;
+import com.zarbosoft.pyxyzygy.core.model.latest.Project;
+import com.zarbosoft.pyxyzygy.core.model.latest.ProjectLayer;
+import com.zarbosoft.pyxyzygy.core.model.latest.TrueColorImageLayer;
+import com.zarbosoft.pyxyzygy.seed.Rectangle;
 import com.zarbosoft.rendaw.common.Assertion;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ScanResult;
@@ -38,18 +46,14 @@ public class CLIMain {
     public String path;
 
     public void run() {
-      com.zarbosoft.pyxyzygy.seed.model.ProjectContext rawContext =
-          Global.deserialize(Paths.get(path));
-      ProjectContext context;
-      if (rawContext.needsMigrate()) {
-        context = (ProjectContext) rawContext.migrate();
-      } else {
-        context = (ProjectContext) rawContext;
-      }
-      runImpl(context);
+      ModelBase.DeserializeResult result = ModelVersions.deserialize(Paths.get(path), 0);
+      if (result.model.needsMigrate())
+        throw new RuntimeException(
+            "This file needs to be updated for this versio nof the software - use the GUI and confirm that the automatic update is correct.");
+      runImpl(new Context((Model) result.model));
     }
 
-    public abstract void runImpl(ProjectContext context);
+    public abstract void runImpl(Context context);
   }
 
   @Configuration(name = "list")
@@ -57,7 +61,7 @@ public class CLIMain {
   public static class ListSubcommand extends Subcommand {
 
     @Override
-    public void runImpl(ProjectContext context) {
+    public void runImpl(Context context) {
       RawWriter w = new RawWriter(System.out, (byte) ' ', 4);
       w.recordBegin();
       walk(w, context.project);
@@ -104,7 +108,7 @@ public class CLIMain {
     public int frame = 0;
 
     @Override
-    public void runImpl(ProjectContext context) {
+    public void runImpl(Context context) {
       ProjectLayer found = find(context.project, selector);
       Rectangle bounds;
       if (found instanceof Camera) {
@@ -156,7 +160,7 @@ public class CLIMain {
     public String output;
 
     @Override
-    public void runImpl(ProjectContext context) {
+    public void runImpl(Context context) {
       ProjectLayer found = find(context.project, selector);
       if (!(found instanceof Camera)) throw new RuntimeException("Selected node is not a camera");
       Camera node = (Camera) found;
@@ -192,7 +196,7 @@ public class CLIMain {
   }
 
   public static void main(String[] args) {
-    Global.logger = new Logger.File(appDirs);
+    Logger.logger = new Logger.File(appDirs);
     ScanResult scan =
         new ClassGraph().enableAllInfo().whitelistPackages("com.zarbosoft.pyxyzygy.cli").scan();
     Commandline got = Command.<Commandline>parse(scan, Commandline.class, args);

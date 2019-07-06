@@ -1,26 +1,30 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.baseimage;
 
+import com.zarbosoft.automodel.lib.Listener;
+import com.zarbosoft.automodel.lib.ProjectObject;
 import com.zarbosoft.pyxyzygy.app.CanvasHandle;
+import com.zarbosoft.pyxyzygy.app.Context;
 import com.zarbosoft.pyxyzygy.app.DoubleRectangle;
 import com.zarbosoft.pyxyzygy.app.DoubleVector;
 import com.zarbosoft.pyxyzygy.app.Wrapper;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
 import com.zarbosoft.pyxyzygy.app.widgets.binding.DoubleHalfBinder;
 import com.zarbosoft.pyxyzygy.app.widgets.binding.ScalarHalfBinder;
 import com.zarbosoft.pyxyzygy.app.wrappers.FrameFinder;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
-import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
-import com.zarbosoft.pyxyzygy.core.model.v0.ProjectLayer;
-import com.zarbosoft.pyxyzygy.core.model.v0.ProjectObject;
-import com.zarbosoft.pyxyzygy.seed.model.Listener;
-import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
-import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
+import com.zarbosoft.pyxyzygy.core.model.latest.ChangeStepBuilder;
+import com.zarbosoft.pyxyzygy.core.model.latest.ProjectLayer;
+import com.zarbosoft.pyxyzygy.seed.Rectangle;
+import com.zarbosoft.pyxyzygy.seed.Vector;
 import javafx.beans.property.SimpleIntegerProperty;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
-public class BaseImageCanvasHandle<N extends ProjectLayer, F extends ProjectObject, T, L>
+public class BaseImageCanvasHandle<N extends ProjectLayer, F extends ProjectObject, T extends ProjectObject, L>
     extends CanvasHandle {
   CanvasHandle parent;
   private final Runnable mirrorCleanup;
@@ -33,7 +37,7 @@ public class BaseImageCanvasHandle<N extends ProjectLayer, F extends ProjectObje
   private Listener.Clear<F> tilesClearListener;
   private BinderRoot offsetCleanup;
 
-  public BaseImageCanvasHandle(ProjectContext context, BaseImageNodeWrapper<N, F, T, L> wrapper) {
+  public BaseImageCanvasHandle(Context context, BaseImageNodeWrapper<N, F, T, L> wrapper) {
     this.wrapper = wrapper;
 
     mirrorCleanup =
@@ -64,7 +68,7 @@ public class BaseImageCanvasHandle<N extends ProjectLayer, F extends ProjectObje
   }
 
   @Override
-  public void remove(ProjectContext context, Wrapper excludeSubtree) {
+  public void remove(Context context, Wrapper excludeSubtree) {
     wrapper.canvasHandle = null;
     mirrorCleanup.run();
     detachTiles();
@@ -81,14 +85,14 @@ public class BaseImageCanvasHandle<N extends ProjectLayer, F extends ProjectObje
   }
 
   @Override
-  public void setViewport(ProjectContext context, DoubleRectangle newBounds1, int positiveZoom) {
+  public void setViewport(Context context, DoubleRectangle newBounds1, int positiveZoom) {
     if (this.zoom.get() == positiveZoom && Objects.equals(this.bounds.get(), newBounds1)) return;
     this.zoom.set(positiveZoom);
     DoubleRectangle oldBounds1 = this.bounds.get();
     this.bounds.set(newBounds1);
 
-    Rectangle oldBounds = oldBounds1.scale(3).divideContains(context.tileSize);
-    Rectangle newBounds = newBounds1.scale(3).divideContains(context.tileSize);
+    Rectangle oldBounds = oldBounds1.scale(3).divideContains(context.project.tileSize());
+    Rectangle newBounds = newBounds1.scale(3).divideContains(context.project.tileSize());
 
     // Remove tiles outside view bounds
     for (int x = 0; x < oldBounds.width; ++x) {
@@ -113,7 +117,7 @@ public class BaseImageCanvasHandle<N extends ProjectLayer, F extends ProjectObje
         }
         WrapTile wrapTile =
             wrapper.createWrapTile(
-                useIndexes.x * context.tileSize, useIndexes.y * context.tileSize);
+                useIndexes.x * context.project.tileSize(), useIndexes.y * context.project.tileSize());
         wrapTile.update(wrapTile.getImage(context, tile)); // Image deserialization must be serial
         wrapTiles.put(key, wrapTile);
         paint.getChildren().add(wrapTile.widget);
@@ -122,12 +126,12 @@ public class BaseImageCanvasHandle<N extends ProjectLayer, F extends ProjectObje
   }
 
   @Override
-  public void setFrame(ProjectContext context, int frameNumber) {
+  public void setFrame(Context context, int frameNumber) {
     this.frameNumber.set(frameNumber);
     updateFrame(context);
   }
 
-  public void updateFrame(ProjectContext context) {
+  public void updateFrame(Context context) {
     F oldFrame = frame;
     FrameFinder.Result<F> found = wrapper.frameFinder.findFrame(wrapper.node, frameNumber.get());
     frame = found.frame;
@@ -167,7 +171,7 @@ public class BaseImageCanvasHandle<N extends ProjectLayer, F extends ProjectObje
     } while (false);
   }
 
-  public void attachTiles(ProjectContext context) {
+  public void attachTiles(Context context) {
     tilesPutListener =
         wrapper.addFrameTilesPutAllListener(
             frame,
@@ -176,7 +180,7 @@ public class BaseImageCanvasHandle<N extends ProjectLayer, F extends ProjectObje
                 WrapTile old = wrapTiles.remove(key);
                 if (old != null) paint.getChildren().remove(old.widget);
               }
-              Rectangle checkBounds = bounds.get().scale(3).divideContains(context.tileSize);
+              Rectangle checkBounds = bounds.get().scale(3).divideContains(context.project.tileSize());
               for (Map.Entry<Long, T> entry : put.entrySet()) {
                 long key = entry.getKey();
                 Vector indexes = Vector.from1D(key);
@@ -188,7 +192,7 @@ public class BaseImageCanvasHandle<N extends ProjectLayer, F extends ProjectObje
                 if (wrap == null) {
                   wrap =
                       wrapper.createWrapTile(
-                          indexes.x * context.tileSize, indexes.y * context.tileSize);
+                          indexes.x * context.project.tileSize(), indexes.y * context.project.tileSize());
                   wrapTiles.put(key, wrap);
                   paint.getChildren().add(wrap.widget);
                 }
@@ -229,24 +233,20 @@ public class BaseImageCanvasHandle<N extends ProjectLayer, F extends ProjectObje
     wrapTiles.clear();
   }
 
-  public void render(ProjectContext context, TrueColorImage gc, Rectangle bounds) {
-    render(context, gc, bounds, bounds.divideContains(context.tileSize));
-  }
-
   public void render(
-      ProjectContext context, TrueColorImage gc, Rectangle bounds, Rectangle unitBounds) {
+    Context context, TrueColorImage gc, Rectangle bounds, Rectangle unitBounds) {
     for (int x = 0; x < unitBounds.width; ++x) {
       for (int y = 0; y < unitBounds.height; ++y) {
         T tile = wrapper.tileGet(frame, unitBounds.corner().plus(x, y).to1D());
         if (tile == null) continue;
-        final int renderX = (x + unitBounds.x) * context.tileSize - bounds.x;
-        final int renderY = (y + unitBounds.y) * context.tileSize - bounds.y;
+        final int renderX = (x + unitBounds.x) * context.project.tileSize() - bounds.x;
+        final int renderY = (y + unitBounds.y) * context.project.tileSize() - bounds.y;
         wrapper.renderCompose(context, gc, tile, renderX, renderY);
       }
     }
   }
 
-  public void clear(ProjectContext context, ChangeStepBuilder change, Rectangle bounds) {
+  public void clear(Context context, ChangeStepBuilder change, Rectangle bounds) {
     wrapper.modify(
         context,
         change,

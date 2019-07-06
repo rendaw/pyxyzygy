@@ -1,8 +1,13 @@
 package com.zarbosoft.pyxyzygy.app.parts.editor;
 
 import com.google.common.base.Objects;
-import com.zarbosoft.pyxyzygy.app.*;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
+import com.zarbosoft.pyxyzygy.app.BoundsBuilder;
+import com.zarbosoft.pyxyzygy.app.Context;
+import com.zarbosoft.pyxyzygy.app.DoubleRectangle;
+import com.zarbosoft.pyxyzygy.app.DoubleVector;
+import com.zarbosoft.pyxyzygy.app.EditHandle;
+import com.zarbosoft.pyxyzygy.app.GUILaunch;
+import com.zarbosoft.pyxyzygy.app.Render;
 import com.zarbosoft.pyxyzygy.app.parts.timeline.Timeline;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
@@ -11,8 +16,8 @@ import com.zarbosoft.pyxyzygy.app.widgets.binding.HalfBinder;
 import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyHalfBinder;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.pyxyzygy.nearestneighborimageview.NearestNeighborImageView;
-import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
-import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
+import com.zarbosoft.pyxyzygy.seed.Rectangle;
+import com.zarbosoft.pyxyzygy.seed.TrueColor;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.Group;
@@ -40,7 +45,7 @@ public class OnionSkin {
   private TrueColor lastColor = null;
 
   public OnionSkin(
-      ProjectContext context, Timeline timeline, EditHandle editHandle, boolean previous) {
+    Context context, Timeline timeline, EditHandle editHandle, boolean previous) {
     this.editHandle = editHandle;
     frameProp = previous ? editHandle.getCanvas().previousFrame : editHandle.getCanvas().nextFrame;
     bounds = editHandle.getCanvas().bounds;
@@ -73,7 +78,7 @@ public class OnionSkin {
     overlay.getChildren().remove(widget);
   }
 
-  private void render(ProjectContext context) {
+  private void render(Context context) {
     int frame = frameProp.get();
     boolean on = this.on.get().get();
     if (frame < 0 || bounds.get() == null || !on) {

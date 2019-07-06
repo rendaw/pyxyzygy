@@ -1,14 +1,14 @@
 package com.zarbosoft.pyxyzygy.app.parts.timeline;
 
+import com.zarbosoft.automodel.lib.Listener;
+import com.zarbosoft.pyxyzygy.app.Context;
 import com.zarbosoft.pyxyzygy.app.WidgetHandle;
 import com.zarbosoft.pyxyzygy.app.Window;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.wrappers.FrameFinder;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupChildWrapper;
-import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
-import com.zarbosoft.pyxyzygy.core.model.v0.GroupChild;
-import com.zarbosoft.pyxyzygy.core.model.v0.GroupTimeFrame;
-import com.zarbosoft.pyxyzygy.seed.model.Listener;
+import com.zarbosoft.pyxyzygy.core.model.latest.ChangeStepBuilder;
+import com.zarbosoft.pyxyzygy.core.model.latest.GroupChild;
+import com.zarbosoft.pyxyzygy.core.model.latest.GroupTimeFrame;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableObjectValue;
 import javafx.beans.value.ObservableValue;
@@ -47,10 +47,10 @@ public class RowAdapterGroupChildTime extends BaseFrameRowAdapter<GroupChild, Gr
   }
 
   @Override
-  protected GroupTimeFrame innerCreateFrame(ProjectContext context, GroupTimeFrame previousFrame) {
-    GroupTimeFrame created = GroupTimeFrame.create(context);
-    created.initialInnerOffsetSet(context, 0);
-    created.initialInnerLoopSet(context, 0);
+  protected GroupTimeFrame innerCreateFrame(Context context, GroupTimeFrame previousFrame) {
+    GroupTimeFrame created = GroupTimeFrame.create(context.model);
+    created.initialInnerOffsetSet(context.model, 0);
+    created.initialInnerLoopSet(context.model, 0);
     return created;
   }
 
@@ -65,8 +65,8 @@ public class RowAdapterGroupChildTime extends BaseFrameRowAdapter<GroupChild, Gr
   }
 
   @Override
-  protected void setFrameInitialLength(ProjectContext context, GroupTimeFrame frame, int length) {
-    frame.initialLengthSet(context, length);
+  protected void setFrameInitialLength(Context context, GroupTimeFrame frame, int length) {
+    frame.initialLengthSet(context.model, length);
   }
 
   @Override
@@ -80,10 +80,10 @@ public class RowAdapterGroupChildTime extends BaseFrameRowAdapter<GroupChild, Gr
   }
 
   @Override
-  protected GroupTimeFrame innerDuplicateFrame(ProjectContext context, GroupTimeFrame source) {
-    GroupTimeFrame created = GroupTimeFrame.create(context);
-    created.initialInnerOffsetSet(context, source.innerOffset());
-    created.initialInnerLoopSet(context, source.innerLoop());
+  protected GroupTimeFrame innerDuplicateFrame(Context context, GroupTimeFrame source) {
+    GroupTimeFrame created = GroupTimeFrame.create(context.model);
+    created.initialInnerOffsetSet(context.model, source.innerOffset());
+    created.initialInnerLoopSet(context.model, source.innerLoop());
     return created;
   }
 
@@ -119,7 +119,7 @@ public class RowAdapterGroupChildTime extends BaseFrameRowAdapter<GroupChild, Gr
   }
 
   @Override
-  public WidgetHandle createRowWidget(ProjectContext context, Window window) {
+  public WidgetHandle createRowWidget(Context context, Window window) {
     return new WidgetHandle() {
       final VBox layout = new VBox();
 
@@ -236,10 +236,10 @@ public class RowAdapterGroupChildTime extends BaseFrameRowAdapter<GroupChild, Gr
   }
 
   @Override
-  public void remove(ProjectContext context) {}
+  public void remove(Context context) {}
 
   @Override
-  public void updateFrameMarker(ProjectContext context, Window window) {
+  public void updateFrameMarker(Context context, Window window) {
     super.updateFrameMarker(context, window);
     if (rowInnerRange.isPresent()) rowInnerRange.get().updateFrameMarker(window);
   }

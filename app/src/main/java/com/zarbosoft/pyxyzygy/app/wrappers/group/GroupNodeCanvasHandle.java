@@ -1,17 +1,23 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.group;
 
-import com.zarbosoft.pyxyzygy.app.*;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
-import com.zarbosoft.pyxyzygy.core.model.v0.GroupChild;
-import com.zarbosoft.pyxyzygy.core.model.v0.ProjectLayer;
-import com.zarbosoft.pyxyzygy.seed.model.Listener;
-import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
+import com.zarbosoft.automodel.lib.Listener;
+import com.zarbosoft.pyxyzygy.app.CanvasHandle;
+import com.zarbosoft.pyxyzygy.app.Context;
+import com.zarbosoft.pyxyzygy.app.DoubleRectangle;
+import com.zarbosoft.pyxyzygy.app.DoubleVector;
+import com.zarbosoft.pyxyzygy.app.Window;
+import com.zarbosoft.pyxyzygy.app.Wrapper;
+import com.zarbosoft.pyxyzygy.core.model.latest.GroupChild;
+import com.zarbosoft.pyxyzygy.core.model.latest.ProjectLayer;
+import com.zarbosoft.pyxyzygy.seed.Vector;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.ToolBar;
 
-import static com.zarbosoft.pyxyzygy.app.Misc.*;
+import static com.zarbosoft.pyxyzygy.app.Misc.mirror;
+import static com.zarbosoft.pyxyzygy.app.Misc.noopConsumer;
+import static com.zarbosoft.pyxyzygy.app.Misc.unopt;
 
 public class GroupNodeCanvasHandle extends CanvasHandle {
   private final Runnable layerListenCleanup;
@@ -23,7 +29,7 @@ public class GroupNodeCanvasHandle extends CanvasHandle {
   ToolBar toolBar = new ToolBar();
   private GroupNodeWrapper wrapper;
 
-  public GroupNodeCanvasHandle(ProjectContext context, Window window, GroupNodeWrapper wrapper) {
+  public GroupNodeCanvasHandle(Context context, Window window, GroupNodeWrapper wrapper) {
     layerListenCleanup =
         mirror(
             wrapper.children,
@@ -68,14 +74,14 @@ public class GroupNodeCanvasHandle extends CanvasHandle {
   }
 
   @Override
-  public void setViewport(ProjectContext context, DoubleRectangle newBounds, int positiveZoom) {
+  public void setViewport(Context context, DoubleRectangle newBounds, int positiveZoom) {
     this.positiveZoom.set(positiveZoom);
     this.bounds.set(newBounds);
     childHandles.forEach(c -> c.setViewport(context, newBounds, positiveZoom));
   }
 
   @Override
-  public void setFrame(ProjectContext context, int frameNumber) {
+  public void setFrame(Context context, int frameNumber) {
     this.frameNumber.set(frameNumber);
     childHandles.forEach(c -> c.setFrame(context, frameNumber));
 
@@ -117,7 +123,7 @@ public class GroupNodeCanvasHandle extends CanvasHandle {
   }
 
   @Override
-  public void remove(ProjectContext context, Wrapper excludeSubtree) {
+  public void remove(Context context, Wrapper excludeSubtree) {
     wrapper.canvasHandle = null;
     childHandles.forEach(c -> c.remove(context, excludeSubtree));
     wrapper.node.removeOffsetSetListeners(offsetListener);

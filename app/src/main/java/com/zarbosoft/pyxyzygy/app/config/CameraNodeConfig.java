@@ -1,8 +1,8 @@
 package com.zarbosoft.pyxyzygy.app.config;
 
 import com.zarbosoft.interface1.Configuration;
+import com.zarbosoft.pyxyzygy.app.Context;
 import com.zarbosoft.pyxyzygy.app.Global;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import javafx.beans.property.SimpleIntegerProperty;
 
 @Configuration(name = "camera")
@@ -13,7 +13,7 @@ public class CameraNodeConfig extends GroupNodeConfig {
     super();
   }
 
-  public CameraNodeConfig(ProjectContext context) {
+  public CameraNodeConfig(Context context) {
     super(context);
   }
 

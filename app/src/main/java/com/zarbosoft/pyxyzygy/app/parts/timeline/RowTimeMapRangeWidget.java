@@ -1,8 +1,9 @@
 package com.zarbosoft.pyxyzygy.app.parts.timeline;
 
+import com.zarbosoft.automodel.lib.History;
+import com.zarbosoft.pyxyzygy.app.Context;
 import com.zarbosoft.pyxyzygy.app.DoubleVector;
 import com.zarbosoft.pyxyzygy.app.Window;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import javafx.beans.binding.Bindings;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
@@ -211,7 +212,7 @@ public class RowTimeMapRangeWidget {
     }
   }
 
-  public RowTimeMapRangeWidget(ProjectContext context, Timeline timeline) {
+  public RowTimeMapRangeWidget(Context context, Timeline timeline) {
     final double pad = 50;
     this.timeline = timeline;
     base.setMinHeight(Timeline.baseSize * 3);
@@ -301,7 +302,7 @@ public class RowTimeMapRangeWidget {
         MouseEvent.MOUSE_DRAGGED,
         e -> {
           context.change(
-              new ProjectContext.Tuple(adapter.getData(), "timemap"),
+              new History.Tuple(adapter.getData(), "timemap"),
               change -> {
                 if (dragMouseStart.y < Timeline.baseSize) {
                   // nop

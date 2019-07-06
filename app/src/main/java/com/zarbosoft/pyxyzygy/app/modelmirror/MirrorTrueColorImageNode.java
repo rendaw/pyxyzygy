@@ -1,8 +1,7 @@
 package com.zarbosoft.pyxyzygy.app.modelmirror;
 
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
-import com.zarbosoft.pyxyzygy.core.model.v0.ProjectObject;
-import com.zarbosoft.pyxyzygy.core.model.v0.TrueColorImageLayer;
+import com.zarbosoft.automodel.lib.ProjectObject;
+import com.zarbosoft.pyxyzygy.core.model.latest.TrueColorImageLayer;
 import javafx.scene.control.TreeItem;
 
 public class MirrorTrueColorImageNode extends ObjectMirror {
@@ -27,5 +26,5 @@ public class MirrorTrueColorImageNode extends ObjectMirror {
   }
 
   @Override
-  public void remove(ProjectContext context) {}
+  public void remove(com.zarbosoft.pyxyzygy.app.Context context) {}
 }

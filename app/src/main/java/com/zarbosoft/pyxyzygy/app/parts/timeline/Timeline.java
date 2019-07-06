@@ -3,18 +3,45 @@ package com.zarbosoft.pyxyzygy.app.parts.timeline;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableList;
-import com.zarbosoft.pyxyzygy.app.*;
+import com.zarbosoft.automodel.lib.History;
+import com.zarbosoft.automodel.lib.Listener;
+import com.zarbosoft.automodel.lib.ProjectObject;
+import com.zarbosoft.pyxyzygy.app.CanvasHandle;
+import com.zarbosoft.pyxyzygy.app.Context;
+import com.zarbosoft.pyxyzygy.app.EditHandle;
+import com.zarbosoft.pyxyzygy.app.FrameMapEntry;
+import com.zarbosoft.pyxyzygy.app.Global;
+import com.zarbosoft.pyxyzygy.app.Hotkeys;
+import com.zarbosoft.pyxyzygy.app.Misc;
+import com.zarbosoft.pyxyzygy.app.WidgetHandle;
+import com.zarbosoft.pyxyzygy.app.Window;
+import com.zarbosoft.pyxyzygy.app.Wrapper;
 import com.zarbosoft.pyxyzygy.app.config.NodeConfig;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.ChildrenReplacer;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.*;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.CustomBinding;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.DoubleHalfBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.IndirectBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.IndirectHalfBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyHalfBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.ScalarBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.SelectionModelBinder;
 import com.zarbosoft.pyxyzygy.app.wrappers.camera.CameraWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.paletteimage.PaletteImageNodeWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage.TrueColorImageNodeWrapper;
-import com.zarbosoft.pyxyzygy.core.model.v0.*;
-import com.zarbosoft.pyxyzygy.seed.model.Listener;
+import com.zarbosoft.pyxyzygy.core.model.latest.Camera;
+import com.zarbosoft.pyxyzygy.core.model.latest.ChangeStepBuilder;
+import com.zarbosoft.pyxyzygy.core.model.latest.GroupChild;
+import com.zarbosoft.pyxyzygy.core.model.latest.GroupLayer;
+import com.zarbosoft.pyxyzygy.core.model.latest.GroupTimeFrame;
+import com.zarbosoft.pyxyzygy.core.model.latest.PaletteImageFrame;
+import com.zarbosoft.pyxyzygy.core.model.latest.PaletteImageLayer;
+import com.zarbosoft.pyxyzygy.core.model.latest.ProjectLayer;
+import com.zarbosoft.pyxyzygy.core.model.latest.TrueColorImageFrame;
+import com.zarbosoft.pyxyzygy.core.model.latest.TrueColorImageLayer;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.Pair;
 import javafx.application.Platform;
@@ -36,13 +63,30 @@ import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.canvas.Canvas;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.ContentDisplay;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollBar;
+import javafx.scene.control.Spinner;
+import javafx.scene.control.SpinnerValueFactory;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.control.ToolBar;
+import javafx.scene.control.Tooltip;
+import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeTableCell;
+import javafx.scene.control.TreeTableColumn;
+import javafx.scene.control.TreeTableView;
 import javafx.scene.effect.BlendMode;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.*;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.util.Callback;
@@ -57,15 +101,15 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.zarbosoft.automodel.lib.Logger.logger;
 import static com.zarbosoft.pyxyzygy.app.Global.localization;
-import static com.zarbosoft.pyxyzygy.app.Global.logger;
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 import static com.zarbosoft.pyxyzygy.app.wrappers.camera.CameraWrapper.getActualFrameTimeMs;
 import static com.zarbosoft.rendaw.common.Common.sublist;
 
 public class Timeline {
-  private final ProjectContext context;
+  private final Context context;
   private final Window window;
   public static final int extraFrames = 500;
   public static final double baseSize = 16;
@@ -134,7 +178,7 @@ public class Timeline {
     return e.getSceneX() - corner.getX();
   }
 
-  public Timeline(ProjectContext context, Window window) {
+  public Timeline(Context context, Window window) {
     this.context = context;
     this.window = window;
 
@@ -271,7 +315,7 @@ public class Timeline {
     left.setOnAction(
         e -> {
           context.change(
-              new ProjectContext.Tuple(selectedFrame.get().row.adapter.getData(), "move"),
+              new History.Tuple(selectedFrame.get().row.adapter.getData(), "move"),
               change -> {
                 selectedFrame.get().frame.moveLeft(context, change);
               });
@@ -288,7 +332,7 @@ public class Timeline {
     right.setOnAction(
         e -> {
           context.change(
-              new ProjectContext.Tuple(selectedFrame.get().row.adapter.getData(), "move"),
+              new History.Tuple(selectedFrame.get().row.adapter.getData(), "move"),
               change -> {
                 selectedFrame.get().frame.moveRight(context, change);
               });
@@ -341,7 +385,7 @@ public class Timeline {
                               "frameRate",
                               r ->
                                   context.change(
-                                      new ProjectContext.Tuple(camera, "framerate"),
+                                      new History.Tuple(camera, "framerate"),
                                       c -> c.camera(camera).frameRateSet(r))));
                     } else {
                       return opt(wrapper.getConfig().previewRate);
@@ -689,7 +733,7 @@ public class Timeline {
 
             @Override
             public boolean createFrame(
-                ProjectContext context, Window window, ChangeStepBuilder change, int outer) {
+              Context context, Window window, ChangeStepBuilder change, int outer) {
               return false;
             }
 
@@ -700,25 +744,25 @@ public class Timeline {
 
             @Override
             public boolean duplicateFrame(
-                ProjectContext context, Window window, ChangeStepBuilder change, int outer) {
+              Context context, Window window, ChangeStepBuilder change, int outer) {
               return false;
             }
 
             @Override
-            public WidgetHandle createRowWidget(ProjectContext context, Window window) {
+            public WidgetHandle createRowWidget(Context context, Window window) {
               return null;
             }
 
             @Override
-            public int updateTime(ProjectContext context, Window window) {
+            public int updateTime(Context context, Window window) {
               return 0;
             }
 
             @Override
-            public void updateFrameMarker(ProjectContext context, Window window) {}
+            public void updateFrameMarker(Context context, Window window) {}
 
             @Override
-            public void remove(ProjectContext context) {}
+            public void remove(Context context) {}
 
             @Override
             public boolean frameAt(Window window, int outer) {

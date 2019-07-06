@@ -1,6 +1,5 @@
 package com.zarbosoft.pyxyzygy.app;
 
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.Group;
@@ -26,12 +25,11 @@ public abstract class CanvasHandle {
     return overlay;
   }
 
-  public abstract void setViewport(
-      ProjectContext context, DoubleRectangle newBounds, int positiveZoom);
+  public abstract void setViewport(Context context, DoubleRectangle newBounds, int positiveZoom);
 
-  public abstract void setFrame(ProjectContext context, int frameNumber);
+  public abstract void setFrame(Context context, int frameNumber);
 
-  public abstract void remove(ProjectContext context, Wrapper excludeSubtree);
+  public abstract void remove(Context context, Wrapper excludeSubtree);
 
   public abstract Wrapper getWrapper();
 

@@ -1,8 +1,8 @@
 package com.zarbosoft.pyxyzygy.app.config;
 
 import com.zarbosoft.interface1.Configuration;
+import com.zarbosoft.pyxyzygy.app.Context;
 import com.zarbosoft.pyxyzygy.app.DoubleVector;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -36,7 +36,7 @@ public abstract class NodeConfig {
   @Configuration(optional = true)
   public final SimpleObjectProperty<Integer> previewRate = new SimpleObjectProperty<>(10);
 
-  public NodeConfig(ProjectContext context) {
+  public NodeConfig(Context context) {
     zoom.set(context.config.defaultZoom);
   }
 

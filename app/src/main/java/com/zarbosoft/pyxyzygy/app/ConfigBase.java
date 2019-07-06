@@ -7,7 +7,11 @@ import com.zarbosoft.luxem.read.ReadTypeGrammar;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ScanResult;
 import javafx.application.Platform;
-import javafx.beans.property.*;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleLongProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
 
@@ -16,10 +20,15 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.function.Supplier;
 
-import static com.zarbosoft.pyxyzygy.app.Global.logger;
+import static com.zarbosoft.automodel.lib.Logger.logger;
 import static com.zarbosoft.rendaw.common.Common.atomicWrite;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 

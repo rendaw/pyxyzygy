@@ -1,14 +1,19 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.group;
 
+import com.zarbosoft.automodel.lib.Listener;
+import com.zarbosoft.automodel.lib.ProjectObject;
 import com.zarbosoft.pyxyzygy.app.CanvasHandle;
+import com.zarbosoft.pyxyzygy.app.Context;
 import com.zarbosoft.pyxyzygy.app.EditHandle;
 import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.Wrapper;
 import com.zarbosoft.pyxyzygy.app.config.NodeConfig;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.wrappers.FrameFinder;
-import com.zarbosoft.pyxyzygy.core.model.v0.*;
-import com.zarbosoft.pyxyzygy.seed.model.Listener;
+import com.zarbosoft.pyxyzygy.core.model.latest.ChangeStepBuilder;
+import com.zarbosoft.pyxyzygy.core.model.latest.GroupChild;
+import com.zarbosoft.pyxyzygy.core.model.latest.GroupPositionFrame;
+import com.zarbosoft.pyxyzygy.core.model.latest.GroupTimeFrame;
+import com.zarbosoft.pyxyzygy.core.model.latest.ProjectLayer;
 import com.zarbosoft.rendaw.common.Assertion;
 import javafx.beans.property.SimpleObjectProperty;
 
@@ -54,7 +59,7 @@ public class GroupChildWrapper extends Wrapper {
   protected GroupChildCanvasHandle canvasHandle;
 
   public GroupChildWrapper(
-      ProjectContext context, Wrapper parent, int parentIndex, GroupChild node) {
+    Context context, Wrapper parent, int parentIndex, GroupChild node) {
     this.parent = parent;
     this.parentIndex = parentIndex;
     this.node = node;
@@ -102,19 +107,19 @@ public class GroupChildWrapper extends Wrapper {
   }
 
   @Override
-  public CanvasHandle buildCanvas(ProjectContext context, Window window, CanvasHandle parent) {
+  public CanvasHandle buildCanvas(Context context, Window window, CanvasHandle parent) {
     if (canvasHandle == null) canvasHandle = new GroupChildCanvasHandle(context, window, this);
     canvasHandle.setParent(parent);
     return canvasHandle;
   }
 
   @Override
-  public ProjectLayer separateClone(ProjectContext context) {
+  public ProjectLayer separateClone(Context context) {
     throw new Assertion();
   }
 
   @Override
-  public void deleteChild(ProjectContext context, ChangeStepBuilder change, int index) {
+  public void deleteChild(Context context, ChangeStepBuilder change, int index) {
     parent.deleteChild(context, change, parentIndex);
   }
 
@@ -131,12 +136,12 @@ public class GroupChildWrapper extends Wrapper {
   }
 
   @Override
-  public void remove(ProjectContext context) {
+  public void remove(Context context) {
     node.removeInnerSetListeners(innerSetListener);
   }
 
   @Override
-  public EditHandle buildEditControls(ProjectContext context, Window window) {
+  public EditHandle buildEditControls(Context context, Window window) {
     return null;
   }
 }

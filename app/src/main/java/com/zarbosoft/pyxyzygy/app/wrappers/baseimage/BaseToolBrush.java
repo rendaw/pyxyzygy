@@ -1,10 +1,15 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.baseimage;
 
-import com.zarbosoft.pyxyzygy.app.*;
+import com.zarbosoft.automodel.lib.History;
+import com.zarbosoft.automodel.lib.ProjectObject;
+import com.zarbosoft.pyxyzygy.app.BoundsBuilder;
+import com.zarbosoft.pyxyzygy.app.Context;
+import com.zarbosoft.pyxyzygy.app.DoubleRectangle;
+import com.zarbosoft.pyxyzygy.app.DoubleVector;
+import com.zarbosoft.pyxyzygy.app.Tool;
+import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.config.BaseBrush;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.CircleCursor;
-import com.zarbosoft.pyxyzygy.core.model.v0.ProjectObject;
 import com.zarbosoft.rendaw.common.Assertion;
 import javafx.beans.value.ChangeListener;
 import javafx.scene.input.KeyCode;
@@ -28,11 +33,11 @@ public abstract class BaseToolBrush<F extends ProjectObject, L> extends Tool {
 
   @Override
   public void markStart(
-      ProjectContext context, Window window, DoubleVector start, DoubleVector globalStart) {}
+    Context context, Window window, DoubleVector start, DoubleVector globalStart) {}
 
   @Override
   public void mark(
-      ProjectContext context,
+      Context context,
       Window window,
       DoubleVector start,
       DoubleVector end,
@@ -43,14 +48,14 @@ public abstract class BaseToolBrush<F extends ProjectObject, L> extends Tool {
     } else if (window.pressed.contains(KeyCode.SHIFT)) {
       if (lastEnd == null) lastEnd = end;
       strokeInner(context, null, lastEnd, end);
-    } else strokeInner(context, new ProjectContext.Tuple(brush, "stroke"), start, end);
+    } else strokeInner(context, new History.Tuple(brush, "stroke"), start, end);
   }
 
   private void strokeInner(
-      ProjectContext context,
-      ProjectContext.Tuple changeUnique,
-      DoubleVector start,
-      DoubleVector end) {
+    Context context,
+    History.Tuple changeUnique,
+    DoubleVector start,
+    DoubleVector end) {
     final double startRadius = brush.size.get() / 20.0;
     final double endRadius = brush.size.get() / 20.0;
     final DoubleRectangle bounds =
@@ -71,12 +76,12 @@ public abstract class BaseToolBrush<F extends ProjectObject, L> extends Tool {
   }
 
   protected abstract void stroke(
-      ProjectContext context,
-      L canvas,
-      DoubleVector start,
-      double startRadius,
-      DoubleVector end,
-      double endRadius);
+    Context context,
+    L canvas,
+    DoubleVector start,
+    double startRadius,
+    DoubleVector end,
+    double endRadius);
 
   private void updateCursor(Window window) {
     double zoom = window.editor.zoomFactor.get();
@@ -84,12 +89,12 @@ public abstract class BaseToolBrush<F extends ProjectObject, L> extends Tool {
   }
 
   @Override
-  public void remove(ProjectContext context, Window window) {
+  public void remove(Context context, Window window) {
     brush.size.removeListener(brushSizeListener);
     window.editor.zoomFactor.removeListener(zoomListener);
     window.editorCursor.clear(this);
   }
 
   @Override
-  public void cursorMoved(ProjectContext context, Window window, DoubleVector position) {}
+  public void cursorMoved(Context context, Window window, DoubleVector position) {}
 }

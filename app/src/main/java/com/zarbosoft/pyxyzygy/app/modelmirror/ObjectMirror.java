@@ -1,7 +1,6 @@
 package com.zarbosoft.pyxyzygy.app.modelmirror;
 
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
-import com.zarbosoft.pyxyzygy.core.model.v0.ProjectObject;
+import com.zarbosoft.automodel.lib.ProjectObject;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.control.TreeItem;
 
@@ -17,10 +16,10 @@ public abstract class ObjectMirror {
 
   public abstract ProjectObject getValue();
 
-  public abstract void remove(ProjectContext context);
+  public abstract void remove(com.zarbosoft.pyxyzygy.app.Context context);
 
   public abstract static class Context {
     public abstract ObjectMirror create(
-        ProjectContext context, ObjectMirror parent, ProjectObject object);
+      com.zarbosoft.pyxyzygy.app.Context context, ObjectMirror parent, ProjectObject object);
   }
 }

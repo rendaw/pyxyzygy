@@ -1,9 +1,9 @@
 package com.zarbosoft.pyxyzygy.app.parts.timeline;
 
+import com.zarbosoft.pyxyzygy.app.Context;
 import com.zarbosoft.pyxyzygy.app.WidgetHandle;
 import com.zarbosoft.pyxyzygy.app.Window;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
-import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
+import com.zarbosoft.pyxyzygy.core.model.latest.ChangeStepBuilder;
 import javafx.beans.value.ObservableObjectValue;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.control.TreeItem;
@@ -27,25 +27,25 @@ public abstract class RowAdapter extends TreeItem<RowAdapter> {
   public abstract boolean hasNormalFrames();
 
   public abstract boolean createFrame(
-      ProjectContext context, Window window, ChangeStepBuilder change, int outer);
+    Context context, Window window, ChangeStepBuilder change, int outer);
 
   public abstract ObservableObjectValue<Image> getStateImage();
 
   public abstract boolean duplicateFrame(
-      ProjectContext context, Window window, ChangeStepBuilder change, int outer);
+    Context context, Window window, ChangeStepBuilder change, int outer);
 
-  public abstract WidgetHandle createRowWidget(ProjectContext context, Window window);
+  public abstract WidgetHandle createRowWidget(Context context, Window window);
 
   /**
    * @param context
    * @param window
    * @return Maximum frame in this row
    */
-  public abstract int updateTime(ProjectContext context, Window window);
+  public abstract int updateTime(Context context, Window window);
 
-  public abstract void updateFrameMarker(ProjectContext context, Window window);
+  public abstract void updateFrameMarker(Context context, Window window);
 
-  public abstract void remove(ProjectContext context);
+  public abstract void remove(Context context);
 
   public abstract boolean frameAt(Window window, int outer);
 

@@ -1,19 +1,20 @@
 package com.zarbosoft.pyxyzygy.app;
 
 import com.google.common.collect.ImmutableList;
+import com.zarbosoft.automodel.lib.ModelBase;
+import com.zarbosoft.luxem.read.StackReader;
 import com.zarbosoft.pyxyzygy.app.parts.timeline.Timeline;
-import com.zarbosoft.pyxyzygy.core.model.v0.GroupTimeFrame;
-import com.zarbosoft.pyxyzygy.seed.model.v0.ProjectContextBase;
+import com.zarbosoft.pyxyzygy.core.model.latest.GroupTimeFrame;
+import com.zarbosoft.rendaw.common.Assertion;
 import org.junit.Test;
 
-import java.nio.file.Paths;
 import java.util.List;
 
 public class TestTimeMapCalc {
-  private static ProjectContextBase context =
-      new ProjectContextBase(Paths.get("/")) {
+  private static ModelBase context =
+      new ModelBase(new ModelBase.TestMarkerArg()) {
         @Override
-        public Object migrate() {
+        public ModelBase migrate() {
           return this;
         }
 
@@ -24,6 +25,11 @@ public class TestTimeMapCalc {
 
         @Override
         public void clearHistory() {}
+
+        @Override
+        public StackReader.State deserializeChange(String type) {
+          throw new Assertion();
+        }
 
         @Override
         public void close() {}

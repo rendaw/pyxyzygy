@@ -1,15 +1,15 @@
 package com.zarbosoft.pyxyzygy.app.parts.timeline;
 
+import com.zarbosoft.automodel.lib.Listener;
+import com.zarbosoft.pyxyzygy.app.Context;
 import com.zarbosoft.pyxyzygy.app.WidgetHandle;
 import com.zarbosoft.pyxyzygy.app.Window;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.wrappers.FrameFinder;
 import com.zarbosoft.pyxyzygy.app.wrappers.paletteimage.PaletteImageNodeWrapper;
-import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
-import com.zarbosoft.pyxyzygy.core.model.v0.PaletteImageFrame;
-import com.zarbosoft.pyxyzygy.core.model.v0.PaletteImageLayer;
-import com.zarbosoft.pyxyzygy.seed.model.Listener;
-import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
+import com.zarbosoft.pyxyzygy.core.model.latest.ChangeStepBuilder;
+import com.zarbosoft.pyxyzygy.core.model.latest.PaletteImageFrame;
+import com.zarbosoft.pyxyzygy.core.model.latest.PaletteImageLayer;
+import com.zarbosoft.pyxyzygy.seed.Vector;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ObservableObjectValue;
 import javafx.beans.value.ObservableValue;
@@ -52,7 +52,7 @@ class RowAdapterPaletteImageNode extends BaseFrameRowAdapter<PaletteImageLayer, 
   }
 
   @Override
-  public void remove(ProjectContext context) {}
+  public void remove(Context context) {}
 
   @Override
   public ObservableValue<String> getName() {
@@ -60,7 +60,7 @@ class RowAdapterPaletteImageNode extends BaseFrameRowAdapter<PaletteImageLayer, 
   }
 
   @Override
-  public WidgetHandle createRowWidget(ProjectContext context, Window window) {
+  public WidgetHandle createRowWidget(Context context, Window window) {
     return new WidgetHandle() {
       private VBox layout;
       private final Runnable framesCleanup;
@@ -105,9 +105,9 @@ class RowAdapterPaletteImageNode extends BaseFrameRowAdapter<PaletteImageLayer, 
 
   @Override
   protected PaletteImageFrame innerCreateFrame(
-      ProjectContext context, PaletteImageFrame previousFrame) {
-    PaletteImageFrame out = PaletteImageFrame.create(context);
-    out.initialOffsetSet(context, Vector.ZERO);
+    Context context, PaletteImageFrame previousFrame) {
+    PaletteImageFrame out = PaletteImageFrame.create(context.model);
+    out.initialOffsetSet(context.model, Vector.ZERO);
     return out;
   }
 
@@ -123,8 +123,8 @@ class RowAdapterPaletteImageNode extends BaseFrameRowAdapter<PaletteImageLayer, 
 
   @Override
   protected void setFrameInitialLength(
-      ProjectContext context, PaletteImageFrame frame, int length) {
-    frame.initialLengthSet(context, length);
+    Context context, PaletteImageFrame frame, int length) {
+    frame.initialLengthSet(context.model, length);
   }
 
   @Override
@@ -139,10 +139,10 @@ class RowAdapterPaletteImageNode extends BaseFrameRowAdapter<PaletteImageLayer, 
 
   @Override
   protected PaletteImageFrame innerDuplicateFrame(
-      ProjectContext context, PaletteImageFrame source) {
-    PaletteImageFrame created = PaletteImageFrame.create(context);
-    created.initialOffsetSet(context, source.offset());
-    created.initialTilesPutAll(context, source.tiles());
+    Context context, PaletteImageFrame source) {
+    PaletteImageFrame created = PaletteImageFrame.create(context.model);
+    created.initialOffsetSet(context.model, source.offset());
+    created.initialTilesPutAll(context.model, source.tiles());
     return created;
   }
 

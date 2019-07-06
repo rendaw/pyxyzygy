@@ -1,23 +1,41 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.paletteimage;
 
-import com.zarbosoft.pyxyzygy.app.*;
+import com.zarbosoft.automodel.lib.Listener;
+import com.zarbosoft.automodel.lib.ProjectObject;
+import com.zarbosoft.pyxyzygy.app.CanvasHandle;
+import com.zarbosoft.pyxyzygy.app.Context;
+import com.zarbosoft.pyxyzygy.app.EditHandle;
+import com.zarbosoft.pyxyzygy.app.GUILaunch;
+import com.zarbosoft.pyxyzygy.app.PaletteTileHelp;
+import com.zarbosoft.pyxyzygy.app.Window;
+import com.zarbosoft.pyxyzygy.app.Wrapper;
 import com.zarbosoft.pyxyzygy.app.config.NodeConfig;
 import com.zarbosoft.pyxyzygy.app.config.PaletteBrush;
 import com.zarbosoft.pyxyzygy.app.config.PaletteImageNodeConfig;
-import com.zarbosoft.pyxyzygy.app.model.v0.PaletteTile;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.*;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.DoubleHalfBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.HalfBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.IndirectBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.IndirectHalfBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.ListHalfBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.ListPropertyHalfBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.ScalarHalfBinder;
 import com.zarbosoft.pyxyzygy.app.wrappers.FrameFinder;
+import com.zarbosoft.pyxyzygy.app.wrappers.PaletteWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.BaseImageCanvasHandle;
 import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.BaseImageNodeWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.WrapTile;
 import com.zarbosoft.pyxyzygy.core.PaletteImage;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
-import com.zarbosoft.pyxyzygy.core.model.v0.*;
-import com.zarbosoft.pyxyzygy.seed.model.Listener;
-import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
-import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
+import com.zarbosoft.pyxyzygy.core.model.latest.ChangeStepBuilder;
+import com.zarbosoft.pyxyzygy.core.model.latest.Palette;
+import com.zarbosoft.pyxyzygy.core.model.latest.PaletteImageFrame;
+import com.zarbosoft.pyxyzygy.core.model.latest.PaletteImageLayer;
+import com.zarbosoft.pyxyzygy.core.model.latest.PaletteTile;
+import com.zarbosoft.pyxyzygy.core.model.latest.ProjectLayer;
+import com.zarbosoft.pyxyzygy.seed.Rectangle;
+import com.zarbosoft.pyxyzygy.seed.Vector;
 import com.zarbosoft.rendaw.common.Assertion;
 import javafx.collections.ObservableList;
 import javafx.scene.image.Image;
@@ -34,8 +52,7 @@ import static com.zarbosoft.pyxyzygy.app.config.PaletteImageNodeConfig.TOOL_BRUS
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 
 public class PaletteImageNodeWrapper
-    extends BaseImageNodeWrapper<
-        PaletteImageLayer, PaletteImageFrame, PaletteTileBase, PaletteImage> {
+    extends BaseImageNodeWrapper<PaletteImageLayer, PaletteImageFrame, PaletteTile, PaletteImage> {
   final PaletteImageNodeConfig config;
 
   public static FrameFinder<PaletteImageLayer, PaletteImageFrame> frameFinder =
@@ -60,17 +77,17 @@ public class PaletteImageNodeWrapper
   public final HalfBinder<ProjectObject> paletteSelectionBinder;
   public final HalfBinder<Integer> paletteSelOffsetFixedBinder;
   public final ScalarHalfBinder<Palette> paletteBinder;
-  public ProjectContext.PaletteWrapper palette;
+  public PaletteWrapper palette;
 
   public PaletteImageNodeWrapper(
-      ProjectContext context, Wrapper parent, int parentIndex, PaletteImageLayer node) {
+    Context context, Wrapper parent, int parentIndex, PaletteImageLayer node) {
     super(parent, parentIndex, node, frameFinder);
     config =
         (PaletteImageNodeConfig)
             context.config.nodes.computeIfAbsent(
                 node.id(), k -> new PaletteImageNodeConfig(context));
     paletteBinder = new ScalarHalfBinder<Palette>(node, "palette");
-    paletteBinder.addListener(p -> this.palette = context.getPaletteWrapper(p));
+    paletteBinder.addListener(p -> this.palette = PaletteWrapper.getPaletteWrapper(p));
     this.brushBinder =
         new DoubleHalfBinder<ObservableList<PaletteBrush>, Integer>(
                 new ListPropertyHalfBinder<>(GUILaunch.profileConfig.paletteBrushes),
@@ -120,14 +137,14 @@ public class PaletteImageNodeWrapper
   }
 
   @Override
-  public CanvasHandle buildCanvas(ProjectContext context, Window window, CanvasHandle parent) {
+  public CanvasHandle buildCanvas(Context context, Window window, CanvasHandle parent) {
     if (canvasHandle == null)
       canvasHandle =
           new BaseImageCanvasHandle<
-              PaletteImageLayer, PaletteImageFrame, PaletteTileBase, PaletteImage>(context, this) {
+              PaletteImageLayer, PaletteImageFrame, PaletteTile, PaletteImage>(context, this) {
             private final BinderRoot paletteChangeRoot =
                 new IndirectHalfBinder<>(
-                        paletteBinder, p -> opt(context.getPaletteWrapper(p).selfBinder))
+                        paletteBinder, p -> opt(PaletteWrapper.getPaletteWrapper(p).selfBinder))
                     .addListener(
                         palette -> {
                           wrapTiles.forEach(
@@ -143,7 +160,7 @@ public class PaletteImageNodeWrapper
                         });
 
             @Override
-            public void remove(ProjectContext context, Wrapper excludeSubtree) {
+            public void remove(Context context, Wrapper excludeSubtree) {
               super.remove(context, excludeSubtree);
               paletteChangeRoot.destroy();
             }
@@ -193,9 +210,9 @@ public class PaletteImageNodeWrapper
   }
 
   @Override
-  public Listener.MapPutAll<PaletteImageFrame, Long, PaletteTileBase> addFrameTilesPutAllListener(
+  public Listener.MapPutAll<PaletteImageFrame, Long, PaletteTile> addFrameTilesPutAllListener(
       PaletteImageFrame frame,
-      Listener.MapPutAll<PaletteImageFrame, Long, PaletteTileBase> listener) {
+      Listener.MapPutAll<PaletteImageFrame, Long, PaletteTile> listener) {
     return frame.addTilesPutAllListeners(listener);
   }
 
@@ -214,7 +231,7 @@ public class PaletteImageNodeWrapper
   @Override
   public void removeFrameTilesPutAllListener(
       PaletteImageFrame frame,
-      Listener.MapPutAll<PaletteImageFrame, Long, PaletteTileBase> listener) {
+      Listener.MapPutAll<PaletteImageFrame, Long, PaletteTile> listener) {
     frame.removeTilesPutAllListeners(listener);
   }
 
@@ -225,29 +242,29 @@ public class PaletteImageNodeWrapper
   }
 
   @Override
-  public WrapTile<PaletteTileBase> createWrapTile(int x, int y) {
-    return new WrapTile<PaletteTileBase>(x, y) {
+  public WrapTile<PaletteTile> createWrapTile(int x, int y) {
+    return new WrapTile<PaletteTile>(x, y) {
       @Override
-      public Image getImage(ProjectContext context, PaletteTileBase tile) {
+      public Image getImage(Context context, ProjectObject tile) {
         return uncheck(
             () ->
                 GUILaunch.imageCache.get(
                     Objects.hash(CACHE_OBJECT, tile.id(), palette.updatedAt),
                     () ->
-                        HelperJFX.toImage(((PaletteTile) tile).getData(context), palette.colors)));
+                        HelperJFX.toImage(PaletteTileHelp.getData(context, (PaletteTile) tile), palette.colors)));
       }
     };
   }
 
   @Override
-  public PaletteTileBase tileGet(PaletteImageFrame frame, long key) {
+  public PaletteTile tileGet(PaletteImageFrame frame, long key) {
     return frame.tilesGet(key);
   }
 
   @Override
   public void renderCompose(
-      ProjectContext context, TrueColorImage gc, PaletteTileBase tile, int x, int y) {
-    PaletteImage data = ((PaletteTile) tile).getData(context);
+    Context context, TrueColorImage gc, PaletteTile tile, int x, int y) {
+    PaletteImage data = PaletteTileHelp.getData(context, (PaletteTile) tile);
     gc.compose(data, palette.colors, x, y, 1);
   }
 
@@ -258,36 +275,36 @@ public class PaletteImageNodeWrapper
 
   @Override
   public void drop(
-      ProjectContext context,
-      ChangeStepBuilder change,
-      PaletteImageFrame frame,
-      Rectangle unitBounds,
-      PaletteImage image) {
+    Context context,
+    ChangeStepBuilder change,
+    PaletteImageFrame frame,
+    Rectangle unitBounds,
+    PaletteImage image) {
     for (int x = 0; x < unitBounds.width; ++x) {
       for (int y = 0; y < unitBounds.height; ++y) {
         final int x0 = x;
         final int y0 = y;
         PaletteImage shot =
             image.copy(
-                x0 * context.tileSize, y0 * context.tileSize, context.tileSize, context.tileSize);
+                x0 * context.project.tileSize(), y0 * context.project.tileSize(), context.project.tileSize(), context.project.tileSize());
         change
             .paletteImageFrame(frame)
-            .tilesPut(unitBounds.corner().plus(x0, y0).to1D(), PaletteTile.create(context, shot));
+            .tilesPut(unitBounds.corner().plus(x0, y0).to1D(), PaletteTileHelp.create(context, shot));
       }
     }
   }
 
   @Override
-  public PaletteImage grab(ProjectContext context, Rectangle unitBounds, Rectangle bounds) {
+  public PaletteImage grab(Context context, Rectangle unitBounds, Rectangle bounds) {
     PaletteImage canvas = PaletteImage.create(bounds.width, bounds.height);
     for (int x = 0; x < unitBounds.width; ++x) {
       for (int y = 0; y < unitBounds.height; ++y) {
         PaletteTile tile =
             (PaletteTile) tileGet(canvasHandle.frame, unitBounds.corner().plus(x, y).to1D());
         if (tile == null) continue;
-        final int renderX = (x + unitBounds.x) * context.tileSize - bounds.x;
-        final int renderY = (y + unitBounds.y) * context.tileSize - bounds.y;
-        canvas.replace(tile.getData(context), renderX, renderY);
+        final int renderX = (x + unitBounds.x) * context.project.tileSize() - bounds.x;
+        final int renderY = (y + unitBounds.y) * context.project.tileSize() - bounds.y;
+        canvas.replace(PaletteTileHelp.getData(context, tile), renderX, renderY);
       }
     }
     return canvas;
@@ -299,25 +316,25 @@ public class PaletteImageNodeWrapper
   }
 
   @Override
-  public EditHandle buildEditControls(ProjectContext context, Window window) {
+  public EditHandle buildEditControls(Context context, Window window) {
     return new PaletteImageEditHandle(context, window, this);
   }
 
   @Override
-  public ProjectLayer separateClone(ProjectContext context) {
-    PaletteImageLayer clone = PaletteImageLayer.create(context);
-    clone.initialNameSet(context, context.namer.uniqueName1(node.name()));
-    clone.initialOffsetSet(context, node.offset());
-    clone.initialPaletteSet(context, node.palette());
+  public ProjectLayer separateClone(Context context) {
+    PaletteImageLayer clone = PaletteImageLayer.create(context.model);
+    clone.initialNameSet(context.model, context.namer.uniqueName1(node.name()));
+    clone.initialOffsetSet(context.model, node.offset());
+    clone.initialPaletteSet(context.model, node.palette());
     clone.initialFramesAdd(
-        context,
+        context.model,
         node.frames().stream()
             .map(
                 frame -> {
-                  PaletteImageFrame newFrame = PaletteImageFrame.create(context);
-                  newFrame.initialOffsetSet(context, frame.offset());
-                  newFrame.initialLengthSet(context, frame.length());
-                  newFrame.initialTilesPutAll(context, frame.tiles());
+                  PaletteImageFrame newFrame = PaletteImageFrame.create(context.model);
+                  newFrame.initialOffsetSet(context.model, frame.offset());
+                  newFrame.initialLengthSet(context.model, frame.length());
+                  newFrame.initialTilesPutAll(context.model, frame.tiles());
                   return newFrame;
                 })
             .collect(Collectors.toList()));
@@ -325,7 +342,7 @@ public class PaletteImageNodeWrapper
   }
 
   @Override
-  public void clear(ProjectContext context, PaletteImage image, Vector offset, Vector span) {
+  public void clear(Context context, PaletteImage image, Vector offset, Vector span) {
     image.clear(offset.x, offset.y, span.x, span.y);
   }
 }

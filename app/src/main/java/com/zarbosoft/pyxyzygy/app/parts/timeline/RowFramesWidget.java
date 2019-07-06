@@ -1,8 +1,8 @@
 package com.zarbosoft.pyxyzygy.app.parts.timeline;
 
+import com.zarbosoft.pyxyzygy.app.Context;
 import com.zarbosoft.pyxyzygy.app.FrameMapEntry;
 import com.zarbosoft.pyxyzygy.app.Window;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import javafx.beans.binding.Bindings;
 import javafx.scene.Group;
 import javafx.scene.effect.BlendMode;
@@ -55,7 +55,7 @@ public class RowFramesWidget extends Pane {
    * @return max frame encountered
    */
   public int updateTime(
-      ProjectContext context, Window window, List<RowAdapterFrame> frameAdapters) {
+    Context context, Window window, List<RowAdapterFrame> frameAdapters) {
     FrameWidget foundSelectedFrame = null;
     Object selectedId =
         Optional.ofNullable(timeline.selectedFrame.get())

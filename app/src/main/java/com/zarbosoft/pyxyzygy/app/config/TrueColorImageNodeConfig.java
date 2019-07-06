@@ -1,12 +1,12 @@
 package com.zarbosoft.pyxyzygy.app.config;
 
 import com.zarbosoft.interface1.Configuration;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
+import com.zarbosoft.pyxyzygy.app.Context;
 import javafx.beans.property.SimpleIntegerProperty;
 
 @Configuration(name = "truecolorimage")
 public class TrueColorImageNodeConfig extends NodeConfig {
-  public TrueColorImageNodeConfig(ProjectContext context) {
+  public TrueColorImageNodeConfig(Context context) {
     super(context);
     tool.set(TOOL_BRUSH);
   }

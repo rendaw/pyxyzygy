@@ -1,6 +1,6 @@
 package com.zarbosoft.pyxyzygy.app.parts.timeline;
 
-import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
+import com.zarbosoft.pyxyzygy.core.model.latest.ChangeStepBuilder;
 
 public abstract class TimeRangeAdapter {
   public abstract int getOuterAt();

@@ -1,14 +1,14 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage;
 
+import com.zarbosoft.pyxyzygy.app.Context;
 import com.zarbosoft.pyxyzygy.app.Window;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.BaseToolSelect;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
-import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
-import com.zarbosoft.pyxyzygy.core.model.v0.TrueColorImageFrame;
-import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
-import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
+import com.zarbosoft.pyxyzygy.core.model.latest.ChangeStepBuilder;
+import com.zarbosoft.pyxyzygy.core.model.latest.TrueColorImageFrame;
+import com.zarbosoft.pyxyzygy.seed.Rectangle;
+import com.zarbosoft.pyxyzygy.seed.Vector;
 import com.zarbosoft.rendaw.common.Pair;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.Node;
@@ -63,7 +63,7 @@ public class ToolSelect extends BaseToolSelect<TrueColorImageFrame, TrueColorIma
   }
 
   @Override
-  public void clear(ProjectContext context, ChangeStepBuilder change, Rectangle bounds) {
+  public void clear(Context context, ChangeStepBuilder change, Rectangle bounds) {
     editHandle.wrapper.canvasHandle.clear(context, change, bounds);
   }
 
@@ -77,7 +77,7 @@ public class ToolSelect extends BaseToolSelect<TrueColorImageFrame, TrueColorIma
   }
 
   @Override
-  protected Pair<TrueColorImage, Vector> uncopy(ProjectContext context) {
+  protected Pair<TrueColorImage, Vector> uncopy(Context context) {
     Image image0 = Clipboard.getSystemClipboard().getImage();
     if (image0 == null) return null;
     return uncheck(

@@ -1,10 +1,10 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage;
 
+import com.zarbosoft.pyxyzygy.app.Context;
 import com.zarbosoft.pyxyzygy.app.DoubleVector;
 import com.zarbosoft.pyxyzygy.app.Render;
 import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.config.TrueColorBrush;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.app.widgets.TrueColorPicker;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
@@ -14,10 +14,10 @@ import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyBinder;
 import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.BaseToolBrush;
 import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.WrapTile;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
-import com.zarbosoft.pyxyzygy.core.model.v0.TrueColorImageFrame;
-import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
-import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
-import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
+import com.zarbosoft.pyxyzygy.core.model.latest.TrueColorImageFrame;
+import com.zarbosoft.pyxyzygy.seed.Rectangle;
+import com.zarbosoft.pyxyzygy.seed.TrueColor;
+import com.zarbosoft.pyxyzygy.seed.Vector;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.Pair;
 import javafx.beans.property.SimpleObjectProperty;
@@ -40,10 +40,10 @@ public class ToolBrush extends BaseToolBrush<TrueColorImageFrame, TrueColorImage
   private final TrueColorImageEditHandle editHandle;
 
   public ToolBrush(
-      ProjectContext context,
-      Window window,
-      TrueColorImageEditHandle trueColorImageEditHandle,
-      TrueColorBrush brush) {
+    Context context,
+    Window window,
+    TrueColorImageEditHandle trueColorImageEditHandle,
+    TrueColorBrush brush) {
     super(window, trueColorImageEditHandle.wrapper, brush);
     this.editHandle = trueColorImageEditHandle;
     this.brush = brush;
@@ -130,7 +130,7 @@ public class ToolBrush extends BaseToolBrush<TrueColorImageFrame, TrueColorImage
                 .build()));
   }
 
-  private void setColor(ProjectContext context, Color color) {
+  private void setColor(Context context, Color color) {
     if (brush.useColor.get()) {
       brush.color.set(TrueColor.fromJfx(color));
     } else {
@@ -140,12 +140,12 @@ public class ToolBrush extends BaseToolBrush<TrueColorImageFrame, TrueColorImage
 
   @Override
   protected void stroke(
-      ProjectContext context,
-      TrueColorImage canvas,
-      DoubleVector start,
-      double startRadius,
-      DoubleVector end,
-      double endRadius) {
+    Context context,
+    TrueColorImage canvas,
+    DoubleVector start,
+    double startRadius,
+    DoubleVector end,
+    double endRadius) {
     TrueColor color = brush.useColor.get() ? brush.color.get() : context.config.trueColor.get();
     if (brush.hard.get())
       canvas.strokeHard(
@@ -177,7 +177,7 @@ public class ToolBrush extends BaseToolBrush<TrueColorImageFrame, TrueColorImage
 
   @Override
   public void mark(
-      ProjectContext context,
+      Context context,
       Window window,
       DoubleVector start,
       DoubleVector end,
@@ -197,13 +197,13 @@ public class ToolBrush extends BaseToolBrush<TrueColorImageFrame, TrueColorImage
           1);
       setColor(context, HelperJFX.toImage(out).getPixelReader().getColor(0, 0));
     } else if (window.pressed.contains(KeyCode.CONTROL)) {
-      Vector quantizedCorner = end.divide(context.tileSize).toInt();
+      Vector quantizedCorner = end.divide(context.project.tileSize()).toInt();
       WrapTile tile = wrapper.canvasHandle.wrapTiles.get(quantizedCorner.to1D());
       if (tile == null) {
         setColor(context, Color.TRANSPARENT);
       } else {
         Vector intEnd = end.toInt();
-        Vector tileCorner = quantizedCorner.multiply(context.tileSize);
+        Vector tileCorner = quantizedCorner.multiply(context.project.tileSize());
         setColor(
             context,
             tile.widget
@@ -215,7 +215,7 @@ public class ToolBrush extends BaseToolBrush<TrueColorImageFrame, TrueColorImage
   }
 
   @Override
-  public void remove(ProjectContext context, Window window) {
+  public void remove(Context context, Window window) {
     super.remove(context, window);
     editHandle.toolProperties.clear(this);
   }

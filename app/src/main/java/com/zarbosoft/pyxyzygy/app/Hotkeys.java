@@ -2,7 +2,6 @@ package com.zarbosoft.pyxyzygy.app;
 
 import com.google.common.collect.ImmutableList;
 import com.zarbosoft.interface1.Configuration;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -77,7 +76,7 @@ public class Hotkeys {
       this.key.set(defaultKey);
     }
 
-    public abstract void run(ProjectContext context, Window window);
+    public abstract void run(Context context, Window window);
 
     public String id() {
       return String.format("%s:%s", scope, name);
@@ -96,7 +95,7 @@ public class Hotkeys {
     actions.remove(action);
   }
 
-  public boolean event(ProjectContext context, Window window, Scope scope, KeyEvent e) {
+  public boolean event(Context context, Window window, Scope scope, KeyEvent e) {
     for (Action action : ImmutableList.copyOf(actions)) {
       if (action.scope != scope) continue;
       if (action.key.get().key != e.getCode()) continue;

@@ -1,13 +1,17 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.baseimage;
 
-import com.zarbosoft.pyxyzygy.app.*;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
+import com.zarbosoft.automodel.lib.ProjectObject;
+import com.zarbosoft.pyxyzygy.app.BoundsBuilder;
+import com.zarbosoft.pyxyzygy.app.Context;
+import com.zarbosoft.pyxyzygy.app.DoubleVector;
+import com.zarbosoft.pyxyzygy.app.Hotkeys;
+import com.zarbosoft.pyxyzygy.app.Tool;
+import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
-import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
-import com.zarbosoft.pyxyzygy.core.model.v0.ProjectObject;
+import com.zarbosoft.pyxyzygy.core.model.latest.ChangeStepBuilder;
 import com.zarbosoft.pyxyzygy.nearestneighborimageview.NearestNeighborImageView;
-import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
-import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
+import com.zarbosoft.pyxyzygy.seed.Rectangle;
+import com.zarbosoft.pyxyzygy.seed.Vector;
 import com.zarbosoft.rendaw.common.Pair;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
@@ -26,7 +30,9 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.StrokeType;
 
-import static com.zarbosoft.pyxyzygy.app.Global.*;
+import static com.zarbosoft.pyxyzygy.app.Global.copyHotkey;
+import static com.zarbosoft.pyxyzygy.app.Global.cutHotkey;
+import static com.zarbosoft.pyxyzygy.app.Global.localization;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.pad;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
@@ -38,15 +44,15 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
   private final BaseImageNodeWrapper<?, F, ?, L> wrapper;
 
   abstract class State {
-    public abstract void markStart(ProjectContext context, Window window, DoubleVector start);
+    public abstract void markStart(Context context, Window window, DoubleVector start);
 
-    public abstract void mark(ProjectContext context, DoubleVector start, DoubleVector end);
+    public abstract void mark(Context context, DoubleVector start, DoubleVector end);
 
-    public abstract void remove(ProjectContext context);
+    public abstract void remove(Context context);
   }
 
   abstract class Interactive {
-    public abstract void mark(ProjectContext context, DoubleVector start, DoubleVector end);
+    public abstract void mark(Context context, DoubleVector start, DoubleVector end);
   }
 
   class SelectRect extends javafx.scene.shape.Rectangle {
@@ -141,7 +147,7 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
               localization.getString("cancel"),
               Hotkeys.Hotkey.create(KeyCode.ESCAPE, false, false, false)) {
             @Override
-            public void run(ProjectContext context, Window window) {
+            public void run(Context context, Window window) {
               setState(context, new StateCreate(context, window));
             }
           },
@@ -151,7 +157,7 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
               localization.getString("place"),
               Hotkeys.Hotkey.create(KeyCode.ENTER, false, false, true)) {
             @Override
-            public void run(ProjectContext context, Window window) {
+            public void run(Context context, Window window) {
               context.change(
                   null,
                   c -> {
@@ -162,7 +168,7 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
           new Hotkeys.Action(
               Hotkeys.Scope.CANVAS, "cut", localization.getString("cut"), cutHotkey) {
             @Override
-            public void run(ProjectContext context, Window window) {
+            public void run(Context context, Window window) {
               context.change(
                   null,
                   c -> {
@@ -173,18 +179,18 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
           new Hotkeys.Action(
               Hotkeys.Scope.CANVAS, "copy", localization.getString("copy"), copyHotkey) {
             @Override
-            public void run(ProjectContext context, Window window) {
+            public void run(Context context, Window window) {
               copy();
             }
           },
         };
 
     StateMove(
-        ProjectContext context,
-        Window window,
-        Rectangle originalBounds,
-        Rectangle bounds,
-        L lifted) {
+      Context context,
+      Window window,
+      Rectangle originalBounds,
+      Rectangle bounds,
+      L lifted) {
       this.originalBounds = originalBounds;
       this.bounds = bounds;
 
@@ -288,13 +294,13 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
       Clipboard.getSystemClipboard().setContent(content);
     }
 
-    private void cut(ProjectContext context, ChangeStepBuilder change, Window window) {
+    private void cut(Context context, ChangeStepBuilder change, Window window) {
       copy();
       if (originalBounds != null) clear(context, change, originalBounds);
       setState(context, new StateCreate(context, window));
     }
 
-    private void place(ProjectContext context, ChangeStepBuilder change, Window window) {
+    private void place(Context context, ChangeStepBuilder change, Window window) {
       if (originalBounds != null) clear(context, change, originalBounds);
       wrapper.modify(
           context,
@@ -307,7 +313,7 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
     }
 
     @Override
-    public void markStart(ProjectContext context, Window window, DoubleVector start) {
+    public void markStart(Context context, Window window, DoubleVector start) {
       if (!bounds.contains(start.toInt())) {
         setState(context, new StateCreate(context, window));
         state.markStart(context, window, start);
@@ -318,7 +324,7 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
     }
 
     @Override
-    public void mark(ProjectContext context, DoubleVector __, DoubleVector end) {
+    public void mark(Context context, DoubleVector __, DoubleVector end) {
       setPosition(startCorner.plus(end.minus(start).toInt()));
     }
 
@@ -331,7 +337,7 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
     }
 
     @Override
-    public void remove(ProjectContext context) {
+    public void remove(Context context) {
       overlayRemove(originalRectangle, rectangle, imageGroup);
       for (Hotkeys.Action action : actions) context.hotkeys.unregister(action);
     }
@@ -349,7 +355,7 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
 
   protected abstract void overlayRemove(Node... nodes);
 
-  public abstract void clear(ProjectContext context, ChangeStepBuilder change, Rectangle bounds);
+  public abstract void clear(Context context, ChangeStepBuilder change, Rectangle bounds);
 
   public class StateCreate extends State {
     final SelectInside rectangle;
@@ -369,7 +375,7 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
               localization.getString("cancel"),
               Hotkeys.Hotkey.create(KeyCode.ESCAPE, false, false, false)) {
             @Override
-            public void run(ProjectContext context, Window window) {
+            public void run(Context context, Window window) {
               cancel(context, window);
             }
           },
@@ -379,14 +385,14 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
               localization.getString("lift"),
               Hotkeys.Hotkey.create(KeyCode.ENTER, false, false, false)) {
             @Override
-            public void run(ProjectContext context, Window window) {
+            public void run(Context context, Window window) {
               lift(context, window);
             }
           },
           new Hotkeys.Action(
               Hotkeys.Scope.CANVAS, "cut", localization.getString("cut"), cutHotkey) {
             @Override
-            public void run(ProjectContext context, Window window) {
+            public void run(Context context, Window window) {
               context.change(
                   null,
                   c -> {
@@ -397,7 +403,7 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
           new Hotkeys.Action(
               Hotkeys.Scope.CANVAS, "copy", localization.getString("copy"), copyHotkey) {
             @Override
-            public void run(ProjectContext context, Window window) {
+            public void run(Context context, Window window) {
               copy(context);
             }
           },
@@ -413,7 +419,7 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
       }
 
       @Override
-      public void mark(ProjectContext context, DoubleVector __, DoubleVector end) {
+      public void mark(Context context, DoubleVector __, DoubleVector end) {
         int diffX = (int) (end.x - start.x);
         int newWidth = startInside.width - diffX;
         if (newWidth < 0)
@@ -436,7 +442,7 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
       }
 
       @Override
-      public void mark(ProjectContext context, DoubleVector __, DoubleVector end) {
+      public void mark(Context context, DoubleVector __, DoubleVector end) {
         int diffX = (int) (end.x - start.x);
         int newWidth = startInside.width + diffX;
         if (newWidth < 0)
@@ -457,7 +463,7 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
       }
 
       @Override
-      public void mark(ProjectContext context, DoubleVector __, DoubleVector end) {
+      public void mark(Context context, DoubleVector __, DoubleVector end) {
         int diff = (int) (end.y - start.y);
         int newHeight = startInside.height - diff;
         if (newHeight < 0)
@@ -483,7 +489,7 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
       }
 
       @Override
-      public void mark(ProjectContext context, DoubleVector __, DoubleVector end) {
+      public void mark(Context context, DoubleVector __, DoubleVector end) {
         int diff = (int) (end.y - start.y);
         int newHeight = startInside.height + diff;
         if (newHeight < 0)
@@ -502,7 +508,7 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
       }
 
       @Override
-      public void mark(ProjectContext context, DoubleVector __, DoubleVector end) {
+      public void mark(Context context, DoubleVector __, DoubleVector end) {
         setInside(new BoundsBuilder().circle(start, 0).circle(end, 0).buildInt());
       }
     }
@@ -517,12 +523,12 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
       }
 
       @Override
-      public void mark(ProjectContext context, DoubleVector __, DoubleVector end) {
+      public void mark(Context context, DoubleVector __, DoubleVector end) {
         setInside(startInside.shift(end.minus(start).toInt()));
       }
     }
 
-    public StateCreate(ProjectContext context, Window window) {
+    public StateCreate(Context context, Window window) {
       for (Hotkeys.Action action : actions) context.hotkeys.register(action);
 
       ObservableNumberValue zoom = window.editor.zoomFactor;
@@ -651,30 +657,30 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
                   .build()));
     }
 
-    private void cancel(ProjectContext context, Window window) {
+    private void cancel(Context context, Window window) {
       setState(context, new StateCreate(context, window));
     }
 
-    private void cut(ProjectContext context, ChangeStepBuilder change, Window window) {
+    private void cut(Context context, ChangeStepBuilder change, Window window) {
       if (inside.get().empty()) return;
       copy(context);
       clear(context, change, window);
     }
 
-    private void copy(ProjectContext context) {
+    private void copy(Context context) {
       if (inside.get().empty()) return;
       ClipboardContent content = new ClipboardContent();
       BaseToolSelect.this.copy(content, wrapper.grab(context, inside.get()));
       Clipboard.getSystemClipboard().setContent(content);
     }
 
-    private void clear(ProjectContext context, ChangeStepBuilder change, Window window) {
+    private void clear(Context context, ChangeStepBuilder change, Window window) {
       if (inside.get().empty()) return;
       BaseToolSelect.this.clear(context, change, inside.get());
       cancel(context, window);
     }
 
-    private void lift(ProjectContext context, Window window) {
+    private void lift(Context context, Window window) {
       if (inside.get().empty()) return;
       setState(
           context,
@@ -683,7 +689,7 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
     }
 
     @Override
-    public void markStart(ProjectContext context, Window window, DoubleVector start) {
+    public void markStart(Context context, Window window, DoubleVector start) {
       if (inside.get().contains(start.toInt())) {
         mark = new MoveHandle(start, inside.get());
       } else if (left.getBoundsInParent().contains(start.toJfx())) {
@@ -705,12 +711,12 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
     }
 
     @Override
-    public void mark(ProjectContext context, DoubleVector start, DoubleVector end) {
+    public void mark(Context context, DoubleVector start, DoubleVector end) {
       mark.mark(context, start, end);
     }
 
     @Override
-    public void remove(ProjectContext context) {
+    public void remove(Context context) {
       overlayRemove(rectangle, left, right, top, bottom);
       for (Hotkeys.Action action : actions) context.hotkeys.unregister(action);
     }
@@ -723,20 +729,20 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
     this.zoom = zoom;
   }
 
-  public void setState(ProjectContext context, State newState) {
+  public void setState(Context context, State newState) {
     if (state != null) state.remove(context);
     state = newState;
   }
 
   @Override
   public void markStart(
-      ProjectContext context, Window window, DoubleVector start, DoubleVector globalStart) {
+    Context context, Window window, DoubleVector start, DoubleVector globalStart) {
     state.markStart(context, window, start);
   }
 
   @Override
   public void mark(
-      ProjectContext context,
+      Context context,
       Window window,
       DoubleVector start,
       DoubleVector end,
@@ -746,12 +752,12 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
   }
 
   @Override
-  public void remove(ProjectContext context, Window window) {
+  public void remove(Context context, Window window) {
     state.remove(context);
     propertiesClear();
   }
 
-  public void paste(ProjectContext context, Window window) {
+  public void paste(Context context, Window window) {
     Pair<L, Vector> image0 = uncopy(context);
     if (image0 == null) return;
     Vector size = image0.second;
@@ -765,8 +771,8 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
 
   protected abstract Vector negViewCenter(Window window);
 
-  protected abstract Pair<L, Vector> uncopy(ProjectContext context);
+  protected abstract Pair<L, Vector> uncopy(Context context);
 
   @Override
-  public void cursorMoved(ProjectContext context, Window window, DoubleVector position) {}
+  public void cursorMoved(Context context, Window window, DoubleVector position) {}
 }

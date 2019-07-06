@@ -1,15 +1,19 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.baseimage;
 
-import com.zarbosoft.pyxyzygy.app.*;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
+import com.zarbosoft.automodel.lib.Listener;
+import com.zarbosoft.automodel.lib.ProjectObject;
+import com.zarbosoft.pyxyzygy.app.CanvasHandle;
+import com.zarbosoft.pyxyzygy.app.Context;
+import com.zarbosoft.pyxyzygy.app.DoubleRectangle;
+import com.zarbosoft.pyxyzygy.app.DoubleVector;
+import com.zarbosoft.pyxyzygy.app.Window;
+import com.zarbosoft.pyxyzygy.app.Wrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.FrameFinder;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
-import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
-import com.zarbosoft.pyxyzygy.core.model.v0.ProjectLayer;
-import com.zarbosoft.pyxyzygy.core.model.v0.ProjectObject;
-import com.zarbosoft.pyxyzygy.seed.model.Listener;
-import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
-import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
+import com.zarbosoft.pyxyzygy.core.model.latest.ChangeStepBuilder;
+import com.zarbosoft.pyxyzygy.core.model.latest.ProjectLayer;
+import com.zarbosoft.pyxyzygy.seed.Rectangle;
+import com.zarbosoft.pyxyzygy.seed.Vector;
 import com.zarbosoft.rendaw.common.Assertion;
 import javafx.scene.control.TreeItem;
 
@@ -17,7 +21,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public abstract class BaseImageNodeWrapper<N extends ProjectLayer, F extends ProjectObject, T, L>
+public abstract class BaseImageNodeWrapper<N extends ProjectLayer, F extends ProjectObject, T extends ProjectObject, L>
     extends Wrapper {
   public final N node;
   private final Wrapper parent;
@@ -54,17 +58,17 @@ public abstract class BaseImageNodeWrapper<N extends ProjectLayer, F extends Pro
   }
 
   @Override
-  public CanvasHandle buildCanvas(ProjectContext context, Window window, CanvasHandle parent) {
+  public CanvasHandle buildCanvas(Context context, Window window, CanvasHandle parent) {
     if (canvasHandle == null) canvasHandle = new BaseImageCanvasHandle<N, F, T, L>(context, this);
     canvasHandle.setParent(parent);
     return canvasHandle;
   }
 
   @Override
-  public void remove(ProjectContext context) {}
+  public void remove(Context context) {}
 
   @Override
-  public void deleteChild(ProjectContext context, ChangeStepBuilder change, int index) {
+  public void deleteChild(Context context, ChangeStepBuilder change, int index) {
     throw new Assertion();
   }
 
@@ -95,29 +99,27 @@ public abstract class BaseImageNodeWrapper<N extends ProjectLayer, F extends Pro
 
   /**
    * Draw tile onto gc at the given position (just forward to TrueColorImage.compose)
-   *
-   * @param context
+   *  @param context
    * @param gc
    * @param tile
    * @param x
    * @param y
    */
   public abstract void renderCompose(
-      ProjectContext context, TrueColorImage gc, T tile, int x, int y);
+    Context context, TrueColorImage gc, T tile, int x, int y);
 
   public abstract void imageCompose(L image, L other, int x, int y);
 
   /**
    * Replace tiles with data from unit-multiple size image
-   *
-   * @param context
+   *  @param context
    * @param change
    * @param frame
    * @param unitBounds
    * @param image
    */
   public abstract void drop(
-      ProjectContext context, ChangeStepBuilder change, F frame, Rectangle unitBounds, L image);
+    Context context, ChangeStepBuilder change, F frame, Rectangle unitBounds, L image);
 
   /**
    * Create single image from tile data. Unit bounds is bounds / tileSize - as argument to avoid
@@ -129,10 +131,10 @@ public abstract class BaseImageNodeWrapper<N extends ProjectLayer, F extends Pro
    * @param bounds
    * @return
    */
-  public abstract L grab(ProjectContext context, Rectangle unitBounds, Rectangle bounds);
+  public abstract L grab(Context context, Rectangle unitBounds, Rectangle bounds);
 
-  public L grab(ProjectContext context, Rectangle bounds) {
-    return grab(context, bounds.divideContains(context.tileSize), bounds);
+  public L grab(Context context, Rectangle bounds) {
+    return grab(context, bounds.divideContains(context.project.tileSize()), bounds);
   }
 
   /**
@@ -141,7 +143,7 @@ public abstract class BaseImageNodeWrapper<N extends ProjectLayer, F extends Pro
    * @param offset relative to image
    * @param span
    */
-  public abstract void clear(ProjectContext context, L image, Vector offset, Vector span);
+  public abstract void clear(Context context, L image, Vector offset, Vector span);
 
   public abstract void removeFrameOffsetListener(F frame, Listener.ScalarSet<F, Vector> listener);
 
@@ -158,24 +160,24 @@ public abstract class BaseImageNodeWrapper<N extends ProjectLayer, F extends Pro
   public abstract void dump(L image, String name);
 
   public void modify(
-      ProjectContext context,
-      ChangeStepBuilder change,
-      DoubleRectangle bounds,
-      DoubleModifyCallback<L> modify) {
-    Rectangle unitBounds = bounds.divideContains(context.tileSize);
-    Rectangle outerBounds = unitBounds.multiply(context.tileSize);
+    Context context,
+    ChangeStepBuilder change,
+    DoubleRectangle bounds,
+    DoubleModifyCallback<L> modify) {
+    Rectangle unitBounds = bounds.divideContains(context.project.tileSize());
+    Rectangle outerBounds = unitBounds.multiply(context.project.tileSize());
     L canvas = grab(context, unitBounds, outerBounds);
     modify.accept(canvas, DoubleVector.of(outerBounds.corner()));
     drop(context, change, canvasHandle.frame, unitBounds, canvas);
   }
 
   public void modify(
-      ProjectContext context,
-      ChangeStepBuilder change,
-      Rectangle bounds,
-      IntModifyCallback<L> modify) {
-    Rectangle unitBounds = bounds.divideContains(context.tileSize);
-    Rectangle outerBounds = unitBounds.multiply(context.tileSize);
+    Context context,
+    ChangeStepBuilder change,
+    Rectangle bounds,
+    IntModifyCallback<L> modify) {
+    Rectangle unitBounds = bounds.divideContains(context.project.tileSize());
+    Rectangle outerBounds = unitBounds.multiply(context.project.tileSize());
     L canvas = grab(context, unitBounds, outerBounds);
     modify.accept(canvas, outerBounds.corner());
     drop(context, change, canvasHandle.frame, unitBounds, canvas);

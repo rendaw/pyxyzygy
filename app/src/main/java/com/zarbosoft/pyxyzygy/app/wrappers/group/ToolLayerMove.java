@@ -1,15 +1,20 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.group;
 
+import com.zarbosoft.automodel.lib.History;
+import com.zarbosoft.pyxyzygy.app.Context;
 import com.zarbosoft.pyxyzygy.app.DoubleVector;
 import com.zarbosoft.pyxyzygy.app.Tool;
 import com.zarbosoft.pyxyzygy.app.Window;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.parts.editor.Origin;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.*;
-import com.zarbosoft.pyxyzygy.core.model.v0.GroupChild;
-import com.zarbosoft.pyxyzygy.core.model.v0.GroupPositionFrame;
-import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.CustomBinding;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.DoubleHalfBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.ScalarHalfBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.SelectionModelBinder;
+import com.zarbosoft.pyxyzygy.core.model.latest.GroupChild;
+import com.zarbosoft.pyxyzygy.core.model.latest.GroupPositionFrame;
+import com.zarbosoft.pyxyzygy.seed.Vector;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.ListCell;
@@ -18,7 +23,9 @@ import javafx.scene.control.SelectionMode;
 import javafx.util.Callback;
 
 import static com.zarbosoft.pyxyzygy.app.Global.localization;
-import static com.zarbosoft.pyxyzygy.app.Misc.*;
+import static com.zarbosoft.pyxyzygy.app.Misc.noopConsumer;
+import static com.zarbosoft.pyxyzygy.app.Misc.opt;
+import static com.zarbosoft.pyxyzygy.app.Misc.unopt;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.centerCursor;
 
 public class ToolLayerMove extends Tool {
@@ -93,7 +100,7 @@ public class ToolLayerMove extends Tool {
 
   @Override
   public void markStart(
-      ProjectContext context, Window window, DoubleVector start, DoubleVector globalStart) {
+    Context context, Window window, DoubleVector start, DoubleVector globalStart) {
     GroupChild specificLayer = unopt(wrapper.specificChild.get());
     if (specificLayer == null) return;
     pos =
@@ -106,21 +113,21 @@ public class ToolLayerMove extends Tool {
 
   @Override
   public void mark(
-      ProjectContext context,
+      Context context,
       Window window,
       DoubleVector start,
       DoubleVector end,
       DoubleVector globalStart,
       DoubleVector globalEnd) {
     context.change(
-        new ProjectContext.Tuple(wrapper, "move-layer"),
+        new History.Tuple(wrapper, "move-layer"),
         c ->
             c.groupPositionFrame(pos)
                 .offsetSet(globalEnd.minus(markStart).plus(markStartOffset).toInt()));
   }
 
   @Override
-  public void remove(ProjectContext context, Window window) {
+  public void remove(Context context, Window window) {
     window.editorCursor.clear(this);
     editHandle.toolPropReplacer.clear(this);
     origin.remove();
@@ -131,5 +138,5 @@ public class ToolLayerMove extends Tool {
   }
 
   @Override
-  public void cursorMoved(ProjectContext context, Window window, DoubleVector position) {}
+  public void cursorMoved(Context context, Window window, DoubleVector position) {}
 }

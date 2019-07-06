@@ -1,11 +1,10 @@
 package com.zarbosoft.pyxyzygy.app;
 
+import com.zarbosoft.automodel.lib.ProjectObject;
 import com.zarbosoft.pyxyzygy.app.config.NodeConfig;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
-import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
-import com.zarbosoft.pyxyzygy.core.model.v0.ProjectLayer;
-import com.zarbosoft.pyxyzygy.core.model.v0.ProjectObject;
+import com.zarbosoft.pyxyzygy.core.model.latest.ChangeStepBuilder;
+import com.zarbosoft.pyxyzygy.core.model.latest.ProjectLayer;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -27,20 +26,20 @@ public abstract class Wrapper {
   public abstract NodeConfig getConfig();
 
   public abstract CanvasHandle buildCanvas(
-      ProjectContext context, Window window, CanvasHandle parent);
+    Context context, Window window, CanvasHandle parent);
 
-  public abstract EditHandle buildEditControls(ProjectContext context, Window window);
+  public abstract EditHandle buildEditControls(Context context, Window window);
 
-  public abstract void remove(ProjectContext context);
+  public abstract void remove(Context context);
 
-  public void delete(ProjectContext context, ChangeStepBuilder change) {
+  public void delete(Context context, ChangeStepBuilder change) {
     if (getParent() != null) getParent().deleteChild(context, change, parentIndex);
     else change.project(context.project).topRemove(parentIndex, 1);
   }
 
-  public abstract ProjectLayer separateClone(ProjectContext context);
+  public abstract ProjectLayer separateClone(Context context);
 
-  public abstract void deleteChild(ProjectContext context, ChangeStepBuilder change, int index);
+  public abstract void deleteChild(Context context, ChangeStepBuilder change, int index);
 
   public static enum TakesChildren {
     NONE,

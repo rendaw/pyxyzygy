@@ -1,7 +1,5 @@
 package com.zarbosoft.pyxyzygy.app;
 
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
-
 public abstract class Tool {
 
   /**
@@ -11,7 +9,7 @@ public abstract class Tool {
    * @param globalStart local coords
    */
   public abstract void markStart(
-      ProjectContext context, Window window, DoubleVector start, DoubleVector globalStart);
+    Context context, Window window, DoubleVector start, DoubleVector globalStart);
 
   /**
    * @param context
@@ -22,19 +20,19 @@ public abstract class Tool {
    * @param globalEnd
    */
   public abstract void mark(
-      ProjectContext context,
-      Window window,
-      DoubleVector start,
-      DoubleVector end,
-      DoubleVector globalStart,
-      DoubleVector globalEnd);
+    Context context,
+    Window window,
+    DoubleVector start,
+    DoubleVector end,
+    DoubleVector globalStart,
+    DoubleVector globalEnd);
 
-  public abstract void remove(ProjectContext context, Window window);
+  public abstract void remove(Context context, Window window);
 
   /**
    * @param context
    * @param window
    * @param position local coords
    */
-  public abstract void cursorMoved(ProjectContext context, Window window, DoubleVector position);
+  public abstract void cursorMoved(Context context, Window window, DoubleVector position);
 }

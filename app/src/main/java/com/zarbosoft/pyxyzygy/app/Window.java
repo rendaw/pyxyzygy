@@ -1,21 +1,40 @@
 package com.zarbosoft.pyxyzygy.app;
 
 import com.google.common.base.Throwables;
+import com.zarbosoft.automodel.lib.ProjectObject;
 import com.zarbosoft.pyxyzygy.app.config.NodeConfig;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.parts.editor.Editor;
 import com.zarbosoft.pyxyzygy.app.parts.structure.Structure;
 import com.zarbosoft.pyxyzygy.app.parts.timeline.Timeline;
+import com.zarbosoft.pyxyzygy.app.widgets.ChildrenReplacer;
+import com.zarbosoft.pyxyzygy.app.widgets.ClosableScene;
+import com.zarbosoft.pyxyzygy.app.widgets.ContentReplacer;
+import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.app.widgets.TitledPane;
-import com.zarbosoft.pyxyzygy.app.widgets.*;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.*;
+import com.zarbosoft.pyxyzygy.app.widgets.TrueColorPicker;
+import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.CustomBinding;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.DoubleHalfBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.HalfBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.IndirectBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.IndirectHalfBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.ListElementsHalfBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.ListPropertyHalfBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.ManualHalfBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyHalfBinder;
 import com.zarbosoft.pyxyzygy.app.wrappers.camera.CameraWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupChildWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.paletteimage.PaletteImageNodeWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage.TrueColorImageNodeWrapper;
-import com.zarbosoft.pyxyzygy.core.model.v0.*;
-import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
+import com.zarbosoft.pyxyzygy.core.model.latest.Camera;
+import com.zarbosoft.pyxyzygy.core.model.latest.GroupChild;
+import com.zarbosoft.pyxyzygy.core.model.latest.GroupLayer;
+import com.zarbosoft.pyxyzygy.core.model.latest.PaletteImageLayer;
+import com.zarbosoft.pyxyzygy.core.model.latest.TrueColorImageLayer;
+import com.zarbosoft.pyxyzygy.seed.TrueColor;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.Pair;
 import javafx.beans.binding.Bindings;
@@ -24,23 +43,62 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
-import javafx.geometry.*;
+import javafx.geometry.Bounds;
+import javafx.geometry.HPos;
+import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
+import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.DialogPane;
+import javafx.scene.control.MenuButton;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.ScrollBar;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.control.Spinner;
+import javafx.scene.control.SpinnerValueFactory;
+import javafx.scene.control.SplitPane;
+import javafx.scene.control.TabPane;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.ToolBar;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.*;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.Border;
+import javafx.scene.layout.BorderStroke;
+import javafx.scene.layout.BorderStrokeStyle;
+import javafx.scene.layout.BorderWidths;
+import javafx.scene.layout.CornerRadii;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.zarbosoft.pyxyzygy.app.Global.*;
+import static com.zarbosoft.automodel.lib.Logger.logger;
+import static com.zarbosoft.pyxyzygy.app.Global.localization;
+import static com.zarbosoft.pyxyzygy.app.Global.nameHuman;
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 
@@ -99,6 +157,8 @@ public class Window {
   private BinderRoot rootTabWidth; // GC root
   private ChangeListener<? super Boolean> maxListener;
   private TabPane leftTabs;
+  private BinderRoot rootCanRedo; // GC root
+  private BinderRoot rootCanUndo; // GC root
 
   public static HalfBinder<Number> effectiveWidthBinder(Node node) {
     return new PropertyHalfBinder<Bounds>(node.layoutBoundsProperty())
@@ -170,11 +230,11 @@ public class Window {
     return selectedForView;
   }
 
-  public void selectForView(ProjectContext context, Wrapper wrapper) {
+  public void selectForView(Context context, Wrapper wrapper) {
     selectForView(context, wrapper, false);
   }
 
-  public void selectForView(ProjectContext context, Wrapper wrapper, boolean fromEdit) {
+  public void selectForView(Context context, Wrapper wrapper, boolean fromEdit) {
     Wrapper oldViewWrapper = selectedForView == null ? null : selectedForView.getWrapper();
     if (oldViewWrapper == wrapper) return;
     if (wrapper == null) {
@@ -236,7 +296,7 @@ public class Window {
     selectedForViewTreeIconBinder.set(selectedForView);
   }
 
-  public void selectForEdit(ProjectContext context, Wrapper wrapper) {
+  public void selectForEdit(Context context, Wrapper wrapper) {
     selectedForEditWrapperEnabledBinder.set(wrapper);
 
     /*
@@ -311,7 +371,7 @@ public class Window {
     }
   }
 
-  public void start(ProjectContext context, Stage primaryStage, boolean main) {
+  public void start(Context context, Stage primaryStage, boolean main) {
     this.stage = primaryStage;
     Thread.currentThread()
         .setUncaughtExceptionHandler(
@@ -338,8 +398,8 @@ public class Window {
                 localization.getString("undo"),
                 Hotkeys.Hotkey.create(KeyCode.Z, true, false, false)) {
               @Override
-              public void run(ProjectContext context, Window window) {
-                context.undo();
+              public void run(Context context, Window window) {
+                context.model.undo();
               }
             },
             new Hotkeys.Action(
@@ -349,8 +409,8 @@ public class Window {
                 Hotkeys.Hotkey.create(KeyCode.Y, true, false, false)) {
 
               @Override
-              public void run(ProjectContext context, Window window) {
-                context.redo();
+              public void run(Context context, Window window) {
+                context.model.redo();
               }
             })
         .forEach(context.hotkeys::register);
@@ -467,16 +527,18 @@ public class Window {
         };
 
     MenuItem undoButton = new MenuItem(localization.getString("undo"));
-    undoButton.disableProperty().bind(Bindings.isEmpty(context.history.undoHistory));
+    rootCanUndo =
+        CustomBinding.bind(undoButton.disableProperty(), context.canUndo.map(b -> opt(!b)));
     undoButton.setOnAction(
         e -> {
-          context.undo();
+          context.model.undo();
         });
     MenuItem redoButton = new MenuItem(localization.getString("redo"));
-    redoButton.disableProperty().bind(Bindings.isEmpty(context.history.redoHistory));
+    rootCanRedo =
+        CustomBinding.bind(redoButton.disableProperty(), context.canRedo.map(b -> opt(!b)));
     redoButton.setOnAction(
         e -> {
-          context.redo();
+          context.model.redo();
         });
     menuButton.getItems().addAll(undoButton, redoButton, new SeparatorMenuItem());
 
@@ -568,7 +630,7 @@ public class Window {
                                         ButtonType.OK,
                                         false,
                                         () -> {
-                                          context.clearHistory();
+                                          context.model.clearHistory();
                                           return true;
                                         })
                                     .addAction(ButtonType.CANCEL, true, () -> true)
@@ -718,7 +780,7 @@ public class Window {
 
     HelperJFX.switchStage(
         primaryStage,
-        String.format("%s - %s", context.path.getFileName().toString(), nameHuman),
+        String.format("%s - %s", context.model.path.getFileName().toString(), nameHuman),
         scene,
         GUILaunch.profileConfig.maximize,
         main
@@ -726,7 +788,7 @@ public class Window {
                 ? e -> Global.shutdown()
                 : e -> {
                   e.consume();
-                  context.close();
+                  context.model.close();
                   GUILaunch.selectProject(primaryStage);
                 })
             : e -> {});
@@ -797,7 +859,7 @@ public class Window {
   }
 
   public static Wrapper createNode(
-      ProjectContext context, Wrapper parent, int parentIndex, ProjectObject node) {
+      Context context, Wrapper parent, int parentIndex, ProjectObject node) {
     if (false) {
       throw new Assertion();
     } else if (node instanceof Camera) {

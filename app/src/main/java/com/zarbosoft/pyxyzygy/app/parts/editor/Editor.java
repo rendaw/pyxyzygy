@@ -1,8 +1,15 @@
 package com.zarbosoft.pyxyzygy.app.parts.editor;
 
-import com.zarbosoft.pyxyzygy.app.*;
+import com.zarbosoft.pyxyzygy.app.CanvasHandle;
+import com.zarbosoft.pyxyzygy.app.Context;
+import com.zarbosoft.pyxyzygy.app.DoubleRectangle;
+import com.zarbosoft.pyxyzygy.app.DoubleVector;
+import com.zarbosoft.pyxyzygy.app.EditHandle;
+import com.zarbosoft.pyxyzygy.app.GUILaunch;
+import com.zarbosoft.pyxyzygy.app.Hotkeys;
+import com.zarbosoft.pyxyzygy.app.Window;
+import com.zarbosoft.pyxyzygy.app.Wrapper;
 import com.zarbosoft.pyxyzygy.app.config.NodeConfig;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupChildWrapper;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ReadOnlyObjectProperty;
@@ -14,8 +21,18 @@ import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.scene.Group;
 import javafx.scene.Node;
-import javafx.scene.input.*;
-import javafx.scene.layout.*;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.input.ScrollEvent;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.CornerRadii;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.scene.shape.Rectangle;
 
 import static com.zarbosoft.pyxyzygy.app.Global.localization;
@@ -39,7 +56,7 @@ public class Editor {
             localization.getString("view.horizontal.flip"),
             Hotkeys.Hotkey.create(KeyCode.H, false, false, false)) {
           @Override
-          public void run(ProjectContext context, Window window) {
+          public void run(Context context, Window window) {
             CanvasHandle view = Editor.this.window.getSelectedForView();
             if (view == null) return;
             view.getWrapper()
@@ -54,7 +71,7 @@ public class Editor {
             localization.getString("view.vertical.flip"),
             Hotkeys.Hotkey.create(KeyCode.V, false, false, false)) {
           @Override
-          public void run(ProjectContext context, Window window) {
+          public void run(Context context, Window window) {
             CanvasHandle view = Editor.this.window.getSelectedForView();
             if (view == null) return;
             view.getWrapper()
@@ -69,7 +86,7 @@ public class Editor {
             localization.getString("maximize.canvas"),
             Hotkeys.Hotkey.create(KeyCode.TAB, false, false, false)) {
           @Override
-          public void run(ProjectContext context, Window window) {
+          public void run(Context context, Window window) {
             context.config.maxCanvas.set(!context.config.maxCanvas.get());
           }
         },
@@ -79,7 +96,7 @@ public class Editor {
             localization.getString("previous.frame.ghost"),
             Hotkeys.Hotkey.create(KeyCode.B, false, false, false)) {
           @Override
-          public void run(ProjectContext context, Window window) {
+          public void run(Context context, Window window) {
             EditHandle e = Editor.this.window.getSelectedForEdit();
             if (e == null) return;
             e.getWrapper().getConfig().onionLeft.set(!e.getWrapper().getConfig().onionLeft.get());
@@ -91,7 +108,7 @@ public class Editor {
             localization.getString("next.frame.ghost"),
             Hotkeys.Hotkey.create(KeyCode.N, false, false, false)) {
           @Override
-          public void run(ProjectContext context, Window window) {
+          public void run(Context context, Window window) {
             EditHandle e = Editor.this.window.getSelectedForEdit();
             if (e == null) return;
             e.getWrapper().getConfig().onionRight.set(!e.getWrapper().getConfig().onionRight.get());
@@ -103,7 +120,7 @@ public class Editor {
             localization.getString("view.top"),
             Hotkeys.Hotkey.create(KeyCode.T, false, false, false)) {
           @Override
-          public void run(ProjectContext context, Window window) {
+          public void run(Context context, Window window) {
             Wrapper at = window.getSelectedForView().getWrapper();
             Wrapper next = at.getParent();
             while (next != null) {
@@ -119,7 +136,7 @@ public class Editor {
             localization.getString("view.up"),
             Hotkeys.Hotkey.create(KeyCode.P, false, false, false)) {
           @Override
-          public void run(ProjectContext context, Window window) {
+          public void run(Context context, Window window) {
             Wrapper at = window.getSelectedForView().getWrapper();
             Wrapper next = at.getParent();
             while (next != null) {
@@ -136,7 +153,7 @@ public class Editor {
             localization.getString("view.selected"),
             Hotkeys.Hotkey.create(KeyCode.E, false, false, false)) {
           @Override
-          public void run(ProjectContext context, Window window) {
+          public void run(Context context, Window window) {
             window.selectForView(context, window.getSelectedForEdit().getWrapper());
           }
         },
@@ -146,7 +163,7 @@ public class Editor {
             localization.getString("previous.frame"),
             Hotkeys.Hotkey.create(KeyCode.LEFT, false, false, false)) {
           @Override
-          public void run(ProjectContext context, Window window) {
+          public void run(Context context, Window window) {
             CanvasHandle edit = window.getSelectedForEdit().getCanvas();
             if (edit == null) return;
             int prev = edit.previousFrame.get();
@@ -160,7 +177,7 @@ public class Editor {
             localization.getString("next.frame"),
             Hotkeys.Hotkey.create(KeyCode.RIGHT, false, false, false)) {
           @Override
-          public void run(ProjectContext context, Window window) {
+          public void run(Context context, Window window) {
             CanvasHandle edit = window.getSelectedForEdit().getCanvas();
             if (edit == null) return;
             int next = edit.nextFrame.get();
@@ -174,7 +191,7 @@ public class Editor {
             localization.getString("play.pause"),
             Hotkeys.Hotkey.create(KeyCode.SPACE, false, false, false)) {
           @Override
-          public void run(ProjectContext context, Window window) {
+          public void run(Context context, Window window) {
             window.timeline.togglePlaying();
           }
         }
@@ -183,7 +200,7 @@ public class Editor {
   private OnionSkin onionSkinNext;
   private Runnable zoomListenerCleanup;
 
-  public void selectedForEditChanged(ProjectContext context, EditHandle newValue) {
+  public void selectedForEditChanged(Context context, EditHandle newValue) {
     if (onionSkinPrevious != null) {
       onionSkinPrevious.remove();
       onionSkinPrevious = null;
@@ -200,7 +217,7 @@ public class Editor {
     }
   }
 
-  public void selectedForViewChanged(ProjectContext context, CanvasHandle newView) {
+  public void selectedForViewChanged(Context context, CanvasHandle newView) {
     canvas.scaleXProperty().unbind();
     canvas.scaleYProperty().unbind();
     if (zoomListenerCleanup != null) {
@@ -269,14 +286,14 @@ public class Editor {
     }
   }
 
-  public void updateScroll(ProjectContext context, DoubleVector scroll) {
+  public void updateScroll(Context context, DoubleVector scroll) {
     CanvasHandle view = window.getSelectedForView();
     if (view == null) return;
     view.getWrapper().getConfig().scroll.set(scroll);
     updateBounds(context);
   }
 
-  public void updateBounds(ProjectContext context) {
+  public void updateBounds(Context context) {
     CanvasHandle viewHandle = window.getSelectedForView();
     if (viewHandle == null) return;
     DoubleVector scroll = viewHandle.getWrapper().getConfig().scroll.get();
@@ -299,7 +316,7 @@ public class Editor {
         zoomFactor.get() * (config.flipVertical.get() ? -1.0 : 1.0));
   }
 
-  public Editor(final ProjectContext context, Window window) {
+  public Editor(final Context context, Window window) {
     this.window = window;
 
     for (Hotkeys.Action action : actions) context.hotkeys.register(action);
@@ -444,7 +461,7 @@ public class Editor {
                   pointerEventState.previous.local,
                   pointerEventState.previous.local);
             }
-            context.finishChange();
+            context.model.finishChange();
           }
         });
     outerCanvas.addEventFilter(

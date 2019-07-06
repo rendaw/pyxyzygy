@@ -3,18 +3,26 @@ package com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
 import com.google.common.collect.Streams;
-import com.zarbosoft.pyxyzygy.app.*;
+import com.zarbosoft.pyxyzygy.app.CanvasHandle;
+import com.zarbosoft.pyxyzygy.app.Context;
+import com.zarbosoft.pyxyzygy.app.DoubleVector;
+import com.zarbosoft.pyxyzygy.app.EditHandle;
+import com.zarbosoft.pyxyzygy.app.GUILaunch;
+import com.zarbosoft.pyxyzygy.app.Hotkeys;
+import com.zarbosoft.pyxyzygy.app.Misc;
+import com.zarbosoft.pyxyzygy.app.Tool;
+import com.zarbosoft.pyxyzygy.app.Window;
+import com.zarbosoft.pyxyzygy.app.Wrapper;
 import com.zarbosoft.pyxyzygy.app.config.TrueColorBrush;
 import com.zarbosoft.pyxyzygy.app.config.TrueColorImageNodeConfig;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.ContentReplacer;
 import com.zarbosoft.pyxyzygy.app.widgets.TitledPane;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
 import com.zarbosoft.pyxyzygy.app.widgets.binding.IndirectHalfBinder;
 import com.zarbosoft.pyxyzygy.app.wrappers.ToolMove;
 import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.BrushButton;
-import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
-import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
+import com.zarbosoft.pyxyzygy.seed.TrueColor;
+import com.zarbosoft.pyxyzygy.seed.Vector;
 import com.zarbosoft.rendaw.common.Assertion;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
@@ -79,7 +87,7 @@ public class TrueColorImageEditHandle extends EditHandle {
   }
 
   public TrueColorImageEditHandle(
-      ProjectContext context, Window window, final TrueColorImageNodeWrapper wrapper) {
+    Context context, Window window, final TrueColorImageNodeWrapper wrapper) {
     this.wrapper = wrapper;
 
     positiveZoom.bind(wrapper.canvasHandle.zoom);
@@ -89,7 +97,7 @@ public class TrueColorImageEditHandle extends EditHandle {
                 Stream.of(
                     new Hotkeys.Action(Hotkeys.Scope.CANVAS, "paste", localization.getString("paste"), pasteHotkey) {
                       @Override
-                      public void run(ProjectContext context, Window window) {
+                      public void run(Context context, Window window) {
                         wrapper.config.tool.set(TOOL_SELECT);
                         ((ToolSelect) tool).paste(context, window);
                       }
@@ -99,7 +107,7 @@ public class TrueColorImageEditHandle extends EditHandle {
                         "last-brush", localization.getString("last.brush"),
                         Hotkeys.Hotkey.create(KeyCode.SPACE, false, false, false)) {
                       @Override
-                      public void run(ProjectContext context, Window window) {
+                      public void run(Context context, Window window) {
                         if (wrapper.config.tool.get() == TrueColorImageNodeConfig.TOOL_BRUSH) {
                           if (wrapper.config.lastBrush < 0
                               || wrapper.config.lastBrush
@@ -115,7 +123,7 @@ public class TrueColorImageEditHandle extends EditHandle {
                         "select", localization.getString("select"),
                         Hotkeys.Hotkey.create(KeyCode.S, false, false, false)) {
                       @Override
-                      public void run(ProjectContext context, Window window) {
+                      public void run(Context context, Window window) {
                         wrapper.config.tool.set(TOOL_SELECT);
                       }
                     },
@@ -124,7 +132,7 @@ public class TrueColorImageEditHandle extends EditHandle {
                         "move", localization.getString("move.layer"),
                         Hotkeys.Hotkey.create(KeyCode.M, false, false, false)) {
                       @Override
-                      public void run(ProjectContext context, Window window) {
+                      public void run(Context context, Window window) {
                         wrapper.config.tool.set(TrueColorImageNodeConfig.TOOL_MOVE);
                       }
                     },
@@ -133,7 +141,7 @@ public class TrueColorImageEditHandle extends EditHandle {
                         "move-frame", localization.getString("move.frame.contents"),
                         Hotkeys.Hotkey.create(KeyCode.F, false, false, false)) {
                       @Override
-                      public void run(ProjectContext context, Window window) {
+                      public void run(Context context, Window window) {
                         wrapper.config.tool.set(TOOL_FRAME_MOVE);
                       }
                     }),
@@ -157,7 +165,7 @@ public class TrueColorImageEditHandle extends EditHandle {
                                 String.format(localization.getString("brush.s"), p.first + 1),
                                 Hotkeys.Hotkey.create(p.second, false, false, false)) {
                               @Override
-                              public void run(ProjectContext context, Window window) {
+                              public void run(Context context, Window window) {
                                 if (p.first >= GUILaunch.profileConfig.trueColorBrushes.size())
                                   return;
                                 setBrush(p.first);
@@ -363,7 +371,7 @@ public class TrueColorImageEditHandle extends EditHandle {
         });
   }
 
-  private void setTool(ProjectContext context, Window window, Supplier<Tool> newTool) {
+  private void setTool(Context context, Window window, Supplier<Tool> newTool) {
     if (tool != null) {
       tool.remove(context, window);
       tool = null;
@@ -372,7 +380,7 @@ public class TrueColorImageEditHandle extends EditHandle {
   }
 
   @Override
-  public void remove(ProjectContext context, Window window) {
+  public void remove(Context context, Window window) {
     if (tool != null) {
       tool.remove(context, window);
       tool = null;
@@ -387,7 +395,7 @@ public class TrueColorImageEditHandle extends EditHandle {
   }
 
   @Override
-  public void cursorMoved(ProjectContext context, Window window, DoubleVector vector) {
+  public void cursorMoved(Context context, Window window, DoubleVector vector) {
     vector = Window.toLocal(window.getSelectedForView(), wrapper.canvasHandle, vector);
     mouseX.set(vector.x);
     mouseY.set(vector.y);
@@ -403,7 +411,7 @@ public class TrueColorImageEditHandle extends EditHandle {
   }
 
   @Override
-  public void markStart(ProjectContext context, Window window, DoubleVector start) {
+  public void markStart(Context context, Window window, DoubleVector start) {
     if (tool == null) return;
     tool.markStart(
         context,
@@ -418,7 +426,7 @@ public class TrueColorImageEditHandle extends EditHandle {
   }
 
   @Override
-  public void mark(ProjectContext context, Window window, DoubleVector start, DoubleVector end) {
+  public void mark(Context context, Window window, DoubleVector start, DoubleVector end) {
     if (tool == null) return;
     Vector offset = offset();
     tool.mark(

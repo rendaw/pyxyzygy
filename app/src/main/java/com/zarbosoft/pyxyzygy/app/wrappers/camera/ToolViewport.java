@@ -1,10 +1,10 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.camera;
 
+import com.zarbosoft.pyxyzygy.app.Context;
 import com.zarbosoft.pyxyzygy.app.DoubleVector;
 import com.zarbosoft.pyxyzygy.app.Tool;
 import com.zarbosoft.pyxyzygy.app.Window;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
-import com.zarbosoft.pyxyzygy.core.model.v0.Camera;
+import com.zarbosoft.pyxyzygy.core.model.latest.Camera;
 import javafx.scene.ImageCursor;
 
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
@@ -46,7 +46,7 @@ public class ToolViewport extends Tool {
 
   @Override
   public void markStart(
-      ProjectContext context, Window window, DoubleVector start, DoubleVector globalStart) {
+    Context context, Window window, DoubleVector start, DoubleVector globalStart) {
     Camera node = (Camera) wrapper.node;
     markStart = start;
     Quadrant quadrant = calculateQuadrant(markStart);
@@ -61,7 +61,7 @@ public class ToolViewport extends Tool {
 
   @Override
   public void mark(
-      ProjectContext context,
+      Context context,
       Window window,
       DoubleVector start,
       DoubleVector end,
@@ -76,12 +76,12 @@ public class ToolViewport extends Tool {
   }
 
   @Override
-  public void remove(ProjectContext context, Window window) {
+  public void remove(Context context, Window window) {
     window.editorCursor.clear(this);
   }
 
   @Override
-  public void cursorMoved(ProjectContext context, Window window, DoubleVector position) {
+  public void cursorMoved(Context context, Window window, DoubleVector position) {
     Quadrant quadrant = calculateQuadrant(position);
     if (lastCursorQuad != null
         && lastCursorQuad.horizontal == quadrant.horizontal

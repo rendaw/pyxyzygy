@@ -35,9 +35,9 @@
             <version>1.0.0</version>
         </dependency>
         <dependency>
-            <groupId>io.github.classgraph</groupId>
-            <artifactId>classgraph</artifactId>
-            <version>4.6.18</version>
+            <groupId>com.zarbosoft.automodel</groupId>
+            <artifactId>task</artifactId>
+            <version>0.0.1</version>
         </dependency>
     </dependencies>
     <build>

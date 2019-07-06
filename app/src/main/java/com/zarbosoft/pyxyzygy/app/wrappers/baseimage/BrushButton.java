@@ -1,8 +1,8 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.baseimage;
 
+import com.zarbosoft.pyxyzygy.app.Context;
 import com.zarbosoft.pyxyzygy.app.Garb;
 import com.zarbosoft.pyxyzygy.app.Window;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.ColorSwatch;
 import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
 import com.zarbosoft.pyxyzygy.app.widgets.binding.CustomBinding;
@@ -58,7 +58,7 @@ public abstract class BrushButton extends ToggleButton implements Garb {
   public abstract void selectBrush();
 
   @Override
-  public void destroy(ProjectContext context, Window window) {
+  public void destroy(Context context, Window window) {
     cleanupSelected.destroy();
     cleanupColor.destroy();
   }

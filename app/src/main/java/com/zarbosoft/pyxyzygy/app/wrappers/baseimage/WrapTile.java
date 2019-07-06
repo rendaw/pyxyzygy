@@ -1,6 +1,7 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.baseimage;
 
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
+import com.zarbosoft.automodel.lib.ProjectObject;
+import com.zarbosoft.pyxyzygy.app.Context;
 import com.zarbosoft.pyxyzygy.nearestneighborimageview.NearestNeighborImageView;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -21,5 +22,5 @@ public abstract class WrapTile<T> {
     widget.setImage(image);
   }
 
-  public abstract Image getImage(ProjectContext context, T tile);
+  public abstract Image getImage(Context context, ProjectObject tile);
 }

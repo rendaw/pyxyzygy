@@ -1,19 +1,20 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.paletteimage;
 
+import com.zarbosoft.automodel.lib.ProjectObject;
+import com.zarbosoft.pyxyzygy.app.Context;
 import com.zarbosoft.pyxyzygy.app.DoubleVector;
+import com.zarbosoft.pyxyzygy.app.PaletteTileHelp;
 import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.config.PaletteBrush;
-import com.zarbosoft.pyxyzygy.app.model.v0.PaletteTile;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
 import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.BaseToolBrush;
 import com.zarbosoft.pyxyzygy.core.PaletteImage;
-import com.zarbosoft.pyxyzygy.core.model.v0.PaletteColor;
-import com.zarbosoft.pyxyzygy.core.model.v0.PaletteImageFrame;
-import com.zarbosoft.pyxyzygy.core.model.v0.PaletteSeparator;
-import com.zarbosoft.pyxyzygy.core.model.v0.ProjectObject;
-import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
+import com.zarbosoft.pyxyzygy.core.model.latest.PaletteColor;
+import com.zarbosoft.pyxyzygy.core.model.latest.PaletteImageFrame;
+import com.zarbosoft.pyxyzygy.core.model.latest.PaletteSeparator;
+import com.zarbosoft.pyxyzygy.core.model.latest.PaletteTile;
+import com.zarbosoft.pyxyzygy.seed.Vector;
 import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.Common;
 import com.zarbosoft.rendaw.common.Pair;
@@ -99,7 +100,7 @@ public class ToolBrush extends BaseToolBrush<PaletteImageFrame, PaletteImage> {
 
   @Override
   public void markStart(
-      ProjectContext context, Window window, DoubleVector start, DoubleVector globalStart) {}
+    Context context, Window window, DoubleVector start, DoubleVector globalStart) {}
 
   private void setColor(int index) {
     editHandle.wrapper.node.palette().entries().stream()
@@ -125,12 +126,12 @@ public class ToolBrush extends BaseToolBrush<PaletteImageFrame, PaletteImage> {
 
   @Override
   protected void stroke(
-      ProjectContext context,
-      PaletteImage canvas,
-      DoubleVector start,
-      double startRadius,
-      DoubleVector end,
-      double endRadius) {
+    Context context,
+    PaletteImage canvas,
+    DoubleVector start,
+    double startRadius,
+    DoubleVector end,
+    double endRadius) {
     ProjectObject paletteSelection = unopt(editHandle.wrapper.paletteSelectionBinder.get());
     if (paletteSelection == null || !(paletteSelection instanceof PaletteColor)) return;
     canvas.stroke(
@@ -145,7 +146,7 @@ public class ToolBrush extends BaseToolBrush<PaletteImageFrame, PaletteImage> {
 
   @Override
   public void mark(
-      ProjectContext context,
+      Context context,
       Window window,
       DoubleVector start,
       DoubleVector end,
@@ -154,21 +155,21 @@ public class ToolBrush extends BaseToolBrush<PaletteImageFrame, PaletteImage> {
     if (false) {
       throw new Assertion();
     } else if (window.pressed.contains(KeyCode.CONTROL)) {
-      Vector quantizedCorner = end.divide(context.tileSize).toInt();
+      Vector quantizedCorner = end.divide(context.project.tileSize()).toInt();
       PaletteTile tile =
           (PaletteTile) editHandle.wrapper.canvasHandle.frame.tilesGet(quantizedCorner.to1D());
       if (tile == null) {
         setColor(0);
       } else {
         Vector intEnd = end.toInt();
-        Vector tileCorner = quantizedCorner.multiply(context.tileSize);
-        setColor(tile.getData(context).getPixel(intEnd.x - tileCorner.x, intEnd.y - tileCorner.y));
+        Vector tileCorner = quantizedCorner.multiply(context.project.tileSize());
+        setColor(PaletteTileHelp.getData(context, tile).getPixel(intEnd.x - tileCorner.x, intEnd.y - tileCorner.y));
       }
     } else super.mark(context, window, start, end, globalStart, globalEnd);
   }
 
   @Override
-  public void remove(ProjectContext context, Window window) {
+  public void remove(Context context, Window window) {
     editHandle.overlay.getChildren().removeAll(alignedCursor);
     editHandle.toolProperties.clear(this);
     super.remove(context, window);

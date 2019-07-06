@@ -1,18 +1,35 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.group;
 
 import com.google.common.collect.ImmutableList;
-import com.zarbosoft.pyxyzygy.app.*;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
-import com.zarbosoft.pyxyzygy.app.modelmirror.*;
+import com.zarbosoft.automodel.lib.Listener;
+import com.zarbosoft.automodel.lib.ProjectObject;
+import com.zarbosoft.pyxyzygy.app.Context;
+import com.zarbosoft.pyxyzygy.app.DoubleVector;
+import com.zarbosoft.pyxyzygy.app.Global;
+import com.zarbosoft.pyxyzygy.app.Render;
+import com.zarbosoft.pyxyzygy.app.Tool;
+import com.zarbosoft.pyxyzygy.app.Window;
+import com.zarbosoft.pyxyzygy.app.Wrapper;
+import com.zarbosoft.pyxyzygy.app.modelmirror.MirrorGroupChild;
+import com.zarbosoft.pyxyzygy.app.modelmirror.MirrorGroupNode;
+import com.zarbosoft.pyxyzygy.app.modelmirror.MirrorPaletteImageNode;
+import com.zarbosoft.pyxyzygy.app.modelmirror.MirrorProject;
+import com.zarbosoft.pyxyzygy.app.modelmirror.MirrorTrueColorImageNode;
+import com.zarbosoft.pyxyzygy.app.modelmirror.ObjectMirror;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
 import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyHalfBinder;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
-import com.zarbosoft.pyxyzygy.core.model.v0.*;
+import com.zarbosoft.pyxyzygy.core.model.latest.GroupChild;
+import com.zarbosoft.pyxyzygy.core.model.latest.GroupLayer;
+import com.zarbosoft.pyxyzygy.core.model.latest.GroupPositionFrame;
+import com.zarbosoft.pyxyzygy.core.model.latest.GroupTimeFrame;
+import com.zarbosoft.pyxyzygy.core.model.latest.PaletteImageLayer;
+import com.zarbosoft.pyxyzygy.core.model.latest.ProjectLayer;
+import com.zarbosoft.pyxyzygy.core.model.latest.TrueColorImageLayer;
 import com.zarbosoft.pyxyzygy.nearestneighborimageview.NearestNeighborImageView;
-import com.zarbosoft.pyxyzygy.seed.model.Listener;
-import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
-import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
+import com.zarbosoft.pyxyzygy.seed.Rectangle;
+import com.zarbosoft.pyxyzygy.seed.Vector;
 import com.zarbosoft.rendaw.common.Assertion;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.Group;
@@ -40,10 +57,10 @@ public class ToolStamp extends Tool {
   private final Group overlayGroup;
 
   ToolStamp(
-      ProjectContext context,
-      Window window,
-      GroupNodeWrapper wrapper,
-      GroupNodeEditHandle editHandle) {
+    Context context,
+    Window window,
+    GroupNodeWrapper wrapper,
+    GroupNodeEditHandle editHandle) {
     this.editHandle = editHandle;
     List<ProjectObject> parents = new ArrayList<>();
     {
@@ -92,7 +109,7 @@ public class ToolStamp extends Tool {
             new ObjectMirror.Context() {
               @Override
               public ObjectMirror create(
-                  ProjectContext context, ObjectMirror parent, ProjectObject object) {
+                Context context, ObjectMirror parent, ProjectObject object) {
                 ObjectMirror out;
                 if (false) {
                   throw new Assertion();
@@ -172,22 +189,22 @@ public class ToolStamp extends Tool {
 
   @Override
   public void markStart(
-      ProjectContext context, Window window, DoubleVector start, DoubleVector globalStart) {
+    Context context, Window window, DoubleVector start, DoubleVector globalStart) {
     if (stampSource == null) return;
-    GroupChild layer = GroupChild.create(context);
-    layer.initialInnerSet(context, stampSource);
-    layer.initialEnabledSet(context, true);
-    layer.initialOpacitySet(context, Global.opacityMax);
-    GroupPositionFrame positionFrame = GroupPositionFrame.create(context);
-    positionFrame.initialLengthSet(context, -1);
+    GroupChild layer = GroupChild.create(context.model);
+    layer.initialInnerSet(context.model, stampSource);
+    layer.initialEnabledSet(context.model, true);
+    layer.initialOpacitySet(context.model, Global.opacityMax);
+    GroupPositionFrame positionFrame = GroupPositionFrame.create(context.model);
+    positionFrame.initialLengthSet(context.model, -1);
     positionFrame.initialOffsetSet(
-        context, new Vector((int) Math.floor(start.x), (int) Math.floor(start.y)));
-    layer.initialPositionFramesAdd(context, ImmutableList.of(positionFrame));
-    GroupTimeFrame timeFrame = GroupTimeFrame.create(context);
-    timeFrame.initialLengthSet(context, -1);
-    timeFrame.initialInnerOffsetSet(context, 0);
-    timeFrame.initialInnerLoopSet(context, 0);
-    layer.initialTimeFramesAdd(context, ImmutableList.of(timeFrame));
+        context.model, new Vector((int) Math.floor(start.x), (int) Math.floor(start.y)));
+    layer.initialPositionFramesAdd(context.model, ImmutableList.of(positionFrame));
+    GroupTimeFrame timeFrame = GroupTimeFrame.create(context.model);
+    timeFrame.initialLengthSet(context.model, -1);
+    timeFrame.initialInnerOffsetSet(context.model, 0);
+    timeFrame.initialInnerLoopSet(context.model, 0);
+    layer.initialTimeFramesAdd(context.model, ImmutableList.of(timeFrame));
     window.structure.suppressSelect = true;
     try {
       context.change(null, c -> c.groupLayer(wrapper.node).childrenAdd(layer));
@@ -199,7 +216,7 @@ public class ToolStamp extends Tool {
 
   @Override
   public void mark(
-      ProjectContext context,
+      Context context,
       Window window,
       DoubleVector start,
       DoubleVector end,
@@ -207,7 +224,7 @@ public class ToolStamp extends Tool {
       DoubleVector globalEnd) {}
 
   @Override
-  public void remove(ProjectContext context, Window window) {
+  public void remove(Context context, Window window) {
     editHandle.overlay.getChildren().remove(overlayGroup);
     mirror.remove(context);
     window.editorCursor.clear(this);
@@ -215,7 +232,7 @@ public class ToolStamp extends Tool {
   }
 
   @Override
-  public void cursorMoved(ProjectContext context, Window window, DoubleVector position) {
+  public void cursorMoved(Context context, Window window, DoubleVector position) {
     overlayGroup.setLayoutX(Math.floor(position.x));
     overlayGroup.setLayoutY(Math.floor(position.y));
   }

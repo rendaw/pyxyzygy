@@ -1,10 +1,9 @@
 package com.zarbosoft.pyxyzygy.app.modelmirror;
 
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
-import com.zarbosoft.pyxyzygy.core.model.v0.GroupChild;
-import com.zarbosoft.pyxyzygy.core.model.v0.ProjectLayer;
-import com.zarbosoft.pyxyzygy.core.model.v0.ProjectObject;
-import com.zarbosoft.pyxyzygy.seed.model.Listener;
+import com.zarbosoft.automodel.lib.Listener;
+import com.zarbosoft.automodel.lib.ProjectObject;
+import com.zarbosoft.pyxyzygy.core.model.latest.GroupChild;
+import com.zarbosoft.pyxyzygy.core.model.latest.ProjectLayer;
 
 public class MirrorGroupChild extends ObjectMirror {
   private final ObjectMirror parent;
@@ -13,10 +12,10 @@ public class MirrorGroupChild extends ObjectMirror {
   private ObjectMirror child;
 
   public MirrorGroupChild(
-      ProjectContext context,
-      ObjectMirror.Context mirrorContext,
-      ObjectMirror parent,
-      GroupChild node) {
+    com.zarbosoft.pyxyzygy.app.Context context,
+    Context mirrorContext,
+    ObjectMirror parent,
+    GroupChild node) {
     this.parent = parent;
     this.parentIndex = -1;
     this.node = node;
@@ -53,7 +52,7 @@ public class MirrorGroupChild extends ObjectMirror {
   }
 
   @Override
-  public void remove(ProjectContext context) {
+  public void remove(com.zarbosoft.pyxyzygy.app.Context context) {
     node.removeInnerSetListeners(innerSetListener);
   }
 }

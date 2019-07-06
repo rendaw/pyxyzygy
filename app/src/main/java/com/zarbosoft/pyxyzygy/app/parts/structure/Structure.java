@@ -2,19 +2,49 @@ package com.zarbosoft.pyxyzygy.app.parts.structure;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.zarbosoft.pyxyzygy.app.*;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
-import com.zarbosoft.pyxyzygy.app.model.v0.TrueColorTile;
+import com.zarbosoft.automodel.lib.History;
+import com.zarbosoft.automodel.lib.Listener;
+import com.zarbosoft.automodel.lib.ProjectObject;
+import com.zarbosoft.pyxyzygy.app.CanvasHandle;
+import com.zarbosoft.pyxyzygy.app.Context;
+import com.zarbosoft.pyxyzygy.app.EditHandle;
+import com.zarbosoft.pyxyzygy.app.GUILaunch;
+import com.zarbosoft.pyxyzygy.app.Global;
+import com.zarbosoft.pyxyzygy.app.Hotkeys;
+import com.zarbosoft.pyxyzygy.app.TrueColorTileHelp;
+import com.zarbosoft.pyxyzygy.app.Window;
+import com.zarbosoft.pyxyzygy.app.Wrapper;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.*;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.CustomBinding;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.DoubleHalfBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.HalfBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.IndirectBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.IndirectHalfBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyHalfBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.ScalarBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.ScalarHalfBinder;
+import com.zarbosoft.pyxyzygy.app.wrappers.PaletteWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupChildWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeWrapper;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
-import com.zarbosoft.pyxyzygy.core.model.v0.*;
-import com.zarbosoft.pyxyzygy.seed.model.Listener;
-import com.zarbosoft.pyxyzygy.seed.model.v0.Rectangle;
-import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
-import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
+import com.zarbosoft.pyxyzygy.core.model.latest.Camera;
+import com.zarbosoft.pyxyzygy.core.model.latest.ChangeStepBuilder;
+import com.zarbosoft.pyxyzygy.core.model.latest.GroupChild;
+import com.zarbosoft.pyxyzygy.core.model.latest.GroupLayer;
+import com.zarbosoft.pyxyzygy.core.model.latest.GroupPositionFrame;
+import com.zarbosoft.pyxyzygy.core.model.latest.GroupTimeFrame;
+import com.zarbosoft.pyxyzygy.core.model.latest.Palette;
+import com.zarbosoft.pyxyzygy.core.model.latest.PaletteColor;
+import com.zarbosoft.pyxyzygy.core.model.latest.PaletteImageFrame;
+import com.zarbosoft.pyxyzygy.core.model.latest.PaletteImageLayer;
+import com.zarbosoft.pyxyzygy.core.model.latest.ProjectLayer;
+import com.zarbosoft.pyxyzygy.core.model.latest.TrueColorImageFrame;
+import com.zarbosoft.pyxyzygy.core.model.latest.TrueColorImageLayer;
+import com.zarbosoft.pyxyzygy.seed.Rectangle;
+import com.zarbosoft.pyxyzygy.seed.TrueColor;
+import com.zarbosoft.pyxyzygy.seed.Vector;
 import com.zarbosoft.rendaw.common.Assertion;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
@@ -26,7 +56,21 @@ import javafx.collections.ObservableList;
 import javafx.collections.ObservableSet;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.MenuButton;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SelectionMode;
+import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.control.Slider;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.control.ToolBar;
+import javafx.scene.control.TreeCell;
+import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeView;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -45,15 +89,21 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.zarbosoft.pyxyzygy.app.Global.*;
-import static com.zarbosoft.pyxyzygy.app.Misc.*;
+import static com.zarbosoft.automodel.lib.Logger.logger;
+import static com.zarbosoft.pyxyzygy.app.Global.localization;
+import static com.zarbosoft.pyxyzygy.app.Global.opacityMax;
+import static com.zarbosoft.pyxyzygy.app.Misc.moveTo;
+import static com.zarbosoft.pyxyzygy.app.Misc.opt;
+import static com.zarbosoft.pyxyzygy.app.Misc.separate;
 import static com.zarbosoft.pyxyzygy.app.Wrapper.TakesChildren.NONE;
-import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.*;
+import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.bindStyle;
+import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
+import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.pad;
 import static com.zarbosoft.rendaw.common.Common.last;
 import static com.zarbosoft.rendaw.common.Common.sublist;
 
 public class Structure {
-  private final ProjectContext context;
+  private final Context context;
   private final Window window;
   private final boolean main;
   private final BinderRoot opacityAllDisableRoot; // GC root
@@ -72,20 +122,20 @@ public class Structure {
             localization.getString("clear.lifting"),
             Hotkeys.Hotkey.create(KeyCode.ESCAPE, false, false, false)) {
           @Override
-          public void run(ProjectContext context, Window window) {
+          public void run(Context context, Window window) {
             clearTagLifted();
           }
         },
         new Hotkeys.Action(Hotkeys.Scope.STRUCTURE, "lift", localization.getString("lift"), Global.cutHotkey) {
           @Override
-          public void run(ProjectContext context, Window window) {
+          public void run(Context context, Window window) {
             lift();
           }
         },
         new Hotkeys.Action(
             Hotkeys.Scope.STRUCTURE, "place-auto", localization.getString("paste.linked"), Global.pasteHotkey) {
           @Override
-          public void run(ProjectContext context, Window window) {
+          public void run(Context context, Window window) {
             context.change(
                 null,
                 c -> {
@@ -98,7 +148,7 @@ public class Structure {
             "duplicate", localization.getString("unlinked.duplicate"),
             Hotkeys.Hotkey.create(KeyCode.D, true, false, false)) {
           @Override
-          public void run(ProjectContext context, Window window) {
+          public void run(Context context, Window window) {
             context.change(
                 null,
                 c -> {
@@ -111,7 +161,7 @@ public class Structure {
             "link", localization.getString("linked.duplicate"),
             Hotkeys.Hotkey.create(KeyCode.L, true, false, false)) {
           @Override
-          public void run(ProjectContext context, Window window) {
+          public void run(Context context, Window window) {
             context.change(
                 null,
                 c -> {
@@ -124,7 +174,7 @@ public class Structure {
             "delete", localization.getString("delete"),
             Hotkeys.Hotkey.create(KeyCode.DELETE, false, false, false)) {
           @Override
-          public void run(ProjectContext context, Window window) {
+          public void run(Context context, Window window) {
             context.change(
                 null,
                 c -> {
@@ -184,7 +234,7 @@ public class Structure {
                 });
   }
 
-  public Structure(ProjectContext context, Window window, boolean main) {
+  public Structure(Context context, Window window, boolean main) {
     this.main = main;
     this.context = context;
     this.window = window;
@@ -333,15 +383,15 @@ public class Structure {
     MenuItem addCamera = new MenuItem(localization.getString("add.camera"));
     addCamera.setOnAction(
         e -> {
-          Camera camera = Camera.create(context);
-          camera.initialNameSet(context, context.namer.uniqueName(localization.getString("camera")));
-          camera.initialOffsetSet(context, Vector.ZERO);
-          camera.initialFrameStartSet(context, 0);
-          camera.initialFrameLengthSet(context, 12);
-          camera.initialFrameRateSet(context, 10);
-          double cameraFactor = context.tileSize / 200.0;
-          camera.initialHeightSet(context, (int) (240 * cameraFactor));
-          camera.initialWidthSet(context, (int) (320 * cameraFactor));
+          Camera camera = Camera.create(context.model);
+          camera.initialNameSet(context.model, context.namer.uniqueName(localization.getString("camera")));
+          camera.initialOffsetSet(context.model, Vector.ZERO);
+          camera.initialFrameStartSet(context.model, 0);
+          camera.initialFrameLengthSet(context.model, 12);
+          camera.initialFrameRateSet(context.model, 10);
+          double cameraFactor = context.project.tileSize() / 200.0;
+          camera.initialHeightSet(context.model, (int) (240 * cameraFactor));
+          camera.initialWidthSet(context.model, (int) (320 * cameraFactor));
           context.change(
               null,
               c -> {
@@ -351,9 +401,9 @@ public class Structure {
     MenuItem addGroup = new MenuItem(localization.getString("add.group"));
     addGroup.setOnAction(
         e -> {
-          GroupLayer group = GroupLayer.create(context);
-          group.initialOffsetSet(context, Vector.ZERO);
-          group.initialNameSet(context, context.namer.uniqueName(Global.getGroupLayerName()));
+          GroupLayer group = GroupLayer.create(context.model);
+          group.initialOffsetSet(context.model, Vector.ZERO);
+          group.initialNameSet(context.model, context.namer.uniqueName(Global.getGroupLayerName()));
           context.change(
               null,
               c -> {
@@ -363,13 +413,13 @@ public class Structure {
     MenuItem addImage = new MenuItem(localization.getString("add.true.color.layer"));
     addImage.setOnAction(
         e -> {
-          TrueColorImageLayer image = TrueColorImageLayer.create(context);
-          image.initialOffsetSet(context, Vector.ZERO);
-          image.initialNameSet(context, context.namer.uniqueName(Global.getTrueColorLayerName()));
-          TrueColorImageFrame frame = TrueColorImageFrame.create(context);
-          frame.initialLengthSet(context, -1);
-          frame.initialOffsetSet(context, new Vector(0, 0));
-          image.initialFramesAdd(context, ImmutableList.of(frame));
+          TrueColorImageLayer image = TrueColorImageLayer.create(context.model);
+          image.initialOffsetSet(context.model, Vector.ZERO);
+          image.initialNameSet(context.model, context.namer.uniqueName(Global.getTrueColorLayerName()));
+          TrueColorImageFrame frame = TrueColorImageFrame.create(context.model);
+          frame.initialLengthSet(context.model, -1);
+          frame.initialOffsetSet(context.model, new Vector(0, 0));
+          image.initialFramesAdd(context.model, ImmutableList.of(frame));
           context.change(
               null,
               c -> {
@@ -410,35 +460,35 @@ public class Structure {
                           Optional<Palette> palette0 = cb.getSelectionModel().getSelectedItem();
                           Palette palette;
                           if (!palette0.isPresent()) {
-                            palette = Palette.create(context);
+                            palette = Palette.create(context.model);
                             palette.initialNameSet(
-                                context, context.namer.uniqueName(Global.getPaletteName()));
-                            palette.initialNextIdSet(context, 2);
-                            PaletteColor transparent = PaletteColor.create(context);
-                            transparent.initialIndexSet(context, 0);
+                                context.model, context.namer.uniqueName(Global.getPaletteName()));
+                            palette.initialNextIdSet(context.model, 2);
+                            PaletteColor transparent = PaletteColor.create(context.model);
+                            transparent.initialIndexSet(context.model, 0);
                             transparent.initialColorSet(
-                                context, TrueColor.fromJfx(Color.TRANSPARENT));
-                            PaletteColor black = PaletteColor.create(context);
-                            black.initialIndexSet(context, 1);
-                            black.initialColorSet(context, TrueColor.fromJfx(Color.BLACK));
+                                context.model, TrueColor.fromJfx(Color.TRANSPARENT));
+                            PaletteColor black = PaletteColor.create(context.model);
+                            black.initialIndexSet(context.model, 1);
+                            black.initialColorSet(context.model, TrueColor.fromJfx(Color.BLACK));
                             palette.initialEntriesAdd(
-                                context, ImmutableList.of(transparent, black));
+                                context.model, ImmutableList.of(transparent, black));
                             Palette finalPalette = palette;
                             c.project(context.project).palettesAdd(finalPalette);
                           } else {
                             palette = palette0.get();
                           }
-                          PaletteImageLayer image = PaletteImageLayer.create(context);
-                          image.initialOffsetSet(context, Vector.ZERO);
+                          PaletteImageLayer image = PaletteImageLayer.create(context.model);
+                          image.initialOffsetSet(context.model, Vector.ZERO);
                           image.initialNameSet(
-                              context, context.namer.uniqueName(Global.getPaletteLayerName()));
-                          image.initialPaletteSet(context, palette);
-                          PaletteImageFrame frame = PaletteImageFrame.create(context);
-                          frame.initialLengthSet(context, -1);
-                          frame.initialOffsetSet(context, new Vector(0, 0));
-                          image.initialFramesAdd(context, ImmutableList.of(frame));
+                              context.model, context.namer.uniqueName(Global.getPaletteLayerName()));
+                          image.initialPaletteSet(context.model, palette);
+                          PaletteImageFrame frame = PaletteImageFrame.create(context.model);
+                          frame.initialLengthSet(context.model, -1);
+                          frame.initialOffsetSet(context.model, new Vector(0, 0));
+                          image.initialFramesAdd(context.model, ImmutableList.of(frame));
                           addNew(image, c);
-                          context.addPaletteUser(image);
+                          PaletteWrapper.addPaletteUser(image);
                         });
                     return true;
                   })
@@ -463,35 +513,35 @@ public class Structure {
               .ifPresent(
                   p -> {
                     TrueColorImage data = TrueColorImage.deserialize(p.toString());
-                    TrueColorImageLayer image = TrueColorImageLayer.create(context);
-                    image.initialOffsetSet(context, Vector.ZERO);
+                    TrueColorImageLayer image = TrueColorImageLayer.create(context.model);
+                    image.initialOffsetSet(context.model, Vector.ZERO);
                     image.initialNameSet(
-                        context, context.namer.uniqueName(p.getFileName().toString()));
-                    TrueColorImageFrame frame = TrueColorImageFrame.create(context);
-                    frame.initialLengthSet(context, -1);
-                    frame.initialOffsetSet(context, Vector.ZERO);
-                    image.initialFramesAdd(context, ImmutableList.of(frame));
+                        context.model, context.namer.uniqueName(p.getFileName().toString()));
+                    TrueColorImageFrame frame = TrueColorImageFrame.create(context.model);
+                    frame.initialLengthSet(context.model, -1);
+                    frame.initialOffsetSet(context.model, Vector.ZERO);
+                    image.initialFramesAdd(context.model, ImmutableList.of(frame));
                     Rectangle base = new Rectangle(0, 0, data.getWidth(), data.getHeight());
 
                     Rectangle offset = base.shift(base.span().divide(2));
-                    Rectangle unitBounds = offset.divideContains(context.tileSize);
+                    Rectangle unitBounds = offset.divideContains(context.project.tileSize());
                     Vector localOffset =
-                        offset.corner().minus(unitBounds.corner().multiply(context.tileSize));
+                        offset.corner().minus(unitBounds.corner().multiply(context.project.tileSize()));
                     for (int x = 0; x < unitBounds.width; ++x) {
                       for (int y = 0; y < unitBounds.height; ++y) {
                         final int x0 = x;
                         final int y0 = y;
                         TrueColorImage cut =
                             data.copy(
-                                x0 * context.tileSize - localOffset.x,
-                                y0 * context.tileSize - localOffset.y,
-                                context.tileSize,
-                                context.tileSize);
+                                x0 * context.project.tileSize() - localOffset.x,
+                                y0 * context.project.tileSize() - localOffset.y,
+                                context.project.tileSize(),
+                                context.project.tileSize());
                         frame.initialTilesPutAll(
-                            context,
+                            context.model,
                             ImmutableMap.of(
                                 unitBounds.corner().plus(x0, y0).to1D(),
-                                TrueColorTile.create(context, cut)));
+                                TrueColorTileHelp.create(context, cut)));
                       }
                     }
                     context.change(
@@ -581,7 +631,7 @@ public class Structure {
 
           Wrapper selected1 = selected;
           context.change(
-              new ProjectContext.Tuple("struct_move"),
+              new History.Tuple("struct_move"),
               c -> {
                 if (parent.getValue() != null) {
                   GroupLayer realParent = (GroupLayer) parent.getValue();
@@ -613,7 +663,7 @@ public class Structure {
 
           Wrapper selected1 = selected;
           context.change(
-              new ProjectContext.Tuple("struct_move"),
+              new History.Tuple("struct_move"),
               c -> {
                 if (parent.getValue() != null) {
                   GroupLayer realParent = (GroupLayer) parent.getValue();
@@ -766,7 +816,7 @@ public class Structure {
                             "enabled",
                             v ->
                                 context.change(
-                                    new ProjectContext.Tuple(childWrapper, "enabled"),
+                                    new History.Tuple(childWrapper, "enabled"),
                                     c -> c.groupChild(layerNode).enabledSet(v))));
                   }),
               new PropertyBinder<>(enabled.selectedProperty()));
@@ -787,7 +837,7 @@ public class Structure {
                             "opacity",
                             v ->
                                 context.change(
-                                    new ProjectContext.Tuple(childWrapper, "opacity"),
+                                    new History.Tuple(childWrapper, "opacity"),
                                     c -> c.groupChild(layerNode).opacitySet(v))));
                   }),
               new PropertyBinder<>(opacity.valueProperty())
@@ -859,7 +909,7 @@ public class Structure {
         sublist(path, 1));
   }
 
-  private void delete(ProjectContext context, ChangeStepBuilder change) {
+  private void delete(Context context, ChangeStepBuilder change) {
     Wrapper edit = window.getSelectedForEdit().getWrapper();
     if (edit == null) return;
     edit.delete(context, change);
@@ -1075,19 +1125,19 @@ public class Structure {
   }
 
   private GroupChild createGroupChild(ProjectLayer node) {
-    GroupChild child = GroupChild.create(context);
-    child.initialInnerSet(context, node);
-    child.initialOpacitySet(context, opacityMax);
-    child.initialEnabledSet(context, true);
-    GroupPositionFrame positionFrame = GroupPositionFrame.create(context);
-    positionFrame.initialLengthSet(context, -1);
-    positionFrame.initialOffsetSet(context, new Vector(0, 0));
-    child.initialPositionFramesAdd(context, ImmutableList.of(positionFrame));
-    GroupTimeFrame timeFrame = GroupTimeFrame.create(context);
-    timeFrame.initialLengthSet(context, -1);
-    timeFrame.initialInnerOffsetSet(context, 0);
-    timeFrame.initialInnerLoopSet(context, 0);
-    child.initialTimeFramesAdd(context, ImmutableList.of(timeFrame));
+    GroupChild child = GroupChild.create(context.model);
+    child.initialInnerSet(context.model, node);
+    child.initialOpacitySet(context.model, opacityMax);
+    child.initialEnabledSet(context.model, true);
+    GroupPositionFrame positionFrame = GroupPositionFrame.create(context.model);
+    positionFrame.initialLengthSet(context.model, -1);
+    positionFrame.initialOffsetSet(context.model, new Vector(0, 0));
+    child.initialPositionFramesAdd(context.model, ImmutableList.of(positionFrame));
+    GroupTimeFrame timeFrame = GroupTimeFrame.create(context.model);
+    timeFrame.initialLengthSet(context.model, -1);
+    timeFrame.initialInnerOffsetSet(context.model, 0);
+    timeFrame.initialInnerLoopSet(context.model, 0);
+    child.initialTimeFramesAdd(context.model, ImmutableList.of(timeFrame));
     return child;
   }
 
@@ -1095,13 +1145,13 @@ public class Structure {
     return layout;
   }
 
-  public void selectedForEdit(ProjectContext context, EditHandle newValue) {
+  public void selectedForEdit(Context context, EditHandle newValue) {
     if (main)
       context.config.editPath =
           getPath(newValue.getWrapper().tree.get()).collect(Collectors.toList());
   }
 
-  public void selectedForView(ProjectContext context, CanvasHandle newValue) {
+  public void selectedForView(Context context, CanvasHandle newValue) {
     if (main)
       context.config.viewPath =
           getPath(newValue.getWrapper().tree.get()).collect(Collectors.toList());

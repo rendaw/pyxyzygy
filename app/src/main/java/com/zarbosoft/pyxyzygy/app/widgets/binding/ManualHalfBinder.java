@@ -1,5 +1,7 @@
 package com.zarbosoft.pyxyzygy.app.widgets.binding;
 
+import com.zarbosoft.automodel.lib.WeakList;
+
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.function.Consumer;

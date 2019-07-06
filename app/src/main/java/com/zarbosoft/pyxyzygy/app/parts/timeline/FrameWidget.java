@@ -1,6 +1,7 @@
 package com.zarbosoft.pyxyzygy.app.parts.timeline;
 
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
+import com.zarbosoft.automodel.lib.History;
+import com.zarbosoft.pyxyzygy.app.Context;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
@@ -24,7 +25,7 @@ public class FrameWidget extends Pane {
   int minLength;
   int at;
 
-  public FrameWidget(ProjectContext context, RowFramesWidget row) {
+  public FrameWidget(Context context, RowFramesWidget row) {
     this.row = row;
 
     setWidth(Timeline.baseSize);
@@ -64,9 +65,9 @@ public class FrameWidget extends Pane {
           RowAdapterFrame frameObj = ((FrameWidget) this.row.frames.get(index - 1)).frame;
           if (frameObj.length() != length) {
             context.change(
-                new ProjectContext.Tuple(row.adapter.getData(), "frame"),
+                new History.Tuple(row.adapter.getData(), "frame"),
                 change -> {
-                  frameObj.setLength(context, change, length);
+                  frameObj.setLength(context.model, change, length);
                 });
             dragged = true;
           }

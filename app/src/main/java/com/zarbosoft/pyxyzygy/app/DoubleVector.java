@@ -1,6 +1,6 @@
 package com.zarbosoft.pyxyzygy.app;
 
-import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
+import com.zarbosoft.pyxyzygy.seed.Vector;
 import javafx.geometry.Point2D;
 
 public class DoubleVector {

@@ -1,11 +1,21 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.group;
 
-import com.zarbosoft.pyxyzygy.app.*;
+import com.zarbosoft.automodel.lib.ProjectObject;
+import com.zarbosoft.pyxyzygy.app.CanvasHandle;
+import com.zarbosoft.pyxyzygy.app.Context;
+import com.zarbosoft.pyxyzygy.app.EditHandle;
+import com.zarbosoft.pyxyzygy.app.Misc;
+import com.zarbosoft.pyxyzygy.app.Window;
+import com.zarbosoft.pyxyzygy.app.Wrapper;
 import com.zarbosoft.pyxyzygy.app.config.GroupNodeConfig;
 import com.zarbosoft.pyxyzygy.app.config.NodeConfig;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.binding.VariableBinder;
-import com.zarbosoft.pyxyzygy.core.model.v0.*;
+import com.zarbosoft.pyxyzygy.core.model.latest.ChangeStepBuilder;
+import com.zarbosoft.pyxyzygy.core.model.latest.GroupChild;
+import com.zarbosoft.pyxyzygy.core.model.latest.GroupLayer;
+import com.zarbosoft.pyxyzygy.core.model.latest.GroupPositionFrame;
+import com.zarbosoft.pyxyzygy.core.model.latest.GroupTimeFrame;
+import com.zarbosoft.pyxyzygy.core.model.latest.ProjectLayer;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.TreeItem;
@@ -23,7 +33,7 @@ public class GroupNodeWrapper extends Wrapper {
   public GroupNodeCanvasHandle canvasHandle;
 
   public GroupNodeWrapper(
-      ProjectContext context, Wrapper parent, int parentIndex, GroupLayer node) {
+    Context context, Wrapper parent, int parentIndex, GroupLayer node) {
     this.parentIndex = parentIndex;
     this.parent = parent;
     this.node = node;
@@ -57,7 +67,7 @@ public class GroupNodeWrapper extends Wrapper {
         Misc.noopConsumer());
   }
 
-  protected GroupNodeConfig initConfig(ProjectContext context, long id) {
+  protected GroupNodeConfig initConfig(Context context, long id) {
     return (GroupNodeConfig)
         context.config.nodes.computeIfAbsent(id, id1 -> new GroupNodeConfig(context));
   }
@@ -78,48 +88,48 @@ public class GroupNodeWrapper extends Wrapper {
   }
 
   @Override
-  public CanvasHandle buildCanvas(ProjectContext context, Window window, CanvasHandle parent) {
+  public CanvasHandle buildCanvas(Context context, Window window, CanvasHandle parent) {
     if (canvasHandle == null) canvasHandle = new GroupNodeCanvasHandle(context, window, this);
     return canvasHandle;
   }
 
   @Override
-  public EditHandle buildEditControls(ProjectContext context, Window window) {
+  public EditHandle buildEditControls(Context context, Window window) {
     return new GroupNodeEditHandle(context, window, this);
   }
 
-  public void cloneSet(ProjectContext context, GroupLayer clone) {
-    clone.initialNameSet(context, context.namer.uniqueName1(node.name()));
-    clone.initialOffsetSet(context, node.offset());
+  public void cloneSet(Context context, GroupLayer clone) {
+    clone.initialNameSet(context.model, context.namer.uniqueName1(node.name()));
+    clone.initialOffsetSet(context.model, node.offset());
     clone.initialChildrenAdd(
-        context,
+        context.model,
         node.children().stream()
             .map(
                 child -> {
-                  GroupChild newLayer = GroupChild.create(context);
-                  newLayer.initialOpacitySet(context, child.opacity());
-                  newLayer.initialEnabledSet(context, true);
-                  newLayer.initialInnerSet(context, child.inner());
+                  GroupChild newLayer = GroupChild.create(context.model);
+                  newLayer.initialOpacitySet(context.model, child.opacity());
+                  newLayer.initialEnabledSet(context.model, true);
+                  newLayer.initialInnerSet(context.model, child.inner());
                   newLayer.initialPositionFramesAdd(
-                      context,
+                      context.model,
                       child.positionFrames().stream()
                           .map(
                               frame -> {
-                                GroupPositionFrame newFrame = GroupPositionFrame.create(context);
-                                newFrame.initialLengthSet(context, frame.length());
-                                newFrame.initialOffsetSet(context, frame.offset());
+                                GroupPositionFrame newFrame = GroupPositionFrame.create(context.model);
+                                newFrame.initialLengthSet(context.model, frame.length());
+                                newFrame.initialOffsetSet(context.model, frame.offset());
                                 return newFrame;
                               })
                           .collect(Collectors.toList()));
                   newLayer.initialTimeFramesAdd(
-                      context,
+                      context.model,
                       child.timeFrames().stream()
                           .map(
                               frame -> {
-                                GroupTimeFrame newFrame = GroupTimeFrame.create(context);
-                                newFrame.initialLengthSet(context, frame.length());
-                                newFrame.initialInnerOffsetSet(context, frame.innerOffset());
-                                newFrame.initialInnerLoopSet(context, 0);
+                                GroupTimeFrame newFrame = GroupTimeFrame.create(context.model);
+                                newFrame.initialLengthSet(context.model, frame.length());
+                                newFrame.initialInnerOffsetSet(context.model, frame.innerOffset());
+                                newFrame.initialInnerLoopSet(context.model, 0);
                                 return newFrame;
                               })
                           .collect(Collectors.toList()));
@@ -129,14 +139,14 @@ public class GroupNodeWrapper extends Wrapper {
   }
 
   @Override
-  public ProjectLayer separateClone(ProjectContext context) {
-    GroupLayer clone = GroupLayer.create(context);
+  public ProjectLayer separateClone(Context context) {
+    GroupLayer clone = GroupLayer.create(context.model);
     cloneSet(context, clone);
     return clone;
   }
 
   @Override
-  public void deleteChild(ProjectContext context, ChangeStepBuilder change, int index) {
+  public void deleteChild(Context context, ChangeStepBuilder change, int index) {
     change.groupLayer(node).childrenRemove(index, 1);
   }
 
@@ -146,7 +156,7 @@ public class GroupNodeWrapper extends Wrapper {
   }
 
   @Override
-  public void remove(ProjectContext context) {
+  public void remove(Context context) {
     childrenListenCleanup.run();
   }
 

@@ -19,6 +19,11 @@
             <artifactId>seed</artifactId>
             <version>1.0.0</version>
         </dependency>
+        <dependency>
+            <groupId>com.zarbosoft.automodel</groupId>
+            <artifactId>lib</artifactId>
+            <version>0.0.1</version>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
@@ -65,7 +70,7 @@
                         <configuration>
                             <tasks>
                                 <taskdef name="generateTask"
-                                         classname="com.zarbosoft.pyxyzygy.generate.model.v0.GenerateModelV0"
+                                         classname="com.zarbosoft.pyxyzygy.generate.GenerateModel"
                                          classpath="${maven.dependency.classpath}"/>
                                 <generateTask path="${project.build.directory}/src"/>
                             </tasks>

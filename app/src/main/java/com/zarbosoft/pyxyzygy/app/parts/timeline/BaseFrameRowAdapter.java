@@ -1,9 +1,10 @@
 package com.zarbosoft.pyxyzygy.app.parts.timeline;
 
+import com.zarbosoft.pyxyzygy.app.Context;
 import com.zarbosoft.pyxyzygy.app.Window;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.wrappers.FrameFinder;
-import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
+import com.zarbosoft.pyxyzygy.core.model.latest.ChangeStepBuilder;
+import com.zarbosoft.pyxyzygy.core.model.latest.Model;
 import com.zarbosoft.rendaw.common.Assertion;
 
 import java.util.ArrayList;
@@ -25,7 +26,7 @@ public abstract class BaseFrameRowAdapter<N, F> extends RowAdapter {
 
   @Override
   public final boolean duplicateFrame(
-      ProjectContext context, Window window, ChangeStepBuilder change, int outer) {
+    Context context, Window window, ChangeStepBuilder change, int outer) {
     int inner = window.timeToInner(outer);
     if (inner == NO_INNER) return false;
     FrameFinder.Result<F> previous = getFrameFinder().findFrame(getNode(), inner);
@@ -40,7 +41,7 @@ public abstract class BaseFrameRowAdapter<N, F> extends RowAdapter {
 
   @Override
   public final boolean createFrame(
-      ProjectContext context, Window window, ChangeStepBuilder change, int outer) {
+    Context context, Window window, ChangeStepBuilder change, int outer) {
     int inner = window.timeToInner(outer);
     if (inner == NO_INNER) return false;
     FrameFinder.Result<F> previous = getFrameFinder().findFrame(getNode(), inner);
@@ -49,14 +50,14 @@ public abstract class BaseFrameRowAdapter<N, F> extends RowAdapter {
     else return createFrame(context, change, inner + 1, previous, newFrame);
   }
 
-  protected abstract F innerDuplicateFrame(ProjectContext context, F source);
+  protected abstract F innerDuplicateFrame(Context context, F source);
 
   public boolean createFrame(
-      ProjectContext context,
-      ChangeStepBuilder change,
-      int inner,
-      FrameFinder.Result<F> previous,
-      F newFrame) {
+    Context context,
+    ChangeStepBuilder change,
+    int inner,
+    FrameFinder.Result<F> previous,
+    F newFrame) {
     int offset = inner - previous.at;
     if (offset <= 0) throw new Assertion();
     timeline.select(null);
@@ -79,13 +80,13 @@ public abstract class BaseFrameRowAdapter<N, F> extends RowAdapter {
 
   protected abstract N getNode();
 
-  protected abstract F innerCreateFrame(ProjectContext context, F previousFrame);
+  protected abstract F innerCreateFrame(Context context, F previousFrame);
 
   protected abstract void addFrame(ChangeStepBuilder change, int at, F frame);
 
   protected abstract void setFrameLength(ChangeStepBuilder change, F frame, int length);
 
-  protected abstract void setFrameInitialLength(ProjectContext context, F frame, int length);
+  protected abstract void setFrameInitialLength(Context context, F frame, int length);
 
   protected abstract int getFrameLength(F frame);
 
@@ -108,7 +109,7 @@ public abstract class BaseFrameRowAdapter<N, F> extends RowAdapter {
   }
 
   @Override
-  public void updateFrameMarker(ProjectContext context, Window window) {
+  public void updateFrameMarker(Context context, Window window) {
     row.ifPresent(r -> r.updateFrameMarker(window));
   }
 
@@ -132,12 +133,12 @@ public abstract class BaseFrameRowAdapter<N, F> extends RowAdapter {
     }
 
     @Override
-    public void setLength(ProjectContext context, ChangeStepBuilder change, int length) {
+    public void setLength(Model context, ChangeStepBuilder change, int length) {
       setFrameLength(change, f, length);
     }
 
     @Override
-    public void remove(ProjectContext context, ChangeStepBuilder change) {
+    public void remove(Context context, ChangeStepBuilder change) {
       int length = getFrameLength(getFrameFinder().frameGet(getNode(), i));
       removeFrame(change, i, 1);
       int previousIndex = i - 1;
@@ -151,12 +152,12 @@ public abstract class BaseFrameRowAdapter<N, F> extends RowAdapter {
     }
 
     @Override
-    public void clear(ProjectContext context, ChangeStepBuilder change) {
+    public void clear(Context context, ChangeStepBuilder change) {
       frameClear(change, f);
     }
 
     @Override
-    public void moveLeft(ProjectContext context, ChangeStepBuilder change) {
+    public void moveLeft(Context context, ChangeStepBuilder change) {
       if (i == 0) return;
       F frameBefore = getFrameFinder().frameGet(getNode(), i - 1);
       moveFramesTo(change, i, 1, i - 1);
@@ -169,7 +170,7 @@ public abstract class BaseFrameRowAdapter<N, F> extends RowAdapter {
     }
 
     @Override
-    public void moveRight(ProjectContext context, ChangeStepBuilder change) {
+    public void moveRight(Context context, ChangeStepBuilder change) {
       if (i == frameCount() - 1) return;
       F frameAfter = getFrameFinder().frameGet(getNode(), i + 1);
       moveFramesTo(change, i, 1, i + 1);
@@ -183,7 +184,7 @@ public abstract class BaseFrameRowAdapter<N, F> extends RowAdapter {
   }
 
   @Override
-  public final int updateTime(ProjectContext context, Window window) {
+  public final int updateTime(Context context, Window window) {
     return row.map(
             r -> {
               List<RowAdapterFrame> adapterFrames = new ArrayList<>();

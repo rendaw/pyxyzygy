@@ -1,9 +1,8 @@
 package com.zarbosoft.pyxyzygy.app.modelmirror;
 
+import com.zarbosoft.automodel.lib.ProjectObject;
 import com.zarbosoft.pyxyzygy.app.Misc;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
-import com.zarbosoft.pyxyzygy.core.model.v0.GroupLayer;
-import com.zarbosoft.pyxyzygy.core.model.v0.ProjectObject;
+import com.zarbosoft.pyxyzygy.core.model.latest.GroupLayer;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.TreeItem;
@@ -15,10 +14,10 @@ public class MirrorGroupNode extends ObjectMirror {
   private final Runnable childrenListenCleanup;
 
   public MirrorGroupNode(
-      ProjectContext context,
-      ObjectMirror.Context mirrorContext,
-      ObjectMirror parent,
-      GroupLayer node) {
+    com.zarbosoft.pyxyzygy.app.Context context,
+    Context mirrorContext,
+    ObjectMirror parent,
+    GroupLayer node) {
     this.parentIndex = -1;
     this.parent = parent;
     this.node = node;
@@ -61,7 +60,7 @@ public class MirrorGroupNode extends ObjectMirror {
   }
 
   @Override
-  public void remove(ProjectContext context) {
+  public void remove(com.zarbosoft.pyxyzygy.app.Context context) {
     childrenListenCleanup.run();
   }
 }

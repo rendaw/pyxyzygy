@@ -1,5 +1,6 @@
 package com.zarbosoft.pyxyzygy.app.widgets.binding;
 
+import com.zarbosoft.automodel.lib.WeakList;
 import com.zarbosoft.rendaw.common.Assertion;
 import javafx.beans.property.ReadOnlyProperty;
 import javafx.beans.value.ChangeListener;

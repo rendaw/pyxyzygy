@@ -1,15 +1,15 @@
 package com.zarbosoft.pyxyzygy.app;
 
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
+import com.zarbosoft.automodel.lib.History;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
 import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
 import com.zarbosoft.pyxyzygy.app.widgets.binding.CustomBinding;
 import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyBinder;
 import com.zarbosoft.pyxyzygy.app.widgets.binding.ScalarBinder;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupChildWrapper;
-import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
-import com.zarbosoft.pyxyzygy.core.model.v0.GroupChild;
-import com.zarbosoft.pyxyzygy.core.model.v0.ProjectLayer;
+import com.zarbosoft.pyxyzygy.core.model.latest.ChangeStepBuilder;
+import com.zarbosoft.pyxyzygy.core.model.latest.GroupChild;
+import com.zarbosoft.pyxyzygy.core.model.latest.ProjectLayer;
 import com.zarbosoft.rendaw.common.Assertion;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -46,7 +46,7 @@ public class Misc {
   }
 
   public static Runnable nodeFormFields(
-      ProjectContext context, WidgetFormBuilder builder, Wrapper wrapper) {
+    Context context, WidgetFormBuilder builder, Wrapper wrapper) {
     return new Runnable() {
       private BinderRoot enabledCleanup;
       private BinderRoot opacityCleanup;
@@ -71,7 +71,7 @@ public class Misc {
                           node::removeNameSetListeners,
                           v ->
                               context.change(
-                                  new ProjectContext.Tuple(wrapper, "name"),
+                                  new History.Tuple(wrapper, "name"),
                                   c -> c.projectLayer(node).nameSet(v))),
                       new PropertyBinder<>(t.textProperty()));
             });
@@ -87,7 +87,7 @@ public class Misc {
                             "enabled",
                             v ->
                                 context.change(
-                                    new ProjectContext.Tuple(groupChildWrapper, "enabled"),
+                                    new History.Tuple(groupChildWrapper, "enabled"),
                                     c -> c.groupChild(groupChildWrapper.node).enabledSet(v))),
                         new PropertyBinder<>(cb.selectedProperty()));
               });
@@ -104,7 +104,7 @@ public class Misc {
                             "opacity",
                             v ->
                                 context.change(
-                                    new ProjectContext.Tuple(wrapper, "opacity"),
+                                    new History.Tuple(wrapper, "opacity"),
                                     c -> c.groupChild(groupChildWrapper.node).opacitySet(v))),
                         new PropertyBinder<>(slider.valueProperty())
                             .bimap(d -> Optional.of((int) (double) d), i -> opt((double) (int) i)));
@@ -121,7 +121,7 @@ public class Misc {
     };
   }
 
-  public static void separate(ProjectContext context, ChangeStepBuilder c, Wrapper wrapper) {
+  public static void separate(Context context, ChangeStepBuilder c, Wrapper wrapper) {
     ProjectLayer replacement = wrapper.separateClone(context);
     int at = wrapper.parentIndex;
     if (wrapper.getParent() == null) {
@@ -134,7 +134,7 @@ public class Misc {
   }
 
   public static void separateFormField(
-      ProjectContext context, WidgetFormBuilder builder, Wrapper wrapper) {
+    Context context, WidgetFormBuilder builder, Wrapper wrapper) {
     builder.buttons(
         build ->
             build.button(

@@ -3,20 +3,51 @@ package com.zarbosoft.pyxyzygy.app.wrappers.paletteimage;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
 import com.google.common.collect.Streams;
-import com.zarbosoft.pyxyzygy.app.*;
+import com.zarbosoft.automodel.lib.History;
+import com.zarbosoft.automodel.lib.Listener;
+import com.zarbosoft.automodel.lib.ProjectObject;
+import com.zarbosoft.pyxyzygy.app.CanvasHandle;
+import com.zarbosoft.pyxyzygy.app.Context;
+import com.zarbosoft.pyxyzygy.app.DoubleVector;
+import com.zarbosoft.pyxyzygy.app.EditHandle;
+import com.zarbosoft.pyxyzygy.app.GUILaunch;
+import com.zarbosoft.pyxyzygy.app.Garb;
+import com.zarbosoft.pyxyzygy.app.Hotkeys;
+import com.zarbosoft.pyxyzygy.app.Misc;
+import com.zarbosoft.pyxyzygy.app.PaletteTileHelp;
+import com.zarbosoft.pyxyzygy.app.Tool;
+import com.zarbosoft.pyxyzygy.app.Window;
+import com.zarbosoft.pyxyzygy.app.Wrapper;
 import com.zarbosoft.pyxyzygy.app.config.PaletteBrush;
 import com.zarbosoft.pyxyzygy.app.config.PaletteImageNodeConfig;
-import com.zarbosoft.pyxyzygy.app.model.v0.PaletteTile;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
-import com.zarbosoft.pyxyzygy.app.widgets.*;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.*;
+import com.zarbosoft.pyxyzygy.app.widgets.ColorSwatch;
+import com.zarbosoft.pyxyzygy.app.widgets.ContentReplacer;
+import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
+import com.zarbosoft.pyxyzygy.app.widgets.TitledPane;
+import com.zarbosoft.pyxyzygy.app.widgets.TrueColorPicker;
+import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.ConstHalfBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.CustomBinding;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.DoubleHalfBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.DoubleIndirectHalfBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.IndirectBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.IndirectHalfBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.ListHalfBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.ScalarBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.ScalarHalfBinder;
+import com.zarbosoft.pyxyzygy.app.wrappers.PaletteWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.ToolMove;
 import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.BrushButton;
 import com.zarbosoft.pyxyzygy.core.PaletteImage;
-import com.zarbosoft.pyxyzygy.core.model.v0.*;
-import com.zarbosoft.pyxyzygy.seed.model.Listener;
-import com.zarbosoft.pyxyzygy.seed.model.v0.TrueColor;
-import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
+import com.zarbosoft.pyxyzygy.core.model.latest.Palette;
+import com.zarbosoft.pyxyzygy.core.model.latest.PaletteColor;
+import com.zarbosoft.pyxyzygy.core.model.latest.PaletteEntry;
+import com.zarbosoft.pyxyzygy.core.model.latest.PaletteImageLayer;
+import com.zarbosoft.pyxyzygy.core.model.latest.PaletteSeparator;
+import com.zarbosoft.pyxyzygy.seed.TrueColor;
+import com.zarbosoft.pyxyzygy.seed.Vector;
 import com.zarbosoft.rendaw.common.Assertion;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
@@ -39,11 +70,20 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.*;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.TilePane;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -51,10 +91,16 @@ import java.util.stream.Stream;
 
 import static com.zarbosoft.pyxyzygy.app.Global.localization;
 import static com.zarbosoft.pyxyzygy.app.Global.pasteHotkey;
-import static com.zarbosoft.pyxyzygy.app.Misc.*;
+import static com.zarbosoft.pyxyzygy.app.Misc.opt;
+import static com.zarbosoft.pyxyzygy.app.Misc.separate;
+import static com.zarbosoft.pyxyzygy.app.Misc.unopt;
 import static com.zarbosoft.pyxyzygy.app.config.NodeConfig.TOOL_MOVE;
-import static com.zarbosoft.pyxyzygy.app.config.PaletteImageNodeConfig.*;
-import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.*;
+import static com.zarbosoft.pyxyzygy.app.config.PaletteImageNodeConfig.TOOL_BRUSH;
+import static com.zarbosoft.pyxyzygy.app.config.PaletteImageNodeConfig.TOOL_FRAME_MOVE;
+import static com.zarbosoft.pyxyzygy.app.config.PaletteImageNodeConfig.TOOL_SELECT;
+import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
+import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.pad;
+import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.topCenterCursor;
 import static com.zarbosoft.rendaw.common.Common.enumerate;
 
 public class PaletteImageEditHandle extends EditHandle {
@@ -96,7 +142,7 @@ public class PaletteImageEditHandle extends EditHandle {
 
   public final Map<ProjectObject, ColorTile> tiles = new HashMap<>();
 
-  interface PaletteTileBase extends Garb {
+  interface PaletteTile extends Garb {
     void setIndex(int index);
 
     int index();
@@ -104,12 +150,12 @@ public class PaletteImageEditHandle extends EditHandle {
 
   interface PaletteState extends Garb {
 
-    void merge(ProjectContext context, int index);
+    void merge(Context context, int index);
   }
 
   public final SimpleObjectProperty<PaletteState> paletteState = new SimpleObjectProperty<>();
 
-  class SeparatorTile extends Region implements PaletteTileBase {
+  class SeparatorTile extends Region implements PaletteTile {
     final PaletteSeparator self;
     private final BinderRoot cleanupBorder;
     private int index;
@@ -158,12 +204,12 @@ public class PaletteImageEditHandle extends EditHandle {
     }
 
     @Override
-    public void destroy(ProjectContext context, Window window) {
+    public void destroy(Context context, Window window) {
       cleanupBorder.destroy();
     }
   }
 
-  class ColorTile extends ColorSwatch implements PaletteTileBase {
+  class ColorTile extends ColorSwatch implements PaletteTile {
     public int index;
     public final PaletteColor color;
     private final BinderRoot cleanupBorder;
@@ -173,7 +219,7 @@ public class PaletteImageEditHandle extends EditHandle {
       getStyleClass().add("large");
     }
 
-    ColorTile(ProjectContext context, PaletteColor color) {
+    ColorTile(Context context, PaletteColor color) {
       super(2);
       this.color = color;
       this.cleanupColor =
@@ -204,7 +250,7 @@ public class PaletteImageEditHandle extends EditHandle {
     }
 
     @Override
-    public void destroy(ProjectContext context, Window window) {
+    public void destroy(Context context, Window window) {
       cleanupBorder.destroy();
       cleanupColor.destroy();
       tiles.remove(color);
@@ -227,7 +273,7 @@ public class PaletteImageEditHandle extends EditHandle {
   }
 
   public PaletteImageEditHandle(
-      ProjectContext context, Window window, final PaletteImageNodeWrapper wrapper) {
+      Context context, Window window, final PaletteImageNodeWrapper wrapper) {
     this.wrapper = wrapper;
     positiveZoom.bind(wrapper.canvasHandle.zoom);
 
@@ -240,7 +286,7 @@ public class PaletteImageEditHandle extends EditHandle {
                         localization.getString("paste"),
                         pasteHotkey) {
                       @Override
-                      public void run(ProjectContext context, Window window) {
+                      public void run(Context context, Window window) {
                         wrapper.config.tool.set(PaletteImageNodeConfig.TOOL_SELECT);
                         ((ToolSelect) tool).paste(context, window);
                       }
@@ -251,7 +297,7 @@ public class PaletteImageEditHandle extends EditHandle {
                         localization.getString("last.brush"),
                         Hotkeys.Hotkey.create(KeyCode.SPACE, false, false, false)) {
                       @Override
-                      public void run(ProjectContext context, Window window) {
+                      public void run(Context context, Window window) {
                         if (wrapper.config.tool.get() == PaletteImageNodeConfig.TOOL_BRUSH) {
                           if (wrapper.config.lastBrush < 0
                               || wrapper.config.lastBrush
@@ -268,7 +314,7 @@ public class PaletteImageEditHandle extends EditHandle {
                         localization.getString("select"),
                         Hotkeys.Hotkey.create(KeyCode.S, false, false, false)) {
                       @Override
-                      public void run(ProjectContext context, Window window) {
+                      public void run(Context context, Window window) {
                         wrapper.config.tool.set(PaletteImageNodeConfig.TOOL_SELECT);
                       }
                     },
@@ -278,7 +324,7 @@ public class PaletteImageEditHandle extends EditHandle {
                         localization.getString("move.layer"),
                         Hotkeys.Hotkey.create(KeyCode.M, false, false, false)) {
                       @Override
-                      public void run(ProjectContext context, Window window) {
+                      public void run(Context context, Window window) {
                         wrapper.config.tool.set(PaletteImageNodeConfig.TOOL_MOVE);
                       }
                     },
@@ -288,7 +334,7 @@ public class PaletteImageEditHandle extends EditHandle {
                         localization.getString("move.frame.contents"),
                         Hotkeys.Hotkey.create(KeyCode.F, false, false, false)) {
                       @Override
-                      public void run(ProjectContext context, Window window) {
+                      public void run(Context context, Window window) {
                         wrapper.config.tool.set(TOOL_FRAME_MOVE);
                       }
                     }),
@@ -312,7 +358,7 @@ public class PaletteImageEditHandle extends EditHandle {
                                 String.format(localization.getString("brush.s"), p.first + 1),
                                 Hotkeys.Hotkey.create(p.second, false, false, false)) {
                               @Override
-                              public void run(ProjectContext context, Window window) {
+                              public void run(Context context, Window window) {
                                 if (p.first >= GUILaunch.profileConfig.paletteBrushes.size())
                                   return;
                                 setBrush(p.first);
@@ -458,11 +504,11 @@ public class PaletteImageEditHandle extends EditHandle {
               paletteTilesCleanup =
                   palette.mirrorEntries(
                       colors.getChildren(),
-                      new Function<ProjectObject, Node>() {
+                      new Function<PaletteEntry, Node>() {
                         /* Keep as class - lambda form causes bytebuddy to go berserk */
                         @Override
-                        public Node apply(ProjectObject e) {
-                          PaletteTileBase tile;
+                        public Node apply(PaletteEntry e) {
+                          PaletteTile tile;
                           if (e instanceof PaletteColor) {
                             tile = new ColorTile(context, (PaletteColor) e);
                           } else if (e instanceof PaletteSeparator) {
@@ -472,13 +518,13 @@ public class PaletteImageEditHandle extends EditHandle {
                         }
                       },
                       r0 -> {
-                        PaletteTileBase r = (PaletteTileBase) r0;
+                        PaletteTile r = (PaletteTile) r0;
                         r.destroy(context, window);
                       },
                       start -> {
                         paletteState.set(null);
                         for (int i = start; i < colors.getChildren().size(); ++i)
-                          ((PaletteTileBase) colors.getChildren().get(i)).setIndex(i);
+                          ((PaletteTile) colors.getChildren().get(i)).setIndex(i);
                       });
             });
 
@@ -503,7 +549,7 @@ public class PaletteImageEditHandle extends EditHandle {
       }
 
       @Override
-      public void destroy(ProjectContext context, Window window) {
+      public void destroy(Context context, Window window) {
         paletteCursor.clear(this);
       }
 
@@ -515,7 +561,7 @@ public class PaletteImageEditHandle extends EditHandle {
       }
 
       @Override
-      public void merge(ProjectContext context, int index) {
+      public void merge(Context context, int index) {
         try {
           if (index == this.index) {
             return;
@@ -526,7 +572,7 @@ public class PaletteImageEditHandle extends EditHandle {
             return;
           }
           final int newIndex = newOpt.get();
-          ProjectContext.PaletteWrapper palette = context.getPaletteWrapper(wrapper.node.palette());
+          PaletteWrapper palette = PaletteWrapper.getPaletteWrapper(wrapper.node.palette());
           context.change(
               null,
               c -> {
@@ -539,7 +585,7 @@ public class PaletteImageEditHandle extends EditHandle {
                                         .forEach(
                                             t -> {
                                               PaletteImage oldTile =
-                                                  ((PaletteTile) f.tilesGet(t)).getData(context);
+                                                  PaletteTileHelp.getData(context, f.tilesGet(t));
                                               PaletteImage newTile =
                                                   oldTile.copy(
                                                       0,
@@ -549,7 +595,7 @@ public class PaletteImageEditHandle extends EditHandle {
                                               newTile.mergeColor(old, newIndex);
                                               c.paletteImageFrame(f)
                                                   .tilesPut(
-                                                      t, PaletteTile.create(context, newTile));
+                                                      t, PaletteTileHelp.create(context, newTile));
                                             })));
                 c.palette(wrapper.node.palette()).entriesRemove(this.index, 1);
               });
@@ -594,14 +640,15 @@ public class PaletteImageEditHandle extends EditHandle {
                                                   null,
                                                   c -> {
                                                     Palette palette = wrapper.node.palette();
-                                                    Palette newPalette = Palette.create(context);
+                                                    Palette newPalette =
+                                                        Palette.create(context.model);
                                                     newPalette.initialNameSet(
-                                                        context,
+                                                        context.model,
                                                         context.namer.uniqueName(palette.name()));
                                                     newPalette.initialNextIdSet(
-                                                        context, palette.nextId());
+                                                        context.model, palette.nextId());
                                                     newPalette.initialEntriesAdd(
-                                                        context,
+                                                        context.model,
                                                         palette.entries().stream()
                                                             .map(
                                                                 entry -> {
@@ -609,20 +656,20 @@ public class PaletteImageEditHandle extends EditHandle {
                                                                       instanceof PaletteColor) {
                                                                     PaletteColor out =
                                                                         PaletteColor.create(
-                                                                            context);
+                                                                            context.model);
                                                                     out.initialColorSet(
-                                                                        context,
+                                                                        context.model,
                                                                         ((PaletteColor) entry)
                                                                             .color());
                                                                     out.initialIndexSet(
-                                                                        context,
+                                                                        context.model,
                                                                         ((PaletteColor) entry)
                                                                             .index());
                                                                     return out;
                                                                   } else if (entry
                                                                       instanceof PaletteSeparator) {
                                                                     return PaletteSeparator.create(
-                                                                        context);
+                                                                        context.model);
                                                                   } else throw new Assertion();
                                                                 })
                                                             .collect(Collectors.toList()));
@@ -650,7 +697,7 @@ public class PaletteImageEditHandle extends EditHandle {
                                                   palette::removeNameSetListeners,
                                                   v ->
                                                       context.change(
-                                                          new ProjectContext.Tuple(
+                                                          new History.Tuple(
                                                               wrapper, "palette_name"),
                                                           c -> c.palette(palette).nameSet(v))))),
                                   new PropertyBinder<>(t.textProperty())));
@@ -691,7 +738,7 @@ public class PaletteImageEditHandle extends EditHandle {
                                                   "color",
                                                   v ->
                                                       context.change(
-                                                          new ProjectContext.Tuple(e, "color"),
+                                                          new History.Tuple(e, "color"),
                                                           c ->
                                                               c.paletteColor((PaletteColor) e)
                                                                   .colorSet(v))));
@@ -762,17 +809,17 @@ public class PaletteImageEditHandle extends EditHandle {
                               _e -> {
                                 ProjectObject selectedColor0 =
                                     unopt(wrapper.paletteSelectionBinder.get());
-                                PaletteColor newColor = PaletteColor.create(context);
+                                PaletteColor newColor = PaletteColor.create(context.model);
                                 if (selectedColor0 instanceof PaletteColor) {
                                   PaletteColor selectedColor = (PaletteColor) selectedColor0;
-                                  newColor.initialColorSet(context, selectedColor.color());
+                                  newColor.initialColorSet(context.model, selectedColor.color());
                                 } else if (selectedColor0 instanceof PaletteSeparator) {
                                   newColor.initialColorSet(
-                                      context, TrueColor.rgba(0, 0, 0, (byte) 255));
+                                      context.model, TrueColor.rgba(0, 0, 0, (byte) 255));
                                 } else throw new Assertion();
                                 Palette palette = wrapper.node.palette();
                                 int id = palette.nextId();
-                                newColor.initialIndexSet(context, id);
+                                newColor.initialIndexSet(context.model, id);
                                 context.change(
                                     null,
                                     c -> {
@@ -793,7 +840,7 @@ public class PaletteImageEditHandle extends EditHandle {
                                 Palette palette = wrapper.node.palette();
                                 PaletteColor selectedColor =
                                     (PaletteColor) wrapper.paletteSelectionBinder.get().get();
-                                PaletteSeparator sep = PaletteSeparator.create(context);
+                                PaletteSeparator sep = PaletteSeparator.create(context.model);
                                 context.change(
                                     null,
                                     c -> {
@@ -937,7 +984,7 @@ public class PaletteImageEditHandle extends EditHandle {
     }
   }
 
-  private void setTool(ProjectContext context, Window window, Supplier<Tool> newTool) {
+  private void setTool(Context context, Window window, Supplier<Tool> newTool) {
     if (tool != null) {
       tool.remove(context, window);
       tool = null;
@@ -946,7 +993,7 @@ public class PaletteImageEditHandle extends EditHandle {
   }
 
   @Override
-  public void remove(ProjectContext context, Window window) {
+  public void remove(Context context, Window window) {
     cleanPalette();
     wrapper.node.removePaletteSetListeners(paletteListener);
     if (tool != null) {
@@ -973,7 +1020,7 @@ public class PaletteImageEditHandle extends EditHandle {
   }
 
   @Override
-  public void cursorMoved(ProjectContext context, Window window, DoubleVector vector) {
+  public void cursorMoved(Context context, Window window, DoubleVector vector) {
     vector =
         Window.toLocal(window.getSelectedForView(), wrapper.canvasHandle, vector).minus(offset());
     mouseX.set(vector.x);
@@ -990,7 +1037,7 @@ public class PaletteImageEditHandle extends EditHandle {
   }
 
   @Override
-  public void markStart(ProjectContext context, Window window, DoubleVector start) {
+  public void markStart(Context context, Window window, DoubleVector start) {
     if (tool == null) return;
     tool.markStart(
         context,
@@ -1005,7 +1052,7 @@ public class PaletteImageEditHandle extends EditHandle {
   }
 
   @Override
-  public void mark(ProjectContext context, Window window, DoubleVector start, DoubleVector end) {
+  public void mark(Context context, Window window, DoubleVector start, DoubleVector end) {
     if (tool == null) return;
     Vector offset = offset();
     tool.mark(

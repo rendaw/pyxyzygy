@@ -1,13 +1,21 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.group;
 
-import com.zarbosoft.pyxyzygy.app.*;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.*;
-import com.zarbosoft.pyxyzygy.core.model.v0.GroupChild;
-import com.zarbosoft.pyxyzygy.core.model.v0.GroupPositionFrame;
-import com.zarbosoft.pyxyzygy.core.model.v0.GroupTimeFrame;
-import com.zarbosoft.pyxyzygy.seed.model.Listener;
-import com.zarbosoft.pyxyzygy.seed.model.v0.Vector;
+import com.zarbosoft.automodel.lib.Listener;
+import com.zarbosoft.pyxyzygy.app.CanvasHandle;
+import com.zarbosoft.pyxyzygy.app.Context;
+import com.zarbosoft.pyxyzygy.app.DoubleRectangle;
+import com.zarbosoft.pyxyzygy.app.DoubleVector;
+import com.zarbosoft.pyxyzygy.app.Window;
+import com.zarbosoft.pyxyzygy.app.Wrapper;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.DoubleHalfBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.IndirectHalfBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyHalfBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.ScalarHalfBinder;
+import com.zarbosoft.pyxyzygy.core.model.latest.GroupChild;
+import com.zarbosoft.pyxyzygy.core.model.latest.GroupPositionFrame;
+import com.zarbosoft.pyxyzygy.core.model.latest.GroupTimeFrame;
+import com.zarbosoft.pyxyzygy.seed.Vector;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,7 +41,7 @@ public class GroupChildCanvasHandle extends CanvasHandle {
   private final List<Runnable> timeCleanup;
   private GroupChildWrapper wrapper;
 
-  public GroupChildCanvasHandle(ProjectContext context, Window window, GroupChildWrapper wrapper) {
+  public GroupChildCanvasHandle(Context context, Window window, GroupChildWrapper wrapper) {
     this.wrapper = wrapper;
     positionCleanup = new ArrayList<>();
     timeCleanup = new ArrayList<>();
@@ -184,13 +192,13 @@ public class GroupChildCanvasHandle extends CanvasHandle {
     return wrapper.positionFrameFinder.findFrame(wrapper.node, frame).frame;
   }
 
-  private void updateTime(ProjectContext context) {
+  private void updateTime(Context context) {
     if (childCanvas != null)
       childCanvas.setFrame(context, wrapper.findInnerFrame(frameNumber.get()));
   }
 
   @Override
-  public void remove(ProjectContext context, Wrapper excludeSubtree) {
+  public void remove(Context context, Wrapper excludeSubtree) {
     if (childCanvas != null) {
       if (childCanvas.getWrapper() != excludeSubtree) childCanvas.remove(context, excludeSubtree);
       childCanvas = null;
@@ -209,13 +217,13 @@ public class GroupChildCanvasHandle extends CanvasHandle {
   }
 
   @Override
-  public void setViewport(ProjectContext context, DoubleRectangle newBounds, int positiveZoom) {
+  public void setViewport(Context context, DoubleRectangle newBounds, int positiveZoom) {
     this.zoom = positiveZoom;
     bounds.set(newBounds);
     updatePosition(context);
   }
 
-  private void updatePosition(ProjectContext context) {
+  private void updatePosition(Context context) {
     GroupPositionFrame pos = findPosition();
     if (bounds.get() == null) return;
     DoubleRectangle newBounds = bounds.get().minus(pos.offset());
@@ -224,7 +232,7 @@ public class GroupChildCanvasHandle extends CanvasHandle {
   }
 
   @Override
-  public void setFrame(ProjectContext context, int frameNumber) {
+  public void setFrame(Context context, int frameNumber) {
     this.frameNumber.set(frameNumber);
     updateTime(context);
     updatePosition(context);

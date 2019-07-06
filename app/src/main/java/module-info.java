@@ -17,4 +17,5 @@ open module com.zarbosoft.pyxyzygy.app {
   requires com.zarbosoft.pyxyzygy.nearestneighborimageview;
   requires gifencoder;
   requires jcodec;
+  requires com.zarbosoft.automodel.lib;
 }

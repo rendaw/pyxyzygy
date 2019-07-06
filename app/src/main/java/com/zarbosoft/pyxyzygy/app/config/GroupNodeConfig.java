@@ -1,7 +1,8 @@
 package com.zarbosoft.pyxyzygy.app.config;
 
 import com.zarbosoft.interface1.Configuration;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
+import com.zarbosoft.pyxyzygy.app.Context;
+import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeCanvasHandle;
 import javafx.beans.property.SimpleLongProperty;
 
 @Configuration(name = "group")
@@ -15,7 +16,7 @@ public class GroupNodeConfig extends NodeConfig {
     super();
   }
 
-  public GroupNodeConfig(ProjectContext context) {
+  public GroupNodeConfig(Context context) {
     super(context);
   }
 }

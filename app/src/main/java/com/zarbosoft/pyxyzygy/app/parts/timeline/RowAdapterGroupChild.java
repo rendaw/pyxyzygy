@@ -1,15 +1,15 @@
 package com.zarbosoft.pyxyzygy.app.parts.timeline;
 
+import com.zarbosoft.automodel.lib.Listener;
+import com.zarbosoft.pyxyzygy.app.Context;
 import com.zarbosoft.pyxyzygy.app.WidgetHandle;
 import com.zarbosoft.pyxyzygy.app.Window;
-import com.zarbosoft.pyxyzygy.app.model.v0.ProjectContext;
 import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
 import com.zarbosoft.pyxyzygy.app.widgets.binding.CustomBinding;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeWrapper;
-import com.zarbosoft.pyxyzygy.core.model.v0.ChangeStepBuilder;
-import com.zarbosoft.pyxyzygy.core.model.v0.GroupChild;
-import com.zarbosoft.pyxyzygy.core.model.v0.ProjectLayer;
-import com.zarbosoft.pyxyzygy.seed.model.Listener;
+import com.zarbosoft.pyxyzygy.core.model.latest.ChangeStepBuilder;
+import com.zarbosoft.pyxyzygy.core.model.latest.GroupChild;
+import com.zarbosoft.pyxyzygy.core.model.latest.ProjectLayer;
 import com.zarbosoft.rendaw.common.Assertion;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -58,7 +58,7 @@ public class RowAdapterGroupChild extends RowAdapter {
   }
 
   @Override
-  public void remove(ProjectContext context) {
+  public void remove(Context context) {
     child.removeInnerSetListeners(innerListener);
     cleanIconBind.destroy();
     if (nameCleanup != null) {
@@ -88,28 +88,28 @@ public class RowAdapterGroupChild extends RowAdapter {
 
   @Override
   public boolean createFrame(
-      ProjectContext context, Window window, ChangeStepBuilder change, int outer) {
+    Context context, Window window, ChangeStepBuilder change, int outer) {
     throw new Assertion();
   }
 
   @Override
   public boolean duplicateFrame(
-      ProjectContext context, Window window, ChangeStepBuilder change, int outer) {
+    Context context, Window window, ChangeStepBuilder change, int outer) {
     throw new Assertion();
   }
 
   @Override
-  public WidgetHandle createRowWidget(ProjectContext context, Window window) {
+  public WidgetHandle createRowWidget(Context context, Window window) {
     return null;
   }
 
   @Override
-  public int updateTime(ProjectContext context, Window window) {
+  public int updateTime(Context context, Window window) {
     return 0;
   }
 
   @Override
-  public void updateFrameMarker(ProjectContext context, Window window) {}
+  public void updateFrameMarker(Context context, Window window) {}
 
   @Override
   public ObservableObjectValue<Image> getStateImage() {
