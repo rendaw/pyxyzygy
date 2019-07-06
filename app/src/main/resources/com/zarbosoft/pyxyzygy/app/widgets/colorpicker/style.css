@@ -11,9 +11,9 @@
     -fx-background-color: derive(#ececec,26.4%);
     -fx-padding: 1.25em;
     -fx-spacing: 1.25em;
-    -fx-min-width: 20em;
-    -fx-pref-width: 20em;
-    -fx-max-width: 20em;
+    -fx-min-width: 21.5em;
+    -fx-pref-width: 21.5em;
+    -fx-max-width: 21.5em;
 }
 
 .true-color-picker:focused,

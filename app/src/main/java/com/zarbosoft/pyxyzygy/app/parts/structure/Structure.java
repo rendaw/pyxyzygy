@@ -111,7 +111,7 @@ public class Structure {
   private final BinderRoot opacityEnabledRoot; // GC root
   private final BinderRoot opacityOpacityRoot; // GC root
   VBox layout = new VBox();
-  TreeView<Wrapper> tree;
+  public TreeView<Wrapper> tree;
   ToolBar toolbar;
   ObservableSet<Wrapper> taggedLifted = FXCollections.observableSet();
   Hotkeys.Action[] actions =
@@ -264,6 +264,9 @@ public class Structure {
                     window.selectForEdit(context, first.getValue());
                   }
                 });
+    tree.addEventFilter(MouseEvent.MOUSE_PRESSED,e -> {
+      if (e.getClickCount() >= 2) e.consume();
+    });
     tree.setCellFactory(
         (TreeView<Wrapper> param) -> {
           return new TreeCell<Wrapper>() {
@@ -292,6 +295,7 @@ public class Structure {
                     if (wrapper.getValue() == null) return;
                     if (e.getClickCount() >= 2) {
                       window.selectForView(context, wrapper.getValue());
+                      e.consume();
                     }
                   });
               MenuItem setView = new MenuItem(localization.getString("set.view"));
@@ -902,7 +906,7 @@ public class Structure {
     postInit = true;
   }
 
-  private static Wrapper findNode(TreeItem<Wrapper> root, List<Integer> path) {
+  public static Wrapper findNode(TreeItem<Wrapper> root, List<Integer> path) {
     if (path.isEmpty()) return root.getValue();
     return findNode(
         root.getChildren().get(Math.min(root.getChildren().size() - 1, path.get(0))),

@@ -100,6 +100,9 @@ import static com.zarbosoft.automodel.lib.Logger.logger;
 import static com.zarbosoft.pyxyzygy.app.Global.localization;
 import static com.zarbosoft.pyxyzygy.app.Global.nameHuman;
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
+import static com.zarbosoft.pyxyzygy.app.Misc.unopt;
+import static com.zarbosoft.pyxyzygy.app.parts.structure.Structure.findNode;
+import static com.zarbosoft.pyxyzygy.app.parts.structure.Structure.getPath;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.pad;
 
@@ -298,6 +301,19 @@ public class Window {
     selectedForViewTreeIconBinder.set(selectedForView);
   }
 
+  public Optional<Wrapper> findNotViewParent(Wrapper parent, Wrapper child) {
+    Wrapper lastPotentialView = null;
+    Wrapper nextPotentialView = child;
+    while (nextPotentialView != null) {
+      if (parent == nextPotentialView) {
+        return Optional.empty();
+      }
+      lastPotentialView = nextPotentialView;
+      nextPotentialView = nextPotentialView.getParent();
+    }
+    return opt(lastPotentialView);
+  }
+
   public void selectForEdit(Context context, Wrapper wrapper) {
     selectedForEditWrapperEnabledBinder.set(wrapper);
 
@@ -322,22 +338,23 @@ public class Window {
     selectedForEditTreeIconBinder.clear();
 
     // Transition
-    Wrapper lastPotentialView = null;
-    Wrapper nextPotentialView = wrapper;
-    boolean found = false;
-    while (nextPotentialView != null) {
-      if (selectedForView.getWrapper() == nextPotentialView) {
-        found = true;
-        break;
-      }
-      lastPotentialView = nextPotentialView;
-      nextPotentialView = nextPotentialView.getParent();
-    }
-    if (found) {
+    Optional<Wrapper> notViewParent = findNotViewParent(selectedForView.getWrapper(), wrapper);
+    if (!notViewParent.isPresent()) {
+      // wrapper parent is already view
       selectedForEdit = wrapper.buildEditControls(context, this);
     } else {
-      selectForView(context, lastPotentialView, true);
+      Wrapper useView = unopt(notViewParent);
+      if (wrapper.getConfig().viewPath != null && !wrapper.getConfig().viewPath.isEmpty()) {
+        Wrapper found = findNode(structure.tree.getRoot(), wrapper.getConfig().viewPath);
+        if (!findNotViewParent(found, wrapper).isPresent()) useView = found;
+      }
+      selectForView(context, useView, true);
       selectedForEdit = wrapper.buildEditControls(context, this);
+    }
+    {
+      List<Integer> path = getPath(selectedForView.getWrapper().tree.get()).collect(Collectors.toList());
+      System.out.format("New view path: %s\n", path);
+      selectedForEdit.getWrapper().getConfig().viewPath = path;
     }
 
     // React to change
@@ -580,7 +597,6 @@ public class Window {
                               (observable, oldValue, newValue) ->
                                   GUILaunch.profileConfig.backgroundColor.set(
                                       TrueColor.fromJfx(newValue)));
-                          GridPane.setHalignment(w, HPos.CENTER);
                           return w;
                         })
                     .twoLine(
@@ -593,7 +609,6 @@ public class Window {
                               (observable, oldValue, newValue) ->
                                   GUILaunch.profileConfig.ghostPreviousColor.set(
                                       TrueColor.fromJfx(newValue)));
-                          //GridPane.setHalignment(w, HPos.CENTER);
                           return w;
                         })
                     .twoLine(
@@ -606,7 +621,6 @@ public class Window {
                               (observable, oldValue, newValue) ->
                                   GUILaunch.profileConfig.ghostNextColor.set(
                                       TrueColor.fromJfx(newValue)));
-                          GridPane.setHalignment(w, HPos.LEFT);
                           return w;
                         })
                     .intSpinner(
