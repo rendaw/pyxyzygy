@@ -126,10 +126,15 @@ public class Timeline {
           toolBox.getChildren().clear();
         }
       };
+  @SuppressWarnings("unused")
   private final BinderRoot rootFrame; // GC root
+  @SuppressWarnings("unused")
   private final BinderRoot rootOnionLeftToggle; // GC root
+  @SuppressWarnings("unused")
   private final BinderRoot rootOnionRightToggle; // GC root
+  @SuppressWarnings("unused")
   private final BinderRoot rootFramerate; // GC root
+  @SuppressWarnings("unused")
   private final BinderRoot rootPlaying; // GC root
   public double zoom = 16;
 
@@ -311,7 +316,7 @@ public class Timeline {
     left.disableProperty()
         .bind(
             Bindings.createBooleanBinding(
-                () -> selectedFrame.get() == null || selectedFrame.get().at == 0, selectedFrame));
+                () -> selectedFrame.get() == null || selectedFrame.get().index == 0, selectedFrame));
     left.setOnAction(
         e -> {
           context.change(
@@ -1177,7 +1182,7 @@ public class Timeline {
     selectedFrame.set(frame);
     if (frame != null) {
       frame.select();
-      this.frame.set(frame.at);
+      this.frame.set(frame.at.get());
     }
   }
 }

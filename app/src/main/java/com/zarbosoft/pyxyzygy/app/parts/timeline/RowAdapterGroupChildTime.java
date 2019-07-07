@@ -9,6 +9,7 @@ import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupChildWrapper;
 import com.zarbosoft.pyxyzygy.core.model.latest.ChangeStepBuilder;
 import com.zarbosoft.pyxyzygy.core.model.latest.GroupChild;
 import com.zarbosoft.pyxyzygy.core.model.latest.GroupTimeFrame;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableObjectValue;
 import javafx.beans.value.ObservableValue;
@@ -173,7 +174,7 @@ public class RowAdapterGroupChildTime extends BaseFrameRowAdapter<GroupChild, Gr
                           .set(
                               new TimeRangeAdapter() {
                                 @Override
-                                public int getOuterAt() {
+                                public SimpleIntegerProperty getOuterAt() {
                                   return newValue.at;
                                 }
 

@@ -314,7 +314,7 @@ public class RowTimeMapRangeWidget {
                 } else {
                   DoubleVector dragAt = getRelative(e.getSceneX(), e.getSceneY());
                   int quantized = (int) (dragAt.x / timeline.zoom);
-                  adapter.changeLength(change, Math.max(0, quantized - adapter.getOuterAt()));
+                  adapter.changeLength(change, Math.max(0, quantized - adapter.getOuterAt().get()));
                 }
               });
         });
@@ -328,9 +328,9 @@ public class RowTimeMapRangeWidget {
   public void set(TimeRangeAdapter adapter) {
     this.adapter = adapter;
 
-    outerA.setLayoutX((adapter.getOuterAt() - adapter.getInnerStart()) * timeline.zoom);
+    outerA.layoutXProperty().bind(adapter.getOuterAt().subtract(adapter.getInnerStart()).multiply(timeline.zoom));
 
-    inner.setLayoutX(adapter.getOuterAt() * timeline.zoom);
+    inner.layoutXProperty().bind(adapter.getOuterAt().multiply(timeline.zoom));
     inBorder.draw(timeline, adapter.getInnerStart(), adapter.getInnerLength());
 
     if (adapter.getInnerStart() == NO_INNER) {

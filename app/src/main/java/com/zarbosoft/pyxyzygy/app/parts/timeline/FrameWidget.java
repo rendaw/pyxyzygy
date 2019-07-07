@@ -2,6 +2,7 @@ package com.zarbosoft.pyxyzygy.app.parts.timeline;
 
 import com.zarbosoft.automodel.lib.History;
 import com.zarbosoft.pyxyzygy.app.Context;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
@@ -23,7 +24,7 @@ public class FrameWidget extends Pane {
   int absStart;
   int absEnd;
   int minLength;
-  int at;
+  SimpleIntegerProperty at = new SimpleIntegerProperty();
 
   public FrameWidget(Context context, RowFramesWidget row) {
     this.row = row;
@@ -112,7 +113,7 @@ public class FrameWidget extends Pane {
     this.absStart = absStart;
     this.absEnd = absEnd;
     this.minLength = minLength;
-    at = absStart + offset;
-    setLayoutX(at * zoom);
+    at.set(absStart + offset);
+    setLayoutX(at.get() * zoom);
   }
 }

@@ -128,6 +128,7 @@ public class GUILaunch extends Application {
 
   static {
     int index = 0;
+    //noinspection UnusedAssignment
     CACHE_OBJECT = index++;
   }
 

@@ -1,9 +1,10 @@
 package com.zarbosoft.pyxyzygy.app.parts.timeline;
 
 import com.zarbosoft.pyxyzygy.core.model.latest.ChangeStepBuilder;
+import javafx.beans.property.SimpleIntegerProperty;
 
 public abstract class TimeRangeAdapter {
-  public abstract int getOuterAt();
+  public abstract SimpleIntegerProperty getOuterAt();
 
   public abstract int getInnerStart();
 
