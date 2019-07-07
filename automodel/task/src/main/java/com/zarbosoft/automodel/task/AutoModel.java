@@ -57,7 +57,10 @@ public class AutoModel {
         path.resolve(
             Arrays.stream(packag.split(Pattern.quote("."))).collect(Collectors.joining("/")));
     System.out.format("Clearing %s before model generation\n", clearRoot);
-    Common.deleteTree(clearRoot);
+    try {
+      Common.deleteTree(clearRoot);
+    } catch (Common.UncheckedNoSuchFileException ignored) {
+    }
     List<GenerateModelVersion.Result> versionTypes = new ArrayList<>();
     for (AutoModelVersion version : versions) {
       versionTypes.add(GenerateModelVersion.generate(version, path));
