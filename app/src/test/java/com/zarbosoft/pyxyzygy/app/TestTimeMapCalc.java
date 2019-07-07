@@ -121,6 +121,15 @@ public class TestTimeMapCalc {
   public void testInnerOffset() {
     compare(
         Timeline.computeSubMap(
+            ImmutableList.of(new FrameMapEntry(Global.NO_LENGTH, 0)),
+            ImmutableList.of(inner(Global.NO_LENGTH, 5, Global.NO_LOOP))),
+        ImmutableList.of(new FrameMapEntry(Global.NO_LENGTH, 5)));
+  }
+
+  @Test
+  public void testInnerOffsetComplex() {
+    compare(
+        Timeline.computeSubMap(
             ImmutableList.of(new FrameMapEntry(Global.NO_LENGTH, 30)),
             ImmutableList.of(
                 inner(30, 5, Global.NO_LOOP), inner(Global.NO_LENGTH, 11, Global.NO_LOOP))),
@@ -194,6 +203,21 @@ public class TestTimeMapCalc {
             new FrameMapEntry(10, 0),
             new FrameMapEntry(10, 0),
             new FrameMapEntry(10, 0)));
+  }
+
+  @Test
+  public void testLoopWithOffset() {
+    compare(
+        Timeline.computeSubMap(
+            ImmutableList.of(new FrameMapEntry(Global.NO_LENGTH, 0)),
+            ImmutableList.of(inner(Global.NO_LENGTH, 5, 10))),
+        ImmutableList.of(
+            new FrameMapEntry(10, 5),
+            new FrameMapEntry(10, 5),
+            new FrameMapEntry(10, 5),
+            new FrameMapEntry(10, 5),
+            new FrameMapEntry(10, 5),
+            new FrameMapEntry(10, 5)));
   }
 
   @Test

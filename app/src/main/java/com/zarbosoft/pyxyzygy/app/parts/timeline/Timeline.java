@@ -898,12 +898,12 @@ public class Timeline {
       }
 
       // Draw times in region
-      for (int i = 0;
-          i
+      for (int outerStep = 0;
+          outerStep
               < Math.max(
                   1,
                   (frame.length == Global.NO_LENGTH ? extraFrames : (frame.length - 2)) / step + 1);
-          ++i) {
+          ++outerStep) {
         Label label;
         if (innerIndex >= scrubInnerNumbers.size()) {
           scrubInnerNumbers.add(label = new Label());
@@ -913,8 +913,8 @@ public class Timeline {
           label = scrubInnerNumbers.get(innerIndex);
         }
         innerIndex += 1;
-        label.setText(Integer.toString((frame.innerOffset + i) * step));
-        label.setLayoutX((at + i * step) * zoom);
+        label.setText(Integer.toString(frame.innerOffset + outerStep * step));
+        label.setLayoutX((at + outerStep * step) * zoom);
         label.setLayoutY(0);
         label.minHeightProperty().bind(scrub.heightProperty());
         label.setAlignment(Pos.BOTTOM_LEFT);
@@ -1002,7 +1002,7 @@ public class Timeline {
                     if (at < outer.innerOffset) at = outer.innerOffset;
                     at += useLength;
                     useLength = Math.min(inner.innerLoop(), endAt - at);
-                    innerOffset = 0;
+                    innerOffset = inner.innerOffset();
                   }
                   if (maxLength == Global.NO_LENGTH)
                     subMap.add(new FrameMapEntry(inner.innerLoop(), innerOffset));
