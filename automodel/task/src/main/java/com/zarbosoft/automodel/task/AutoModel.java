@@ -14,11 +14,14 @@ import com.zarbosoft.rendaw.common.Common;
 import javax.lang.model.element.Modifier;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.regex.Pattern;
 import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 import static com.zarbosoft.automodel.task.GenerateModelVersion.sigConstructor;
 import static com.zarbosoft.automodel.task.Helper.name;
@@ -50,7 +53,11 @@ public class AutoModel {
   }
 
   public void generate(Path path) {
-    Common.deleteTree(path);
+    Path clearRoot =
+        path.resolve(
+            Arrays.stream(packag.split(Pattern.quote("."))).collect(Collectors.joining("/")));
+    System.out.format("Clearing %s before model generation\n", clearRoot);
+    Common.deleteTree(clearRoot);
     List<GenerateModelVersion.Result> versionTypes = new ArrayList<>();
     for (AutoModelVersion version : versions) {
       versionTypes.add(GenerateModelVersion.generate(version, path));

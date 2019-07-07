@@ -776,8 +776,8 @@ public class GUILaunch extends Application {
               logger.write("Allocated (native image): %s", get_allocated());
             }
           };
-      // cacheStatsTimer.scheduleAtFixedRate(cacheStatsTask, 0, 1000 * 60 * 5);
-      cacheStatsTimer.scheduleAtFixedRate(cacheStatsTask, 0, 1000);
+      cacheStatsTimer.scheduleAtFixedRate(cacheStatsTask, 0, 1000 * 60 * 5);
+      //cacheStatsTimer.scheduleAtFixedRate(cacheStatsTask, 0, 1000);
       shutdown.add(
           () -> {
             cacheStatsTimer.cancel();

@@ -15,6 +15,7 @@ import com.zarbosoft.automodel.lib.ModelVersionDeserializer;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
+import java.util.Arrays;
 
 import static com.zarbosoft.automodel.task.Helper.capFirst;
 import static com.zarbosoft.automodel.task.Helper.poetForward;
@@ -85,7 +86,12 @@ class GenerateModelVersion {
 
     ClassName contextName = version.name("Model");
 
-    sigConstructor = ModelBase.class.getConstructors()[0];
+    sigConstructor =
+        Arrays.stream(ModelBase.class.getConstructors())
+            .filter(
+                c -> c.getParameters().length > 0 && c.getParameters()[0].getType() == Path.class)
+            .findFirst()
+            .get();
     write(
         path,
         contextName,
