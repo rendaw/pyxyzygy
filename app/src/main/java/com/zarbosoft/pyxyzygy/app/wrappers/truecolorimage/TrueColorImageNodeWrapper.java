@@ -41,7 +41,8 @@ import static com.zarbosoft.pyxyzygy.app.config.TrueColorImageNodeConfig.TOOL_BR
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 
 public class TrueColorImageNodeWrapper
-    extends BaseImageNodeWrapper<TrueColorImageLayer, TrueColorImageFrame, TrueColorTile, TrueColorImage> {
+    extends BaseImageNodeWrapper<
+        TrueColorImageLayer, TrueColorImageFrame, TrueColorTile, TrueColorImage> {
   final TrueColorImageNodeConfig config;
   public static FrameFinder<TrueColorImageLayer, TrueColorImageFrame> frameFinder =
       new FrameFinder<TrueColorImageLayer, TrueColorImageFrame>() {
@@ -64,7 +65,7 @@ public class TrueColorImageNodeWrapper
 
   // Cache values when there's no canvas
   public TrueColorImageNodeWrapper(
-    Context context, Wrapper parent, int parentIndex, TrueColorImageLayer node) {
+      Context context, Wrapper parent, int parentIndex, TrueColorImageLayer node) {
     super(parent, parentIndex, node, frameFinder);
     this.config =
         (TrueColorImageNodeConfig)
@@ -156,10 +157,9 @@ public class TrueColorImageNodeWrapper
   }
 
   @Override
-  public Listener.MapPutAll<TrueColorImageFrame, Long, TrueColorTile>
-      addFrameTilesPutAllListener(
-          TrueColorImageFrame frame,
-          Listener.MapPutAll<TrueColorImageFrame, Long, TrueColorTile> listener) {
+  public Listener.MapPutAll<TrueColorImageFrame, Long, TrueColorTile> addFrameTilesPutAllListener(
+      TrueColorImageFrame frame,
+      Listener.MapPutAll<TrueColorImageFrame, Long, TrueColorTile> listener) {
     return frame.addTilesPutAllListeners(listener);
   }
 
@@ -191,7 +191,9 @@ public class TrueColorImageNodeWrapper
             () ->
                 GUILaunch.imageCache.get(
                     Objects.hash(CACHE_OBJECT, tile.id()),
-                    () -> HelperJFX.toImage(TrueColorTileHelp.getData(context, (TrueColorTile) tile))));
+                    () ->
+                        HelperJFX.toImage(
+                            TrueColorTileHelp.getData(context, (TrueColorTile) tile))));
       }
     };
   }
@@ -202,8 +204,7 @@ public class TrueColorImageNodeWrapper
   }
 
   @Override
-  public void renderCompose(
-    Context context, TrueColorImage gc, TrueColorTile tile, int x, int y) {
+  public void renderCompose(Context context, TrueColorImage gc, TrueColorTile tile, int x, int y) {
     TrueColorImage data = TrueColorTileHelp.getData(context, (TrueColorTile) tile);
     gc.compose(data, x, y, (float) 1);
   }
@@ -215,21 +216,25 @@ public class TrueColorImageNodeWrapper
 
   @Override
   public void drop(
-    Context context,
-    ChangeStepBuilder change,
-    TrueColorImageFrame frame,
-    Rectangle unitBounds,
-    TrueColorImage image) {
+      Context context,
+      ChangeStepBuilder change,
+      TrueColorImageFrame frame,
+      Rectangle unitBounds,
+      TrueColorImage image) {
     for (int x = 0; x < unitBounds.width; ++x) {
       for (int y = 0; y < unitBounds.height; ++y) {
         final int x0 = x;
         final int y0 = y;
         TrueColorImage shot =
             image.copy(
-                x0 * context.project.tileSize(), y0 * context.project.tileSize(), context.project.tileSize(), context.project.tileSize());
+                x0 * context.project.tileSize(),
+                y0 * context.project.tileSize(),
+                context.project.tileSize(),
+                context.project.tileSize());
         change
             .trueColorImageFrame(frame)
-            .tilesPut(unitBounds.corner().plus(x0, y0).to1D(), TrueColorTileHelp.create(context, shot));
+            .tilesPut(
+                unitBounds.corner().plus(x0, y0).to1D(), TrueColorTileHelp.create(context, shot));
       }
     }
   }

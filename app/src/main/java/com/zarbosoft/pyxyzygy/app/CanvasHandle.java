@@ -27,7 +27,7 @@ public abstract class CanvasHandle {
 
   public abstract void setViewport(Context context, DoubleRectangle newBounds, int positiveZoom);
 
-  public abstract void setFrame(Context context, int frameNumber);
+  public abstract void setViewedFrame(Context context, int frameNumber);
 
   public abstract void remove(Context context, Wrapper excludeSubtree);
 

@@ -24,7 +24,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public class BaseImageCanvasHandle<N extends ProjectLayer, F extends ProjectObject, T extends ProjectObject, L>
+public class BaseImageCanvasHandle<
+        N extends ProjectLayer, F extends ProjectObject, T extends ProjectObject, L>
     extends CanvasHandle {
   CanvasHandle parent;
   private final Runnable mirrorCleanup;
@@ -46,9 +47,11 @@ public class BaseImageCanvasHandle<N extends ProjectLayer, F extends ProjectObje
             frameCleanup,
             frame -> {
               Listener.ScalarSet<F, Vector> offsetListener =
-                  wrapper.addFrameOffsetSetListener(frame, (target, value) -> updateFrame(context));
+                  wrapper.addFrameOffsetSetListener(
+                      frame, (target, value) -> updateViewedFrame(context));
               Listener.ScalarSet<F, Integer> lengthListener =
-                  wrapper.addFrameLengthSetListener(frame, (target, value) -> updateFrame(context));
+                  wrapper.addFrameLengthSetListener(
+                      frame, (target, value) -> updateViewedFrame(context));
               return () -> {
                 wrapper.removeFrameOffsetSetListener(frame, offsetListener);
                 wrapper.removeFrameLengthSetListener(frame, lengthListener);
@@ -56,7 +59,7 @@ public class BaseImageCanvasHandle<N extends ProjectLayer, F extends ProjectObje
             },
             cleanup -> cleanup.run(),
             at -> {
-              updateFrame(context);
+              updateViewedFrame(context);
             });
 
     attachTiles(context);
@@ -117,7 +120,8 @@ public class BaseImageCanvasHandle<N extends ProjectLayer, F extends ProjectObje
         }
         WrapTile wrapTile =
             wrapper.createWrapTile(
-                useIndexes.x * context.project.tileSize(), useIndexes.y * context.project.tileSize());
+                useIndexes.x * context.project.tileSize(),
+                useIndexes.y * context.project.tileSize());
         wrapTile.update(wrapTile.getImage(context, tile)); // Image deserialization must be serial
         wrapTiles.put(key, wrapTile);
         paint.getChildren().add(wrapTile.widget);
@@ -126,12 +130,12 @@ public class BaseImageCanvasHandle<N extends ProjectLayer, F extends ProjectObje
   }
 
   @Override
-  public void setFrame(Context context, int frameNumber) {
+  public void setViewedFrame(Context context, int frameNumber) {
     this.frameNumber.set(frameNumber);
-    updateFrame(context);
+    updateViewedFrame(context);
   }
 
-  public void updateFrame(Context context) {
+  public void updateViewedFrame(Context context) {
     F oldFrame = frame;
     FrameFinder.Result<F> found = wrapper.frameFinder.findFrame(wrapper.node, frameNumber.get());
     frame = found.frame;
@@ -180,7 +184,8 @@ public class BaseImageCanvasHandle<N extends ProjectLayer, F extends ProjectObje
                 WrapTile old = wrapTiles.remove(key);
                 if (old != null) paint.getChildren().remove(old.widget);
               }
-              Rectangle checkBounds = bounds.get().scale(3).divideContains(context.project.tileSize());
+              Rectangle checkBounds =
+                  bounds.get().scale(3).divideContains(context.project.tileSize());
               for (Map.Entry<Long, T> entry : put.entrySet()) {
                 long key = entry.getKey();
                 Vector indexes = Vector.from1D(key);
@@ -192,7 +197,8 @@ public class BaseImageCanvasHandle<N extends ProjectLayer, F extends ProjectObje
                 if (wrap == null) {
                   wrap =
                       wrapper.createWrapTile(
-                          indexes.x * context.project.tileSize(), indexes.y * context.project.tileSize());
+                          indexes.x * context.project.tileSize(),
+                          indexes.y * context.project.tileSize());
                   wrapTiles.put(key, wrap);
                   paint.getChildren().add(wrap.widget);
                 }
@@ -233,8 +239,7 @@ public class BaseImageCanvasHandle<N extends ProjectLayer, F extends ProjectObje
     wrapTiles.clear();
   }
 
-  public void render(
-    Context context, TrueColorImage gc, Rectangle bounds, Rectangle unitBounds) {
+  public void render(Context context, TrueColorImage gc, Rectangle bounds, Rectangle unitBounds) {
     for (int x = 0; x < unitBounds.width; ++x) {
       for (int y = 0; y < unitBounds.height; ++y) {
         T tile = wrapper.tileGet(frame, unitBounds.corner().plus(x, y).to1D());

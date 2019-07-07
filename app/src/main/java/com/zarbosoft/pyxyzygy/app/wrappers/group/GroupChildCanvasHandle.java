@@ -145,15 +145,19 @@ public class GroupChildCanvasHandle extends CanvasHandle {
                             Listener.ScalarSet<GroupTimeFrame, Integer> lengthListener =
                                 v.addLengthSetListeners(
                                     (target1, value1) -> {
-                                      updatePosition(context);
+                                      updateTime(context);
                                     });
                             Listener.ScalarSet<GroupTimeFrame, Integer> offsetListener =
                                 v.addInnerOffsetSetListeners(
-                                    (target12, value12) -> updatePosition(context));
+                                    (target1, value1) -> updateTime(context));
+                            Listener.ScalarSet<GroupTimeFrame, Integer> loopListener =
+                                v.addInnerLoopSetListeners(
+                                    (target1, value1) -> updateTime(context));
                             return (Runnable)
                                 () -> {
                                   v.removeLengthSetListeners(lengthListener);
                                   v.removeInnerOffsetSetListeners(offsetListener);
+                                  v.removeInnerLoopSetListeners(loopListener);
                                 };
                           })
                       .collect(Collectors.toList()));
@@ -194,7 +198,7 @@ public class GroupChildCanvasHandle extends CanvasHandle {
 
   private void updateTime(Context context) {
     if (childCanvas != null)
-      childCanvas.setFrame(context, wrapper.findInnerFrame(frameNumber.get()));
+      childCanvas.setViewedFrame(context, wrapper.findInnerFrame(frameNumber.get()));
   }
 
   @Override
@@ -232,7 +236,7 @@ public class GroupChildCanvasHandle extends CanvasHandle {
   }
 
   @Override
-  public void setFrame(Context context, int frameNumber) {
+  public void setViewedFrame(Context context, int frameNumber) {
     this.frameNumber.set(frameNumber);
     updateTime(context);
     updatePosition(context);

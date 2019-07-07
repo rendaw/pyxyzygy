@@ -829,7 +829,7 @@ public class Timeline {
   private void updateFrameMarker() {
     CanvasHandle root = window.getSelectedForView();
     if (root == null) return;
-    root.setFrame(context, frame.get());
+    root.setViewedFrame(context, frame.get());
     frameMarker.setLayoutX(frame.get() * zoom);
     new Consumer<TreeItem<RowAdapter>>() {
       @Override

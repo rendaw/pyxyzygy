@@ -81,9 +81,9 @@ public class GroupNodeCanvasHandle extends CanvasHandle {
   }
 
   @Override
-  public void setFrame(Context context, int frameNumber) {
+  public void setViewedFrame(Context context, int frameNumber) {
     this.frameNumber.set(frameNumber);
-    childHandles.forEach(c -> c.setFrame(context, frameNumber));
+    childHandles.forEach(c -> c.setViewedFrame(context, frameNumber));
 
     do {
       GroupChild specificChild = unopt(wrapper.specificChild.get());
