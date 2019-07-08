@@ -8,11 +8,15 @@ This section has a number of tabs - most are self explanatory but here's an over
 
 * **1** / The project tree
 
-   The project is composed of a number of scenes, and each scene has layers.
+   A project in pyxyzyg is composed of layers.
 
-   Any root layer in the tree is a "scene".  Scenes are drawn separately - you can only view one scene at a time.
+   Layers at the root of the project tree (layers with no parent layers) are "scenes" - scenes are viewed separately. You can turn any layer into a scene by moving it to the root of the tree.
 
-   Layers and scenes are shown in this tree.  Disabled layers/scenes have their names faded.  When a layer with linked copies is selected, those copies will be shown in bold.
+   In the above image the layer named "Group" forms a scene, and "Palette layer" is a non-scene.
+
+   Note: If you just want to view some layers without the rest of the scene, you can change the viewed layer as described below, which is quicker than making a new scene.
+
+   Disabled layers/scenes have their names faded.  When a layer with linked copies is selected, those copies will be shown in bold.
 
 ## Viewing and editing
 
@@ -50,9 +54,11 @@ The toolbar at the top contains all the buttons for modifying the project struct
 
    This will move a scene up or down or move a layer up or down in the current group.  Lower layers in a group obscure the layers above them.
 
-* **9** / Lift and place layers
+* **9** / Other options
 
-   This also allows you to move a scene/layer.  Lifting is like cutting - you can also press `ctrl+x` to toggle whether a layer is lifted.  When you place the layers they will be moved from their current location.  Press `esc` to un-lift everything.
+   Lifting a layer marks it with a scissors icon.  Placing moves all marked items to the selected location.  You can also press `ctrl+x` to toggle whether a layer is lifted.  Press `esc` to un-lift everything.
+
+   Unlink makes the selected layer a distinct layer if the layer was a linked copy of another layer.  After unlinking a layer modifying it won't affect the other layer.
 
 ## Changing layer visibility
 

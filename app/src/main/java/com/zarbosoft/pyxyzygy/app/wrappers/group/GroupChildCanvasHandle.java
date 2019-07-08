@@ -8,6 +8,7 @@ import com.zarbosoft.pyxyzygy.app.DoubleVector;
 import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.Wrapper;
 import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.CustomBinding;
 import com.zarbosoft.pyxyzygy.app.widgets.binding.DoubleHalfBinder;
 import com.zarbosoft.pyxyzygy.app.widgets.binding.IndirectHalfBinder;
 import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyHalfBinder;
@@ -26,6 +27,7 @@ import static com.zarbosoft.pyxyzygy.app.Misc.moveTo;
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 
 public class GroupChildCanvasHandle extends CanvasHandle {
+  private final BinderRoot opacityRoot;
   private CanvasHandle parent;
   private final Listener.ListAdd<GroupChild, GroupPositionFrame> positionAddListener;
   private final Listener.ListRemove<GroupChild> positionRemoveListener;
@@ -33,7 +35,6 @@ public class GroupChildCanvasHandle extends CanvasHandle {
   private final Listener.ListAdd<GroupChild, GroupTimeFrame> timeAddListener;
   private final Listener.ListRemove<GroupChild> timeRemoveListener;
   private final Listener.ListMoveTo<GroupChild> timeMoveListener;
-  private final Listener.ScalarSet<GroupChild, Integer> opacityListener;
   private final BinderRoot enabledListenerRoot;
   private int zoom;
   private CanvasHandle childCanvas;
@@ -46,11 +47,13 @@ public class GroupChildCanvasHandle extends CanvasHandle {
     positionCleanup = new ArrayList<>();
     timeCleanup = new ArrayList<>();
 
+    ScalarHalfBinder<Boolean> enabledBinder = new ScalarHalfBinder<>(wrapper.node, "enabled");
+    ScalarHalfBinder<Integer> opacityBinder = new ScalarHalfBinder<>(wrapper.node, "opacity");
     enabledListenerRoot =
         new DoubleHalfBinder<>(
                 new PropertyHalfBinder<>(wrapper.child),
                 new DoubleHalfBinder<>(
-                        new ScalarHalfBinder<Boolean>(wrapper.node, "enabled"),
+                        enabledBinder,
                         new DoubleHalfBinder<>(
                             window.selectedForEditWrapperEnabledBinder,
                             new IndirectHalfBinder<GroupChild>(
@@ -176,11 +179,13 @@ public class GroupChildCanvasHandle extends CanvasHandle {
               updateTime(context);
               moveTo(timeCleanup, source, count, dest);
             });
-    opacityListener =
-        wrapper.node.addOpacitySetListeners(
-            (target, value) -> {
-              paint.setOpacity((double) value / opacityMax);
-            });
+    opacityRoot =
+        CustomBinding.bind(
+            paint.opacityProperty(),
+            new DoubleHalfBinder<Boolean, Integer>(enabledBinder, opacityBinder)
+                .map(
+                    (enabled, opacity) ->
+                        opt(((double) opacity) / opacityMax / (enabled ? 1 : 2))));
   }
 
   @Override
@@ -213,7 +218,7 @@ public class GroupChildCanvasHandle extends CanvasHandle {
     wrapper.node.removeTimeFramesAddListeners(timeAddListener);
     wrapper.node.removeTimeFramesRemoveListeners(timeRemoveListener);
     wrapper.node.removeTimeFramesMoveToListeners(timeMoveListener);
-    wrapper.node.removeOpacitySetListeners(opacityListener);
+    opacityRoot.destroy();
     enabledListenerRoot.destroy();
     positionCleanup.forEach(r -> r.run());
     timeCleanup.forEach(r -> r.run());

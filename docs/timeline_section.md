@@ -34,9 +34,9 @@
 
    This creates a duplicate of the selected frame or else the currently shown frame at the current time.
 
-* **8** **9** / Move frame backward/forward
+* **8** **9** / Swap frame left/right
 
-   This swaps frames, so frame timings will not be affected.
+   This swaps frames, keeping the overall timing the same.
 
 * **10** / Delete frame
 

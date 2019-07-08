@@ -126,16 +126,22 @@ public class Timeline {
           toolBox.getChildren().clear();
         }
       };
+
   @SuppressWarnings("unused")
   private final BinderRoot rootFrame; // GC root
+
   @SuppressWarnings("unused")
   private final BinderRoot rootOnionLeftToggle; // GC root
+
   @SuppressWarnings("unused")
   private final BinderRoot rootOnionRightToggle; // GC root
+
   @SuppressWarnings("unused")
   private final BinderRoot rootFramerate; // GC root
+
   @SuppressWarnings("unused")
   private final BinderRoot rootPlaying; // GC root
+
   public double zoom = 16;
 
   VBox foreground = new VBox();
@@ -316,7 +322,8 @@ public class Timeline {
     left.disableProperty()
         .bind(
             Bindings.createBooleanBinding(
-                () -> selectedFrame.get() == null || selectedFrame.get().index == 0, selectedFrame));
+                () -> selectedFrame.get() == null || selectedFrame.get().index == 0,
+                selectedFrame));
     left.setOnAction(
         e -> {
           context.change(
@@ -738,7 +745,7 @@ public class Timeline {
 
             @Override
             public boolean createFrame(
-              Context context, Window window, ChangeStepBuilder change, int outer) {
+                Context context, Window window, ChangeStepBuilder change, int outer) {
               return false;
             }
 
@@ -749,7 +756,7 @@ public class Timeline {
 
             @Override
             public boolean duplicateFrame(
-              Context context, Window window, ChangeStepBuilder change, int outer) {
+                Context context, Window window, ChangeStepBuilder change, int outer) {
               return false;
             }
 
@@ -897,28 +904,32 @@ public class Timeline {
         mark.setLayoutX(at * zoom);
       }
 
-      // Draw times in region
-      for (int outerStep = 0;
-          outerStep
-              < Math.max(
-                  1,
-                  (frame.length == Global.NO_LENGTH ? extraFrames : (frame.length - 2)) / step + 1);
-          ++outerStep) {
-        Label label;
-        if (innerIndex >= scrubInnerNumbers.size()) {
-          scrubInnerNumbers.add(label = new Label());
-          scrubElements.getChildren().add(label);
-          label.setPadding(new Insets(0, 0, 0, 2));
-        } else {
-          label = scrubInnerNumbers.get(innerIndex);
+      if (frame.innerOffset != Global.NO_LENGTH) {
+        // Draw times in region
+        for (int outerStep = 0;
+            outerStep
+                < Math.max(
+                    1,
+                    (frame.length == Global.NO_LENGTH ? extraFrames : (frame.length - 2)) / step
+                        + 1);
+            ++outerStep) {
+          Label label;
+          if (innerIndex >= scrubInnerNumbers.size()) {
+            scrubInnerNumbers.add(label = new Label());
+            scrubElements.getChildren().add(label);
+            label.setPadding(new Insets(0, 0, 0, 2));
+          } else {
+            label = scrubInnerNumbers.get(innerIndex);
+          }
+          innerIndex += 1;
+          label.setText(Integer.toString(frame.innerOffset + outerStep * step));
+          label.setLayoutX((at + outerStep * step) * zoom);
+          label.setLayoutY(0);
+          label.minHeightProperty().bind(scrub.heightProperty());
+          label.setAlignment(Pos.BOTTOM_LEFT);
         }
-        innerIndex += 1;
-        label.setText(Integer.toString(frame.innerOffset + outerStep * step));
-        label.setLayoutX((at + outerStep * step) * zoom);
-        label.setLayoutY(0);
-        label.minHeightProperty().bind(scrub.heightProperty());
-        label.setAlignment(Pos.BOTTOM_LEFT);
       }
+
       at += frame.length;
     }
 

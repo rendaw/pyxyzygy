@@ -630,7 +630,7 @@ public class Structure {
             new SeparatorMenuItem(),
             importImage);
     Button mainDuplicateButton =
-        HelperJFX.button("content-copy.png", localization.getString("duplicate"));
+        HelperJFX.button("content-copy.png", localization.getString("unlinked.duplicate"));
     mainDuplicateButton
         .disableProperty()
         .bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedIndices()));

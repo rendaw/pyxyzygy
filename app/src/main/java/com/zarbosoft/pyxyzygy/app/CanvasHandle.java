@@ -5,12 +5,16 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.Group;
 import javafx.scene.Node;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public abstract class CanvasHandle {
   public final SimpleIntegerProperty frameNumber = new SimpleIntegerProperty(0);
   public final SimpleIntegerProperty previousFrame = new SimpleIntegerProperty(-1);
   public final SimpleIntegerProperty nextFrame = new SimpleIntegerProperty(-1);
   public final SimpleObjectProperty<DoubleRectangle> bounds =
       new SimpleObjectProperty<>(new DoubleRectangle(0, 0, 0, 0));
+  public List<FrameMapEntry> timeMap = new ArrayList<>();
 
   public abstract DoubleVector toInner(DoubleVector vector);
 
