@@ -271,16 +271,25 @@ class GenerateChange {
     change.addMethod(poetMethod(sigChangeDebugCounts).addCode(changeDebugCounts.build()).build());
     typeChangeStepBuilder.addMethod(
         changeInvoke
-            .addCode(
-                "$T change = new $T(changeStepBuilder.context, target$L);\n",
-                changeName,
-                changeName,
-                invokeForward.stream()
-                    .map(n -> String.format(", %s", n))
-                    .collect(Collectors.joining("")))
-            .addCode("change.apply(changeStepBuilder.context, changeStepBuilder.changeStep);\n")
-            .addCode("change.delete(changeStepBuilder.context);\n")
-            .addCode("return this;\n")
+          .addCode(CodeBlock.builder()
+            .add(
+              "$T change = new $T(changeStepBuilder.context, target$L);\n",
+              changeName,
+              changeName,
+              invokeForward.stream()
+                .map(n -> String.format(", %s", n))
+                .collect(Collectors.joining("")))
+            .add("try {\n")
+            .indent()
+            .add("change.apply(changeStepBuilder.context, changeStepBuilder.changeStep);\n")
+            .unindent()
+            .add("} finally {\n")
+            .indent()
+            .add("change.delete(changeStepBuilder.context);\n")
+            .unindent()
+            .add("}\n")
+            .add("return this;\n")
+            .build())
             .build());
     deserializer.generateInto(
         changeLuxemTypeName, changeName, change, globalChangeDeserialize, ModelBase.class);

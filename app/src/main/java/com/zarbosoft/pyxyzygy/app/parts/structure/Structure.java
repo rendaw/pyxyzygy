@@ -1097,9 +1097,9 @@ public class Structure {
    * Places exactly within parent/top before/after reference/start=end
    *
    * @param change
-   * @param pasteParent
-   * @param before
-   * @param reference
+   * @param pasteParent a GroupLayer/derivative wrapper
+   * @param before how the nodes should be placed relative to reference
+   * @param reference a GroupChild
    */
   private void place(
       ChangeStepBuilder change, Wrapper pasteParent, boolean before, Wrapper reference) {
@@ -1118,12 +1118,20 @@ public class Structure {
     if (placable.isEmpty()) {
       logger.write("Warning: No nodes left to place!");
     }
-    List<Wrapper> removeAfter = new ArrayList<>();
     if (pasteParent != null) {
+      int dest;
+      if (reference != null) {
+        dest = reference.parentIndex + (before ? -1 : 1);
+      } else {
+        dest = before ? 0 : -1;
+      }
       List<GroupChild> children = new ArrayList<>();
       for (Wrapper wrapper : placable) {
         boolean lifted = taggedLifted.contains(wrapper);
-        if (lifted) removeAfter.add(wrapper);
+        if (lifted) {
+          if (wrapper.getParent() != null && wrapper.getParent().parentIndex < dest) dest -= 1;
+          wrapper.delete(context, change);
+        }
         if (wrapper.getParent() != null) {
           Wrapper childParent = wrapper.getParent();
           if (lifted) {
@@ -1138,20 +1146,8 @@ public class Structure {
           children.add(layer);
         }
       }
-      int dest;
-      if (reference != null) {
-        dest = reference.parentIndex + (before ? -1 : 1);
-      } else {
-        dest = before ? 0 : -1;
-      }
       change.groupLayer((GroupLayer) pasteParent.getValue()).childrenAdd(dest, children);
     } else {
-      List<ProjectLayer> children = new ArrayList<>();
-      for (Wrapper wrapper : placable) {
-        boolean lifted = taggedLifted.contains(wrapper);
-        if (lifted) removeAfter.add(wrapper);
-        children.add((ProjectLayer) wrapper.getValue());
-      }
       int dest;
       if (reference != null) {
         dest = reference.parentIndex + (before ? -1 : 1);
@@ -1159,9 +1155,17 @@ public class Structure {
         if (before) dest = 0;
         else dest = context.project.topLength();
       }
+      List<ProjectLayer> children = new ArrayList<>();
+      for (Wrapper wrapper : placable) {
+        boolean lifted = taggedLifted.contains(wrapper);
+        if (lifted) {
+          if (wrapper.getParent() == null && wrapper.parentIndex < dest) dest -= 1;
+          wrapper.delete(context, change);
+        }
+        children.add((ProjectLayer) wrapper.getValue());
+      }
       change.project(context.project).topAdd(dest, children);
     }
-    removeAfter.forEach(c -> c.delete(context, change));
     clearTagLifted();
   }
 
