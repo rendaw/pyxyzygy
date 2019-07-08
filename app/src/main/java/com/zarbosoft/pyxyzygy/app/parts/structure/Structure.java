@@ -39,6 +39,7 @@ import com.zarbosoft.pyxyzygy.core.model.latest.Palette;
 import com.zarbosoft.pyxyzygy.core.model.latest.PaletteColor;
 import com.zarbosoft.pyxyzygy.core.model.latest.PaletteImageFrame;
 import com.zarbosoft.pyxyzygy.core.model.latest.PaletteImageLayer;
+import com.zarbosoft.pyxyzygy.core.model.latest.Project;
 import com.zarbosoft.pyxyzygy.core.model.latest.ProjectLayer;
 import com.zarbosoft.pyxyzygy.core.model.latest.TrueColorImageFrame;
 import com.zarbosoft.pyxyzygy.core.model.latest.TrueColorImageLayer;
@@ -106,10 +107,19 @@ public class Structure {
   private final Context context;
   private final Window window;
   private final boolean main;
-  private final BinderRoot opacityAllDisableRoot; // GC root
-  private final BinderRoot opacityEnabledGraphicRoot; // GC root
-  private final BinderRoot opacityEnabledRoot; // GC root
-  private final BinderRoot opacityOpacityRoot; // GC root
+
+  @SuppressWarnings("unused")
+  private final BinderRoot opacityAllDisableRoot;
+
+  @SuppressWarnings("unused")
+  private final BinderRoot opacityEnabledGraphicRoot;
+
+  @SuppressWarnings("unused")
+  private final BinderRoot opacityEnabledRoot;
+
+  @SuppressWarnings("unused")
+  private final BinderRoot opacityOpacityRoot;
+
   VBox layout = new VBox();
   public TreeView<Wrapper> tree;
   ToolBar toolbar;
@@ -126,14 +136,18 @@ public class Structure {
             clearTagLifted();
           }
         },
-        new Hotkeys.Action(Hotkeys.Scope.STRUCTURE, "lift", localization.getString("lift"), Global.cutHotkey) {
+        new Hotkeys.Action(
+            Hotkeys.Scope.STRUCTURE, "lift", localization.getString("lift"), Global.cutHotkey) {
           @Override
           public void run(Context context, Window window) {
             lift();
           }
         },
         new Hotkeys.Action(
-            Hotkeys.Scope.STRUCTURE, "place-auto", localization.getString("paste.linked"), Global.pasteHotkey) {
+            Hotkeys.Scope.STRUCTURE,
+            "place-auto",
+            localization.getString("paste.linked"),
+            Global.pasteHotkey) {
           @Override
           public void run(Context context, Window window) {
             context.change(
@@ -145,7 +159,8 @@ public class Structure {
         },
         new Hotkeys.Action(
             Hotkeys.Scope.STRUCTURE,
-            "duplicate", localization.getString("unlinked.duplicate"),
+            "duplicate",
+            localization.getString("unlinked.duplicate"),
             Hotkeys.Hotkey.create(KeyCode.D, true, false, false)) {
           @Override
           public void run(Context context, Window window) {
@@ -158,7 +173,8 @@ public class Structure {
         },
         new Hotkeys.Action(
             Hotkeys.Scope.STRUCTURE,
-            "link", localization.getString("linked.duplicate"),
+            "link",
+            localization.getString("linked.duplicate"),
             Hotkeys.Hotkey.create(KeyCode.L, true, false, false)) {
           @Override
           public void run(Context context, Window window) {
@@ -171,7 +187,8 @@ public class Structure {
         },
         new Hotkeys.Action(
             Hotkeys.Scope.STRUCTURE,
-            "delete", localization.getString("delete"),
+            "delete",
+            localization.getString("delete"),
             Hotkeys.Hotkey.create(KeyCode.DELETE, false, false, false)) {
           @Override
           public void run(Context context, Window window) {
@@ -185,6 +202,15 @@ public class Structure {
       };
   boolean postInit = false;
   public boolean suppressSelect = false;
+
+  @SuppressWarnings("unused")
+  private Listener.ListAdd<Project, ProjectLayer> topAddRoot;
+
+  @SuppressWarnings("unused")
+  private Listener.ListRemove<Project> topRemoveRoot;
+
+  @SuppressWarnings("unused")
+  private Listener.ListMoveTo<Project> topMoveToRoot;
 
   public static Stream<Integer> getPath(TreeItem<Wrapper> leaf) {
     if (leaf.getParent() == null) return Stream.empty();
@@ -264,9 +290,11 @@ public class Structure {
                     window.selectForEdit(context, first.getValue());
                   }
                 });
-    tree.addEventFilter(MouseEvent.MOUSE_PRESSED,e -> {
-      if (e.getClickCount() >= 2) e.consume();
-    });
+    tree.addEventFilter(
+        MouseEvent.MOUSE_PRESSED,
+        e -> {
+          if (e.getClickCount() >= 2) e.consume();
+        });
     tree.setCellFactory(
         (TreeView<Wrapper> param) -> {
           return new TreeCell<Wrapper>() {
@@ -388,7 +416,8 @@ public class Structure {
     addCamera.setOnAction(
         e -> {
           Camera camera = Camera.create(context.model);
-          camera.initialNameSet(context.model, context.namer.uniqueName(localization.getString("camera")));
+          camera.initialNameSet(
+              context.model, context.namer.uniqueName(localization.getString("camera")));
           camera.initialOffsetSet(context.model, Vector.ZERO);
           camera.initialFrameStartSet(context.model, 0);
           camera.initialFrameLengthSet(context.model, 12);
@@ -419,7 +448,8 @@ public class Structure {
         e -> {
           TrueColorImageLayer image = TrueColorImageLayer.create(context.model);
           image.initialOffsetSet(context.model, Vector.ZERO);
-          image.initialNameSet(context.model, context.namer.uniqueName(Global.getTrueColorLayerName()));
+          image.initialNameSet(
+              context.model, context.namer.uniqueName(Global.getTrueColorLayerName()));
           TrueColorImageFrame frame = TrueColorImageFrame.create(context.model);
           frame.initialLengthSet(context.model, -1);
           frame.initialOffsetSet(context.model, new Vector(0, 0));
@@ -485,7 +515,8 @@ public class Structure {
                           PaletteImageLayer image = PaletteImageLayer.create(context.model);
                           image.initialOffsetSet(context.model, Vector.ZERO);
                           image.initialNameSet(
-                              context.model, context.namer.uniqueName(Global.getPaletteLayerName()));
+                              context.model,
+                              context.namer.uniqueName(Global.getPaletteLayerName()));
                           image.initialPaletteSet(context.model, palette);
                           PaletteImageFrame frame = PaletteImageFrame.create(context.model);
                           frame.initialLengthSet(context.model, -1);
@@ -530,7 +561,9 @@ public class Structure {
                     Rectangle offset = base.shift(base.span().divide(2));
                     Rectangle unitBounds = offset.divideContains(context.project.tileSize());
                     Vector localOffset =
-                        offset.corner().minus(unitBounds.corner().multiply(context.project.tileSize()));
+                        offset
+                            .corner()
+                            .minus(unitBounds.corner().multiply(context.project.tileSize()));
                     for (int x = 0; x < unitBounds.width; ++x) {
                       for (int y = 0; y < unitBounds.height; ++y) {
                         final int x0 = x;
@@ -556,7 +589,8 @@ public class Structure {
                   });
         });
     MenuItem duplicateButton =
-        new MenuItem(localization.getString("unlinked.duplicate"), new ImageView(icon("content-copy.png")));
+        new MenuItem(
+            localization.getString("unlinked.duplicate"), new ImageView(icon("content-copy.png")));
     duplicateButton
         .disableProperty()
         .bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedIndices()));
@@ -568,7 +602,9 @@ public class Structure {
                 duplicate(c);
               });
         });
-    MenuItem linkButton = new MenuItem(localization.getString("linked.duplicate"), new ImageView(icon("link-plus.png")));
+    MenuItem linkButton =
+        new MenuItem(
+            localization.getString("linked.duplicate"), new ImageView(icon("link-plus.png")));
     linkButton
         .disableProperty()
         .bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedIndices()));
@@ -593,7 +629,8 @@ public class Structure {
             addCamera,
             new SeparatorMenuItem(),
             importImage);
-    Button mainDuplicateButton = HelperJFX.button("content-copy.png", localization.getString("duplicate"));
+    Button mainDuplicateButton =
+        HelperJFX.button("content-copy.png", localization.getString("duplicate"));
     mainDuplicateButton
         .disableProperty()
         .bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedIndices()));
@@ -862,40 +899,38 @@ public class Structure {
     prepareTreeItem(rootTreeItem);
     tree.setRoot(rootTreeItem);
 
-    context.project.addTopAddListeners(
-        (target, at, value) -> {
-          List<TreeItem<Wrapper>> newItems = new ArrayList<>();
-          for (int i = 0; i < value.size(); ++i) {
-            ProjectLayer v = value.get(i);
-            Wrapper child = Window.createNode(context, null, at + i, v);
-            child.tree.addListener(
-                (observable, oldValue, newValue) -> {
-                  tree.getRoot().getChildren().set(child.parentIndex, newValue);
-                });
-            newItems.add(child.tree.getValue());
-          }
-          tree.getRoot().getChildren().addAll(at, newItems);
-        });
-    context.project.addTopRemoveListeners(
-        (target, at, count) -> {
-          List<TreeItem<Wrapper>> temp = tree.getRoot().getChildren().subList(at, at + count);
-          temp.forEach(i -> i.getValue().remove(context));
-          temp.clear();
-          for (int i = at; i < tree.getRoot().getChildren().size(); ++i) {
-            tree.getRoot().getChildren().get(i).getValue().setParentIndex(at + i);
-          }
-        });
-    context.project.addTopMoveToListeners(
-        (target, source, count, dest) -> {
-          moveTo(tree.getRoot().getChildren(), source, count, dest);
-          for (int i = Math.min(source, dest); i < tree.getRoot().getChildren().size(); ++i)
-            tree.getRoot().getChildren().get(i).getValue().setParentIndex(i);
-        });
-    context.project.addTopClearListeners(
-        target -> {
-          tree.getRoot().getChildren().forEach(c -> c.getValue().remove(context));
-          tree.getRoot().getChildren().clear();
-        });
+    topAddRoot =
+        context.project.addTopAddListeners(
+            (target, at, value) -> {
+              List<TreeItem<Wrapper>> newItems = new ArrayList<>();
+              for (int i = 0; i < value.size(); ++i) {
+                ProjectLayer v = value.get(i);
+                Wrapper child = Window.createNode(context, null, at + i, v);
+                child.tree.addListener(
+                    (observable, oldValue, newValue) -> {
+                      tree.getRoot().getChildren().set(child.parentIndex, newValue);
+                    });
+                newItems.add(child.tree.getValue());
+              }
+              tree.getRoot().getChildren().addAll(at, newItems);
+            });
+    topRemoveRoot =
+        context.project.addTopRemoveListeners(
+            (target, at, count) -> {
+              List<TreeItem<Wrapper>> temp = tree.getRoot().getChildren().subList(at, at + count);
+              temp.forEach(i -> i.getValue().remove(context));
+              temp.clear();
+              for (int i = at; i < tree.getRoot().getChildren().size(); ++i) {
+                tree.getRoot().getChildren().get(i).getValue().setParentIndex(at + i);
+              }
+            });
+    topMoveToRoot =
+        context.project.addTopMoveToListeners(
+            (target, source, count, dest) -> {
+              moveTo(tree.getRoot().getChildren(), source, count, dest);
+              for (int i = Math.min(source, dest); i < tree.getRoot().getChildren().size(); ++i)
+                tree.getRoot().getChildren().get(i).getValue().setParentIndex(i);
+            });
 
     if (main) {
       window.selectForEdit(context, null);
@@ -925,6 +960,7 @@ public class Structure {
       place(change, null, false, null);
     } else {
       Wrapper pasteParent = destination.getParent();
+      if (pasteParent != null) pasteParent = pasteParent.getParent();
       place(change, pasteParent, false, destination);
     }
   }
@@ -944,6 +980,7 @@ public class Structure {
       place(change, null, true, null);
     } else {
       Wrapper pasteParent = destination.getParent();
+      if (pasteParent != null) pasteParent = pasteParent.getParent();
       place(change, pasteParent, true, destination);
     }
   }
