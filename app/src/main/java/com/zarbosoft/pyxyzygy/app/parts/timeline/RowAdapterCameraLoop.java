@@ -125,4 +125,9 @@ public class RowAdapterCameraLoop extends RowAdapter {
   public Object getData() {
     return node;
   }
+
+  @Override
+  public boolean isMain() {
+    return false;
+  }
 }

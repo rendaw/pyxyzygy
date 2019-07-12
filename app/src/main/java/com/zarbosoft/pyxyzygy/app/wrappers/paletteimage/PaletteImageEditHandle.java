@@ -1020,6 +1020,7 @@ public class PaletteImageEditHandle extends EditHandle {
 
   @Override
   public void cursorMoved(Context context, Window window, DoubleVector vector) {
+    if (getCanvas().time.get() == -1) return;
     vector =
         Window.toLocal(window.getSelectedForView(), wrapper.canvasHandle, vector).minus(offset());
     mouseX.set(vector.x);
@@ -1037,6 +1038,7 @@ public class PaletteImageEditHandle extends EditHandle {
 
   @Override
   public void markStart(Context context, Window window, DoubleVector start) {
+    if (getCanvas().time.get() == -1) return;
     if (tool == null) return;
     tool.markStart(
         context,
@@ -1052,6 +1054,7 @@ public class PaletteImageEditHandle extends EditHandle {
 
   @Override
   public void mark(Context context, Window window, DoubleVector start, DoubleVector end) {
+    if (getCanvas().time.get() == -1) return;
     if (tool == null) return;
     Vector offset = offset();
     tool.mark(

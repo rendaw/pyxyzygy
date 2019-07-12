@@ -72,7 +72,7 @@ public class ToolSelect extends BaseToolSelect<TrueColorImageFrame, TrueColorIma
     return editHandle
         .wrapper
         .canvasHandle
-        .toInner(window.getSelectedForView().getWrapper().getConfig().scroll.get())
+        .toInnerPosition(window.getSelectedForView().getWrapper().getConfig().scroll.get())
         .toInt();
   }
 

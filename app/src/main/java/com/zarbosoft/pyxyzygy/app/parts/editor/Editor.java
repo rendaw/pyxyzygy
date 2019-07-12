@@ -164,11 +164,9 @@ public class Editor {
             Hotkeys.Hotkey.create(KeyCode.LEFT, false, false, false)) {
           @Override
           public void run(Context context, Window window) {
-            CanvasHandle edit = window.getSelectedForEdit().getCanvas();
-            if (edit == null) return;
-            int prev = edit.previousFrame.get();
-            if (prev == -1) prev = 0;
-            window.timeline.frame.set(prev);
+            int prev = window.timeline.previousFrame.get();
+            if (prev == -1) return;
+            window.timeline.time.set(prev);
           }
         },
         new Hotkeys.Action(
@@ -178,11 +176,9 @@ public class Editor {
             Hotkeys.Hotkey.create(KeyCode.RIGHT, false, false, false)) {
           @Override
           public void run(Context context, Window window) {
-            CanvasHandle edit = window.getSelectedForEdit().getCanvas();
-            if (edit == null) return;
-            int next = edit.nextFrame.get();
-            if (next == -1) next = 0;
-            window.timeline.frame.set(next);
+            int next = window.timeline.nextFrame.get();
+            if (next == -1) return;
+            window.timeline.time.set(next);
           }
         },
         new Hotkeys.Action(
@@ -206,14 +202,14 @@ public class Editor {
       onionSkinPrevious = null;
     }
     if (newValue != null) {
-      onionSkinPrevious = new OnionSkin(context, window.timeline, newValue, true);
+      onionSkinPrevious = new OnionSkin(context, this.window.timeline, newValue, true);
     }
     if (onionSkinNext != null) {
       onionSkinNext.remove();
       onionSkinNext = null;
     }
     if (newValue != null) {
-      onionSkinNext = new OnionSkin(context, window.timeline, newValue, false);
+      onionSkinNext = new OnionSkin(context, this.window.timeline, newValue, false);
     }
   }
 

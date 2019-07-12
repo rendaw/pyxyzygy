@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import static com.zarbosoft.pyxyzygy.app.Global.NO_INNER;
 import static com.zarbosoft.pyxyzygy.app.Global.localization;
 import static com.zarbosoft.pyxyzygy.app.Global.pasteHotkey;
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
@@ -396,6 +397,7 @@ public class TrueColorImageEditHandle extends EditHandle {
 
   @Override
   public void cursorMoved(Context context, Window window, DoubleVector vector) {
+    if (getCanvas().time.get() == NO_INNER) return;
     vector = Window.toLocal(window.getSelectedForView(), wrapper.canvasHandle, vector);
     mouseX.set(vector.x);
     mouseY.set(vector.y);
@@ -412,6 +414,7 @@ public class TrueColorImageEditHandle extends EditHandle {
 
   @Override
   public void markStart(Context context, Window window, DoubleVector start) {
+    if (getCanvas().time.get() == NO_INNER) return;
     if (tool == null) return;
     tool.markStart(
         context,
@@ -427,6 +430,7 @@ public class TrueColorImageEditHandle extends EditHandle {
 
   @Override
   public void mark(Context context, Window window, DoubleVector start, DoubleVector end) {
+    if (getCanvas().time.get() == NO_INNER) return;
     if (tool == null) return;
     Vector offset = offset();
     tool.mark(

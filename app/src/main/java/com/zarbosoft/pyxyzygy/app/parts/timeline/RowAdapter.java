@@ -55,4 +55,10 @@ public abstract class RowAdapter extends TreeItem<RowAdapter> {
    * @return
    */
   public abstract Object getData();
+
+  /**
+   * Currently means row is selected and should be used to decide previous/next frame
+   * @return
+   */
+  public abstract boolean isMain();
 }

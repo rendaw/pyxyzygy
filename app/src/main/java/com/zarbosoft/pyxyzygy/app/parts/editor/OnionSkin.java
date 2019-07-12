@@ -8,6 +8,7 @@ import com.zarbosoft.pyxyzygy.app.DoubleVector;
 import com.zarbosoft.pyxyzygy.app.EditHandle;
 import com.zarbosoft.pyxyzygy.app.GUILaunch;
 import com.zarbosoft.pyxyzygy.app.Render;
+import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.parts.timeline.Timeline;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
@@ -45,9 +46,10 @@ public class OnionSkin {
   private TrueColor lastColor = null;
 
   public OnionSkin(
-    Context context, Timeline timeline, EditHandle editHandle, boolean previous) {
+    Context context, Timeline timeline, EditHandle editHandle, boolean previous
+  ) {
     this.editHandle = editHandle;
-    frameProp = previous ? editHandle.getCanvas().previousFrame : editHandle.getCanvas().nextFrame;
+    frameProp = previous ? timeline.previousFrame : timeline.nextFrame;
     bounds = editHandle.getCanvas().bounds;
     on =
         new DoubleHalfBinder<>(

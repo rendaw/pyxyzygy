@@ -25,6 +25,7 @@ import javafx.scene.layout.VBox;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.zarbosoft.pyxyzygy.app.Global.NO_INNER;
 import static com.zarbosoft.pyxyzygy.app.Global.localization;
 import static com.zarbosoft.pyxyzygy.app.Misc.nodeFormFields;
 import static com.zarbosoft.pyxyzygy.app.Misc.separateFormField;
@@ -40,8 +41,7 @@ public class GroupNodeEditHandle extends EditHandle {
 
   public GroupNodeWrapper wrapper;
 
-  public GroupNodeEditHandle(
-    Context context, Window window, final GroupNodeWrapper wrapper) {
+  public GroupNodeEditHandle(Context context, Window window, final GroupNodeWrapper wrapper) {
     this.wrapper = wrapper;
 
     // Canvas overlay
@@ -67,7 +67,7 @@ public class GroupNodeEditHandle extends EditHandle {
     window.layerTabContent.set(this, pad(buildTab(context, window, toolProps)));
 
     // Toolbar
-    window.toolBarChildren.set(this, createToolButtons());
+    window.toolBarChildren.set(this, createToolButtons(window));
 
     wrapper.config.tool.addListener(
         new ChangeListener<String>() {
@@ -118,7 +118,7 @@ public class GroupNodeEditHandle extends EditHandle {
     } else throw new Assertion();
   }
 
-  protected List<Node> createToolButtons() {
+  protected List<Node> createToolButtons(Window window) {
     return ImmutableList.of(
         new Wrapper.ToolToggle(
             wrapper,
@@ -129,9 +129,21 @@ public class GroupNodeEditHandle extends EditHandle {
             wrapper,
             "cursor-layer-move.png",
             localization.getString("move.layer"),
-            GroupNodeConfig.TOOL_LAYER_MOVE),
+            GroupNodeConfig.TOOL_LAYER_MOVE) {
+          @Override
+          public void fire() {
+            super.fire();
+            window.showLayerTab();
+          }
+        },
         new Wrapper.ToolToggle(
-            wrapper, "stamper16.png", localization.getString("stamp"), GroupNodeConfig.TOOL_STAMP));
+            wrapper, "stamper16.png", localization.getString("stamp"), GroupNodeConfig.TOOL_STAMP) {
+          @Override
+          public void fire() {
+            super.fire();
+            window.showLayerTab();
+          }
+        });
   }
 
   @Override
@@ -158,6 +170,7 @@ public class GroupNodeEditHandle extends EditHandle {
 
   @Override
   public void markStart(Context context, Window window, DoubleVector start) {
+    if (getCanvas().time.get() == NO_INNER) return;
     if (tool == null) return;
     tool.markStart(
         context,
@@ -173,6 +186,7 @@ public class GroupNodeEditHandle extends EditHandle {
 
   @Override
   public void mark(Context context, Window window, DoubleVector start, DoubleVector end) {
+    if (getCanvas().time.get() == NO_INNER) return;
     if (tool == null) return;
     Vector offset = offset();
     tool.mark(
@@ -186,6 +200,7 @@ public class GroupNodeEditHandle extends EditHandle {
 
   @Override
   public void cursorMoved(Context context, Window window, DoubleVector vector) {
+    if (getCanvas().time.get() == NO_INNER) return;
     vector = Window.toLocal(window.getSelectedForView(), wrapper.canvasHandle, vector);
     tool.cursorMoved(context, window, vector);
   }

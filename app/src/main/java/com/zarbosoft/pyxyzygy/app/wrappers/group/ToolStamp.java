@@ -175,7 +175,6 @@ public class ToolStamp extends Tool {
                   return tree;
                 })
             .build());
-    window.showLayerTab();
     this.wrapper = wrapper;
     window.editorCursor.set(this, centerCursor("stamper32.png"));
 

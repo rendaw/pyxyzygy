@@ -155,4 +155,9 @@ class RowAdapterPaletteImageNode extends BaseFrameRowAdapter<PaletteImageLayer, 
   public ObservableObjectValue<Image> getStateImage() {
     return Timeline.emptyStateImage;
   }
+
+  @Override
+  public boolean isMain() {
+    return true;
+  }
 }

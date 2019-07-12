@@ -18,14 +18,15 @@ public abstract class FrameFinder<N, L> {
     }
   }
 
-  public Result<L> findFrame(N node, int frame) {
+  public Result<L> findFrame(N node, int time) {
+    if (time == -1) throw new Assertion();
     int at = 0;
     final int frameCount = frameCount(node);
     for (int i = 0; i < frameCount; ++i) {
       L pos = frameGet(node, i);
       final int frameLength = frameLength(pos);
       if ((i == frameCount - 1)
-          || (frame >= at && (frameLength == -1 || frame < at + frameLength))) {
+          || (time >= at && (frameLength == -1 || time < at + frameLength))) {
         return new Result(pos, at, i);
       }
       at += frameLength;

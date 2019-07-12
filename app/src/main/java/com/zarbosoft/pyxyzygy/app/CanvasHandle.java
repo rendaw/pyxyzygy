@@ -9,14 +9,24 @@ import java.util.ArrayList;
 import java.util.List;
 
 public abstract class CanvasHandle {
-  public final SimpleIntegerProperty frameNumber = new SimpleIntegerProperty(0);
-  public final SimpleIntegerProperty previousFrame = new SimpleIntegerProperty(-1);
-  public final SimpleIntegerProperty nextFrame = new SimpleIntegerProperty(-1);
+  public final SimpleIntegerProperty time = new SimpleIntegerProperty(0);
   public final SimpleObjectProperty<DoubleRectangle> bounds =
       new SimpleObjectProperty<>(new DoubleRectangle(0, 0, 0, 0));
   public List<FrameMapEntry> timeMap = new ArrayList<>();
 
-  public abstract DoubleVector toInner(DoubleVector vector);
+  /**
+   * Convert vector in parent space to local space at the current time
+   * @param outerPosition
+   * @return
+   */
+  public abstract DoubleVector toInnerPosition(DoubleVector outerPosition);
+
+  /**
+   * Convert time in parent timespace to local time
+   * @param outerTime
+   * @return
+   */
+  public abstract int toInnerTime(int outerTime);
 
   public final Group paint = new Group();
   public final Group overlay = new Group();
@@ -31,7 +41,7 @@ public abstract class CanvasHandle {
 
   public abstract void setViewport(Context context, DoubleRectangle newBounds, int positiveZoom);
 
-  public abstract void setViewedFrame(Context context, int frameNumber);
+  public abstract void setViewedTime(Context context, int outerTime);
 
   public abstract void remove(Context context, Wrapper excludeSubtree);
 

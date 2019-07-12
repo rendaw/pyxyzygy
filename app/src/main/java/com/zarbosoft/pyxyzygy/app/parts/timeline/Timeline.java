@@ -113,6 +113,8 @@ public class Timeline {
   private final Window window;
   public static final int extraFrames = 500;
   public static final double baseSize = 16;
+  public final SimpleIntegerProperty previousFrame = new SimpleIntegerProperty(-1);
+  public final SimpleIntegerProperty nextFrame = new SimpleIntegerProperty(-1);
   private final HBox toolBox;
   public final ChildrenReplacer<Node> toolBoxContents =
       new ChildrenReplacer<Node>() {
@@ -166,7 +168,7 @@ public class Timeline {
   private final SimpleIntegerProperty requestedMaxFrame = new SimpleIntegerProperty();
   private final SimpleIntegerProperty calculatedMaxFrame = new SimpleIntegerProperty();
   private final SimpleIntegerProperty useMaxFrame = new SimpleIntegerProperty();
-  public final SimpleIntegerProperty frame = new SimpleIntegerProperty();
+  public final SimpleIntegerProperty time = new SimpleIntegerProperty();
   public final SimpleBooleanProperty playingProperty = new SimpleBooleanProperty(false);
   public PlayThread playThread;
   public BiMap<TreeItem<RowAdapter>, GroupChild> groupTreeItemLookup = HashBiMap.create();
@@ -197,14 +199,14 @@ public class Timeline {
         newValue -> {
           Observable[] deps;
           if (newValue == null) deps = new Observable[] {requestedMaxFrame, calculatedMaxFrame};
-          else deps = new Observable[] {requestedMaxFrame, calculatedMaxFrame, frame};
+          else deps = new Observable[] {requestedMaxFrame, calculatedMaxFrame, time};
           useMaxFrame.bind(
               Bindings.createIntegerBinding(
                   () -> {
                     int out = 0;
                     out = Math.max(out, requestedMaxFrame.get());
                     out = Math.max(out, calculatedMaxFrame.get());
-                    if (newValue != null) out = Math.max(out, frame.get());
+                    if (newValue != null) out = Math.max(out, time.get());
                     return out + extraFrames;
                   },
                   deps));
@@ -239,7 +241,7 @@ public class Timeline {
     EventHandler<MouseEvent> mouseEventEventHandler =
         e -> {
           if (window.getSelectedForView() == null) return;
-          frame.set(Math.max(0, (int) (getTimelineX(e) / zoom)));
+          time.set(Math.max(0, (int) (getTimelineX(e) / zoom)));
           updateFrameMarker();
         };
     scrub.addEventFilter(MouseEvent.MOUSE_CLICKED, mouseEventEventHandler);
@@ -269,7 +271,7 @@ public class Timeline {
                                 && c.getTreeItem().getValue() != null
                                 && c.getTreeItem()
                                     .getValue()
-                                    .createFrame(context, window, change, frame.get()))
+                                    .createFrame(context, window, change, time.get()))
                     .findFirst();
               });
         });
@@ -288,7 +290,7 @@ public class Timeline {
                                 && c.getTreeItem().getValue() != null
                                 && c.getTreeItem()
                                     .getValue()
-                                    .duplicateFrame(context, window, change, frame.get()))
+                                    .duplicateFrame(context, window, change, time.get()))
                     .findFirst();
               });
         });
@@ -448,12 +450,13 @@ public class Timeline {
               protected void updateItem(RowAdapter item, boolean empty) {
                 if (item == null) {
                   showViewing.imageProperty().unbind();
+                  showViewing.setImage(null);
                   textProperty().unbind();
                   setText("");
-                  return;
+                } else {
+                  textProperty().bind(item.getName());
+                  showViewing.imageProperty().bind(item.getStateImage());
                 }
-                textProperty().bind(item.getName());
-                showViewing.imageProperty().bind(item.getStateImage());
                 super.updateItem(item, empty);
               }
             });
@@ -562,7 +565,7 @@ public class Timeline {
 
     rootFrame =
         CustomBinding.bind(
-            frame,
+            time,
             new IndirectHalfBinder<Number>(
                 window.selectedForViewFrameBinder,
                 e ->
@@ -572,7 +575,7 @@ public class Timeline {
     final ChangeListener<Number> frameListener =
         new ChangeListener<>() {
           {
-            changed(null, null, frame.get());
+            changed(null, null, time.get());
           }
 
           @Override
@@ -581,7 +584,7 @@ public class Timeline {
             updateFrameMarker();
           }
         };
-    frame.addListener(frameListener);
+    time.addListener(frameListener);
 
     rootPlaying =
         new DoubleHalfBinder<Boolean, Pair<CanvasHandle, EditHandle>>(
@@ -699,8 +702,6 @@ public class Timeline {
   }
 
   public void setNodes(CanvasHandle root1, EditHandle edit1) {
-    updateFrameMarker();
-
     // Clean up everything
     select(null);
     cleanItemSubtree(tree.getRoot());
@@ -785,6 +786,11 @@ public class Timeline {
             public Object getData() {
               return null;
             }
+
+            @Override
+            public boolean isMain() {
+              return false;
+            }
           };
       editCleanup.add(
           ((GroupLayer) edit.getValue())
@@ -831,13 +837,15 @@ public class Timeline {
             tree.getRoot().getChildren().size() > 1
                 ? tree.getRoot().getChildren().get(1)
                 : tree.getRoot().getChildren().get(0));
+
+    updateFrameMarker();
   }
 
   private void updateFrameMarker() {
     CanvasHandle root = window.getSelectedForView();
     if (root == null) return;
-    root.setViewedFrame(context, frame.get());
-    frameMarker.setLayoutX(frame.get() * zoom);
+    root.setViewedTime(context, time.get());
+    frameMarker.setLayoutX(time.get() * zoom);
     new Consumer<TreeItem<RowAdapter>>() {
       @Override
       public void accept(TreeItem<RowAdapter> item) {
@@ -1094,17 +1102,12 @@ public class Timeline {
         int suppressRecalc = 0;
 
         {
-          child = createTimeMapper(((GroupChild) object).inner());
-
           innerSetListener =
               ((GroupChild) object)
                   .addInnerSetListeners(
                       (GroupChild target, ProjectLayer value) -> {
                         if (child != null) child.remove();
-                        if (value
-                            == Optional.ofNullable(window.getSelectedForEdit())
-                                .map(e -> e.getWrapper().getValue())
-                                .orElse(null)) child = createTimeMapper(value);
+                        if (value != null) child = createTimeMapper(value);
                         else child = createEndTimeHandle();
                         recalcTimes();
                       });
@@ -1175,6 +1178,7 @@ public class Timeline {
     return new TimeMapper() {
       @Override
       public void updateTime(List<FrameMapEntry> timeMap) {
+        super.updateTime(timeMap);
         window.timeMap = timeMap;
       }
 
@@ -1193,7 +1197,7 @@ public class Timeline {
     selectedFrame.set(frame);
     if (frame != null) {
       frame.select();
-      this.frame.set(frame.at.get());
+      this.time.set(frame.at.get());
     }
   }
 }

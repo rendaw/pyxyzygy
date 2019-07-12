@@ -157,11 +157,14 @@ public class Window {
   public Timeline timeline;
   private StackPane stack;
   public Structure structure;
-  private BinderRoot rootTabWidth; // GC root
+  @SuppressWarnings("unused")
+  private BinderRoot rootTabWidth;
   private ChangeListener<? super Boolean> maxListener;
   private TabPane leftTabs;
-  private BinderRoot rootCanRedo; // GC root
-  private BinderRoot rootCanUndo; // GC root
+  @SuppressWarnings("unused")
+  private BinderRoot rootCanRedo;
+  @SuppressWarnings("unused")
+  private BinderRoot rootCanUndo;
 
   public static HalfBinder<Number> effectiveWidthBinder(Node node) {
     return new PropertyHalfBinder<Bounds>(node.layoutBoundsProperty())
@@ -855,7 +858,7 @@ public class Window {
   public static DoubleVector toLocal(
       CanvasHandle selectedForView, CanvasHandle translateTo, DoubleVector v) {
     for (CanvasHandle parent : getAncestorsInward(selectedForView, translateTo)) {
-      v = parent.toInner(v);
+      v = parent.toInnerPosition(v);
     }
     return v;
   }
@@ -870,7 +873,7 @@ public class Window {
   public static DoubleVector toGlobal(CanvasHandle wrapper, DoubleVector v) {
     DoubleVector zero = new DoubleVector(0, 0);
     for (CanvasHandle parent : getAncestorsOutward(null, wrapper)) {
-      v = v.minus(parent.toInner(zero));
+      v = v.minus(parent.toInnerPosition(zero));
     }
     return v;
   }

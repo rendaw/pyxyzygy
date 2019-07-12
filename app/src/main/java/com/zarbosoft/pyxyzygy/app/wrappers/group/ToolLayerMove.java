@@ -22,6 +22,7 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.SelectionMode;
 import javafx.util.Callback;
 
+import static com.zarbosoft.pyxyzygy.app.Global.NO_INNER;
 import static com.zarbosoft.pyxyzygy.app.Global.localization;
 import static com.zarbosoft.pyxyzygy.app.Misc.noopConsumer;
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
@@ -69,17 +70,18 @@ public class ToolLayerMove extends Tool {
     CustomBinding.bindBidirectional(
         wrapper.specificChild, new SelectionModelBinder<>(layerList.getSelectionModel()));
     CustomBinding.bind(origin.visibleProperty(), wrapper.specificChild.map(s -> opt(s != null)));
-    new DoubleHalfBinder<>(wrapper.specificChild, wrapper.getConfig().frame)
+    new DoubleHalfBinder<>(wrapper.specificChild,wrapper.canvasHandle.time.asObject())
         .addListener(
-            (select, frame) -> {
+            (select, time) -> {
               if (originCleanup != null) {
                 originCleanup.destroy();
                 originCleanup = null;
               }
+              if (time == NO_INNER) return;
               if (select == null) return;
               pos =
                   GroupChildWrapper.positionFrameFinder.findFrame(
-                          select, wrapper.canvasHandle.frameNumber.get())
+                          select, wrapper.canvasHandle.time.get())
                       .frame;
               originCleanup =
                   CustomBinding.bind(origin.offset, new ScalarHalfBinder<Vector>(pos, "offset"));
@@ -95,7 +97,6 @@ public class ToolLayerMove extends Tool {
                   return layerList;
                 })
             .build());
-    window.showLayerTab();
   }
 
   @Override
@@ -105,7 +106,7 @@ public class ToolLayerMove extends Tool {
     if (specificLayer == null) return;
     pos =
         GroupChildWrapper.positionFrameFinder.findFrame(
-                specificLayer, wrapper.canvasHandle.frameNumber.get())
+                specificLayer, wrapper.canvasHandle.time.get())
             .frame;
     this.markStart = globalStart;
     this.markStartOffset = pos.offset();

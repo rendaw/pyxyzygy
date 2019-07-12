@@ -186,8 +186,8 @@ public class CameraEditHandle extends GroupNodeEditHandle {
                           dir.resolve(String.format("%s.png", wrapper.config.renderName))
                               .toString()));
             },
-            wrapper.canvasHandle.frameNumber.get(),
-            wrapper.canvasHandle.frameNumber.get() + 1,
+            wrapper.canvasHandle.time.get(),
+            wrapper.canvasHandle.time.get() + 1,
             scale);
         break;
       case WEBM:
@@ -285,7 +285,7 @@ public class CameraEditHandle extends GroupNodeEditHandle {
   }
 
   @Override
-  protected List<Node> createToolButtons() {
+  protected List<Node> createToolButtons(Window window) {
     return ImmutableList.of(
         new Wrapper.ToolToggle(
             wrapper,

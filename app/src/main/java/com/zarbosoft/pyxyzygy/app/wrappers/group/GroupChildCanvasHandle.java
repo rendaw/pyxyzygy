@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.zarbosoft.pyxyzygy.app.Global.NO_INNER;
 import static com.zarbosoft.pyxyzygy.app.Global.opacityMax;
 import static com.zarbosoft.pyxyzygy.app.Misc.moveTo;
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
@@ -89,10 +90,10 @@ public class GroupChildCanvasHandle extends CanvasHandle {
                   }
                   if (child != null && enabled) {
                     childCanvas = child.buildCanvas(context, window, this);
-                    childCanvas.setViewport(context, bounds.get(), zoom);
                     paint.getChildren().add(childCanvas.getPaintWidget());
                     overlay.getChildren().add(childCanvas.getOverlayWidget());
-                    GroupChildCanvasHandle.this.updateChildCanvasPosition(null);
+                    updateTime(context);
+                    updatePosition(context);
                   }
                 });
 
@@ -194,7 +195,7 @@ public class GroupChildCanvasHandle extends CanvasHandle {
   }
 
   private GroupPositionFrame findPosition() {
-    return findPosition(frameNumber.get());
+    return findPosition(time.get());
   }
 
   private GroupPositionFrame findPosition(int frame) {
@@ -203,7 +204,7 @@ public class GroupChildCanvasHandle extends CanvasHandle {
 
   private void updateTime(Context context) {
     if (childCanvas != null)
-      childCanvas.setViewedFrame(context, wrapper.findInnerFrame(frameNumber.get()));
+      childCanvas.setViewedTime(context, time.get());
   }
 
   @Override
@@ -233,32 +234,33 @@ public class GroupChildCanvasHandle extends CanvasHandle {
   }
 
   private void updatePosition(Context context) {
+    if (time.get() == NO_INNER) return;
     GroupPositionFrame pos = findPosition();
     if (bounds.get() == null) return;
     DoubleRectangle newBounds = bounds.get().minus(pos.offset());
-    updateChildCanvasPosition(pos);
-    if (childCanvas != null) childCanvas.setViewport(context, newBounds, zoom);
-  }
-
-  @Override
-  public void setViewedFrame(Context context, int frameNumber) {
-    this.frameNumber.set(frameNumber);
-    updateTime(context);
-    updatePosition(context);
-  }
-
-  private void updateChildCanvasPosition(GroupPositionFrame pos) {
-    if (pos == null) pos = findPosition();
     paint.setLayoutX(pos.offset().x);
     paint.setLayoutY(pos.offset().y);
     overlay.setLayoutX(pos.offset().x);
     overlay.setLayoutY(pos.offset().y);
+    if (childCanvas != null) childCanvas.setViewport(context, newBounds, zoom);
   }
 
   @Override
-  public DoubleVector toInner(DoubleVector vector) {
+  public void setViewedTime(Context context, int outerTime) {
+    this.time.set(toInnerTime(outerTime));
+    updateTime(context);
+    updatePosition(context);
+  }
+
+  @Override
+  public DoubleVector toInnerPosition(DoubleVector outerPosition) {
     GroupPositionFrame pos = findPosition();
-    return vector.minus(pos.offset());
+    return outerPosition.minus(pos.offset());
+  }
+
+  @Override
+  public int toInnerTime(int outerTime) {
+    return GroupChildWrapper.toInnerTime(wrapper.node,outerTime);
   }
 
   @Override

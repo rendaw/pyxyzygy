@@ -6,6 +6,7 @@ import com.zarbosoft.pyxyzygy.app.WidgetHandle;
 import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
 import com.zarbosoft.pyxyzygy.app.widgets.binding.CustomBinding;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.HalfBinder;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeWrapper;
 import com.zarbosoft.pyxyzygy.core.model.latest.ChangeStepBuilder;
 import com.zarbosoft.pyxyzygy.core.model.latest.GroupChild;
@@ -23,16 +24,18 @@ import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 public class RowAdapterGroupChild extends RowAdapter {
   private final GroupChild child;
   private final BinderRoot cleanIconBind;
+  public final HalfBinder<Boolean> selected;
   SimpleObjectProperty<Image> stateImage = new SimpleObjectProperty<>(null);
   Runnable nameCleanup;
   private Listener.ScalarSet<GroupChild, ProjectLayer> innerListener;
 
   RowAdapterGroupChild(GroupNodeWrapper wrapper, GroupChild child) {
     this.child = child;
+    this.selected = wrapper.specificChild.map(c -> opt(c == child));
     cleanIconBind =
         CustomBinding.bind(
             stateImage,
-            wrapper.specificChild.map(c -> opt(c == child ? icon("editing.png") : null)));
+            selected.map(s -> opt(s ? icon("editing.png") : null)));
   }
 
   @Override
@@ -74,6 +77,11 @@ public class RowAdapterGroupChild extends RowAdapter {
   @Override
   public Object getData() {
     return child;
+  }
+
+  @Override
+  public boolean isMain() {
+    return false;
   }
 
   @Override

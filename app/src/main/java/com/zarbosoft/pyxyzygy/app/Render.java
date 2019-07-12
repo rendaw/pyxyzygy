@@ -21,6 +21,7 @@ import com.zarbosoft.pyxyzygy.seed.Rectangle;
 import com.zarbosoft.pyxyzygy.seed.Vector;
 import com.zarbosoft.rendaw.common.Assertion;
 
+import static com.zarbosoft.pyxyzygy.app.Global.NO_INNER;
 import static com.zarbosoft.pyxyzygy.app.Global.opacityMax;
 
 public class Render {
@@ -39,7 +40,7 @@ public class Render {
     } else if (node1 instanceof GroupChild) {
       GroupChild node = (GroupChild) node1;
       GroupPositionFrame pos = GroupChildWrapper.positionFrameFinder.findFrame(node, frame).frame;
-      int frame1 = GroupChildWrapper.findInnerFrame(node, frame);
+      int frame1 = GroupChildWrapper.toInnerTime(node, frame);
       if (node.inner() != null) {
         Rectangle childBounds = findBounds(context, frame1, node.inner());
         out.point(childBounds.corner().plus(pos.offset()));
@@ -63,7 +64,7 @@ public class Render {
     return out.buildInt();
   }
 
-  public static Rectangle render(
+  public static Rectangle renderTrueColorImageLayer(
     Context context,
     TrueColorImage gc,
     TrueColorImageLayer node,
@@ -85,7 +86,7 @@ public class Render {
     return tileBounds;
   }
 
-  public static Rectangle render(
+  public static Rectangle renderPaletteImageLayer(
     Context context,
     TrueColorImage gc,
     PaletteImageLayer node,
@@ -123,6 +124,7 @@ public class Render {
     int frame,
     Rectangle crop,
     double opacity) {
+    if (frame == NO_INNER) return;
     if (false) {
       throw new Assertion();
     } else if (node1 instanceof GroupLayer) {
@@ -133,13 +135,13 @@ public class Render {
       GroupChild node = (GroupChild) node1;
       if (node.enabled() && node.inner() != null) {
         GroupPositionFrame pos = GroupChildWrapper.positionFrameFinder.findFrame(node, frame).frame;
-        int frame1 = GroupChildWrapper.findInnerFrame(node, frame);
+        int frame1 = GroupChildWrapper.toInnerTime(node, frame);
         double useOpacity = opacity * ((double) node.opacity() / opacityMax);
         render(context, node.inner(), out, frame1, crop.unshift(pos.offset()), useOpacity);
       }
     } else if (node1 instanceof TrueColorImageLayer) {
       TrueColorImageLayer node = (TrueColorImageLayer) node1;
-      render(
+      renderTrueColorImageLayer(
           context,
           out,
           node,
@@ -148,7 +150,7 @@ public class Render {
           opacity);
     } else if (node1 instanceof PaletteImageLayer) {
       PaletteImageLayer node = (PaletteImageLayer) node1;
-      render(
+      renderPaletteImageLayer(
           context,
           out,
           node,
@@ -170,7 +172,7 @@ public class Render {
         out = out.expand(bounds(context, layer, frame)).shift(node.offset());
     } else if (node1 instanceof GroupChild) {
       GroupChild node = (GroupChild) node1;
-      int frame1 = GroupChildWrapper.findInnerFrame(node, frame);
+      int frame1 = GroupChildWrapper.toInnerTime(node, frame);
       if (node.inner() != null) out = out.expand(bounds(context, node.inner(), frame1));
     } else if (node1 instanceof TrueColorImageLayer) {
       TrueColorImageLayer node = (TrueColorImageLayer) node1;

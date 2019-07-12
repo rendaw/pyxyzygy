@@ -240,6 +240,11 @@ public class RowAdapterGroupChildTime extends BaseFrameRowAdapter<GroupChild, Gr
   public void remove(Context context) {}
 
   @Override
+  public boolean isMain() {
+    return false;
+  }
+
+  @Override
   public void updateFrameMarker(Context context, Window window) {
     super.updateFrameMarker(context, window);
     if (rowInnerRange.isPresent()) rowInnerRange.get().updateFrameMarker(window);

@@ -23,10 +23,8 @@ import com.zarbosoft.rendaw.common.Pair;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
-import javafx.geometry.HPos;
 import javafx.scene.Node;
 import javafx.scene.input.KeyCode;
-import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
 
 import java.util.Optional;
@@ -191,7 +189,7 @@ public class ToolBrush extends BaseToolBrush<TrueColorImageFrame, TrueColorImage
           context,
           window.getSelectedForView().getWrapper().getValue(),
           out,
-          window.getSelectedForView().frameNumber.get(),
+          window.getSelectedForView().time.get(),
           new Rectangle((int) Math.floor(outer.x), (int) Math.floor(outer.y), 1, 1),
           1);
       setColor(context, HelperJFX.toImage(out).getPixelReader().getColor(0, 0));

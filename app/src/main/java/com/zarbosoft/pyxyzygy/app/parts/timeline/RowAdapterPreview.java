@@ -114,4 +114,9 @@ public class RowAdapterPreview extends RowAdapter {
   public Object getData() {
     return data;
   }
+
+  @Override
+  public boolean isMain() {
+    return false;
+  }
 }

@@ -17,6 +17,8 @@ import com.zarbosoft.pyxyzygy.core.model.latest.ProjectLayer;
 import com.zarbosoft.rendaw.common.Assertion;
 import javafx.beans.property.SimpleObjectProperty;
 
+import static com.zarbosoft.pyxyzygy.app.Global.NO_INNER;
+
 public class GroupChildWrapper extends Wrapper {
   private final Wrapper parent;
   public final GroupChild node;
@@ -79,16 +81,14 @@ public class GroupChildWrapper extends Wrapper {
             });
   }
 
-  public static int findInnerFrame(GroupChild node, int frame) {
-    FrameFinder.Result<GroupTimeFrame> result = timeFrameFinder.findFrame(node, frame);
-    int offset = (frame - result.at);
+  public static int toInnerTime(GroupChild node, int time) {
+    if (time == NO_INNER) return NO_INNER;
+    FrameFinder.Result<GroupTimeFrame> result = timeFrameFinder.findFrame(node, time);
+    int offset = (time - result.at);
     if (result.frame.innerLoop() != 0) offset = offset % result.frame.innerLoop();
+    if (result.frame.innerOffset() == NO_INNER) return NO_INNER;
     int innerFrame = result.frame.innerOffset() + offset;
     return innerFrame;
-  }
-
-  public int findInnerFrame(int frame) {
-    return findInnerFrame(node, frame);
   }
 
   @Override

@@ -156,4 +156,9 @@ class RowAdapterTrueColorImageNode
   public ObservableObjectValue<Image> getStateImage() {
     return Timeline.emptyStateImage;
   }
+
+  @Override
+  public boolean isMain() {
+    return true;
+  }
 }

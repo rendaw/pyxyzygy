@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.zarbosoft.pyxyzygy.app.Global.NO_INNER;
+
 public class BaseImageCanvasHandle<
         N extends ProjectLayer, F extends ProjectObject, T extends ProjectObject, L>
     extends CanvasHandle {
@@ -48,10 +50,10 @@ public class BaseImageCanvasHandle<
             frame -> {
               Listener.ScalarSet<F, Vector> offsetListener =
                   wrapper.addFrameOffsetSetListener(
-                      frame, (target, value) -> updateViewedFrame(context));
+                      frame, (target, value) -> updateViewedTime(context));
               Listener.ScalarSet<F, Integer> lengthListener =
                   wrapper.addFrameLengthSetListener(
-                      frame, (target, value) -> updateViewedFrame(context));
+                      frame, (target, value) -> updateViewedTime(context));
               return () -> {
                 wrapper.removeFrameOffsetSetListener(frame, offsetListener);
                 wrapper.removeFrameLengthSetListener(frame, lengthListener);
@@ -59,7 +61,7 @@ public class BaseImageCanvasHandle<
             },
             cleanup -> cleanup.run(),
             at -> {
-              updateViewedFrame(context);
+              updateViewedTime(context);
             });
 
     attachTiles(context);
@@ -97,6 +99,8 @@ public class BaseImageCanvasHandle<
     Rectangle oldBounds = oldBounds1.scale(3).divideContains(context.project.tileSize());
     Rectangle newBounds = newBounds1.scale(3).divideContains(context.project.tileSize());
 
+    if (time.get() == NO_INNER) return;
+
     // Remove tiles outside view bounds
     for (int x = 0; x < oldBounds.width; ++x) {
       for (int y = 0; y < oldBounds.height; ++y) {
@@ -130,52 +134,28 @@ public class BaseImageCanvasHandle<
   }
 
   @Override
-  public void setViewedFrame(Context context, int frameNumber) {
-    this.frameNumber.set(frameNumber);
-    updateViewedFrame(context);
+  public void setViewedTime(Context context, int outerTime) {
+    this.time.set(outerTime);
+    updateViewedTime(context);
   }
 
-  public void updateViewedFrame(Context context) {
-    F oldFrame = frame;
-    FrameFinder.Result<F> found = wrapper.frameFinder.findFrame(wrapper.node, frameNumber.get());
-    frame = found.frame;
-    if (oldFrame != frame) {
+  public void updateViewedTime(Context context) {
+    if (time.get() != NO_INNER) {
+      F oldFrame = frame;
+      FrameFinder.Result<F> found = wrapper.frameFinder.findFrame(wrapper.node, time.get());
+      frame = found.frame;
+      if (oldFrame != frame) {
+        detachTiles();
+        attachTiles(context);
+      }
+    } else {
       detachTiles();
-      attachTiles(context);
+      frame = null;
     }
-    int frameCount = wrapper.frameFinder.frameCount(wrapper.node);
-    do {
-      if (frameCount == 1) {
-        previousFrame.set(-1);
-        nextFrame.set(-1);
-        break;
-      }
-
-      {
-        int frameIndex = found.frameIndex - 1;
-        if (frameIndex == -1) frameIndex = frameCount - 1;
-        int outFrame = 0;
-        for (int i = 0; i < frameIndex; ++i) {
-          outFrame +=
-              wrapper.frameFinder.frameLength(wrapper.frameFinder.frameGet(wrapper.node, i));
-        }
-        previousFrame.set(outFrame);
-      }
-
-      {
-        int frameIndex = found.frameIndex + 1;
-        if (frameIndex >= frameCount) frameIndex = 0;
-        int outFrame = 0;
-        for (int i = 0; i < frameIndex; ++i) {
-          outFrame +=
-              wrapper.frameFinder.frameLength(wrapper.frameFinder.frameGet(wrapper.node, i));
-        }
-        nextFrame.set(outFrame);
-      }
-    } while (false);
   }
 
   public void attachTiles(Context context) {
+    if (time.get() == NO_INNER) return;
     tilesPutListener =
         wrapper.addFrameTilesPutAllListener(
             frame,
@@ -228,13 +208,18 @@ public class BaseImageCanvasHandle<
   }
 
   public void detachTiles() {
-    wrapper.removeFrameTilesPutAllListener(frame, tilesPutListener);
-    wrapper.removeFrameTilesClearListener(frame, tilesClearListener);
+    if (tilesPutListener != null) {
+      wrapper.removeFrameTilesPutAllListener(frame, tilesPutListener);
+      tilesPutListener = null;
+    }
+    if (tilesClearListener != null) {
+      wrapper.removeFrameTilesClearListener(frame, tilesClearListener);
+      tilesClearListener = null;
+    }
     if (offsetCleanup != null) {
       offsetCleanup.destroy();
       offsetCleanup = null;
     }
-    tilesPutListener = null;
     paint.getChildren().clear();
     wrapTiles.clear();
   }
@@ -262,7 +247,12 @@ public class BaseImageCanvasHandle<
   }
 
   @Override
-  public DoubleVector toInner(DoubleVector vector) {
-    return vector;
+  public DoubleVector toInnerPosition(DoubleVector outerPosition) {
+    return outerPosition;
+  }
+
+  @Override
+  public int toInnerTime(int outerTime) {
+    return outerTime;
   }
 }

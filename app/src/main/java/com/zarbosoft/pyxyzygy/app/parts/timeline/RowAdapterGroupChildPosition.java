@@ -99,6 +99,11 @@ public class RowAdapterGroupChildPosition
   public void remove(Context context) {}
 
   @Override
+  public boolean isMain() {
+    return childRowAdapter.selected.get().orElse(false);
+  }
+
+  @Override
   protected void addFrame(ChangeStepBuilder change, int index, GroupPositionFrame frame) {
     change.groupChild(child).positionFramesAdd(index, frame);
   }
