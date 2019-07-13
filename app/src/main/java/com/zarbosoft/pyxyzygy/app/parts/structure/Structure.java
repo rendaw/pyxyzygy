@@ -288,6 +288,7 @@ public class Structure {
                     TreeItem<Wrapper> first = added.get(0);
                     if (first.getValue() == null) return;
                     window.selectForEdit(context, first.getValue());
+                    return;
                   }
                 });
     tree.addEventFilter(
@@ -446,6 +447,7 @@ public class Structure {
     MenuItem addImage = new MenuItem(localization.getString("add.true.color.layer"));
     addImage.setOnAction(
         e -> {
+          System.out.format("z1\n");
           TrueColorImageLayer image = TrueColorImageLayer.create(context.model);
           image.initialOffsetSet(context.model, Vector.ZERO);
           image.initialNameSet(
@@ -454,10 +456,13 @@ public class Structure {
           frame.initialLengthSet(context.model, -1);
           frame.initialOffsetSet(context.model, new Vector(0, 0));
           image.initialFramesAdd(context.model, ImmutableList.of(frame));
+          System.out.format("z2\n");
           context.change(
               null,
               c -> {
+                System.out.format("z3\n");
                 addNew(image, c);
+                System.out.format("z4\n");
               });
         });
     MenuItem addPalette = new MenuItem(localization.getString("add.palette.layer"));
@@ -923,6 +928,11 @@ public class Structure {
               for (int i = at; i < tree.getRoot().getChildren().size(); ++i) {
                 tree.getRoot().getChildren().get(i).getValue().setParentIndex(at + i);
               }
+              if (target.topLength() == 0) {
+                tree.getSelectionModel().clearSelection();
+                window.selectForView(context, null);
+                window.selectForEdit(context, null);
+              }
             });
     topMoveToRoot =
         context.project.addTopMoveToListeners(
@@ -934,18 +944,21 @@ public class Structure {
 
     if (main) {
       window.selectForEdit(context, null);
-      window.selectForView(context, findNode(rootTreeItem, viewPath));
-      tree.getSelectionModel().clearSelection();
-      tree.getSelectionModel().select(findNode(rootTreeItem, editPath).tree.get());
+      Wrapper editNode = findNode(rootTreeItem, viewPath);
+      if (editNode != null) {
+        window.selectForView(context, editNode);
+        tree.getSelectionModel().clearSelection();
+        tree.getSelectionModel().select(findNode(rootTreeItem, editPath).tree.get());
+      }
     }
     postInit = true;
   }
 
   public static Wrapper findNode(TreeItem<Wrapper> root, List<Integer> path) {
     if (path.isEmpty()) return root.getValue();
-    return findNode(
-        root.getChildren().get(Math.min(root.getChildren().size() - 1, path.get(0))),
-        sublist(path, 1));
+    int next = Math.min(root.getChildren().size() - 1, path.get(0));
+    if (next == -1) return root.getValue();
+    return findNode(root.getChildren().get(next), sublist(path, 1));
   }
 
   private void delete(Context context, ChangeStepBuilder change) {
@@ -1055,6 +1068,7 @@ public class Structure {
       index = placeAt.parentIndex + 1;
       placeAt = placeAt.getParent();
     }
+    System.out.format("top add new node %s\n", node.name());
     change.project(context.project).topAdd(node);
   }
 

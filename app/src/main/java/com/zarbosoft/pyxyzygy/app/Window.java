@@ -157,12 +157,16 @@ public class Window {
   public Timeline timeline;
   private StackPane stack;
   public Structure structure;
+
   @SuppressWarnings("unused")
   private BinderRoot rootTabWidth;
+
   private ChangeListener<? super Boolean> maxListener;
   private TabPane leftTabs;
+
   @SuppressWarnings("unused")
   private BinderRoot rootCanRedo;
+
   @SuppressWarnings("unused")
   private BinderRoot rootCanUndo;
 
@@ -243,9 +247,6 @@ public class Window {
   public void selectForView(Context context, Wrapper wrapper, boolean fromEdit) {
     Wrapper oldViewWrapper = selectedForView == null ? null : selectedForView.getWrapper();
     if (oldViewWrapper == wrapper) return;
-    if (wrapper == null) {
-      return;
-    }
     do {
       // Delete old canvas handles--
 
@@ -281,6 +282,12 @@ public class Window {
       }
     } while (false);
     selectedForView = null;
+
+    if (wrapper == null) {
+      timeline.setNodes(selectedForView, selectedForEdit);
+      return;
+    }
+
     selectedForView = wrapper.buildCanvas(context, this, null);
 
     selectedForViewZoomControlBinder.clear();
@@ -326,6 +333,7 @@ public class Window {
     EditHandle oldValue = selectedForEdit;
     selectedForEdit = null;
     if (wrapper == null) {
+      timeline.setNodes(selectedForView, selectedForEdit);
       return;
     }
 
@@ -339,7 +347,8 @@ public class Window {
     selectedForEditTreeIconBinder.clear();
 
     // Transition
-    Optional<Wrapper> notViewParent = findNotViewParent(selectedForView.getWrapper(), wrapper);
+    Optional<Wrapper> notViewParent =
+        findNotViewParent(selectedForView == null ? null : selectedForView.getWrapper(), wrapper);
     if (!notViewParent.isPresent()) {
       // wrapper parent is already view
       selectedForEdit = wrapper.buildEditControls(context, this);

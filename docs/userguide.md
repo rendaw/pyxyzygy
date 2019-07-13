@@ -86,3 +86,11 @@ A project is stored on disk as a directory with a `project.luxem` file.  You can
 * `ctrl + click` - sample color from current node
 * `ctrl + shift + click` - sample merged color from campus
 * `shift + click` - draw line
+
+## Troubleshooting
+
+### I can only view one layer at a time.
+
+Are your layers in a group?  If they aren't in a group, then they are probably being treated as separate scenes. See [Project structure](project_section.md) for more information on scenes.
+
+If you create a group, lift your layers, and then place them in the group you can view them together.
