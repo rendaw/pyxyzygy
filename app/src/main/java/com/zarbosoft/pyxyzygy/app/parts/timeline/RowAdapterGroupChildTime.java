@@ -122,6 +122,7 @@ public class RowAdapterGroupChildTime extends BaseFrameRowAdapter<GroupChild, Gr
   @Override
   public WidgetHandle createRowWidget(Context context, Window window) {
     return new WidgetHandle() {
+      private final Listener.ScalarSet<GroupChild, Integer> prelengthCleanup;
       final VBox layout = new VBox();
 
       Runnable framesCleanup;
@@ -130,6 +131,11 @@ public class RowAdapterGroupChildTime extends BaseFrameRowAdapter<GroupChild, Gr
       Runnable selectedFrameCleanup;
 
       {
+        prelengthCleanup =
+            child.addTimePrelengthSetListeners(
+                ((target, value) -> {
+                  updateFrames(context, window);
+                }));
         framesCleanup =
             child.mirrorTimeFrames(
                 frameCleanup,
@@ -137,7 +143,7 @@ public class RowAdapterGroupChildTime extends BaseFrameRowAdapter<GroupChild, Gr
                   Listener.ScalarSet<GroupTimeFrame, Integer> lengthListener =
                       f.addLengthSetListeners(
                           (target, value) -> {
-                            updateTime(context, window);
+                            updateFrames(context, window);
                           });
                   return () -> {
                     f.removeLengthSetListeners(lengthListener);
@@ -145,7 +151,7 @@ public class RowAdapterGroupChildTime extends BaseFrameRowAdapter<GroupChild, Gr
                 },
                 c -> c.run(),
                 at -> {
-                  updateTime(context, window);
+                  updateFrames(context, window);
                 });
         selectedFrameListener =
             (observable, oldValue, newValue) -> {
@@ -229,6 +235,7 @@ public class RowAdapterGroupChildTime extends BaseFrameRowAdapter<GroupChild, Gr
       @Override
       public void remove() {
         framesCleanup.run();
+        child.removeTimePrelengthSetListeners(prelengthCleanup);
         frameCleanup.forEach(c -> c.run());
         timeline.selectedFrame.removeListener(selectedFrameListener);
         if (selectedFrameCleanup != null) selectedFrameCleanup.run();
@@ -248,5 +255,15 @@ public class RowAdapterGroupChildTime extends BaseFrameRowAdapter<GroupChild, Gr
   public void updateFrameMarker(Context context, Window window) {
     super.updateFrameMarker(context, window);
     if (rowInnerRange.isPresent()) rowInnerRange.get().updateFrameMarker(window);
+  }
+
+  @Override
+  protected void setPrelength(ChangeStepBuilder change, GroupChild node, int length) {
+    change.groupChild(node).timePrelengthSet(length);
+  }
+
+  @Override
+  protected int getPrelength(GroupChild node) {
+    return node.timePrelength();
   }
 }

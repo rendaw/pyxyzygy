@@ -29,6 +29,8 @@ import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 
 public class GroupChildCanvasHandle extends CanvasHandle {
   private final BinderRoot opacityRoot;
+  private final Listener.ScalarSet<GroupChild, Integer> timePrelengthListener;
+  private final Listener.ScalarSet<GroupChild, Integer> positionPrelengthListener;
   private CanvasHandle parent;
   private final Listener.ListAdd<GroupChild, GroupPositionFrame> positionAddListener;
   private final Listener.ListRemove<GroupChild> positionRemoveListener;
@@ -98,6 +100,9 @@ public class GroupChildCanvasHandle extends CanvasHandle {
                 });
 
     // Don't need clear listeners because clear should never happen (1 frame must always be left)
+    positionPrelengthListener = wrapper.node.addPositionPrelengthSetListeners(((target, value) -> {
+      updatePosition(context);
+    }));
     positionAddListener =
         wrapper.node.addPositionFramesAddListeners(
             (target, at, value) -> {
@@ -137,6 +142,9 @@ public class GroupChildCanvasHandle extends CanvasHandle {
               updatePosition(context);
               moveTo(positionCleanup, source, count, dest);
             });
+    timePrelengthListener = wrapper.node.addTimePrelengthSetListeners(((target, value) -> {
+      updateTime(context);
+    }));
     timeAddListener =
         wrapper.node.addTimeFramesAddListeners(
             (target, at, value) -> {
@@ -213,9 +221,11 @@ public class GroupChildCanvasHandle extends CanvasHandle {
       if (childCanvas.getWrapper() != excludeSubtree) childCanvas.remove(context, excludeSubtree);
       childCanvas = null;
     }
+    wrapper.node.removePositionPrelengthSetListeners(positionPrelengthListener);
     wrapper.node.removePositionFramesAddListeners(positionAddListener);
     wrapper.node.removePositionFramesRemoveListeners(positionRemoveListener);
     wrapper.node.removePositionFramesMoveToListeners(positionMoveListener);
+    wrapper.node.removeTimePrelengthSetListeners(timePrelengthListener);
     wrapper.node.removeTimeFramesAddListeners(timeAddListener);
     wrapper.node.removeTimeFramesRemoveListeners(timeRemoveListener);
     wrapper.node.removeTimeFramesMoveToListeners(timeMoveListener);

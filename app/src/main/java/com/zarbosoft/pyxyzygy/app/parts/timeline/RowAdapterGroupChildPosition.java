@@ -38,11 +38,17 @@ public class RowAdapterGroupChildPosition
   @Override
   public WidgetHandle createRowWidget(Context context, Window window) {
     return new WidgetHandle() {
+      private final Listener.ScalarSet<GroupChild, Integer> prelengthCleanup;
       private VBox layout;
       Runnable framesCleanup;
       private List<Runnable> frameCleanup = new ArrayList<>();
 
       {
+        prelengthCleanup =
+            child.addPositionPrelengthSetListeners(
+                ((target, value) -> {
+                  updateFrames(context, window);
+                }));
         framesCleanup =
             child.mirrorPositionFrames(
                 frameCleanup,
@@ -50,7 +56,7 @@ public class RowAdapterGroupChildPosition
                   Listener.ScalarSet<GroupPositionFrame, Integer> lengthListener =
                       f.addLengthSetListeners(
                           (target, value) -> {
-                            updateTime(context, window);
+                            updateFrames(context, window);
                           });
                   return () -> {
                     f.removeLengthSetListeners(lengthListener);
@@ -60,7 +66,7 @@ public class RowAdapterGroupChildPosition
                   r.run();
                 },
                 at -> {
-                  updateTime(context, window);
+                  updateFrames(context, window);
                 });
         layout = new VBox();
         row = Optional.of(new RowFramesWidget(window, timeline, RowAdapterGroupChildPosition.this));
@@ -75,6 +81,7 @@ public class RowAdapterGroupChildPosition
       @Override
       public void remove() {
         framesCleanup.run();
+        child.removePositionPrelengthSetListeners(prelengthCleanup);
         frameCleanup.forEach(c -> c.run());
       }
     };
@@ -109,8 +116,7 @@ public class RowAdapterGroupChildPosition
   }
 
   @Override
-  protected GroupPositionFrame innerCreateFrame(
-    Context context, GroupPositionFrame previousFrame) {
+  protected GroupPositionFrame innerCreateFrame(Context context, GroupPositionFrame previousFrame) {
     GroupPositionFrame newFrame = GroupPositionFrame.create(context.model);
     newFrame.initialOffsetSet(context.model, previousFrame.offset());
     return newFrame;
@@ -122,14 +128,18 @@ public class RowAdapterGroupChildPosition
   }
 
   @Override
-  protected void setFrameInitialLength(
-    Context context, GroupPositionFrame frame, int length) {
+  protected void setFrameInitialLength(Context context, GroupPositionFrame frame, int length) {
     frame.initialLengthSet(context.model, length);
   }
 
   @Override
   protected int getFrameLength(GroupPositionFrame frame) {
     return frame.length();
+  }
+
+  @Override
+  protected int getPrelength(GroupChild node) {
+    return node.positionPrelength();
   }
 
   @Override
@@ -143,8 +153,7 @@ public class RowAdapterGroupChildPosition
   }
 
   @Override
-  protected GroupPositionFrame innerDuplicateFrame(
-    Context context, GroupPositionFrame source) {
+  protected GroupPositionFrame innerDuplicateFrame(Context context, GroupPositionFrame source) {
     GroupPositionFrame out = GroupPositionFrame.create(context.model);
     out.initialOffsetSet(context.model, source.offset());
     return out;
@@ -168,5 +177,10 @@ public class RowAdapterGroupChildPosition
   @Override
   protected void moveFramesTo(ChangeStepBuilder change, int source, int count, int dest) {
     change.groupChild(child).positionFramesMoveTo(source, count, dest);
+  }
+
+  @Override
+  protected void setPrelength(ChangeStepBuilder change, GroupChild node, int length) {
+    change.groupChild(node).positionPrelengthSet(length);
   }
 }

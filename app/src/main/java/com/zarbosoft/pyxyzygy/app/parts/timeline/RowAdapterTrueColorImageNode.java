@@ -45,6 +45,7 @@ class RowAdapterTrueColorImageNode
     return new WidgetHandle() {
       private VBox layout;
       private final Runnable framesCleanup;
+      private final Listener.ScalarSet<TrueColorImageLayer, Integer> prelengthCleanup;
       private final List<Runnable> frameCleanup = new ArrayList<>();
 
       {
@@ -52,6 +53,11 @@ class RowAdapterTrueColorImageNode
         row = Optional.of(new RowFramesWidget(window, timeline, RowAdapterTrueColorImageNode.this));
         layout.getChildren().add(row.get());
 
+        prelengthCleanup =
+            node.addPrelengthSetListeners(
+                ((target, value) -> {
+                  updateFrames(context, window);
+                }));
         framesCleanup =
             node.mirrorFrames(
                 frameCleanup,
@@ -59,7 +65,7 @@ class RowAdapterTrueColorImageNode
                   Listener.ScalarSet<TrueColorImageFrame, Integer> lengthListener =
                       f.addLengthSetListeners(
                           (target, value) -> {
-                            updateTime(context, window);
+                            updateFrames(context, window);
                           });
                   return () -> {
                     f.removeLengthSetListeners(lengthListener);
@@ -67,7 +73,7 @@ class RowAdapterTrueColorImageNode
                 },
                 c -> c.run(),
                 at -> {
-                  updateTime(context, window);
+                  updateFrames(context, window);
                 });
       }
 
@@ -79,6 +85,7 @@ class RowAdapterTrueColorImageNode
       @Override
       public void remove() {
         framesCleanup.run();
+        node.removePrelengthSetListeners(prelengthCleanup);
         frameCleanup.forEach(c -> c.run());
       }
     };
@@ -86,7 +93,7 @@ class RowAdapterTrueColorImageNode
 
   @Override
   protected TrueColorImageFrame innerCreateFrame(
-    Context context, TrueColorImageFrame previousFrame) {
+      Context context, TrueColorImageFrame previousFrame) {
     TrueColorImageFrame out = TrueColorImageFrame.create(context.model);
     out.initialOffsetSet(context.model, Vector.ZERO);
     return out;
@@ -103,8 +110,17 @@ class RowAdapterTrueColorImageNode
   }
 
   @Override
-  protected void setFrameInitialLength(
-    Context context, TrueColorImageFrame frame, int length) {
+  protected void setPrelength(ChangeStepBuilder change, TrueColorImageLayer node, int length) {
+    change.trueColorImageLayer(node).prelengthSet(length);
+  }
+
+  @Override
+  protected int getPrelength(TrueColorImageLayer node) {
+    return node.prelength();
+  }
+
+  @Override
+  protected void setFrameInitialLength(Context context, TrueColorImageFrame frame, int length) {
     frame.initialLengthSet(context.model, length);
   }
 
@@ -139,8 +155,7 @@ class RowAdapterTrueColorImageNode
   }
 
   @Override
-  protected TrueColorImageFrame innerDuplicateFrame(
-    Context context, TrueColorImageFrame source) {
+  protected TrueColorImageFrame innerDuplicateFrame(Context context, TrueColorImageFrame source) {
     TrueColorImageFrame created = TrueColorImageFrame.create(context.model);
     created.initialOffsetSet(context.model, source.offset());
     created.initialTilesPutAll(context.model, source.tiles());

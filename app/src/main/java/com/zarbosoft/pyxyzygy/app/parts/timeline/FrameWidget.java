@@ -1,7 +1,7 @@
 package com.zarbosoft.pyxyzygy.app.parts.timeline;
 
-import com.zarbosoft.automodel.lib.History;
 import com.zarbosoft.pyxyzygy.app.Context;
+import com.zarbosoft.pyxyzygy.app.Window;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
@@ -23,10 +23,9 @@ public class FrameWidget extends Pane {
 
   int absStart;
   int absEnd;
-  int minLength;
   SimpleIntegerProperty at = new SimpleIntegerProperty();
 
-  public FrameWidget(Context context, RowFramesWidget row) {
+  public FrameWidget(Context context, Window window, RowFramesWidget row) {
     this.row = row;
 
     setWidth(Timeline.baseSize);
@@ -57,21 +56,13 @@ public class FrameWidget extends Pane {
     addEventHandler(
         MouseEvent.MOUSE_DRAGGED,
         e -> {
-          if (index == 0) return;
           double x = row.timeline.getTimelineX(e);
-          int frame = (int) (x / zoom);
-          if (absEnd != -1) frame = Math.min(frame, absEnd - 1);
-          frame = Math.max(frame, absStart);
-          int length = minLength + frame - absStart;
-          RowAdapterFrame frameObj = ((FrameWidget) this.row.frames.get(index - 1)).frame;
-          if (frameObj.length() != length) {
-            context.change(
-                new History.Tuple(row.adapter.getData(), "frame"),
-                change -> {
-                  frameObj.setLength(context.model, change, length);
-                });
-            dragged = true;
-          }
+          int newAt = (int) (x / zoom);
+          if (absEnd != -1) newAt = Math.min(newAt, absEnd - 1);
+          newAt = Math.max(newAt, absStart);
+          if (newAt == at.get()) return;
+          dragged = true;
+          this.frame.setAt(context, window, newAt);
         });
     deselect();
   }
@@ -92,19 +83,11 @@ public class FrameWidget extends Pane {
    * @param index
    * @param frame
    * @param absStart Farthest left frame can be dragged
-   * @param absEnd Farthest right frame can be dragged or -1
-   * @param minLength When dragged all the way to the left, what length does the frame's preceding
-   *     frame get
-   * @param offset Where to draw the frame relative to absStart
+   * @param absEnd Farthest right frame can be dragged or NO_LENGTH
+   * @param absAt Time of the frame
    */
   public void set(
-      double zoom,
-      int index,
-      RowAdapterFrame frame,
-      int absStart,
-      int absEnd,
-      int minLength,
-      int offset) {
+      double zoom, int index, RowAdapterFrame frame, int absStart, int absEnd, int absAt) {
     this.zoom = zoom;
     rectangle.setWidth(zoom * sizePercent);
     rectangle.setLayoutX(zoom * sizePercentComp);
@@ -112,8 +95,7 @@ public class FrameWidget extends Pane {
     this.frame = frame;
     this.absStart = absStart;
     this.absEnd = absEnd;
-    this.minLength = minLength;
-    at.set(absStart + offset);
-    setLayoutX(at.get() * zoom);
+    at.set(absAt);
+    setLayoutX(absAt * zoom);
   }
 }

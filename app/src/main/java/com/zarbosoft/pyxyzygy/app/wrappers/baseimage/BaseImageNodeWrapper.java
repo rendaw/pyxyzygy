@@ -77,6 +77,12 @@ public abstract class BaseImageNodeWrapper<
   public TakesChildren takesChildren() {
     return TakesChildren.NONE;
   }
+  public abstract Listener.ScalarSet<N, Integer> addPrelengthSetListener(
+    N node, Listener.ScalarSet<N, Integer> listener);
+
+  public abstract void removePrelengthSetListener(
+    Listener.ScalarSet<N, Integer> listener
+  );
 
   public abstract void removeFrameOffsetSetListener(
       F frame, Listener.ScalarSet<F, Vector> listener);
@@ -146,8 +152,6 @@ public abstract class BaseImageNodeWrapper<
    * @param span
    */
   public abstract void clear(Context context, L image, Vector offset, Vector span);
-
-  public abstract void removeFrameOffsetListener(F frame, Listener.ScalarSet<F, Vector> listener);
 
   @FunctionalInterface
   public interface DoubleModifyCallback<L> {

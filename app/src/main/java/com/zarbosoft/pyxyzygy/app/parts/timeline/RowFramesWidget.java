@@ -16,6 +16,7 @@ import java.util.Optional;
 import static com.zarbosoft.pyxyzygy.app.Global.NO_INNER;
 import static com.zarbosoft.pyxyzygy.app.Global.NO_LENGTH;
 import static com.zarbosoft.rendaw.common.Common.last;
+import static com.zarbosoft.rendaw.common.Common.lastOpt;
 import static com.zarbosoft.rendaw.common.Common.sublist;
 
 public class RowFramesWidget extends Pane {
@@ -55,9 +56,10 @@ public class RowFramesWidget extends Pane {
   /**
    * @param context
    * @param window
+   * @param prelength
    * @return max frame encountered
    */
-  public int updateTime(Context context, Window window, List<RowAdapterFrame> frameAdapters) {
+  public int updateFrames(Context context, Window window, int prelength, List<RowAdapterFrame> frameAdapters) {
     FrameWidget foundSelectedFrame = null;
     Object selectedId =
         Optional.ofNullable(timeline.selectedFrame.get())
@@ -74,8 +76,8 @@ public class RowFramesWidget extends Pane {
 
     for (FrameMapEntry outer : window.timeMap) {
       if (outer.innerOffset != NO_INNER) {
-        int previousInnerAt = 0;
-        int innerAt = 0;
+        int previousInnerAt = -1;
+        int innerAt = prelength;
         for (RowAdapterFrame inner : frameAdapters) {
           int offset = innerAt - outer.innerOffset;
           if (offset >= 0) {
@@ -85,27 +87,26 @@ public class RowFramesWidget extends Pane {
             FrameWidget frame;
             int useFrameIndex = frameIndex++;
             if (frames.size() <= useFrameIndex) {
-              frames.add(frame = new FrameWidget(context, this));
+              frames.add(frame = new FrameWidget(context, window, this));
               this.inner.getChildren().add(frame);
             } else {
               frame = frames.get(useFrameIndex);
             }
-            int innerLeft = Math.max(previousInnerAt + 1, outer.innerOffset);
-            int absStart = outerAt + innerLeft - outer.innerOffset;
+            int innerFrameStart = Math.max(previousInnerAt + 1, outer.innerOffset);
+            int absStart = outerAt + innerFrameStart - outer.innerOffset;
             int absEnd = outer.length == NO_LENGTH ? NO_LENGTH : outerAt + outer.length;
-            int minLength = innerLeft - previousInnerAt;
-            int offset1 = innerAt - innerLeft;
-            frame.set(timeline.zoom, useFrameIndex, inner, absStart, absEnd, minLength, offset1);
+            int offset1 = innerAt - innerFrameStart;
+            int frameAt = absStart + offset1;
+            frame.set(timeline.zoom, useFrameIndex, inner, absStart, absEnd, frameAt);
             if (inner.id() == selectedId && foundSelectedFrame == null) {
               foundSelectedFrame = frame;
             }
             if (adapter.isMain()) {
-              int abs = frame.at.get();
-              if (frame.at.get() < time) {
-                previous = abs;
+              if (frameAt < time) {
+                previous = frameAt;
               }
               if (next == NO_LENGTH && frame.at.get() > time) {
-                next = abs;
+                next = frameAt;
               }
             }
           }
@@ -131,7 +132,7 @@ public class RowFramesWidget extends Pane {
       remove.clear();
     }
 
-    return last(frames).at.get();
+    return lastOpt(frames).map(f ->f.at.get()).orElse(0);
   }
 
   public void updateFrameMarker(Window window) {

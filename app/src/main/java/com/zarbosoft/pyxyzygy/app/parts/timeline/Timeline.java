@@ -768,7 +768,7 @@ public class Timeline {
             }
 
             @Override
-            public int updateTime(Context context, Window window) {
+            public int updateFrames(Context context, Window window) {
               return 0;
             }
 
@@ -868,7 +868,7 @@ public class Timeline {
                     out,
                     item.getChildren().stream().mapToInt(child -> apply(child)).max().orElse(0));
             if (item.getValue() != null)
-              out = Math.max(out, item.getValue().updateTime(context, window));
+              out = Math.max(out, item.getValue().updateFrames(context, window));
             return out;
           }
         }.apply(tree.getRoot()));
@@ -956,13 +956,16 @@ public class Timeline {
   }
 
   public static List<FrameMapEntry> computeSubMap(
-      List<FrameMapEntry> outerFrames, List<GroupTimeFrame> innerFrames) {
+      List<FrameMapEntry> outerFrames, int prelength, List<GroupTimeFrame> innerFrames) {
     return outerFrames.stream()
         .flatMap(
             outer -> {
               if (outer.innerOffset == Global.NO_INNER) return Stream.of(outer);
               List<FrameMapEntry> subMap = new ArrayList<>();
-              int at = 0;
+              if (prelength > 0) {
+                subMap.add(new FrameMapEntry(prelength,NO_INNER));
+              }
+              int at = prelength;
               int outerRemaining = outer.length;
               for (GroupTimeFrame inner : innerFrames) {
                 // Skip frames that come before outer frame window
@@ -1152,7 +1155,11 @@ public class Timeline {
         public void recalcTimes() {
           if (timeMap == null) return;
           if (suppressRecalc != 0) return;
-          child.updateTime(computeSubMap(timeMap, ((GroupChild) object).timeFrames()));
+          child.updateTime(
+              computeSubMap(
+                  timeMap,
+                  ((GroupChild) object).timePrelength(),
+                  ((GroupChild) object).timeFrames()));
         }
 
         @Override

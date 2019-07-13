@@ -29,6 +29,7 @@ import static com.zarbosoft.pyxyzygy.app.Global.NO_INNER;
 public class BaseImageCanvasHandle<
         N extends ProjectLayer, F extends ProjectObject, T extends ProjectObject, L>
     extends CanvasHandle {
+  private final Listener.ScalarSet<N, Integer> prelengthCleanup;
   CanvasHandle parent;
   private final Runnable mirrorCleanup;
   public final BaseImageNodeWrapper<N, F, T, L> wrapper;
@@ -42,7 +43,12 @@ public class BaseImageCanvasHandle<
 
   public BaseImageCanvasHandle(Context context, BaseImageNodeWrapper<N, F, T, L> wrapper) {
     this.wrapper = wrapper;
-
+    prelengthCleanup =
+        wrapper.addPrelengthSetListener(
+            wrapper.node,
+            ((target, value) -> {
+              updateViewedTime(context);
+            }));
     mirrorCleanup =
         wrapper.mirrorFrames(
             wrapper.node,
@@ -75,6 +81,7 @@ public class BaseImageCanvasHandle<
   @Override
   public void remove(Context context, Wrapper excludeSubtree) {
     wrapper.canvasHandle = null;
+    wrapper.removePrelengthSetListener(prelengthCleanup);
     mirrorCleanup.run();
     detachTiles();
   }
@@ -99,7 +106,7 @@ public class BaseImageCanvasHandle<
     Rectangle oldBounds = oldBounds1.scale(3).divideContains(context.project.tileSize());
     Rectangle newBounds = newBounds1.scale(3).divideContains(context.project.tileSize());
 
-    if (time.get() == NO_INNER) return;
+    if (frame == null) return;
 
     // Remove tiles outside view bounds
     for (int x = 0; x < oldBounds.width; ++x) {
@@ -140,7 +147,7 @@ public class BaseImageCanvasHandle<
   }
 
   public void updateViewedTime(Context context) {
-    if (time.get() != NO_INNER) {
+    if (time.get() != NO_INNER && time.get() >= wrapper.frameFinder.prelength(wrapper.node)) {
       F oldFrame = frame;
       FrameFinder.Result<F> found = wrapper.frameFinder.findFrame(wrapper.node, time.get());
       frame = found.frame;
@@ -155,7 +162,7 @@ public class BaseImageCanvasHandle<
   }
 
   public void attachTiles(Context context) {
-    if (time.get() == NO_INNER) return;
+    if (frame == null) return;
     tilesPutListener =
         wrapper.addFrameTilesPutAllListener(
             frame,

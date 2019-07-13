@@ -58,6 +58,11 @@ public class PaletteImageNodeWrapper
   public static FrameFinder<PaletteImageLayer, PaletteImageFrame> frameFinder =
       new FrameFinder<PaletteImageLayer, PaletteImageFrame>() {
         @Override
+        public int prelength(PaletteImageLayer node) {
+          return node.prelength();
+        }
+
+        @Override
         public PaletteImageFrame frameGet(PaletteImageLayer node, int i) {
           return node.framesGet(i);
         }
@@ -80,7 +85,7 @@ public class PaletteImageNodeWrapper
   public PaletteWrapper palette;
 
   public PaletteImageNodeWrapper(
-    Context context, Wrapper parent, int parentIndex, PaletteImageLayer node) {
+      Context context, Wrapper parent, int parentIndex, PaletteImageLayer node) {
     super(parent, parentIndex, node, frameFinder);
     config =
         (PaletteImageNodeConfig)
@@ -155,7 +160,7 @@ public class PaletteImageNodeWrapper
                                         wrapper.tileGet(
                                             frame,
                                             k))); // Image deserialization can't be done in parallel
-                                                  // :( (global pixelreader state?)
+                                // :( (global pixelreader state?)
                               });
                         });
 
@@ -167,6 +172,17 @@ public class PaletteImageNodeWrapper
           };
     canvasHandle.setParent(parent);
     return canvasHandle;
+  }
+
+  @Override
+  public Listener.ScalarSet<PaletteImageLayer, Integer> addPrelengthSetListener(
+      PaletteImageLayer node, Listener.ScalarSet<PaletteImageLayer, Integer> listener) {
+    return node.addPrelengthSetListeners(listener);
+  }
+
+  @Override
+  public void removePrelengthSetListener(Listener.ScalarSet<PaletteImageLayer, Integer> listener) {
+    node.removePrelengthSetListeners(listener);
   }
 
   @Override
@@ -211,8 +227,7 @@ public class PaletteImageNodeWrapper
 
   @Override
   public Listener.MapPutAll<PaletteImageFrame, Long, PaletteTile> addFrameTilesPutAllListener(
-      PaletteImageFrame frame,
-      Listener.MapPutAll<PaletteImageFrame, Long, PaletteTile> listener) {
+      PaletteImageFrame frame, Listener.MapPutAll<PaletteImageFrame, Long, PaletteTile> listener) {
     return frame.addTilesPutAllListeners(listener);
   }
 
@@ -223,15 +238,8 @@ public class PaletteImageNodeWrapper
   }
 
   @Override
-  public void removeFrameOffsetListener(
-      PaletteImageFrame frame, Listener.ScalarSet<PaletteImageFrame, Vector> listener) {
-    frame.removeOffsetSetListeners(listener);
-  }
-
-  @Override
   public void removeFrameTilesPutAllListener(
-      PaletteImageFrame frame,
-      Listener.MapPutAll<PaletteImageFrame, Long, PaletteTile> listener) {
+      PaletteImageFrame frame, Listener.MapPutAll<PaletteImageFrame, Long, PaletteTile> listener) {
     frame.removeTilesPutAllListeners(listener);
   }
 
@@ -251,7 +259,8 @@ public class PaletteImageNodeWrapper
                 GUILaunch.imageCache.get(
                     Objects.hash(CACHE_OBJECT, tile.id(), palette.updatedAt),
                     () ->
-                        HelperJFX.toImage(PaletteTileHelp.getData(context, (PaletteTile) tile), palette.colors)));
+                        HelperJFX.toImage(
+                            PaletteTileHelp.getData(context, (PaletteTile) tile), palette.colors)));
       }
     };
   }
@@ -262,8 +271,7 @@ public class PaletteImageNodeWrapper
   }
 
   @Override
-  public void renderCompose(
-    Context context, TrueColorImage gc, PaletteTile tile, int x, int y) {
+  public void renderCompose(Context context, TrueColorImage gc, PaletteTile tile, int x, int y) {
     PaletteImage data = PaletteTileHelp.getData(context, (PaletteTile) tile);
     gc.compose(data, palette.colors, x, y, 1);
   }
@@ -275,21 +283,25 @@ public class PaletteImageNodeWrapper
 
   @Override
   public void drop(
-    Context context,
-    ChangeStepBuilder change,
-    PaletteImageFrame frame,
-    Rectangle unitBounds,
-    PaletteImage image) {
+      Context context,
+      ChangeStepBuilder change,
+      PaletteImageFrame frame,
+      Rectangle unitBounds,
+      PaletteImage image) {
     for (int x = 0; x < unitBounds.width; ++x) {
       for (int y = 0; y < unitBounds.height; ++y) {
         final int x0 = x;
         final int y0 = y;
         PaletteImage shot =
             image.copy(
-                x0 * context.project.tileSize(), y0 * context.project.tileSize(), context.project.tileSize(), context.project.tileSize());
+                x0 * context.project.tileSize(),
+                y0 * context.project.tileSize(),
+                context.project.tileSize(),
+                context.project.tileSize());
         change
             .paletteImageFrame(frame)
-            .tilesPut(unitBounds.corner().plus(x0, y0).to1D(), PaletteTileHelp.create(context, shot));
+            .tilesPut(
+                unitBounds.corner().plus(x0, y0).to1D(), PaletteTileHelp.create(context, shot));
       }
     }
   }

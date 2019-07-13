@@ -20,7 +20,7 @@ public abstract class FrameFinder<N, L> {
 
   public Result<L> findFrame(N node, int time) {
     if (time == -1) throw new Assertion();
-    int at = 0;
+    int at = prelength(node);
     final int frameCount = frameCount(node);
     for (int i = 0; i < frameCount; ++i) {
       L pos = frameGet(node, i);
@@ -32,6 +32,16 @@ public abstract class FrameFinder<N, L> {
       at += frameLength;
     }
     throw new Assertion();
+  }
+
+  public abstract int prelength(N node);
+
+  public int frameTime(N node, int index) {
+    int at = prelength(node);
+    for (int i = 0; i < index; ++i) {
+      at += frameLength(frameGet(node,i));
+    }
+    return at;
   }
 
   public abstract L frameGet(N node, int i);

@@ -64,7 +64,8 @@ public class GenerateModel extends TaskBase {
                                   "tiles",
                                   new MapType(AutoType.lon, version.obj("PaletteTile")),
                                   f -> f.versioned())),
-                      f -> f.versioned());
+                      f -> f.versioned())
+                  .field("prelength", AutoType.integer, f -> f.versioned().def("$L",0));
               version
                   .obj("TrueColorImageLayer")
                   .parent(projectLayer)
@@ -82,7 +83,8 @@ public class GenerateModel extends TaskBase {
                                   "tiles",
                                   new MapType(AutoType.lon, version.obj("TrueColorTile")),
                                   f -> f.versioned())),
-                      f -> f.versioned());
+                      f -> f.versioned())
+                  .field("prelength", AutoType.integer, f -> f.versioned().def("$L",0));
 
               AutoObject groupLayer =
                   version
@@ -112,6 +114,7 @@ public class GenerateModel extends TaskBase {
                                                   AutoType.integer,
                                                   f -> f.versioned())),
                                       f1 -> f1.versioned())
+                                  .field("timePrelength", AutoType.integer, f -> f.versioned().def("$L",0))
                                   .field(
                                       "positionFrames",
                                       new ListType(
@@ -123,6 +126,7 @@ public class GenerateModel extends TaskBase {
                                                   AutoType.of(Vector.class),
                                                   f -> f.versioned().def("$T.ZERO", Vector.class))),
                                       f1 -> f1.versioned())
+                                  .field("positionPrelength", AutoType.integer, f -> f.versioned().def("$L",0))
                                   .field("inner", projectLayer, f -> f.versioned())
                                   .field(
                                       "opacity",

@@ -62,6 +62,7 @@ class RowAdapterPaletteImageNode extends BaseFrameRowAdapter<PaletteImageLayer, 
   @Override
   public WidgetHandle createRowWidget(Context context, Window window) {
     return new WidgetHandle() {
+      private final Listener.ScalarSet<PaletteImageLayer, Integer> prelengthCleanup;
       private VBox layout;
       private final Runnable framesCleanup;
       private final List<Runnable> frameCleanup = new ArrayList<>();
@@ -71,6 +72,11 @@ class RowAdapterPaletteImageNode extends BaseFrameRowAdapter<PaletteImageLayer, 
         row = Optional.of(new RowFramesWidget(window, timeline, RowAdapterPaletteImageNode.this));
         layout.getChildren().add(row.get());
 
+        prelengthCleanup =
+            node.addPrelengthSetListeners(
+                ((target, value) -> {
+                  updateFrames(context, window);
+                }));
         framesCleanup =
             node.mirrorFrames(
                 frameCleanup,
@@ -78,7 +84,7 @@ class RowAdapterPaletteImageNode extends BaseFrameRowAdapter<PaletteImageLayer, 
                   Listener.ScalarSet<PaletteImageFrame, Integer> lengthListener =
                       f.addLengthSetListeners(
                           (target, value) -> {
-                            updateTime(context, window);
+                            updateFrames(context, window);
                           });
                   return () -> {
                     f.removeLengthSetListeners(lengthListener);
@@ -86,7 +92,7 @@ class RowAdapterPaletteImageNode extends BaseFrameRowAdapter<PaletteImageLayer, 
                 },
                 c -> c.run(),
                 at -> {
-                  updateTime(context, window);
+                  updateFrames(context, window);
                 });
       }
 
@@ -98,14 +104,14 @@ class RowAdapterPaletteImageNode extends BaseFrameRowAdapter<PaletteImageLayer, 
       @Override
       public void remove() {
         framesCleanup.run();
+        node.removePrelengthSetListeners(prelengthCleanup);
         frameCleanup.forEach(c -> c.run());
       }
     };
   }
 
   @Override
-  protected PaletteImageFrame innerCreateFrame(
-    Context context, PaletteImageFrame previousFrame) {
+  protected PaletteImageFrame innerCreateFrame(Context context, PaletteImageFrame previousFrame) {
     PaletteImageFrame out = PaletteImageFrame.create(context.model);
     out.initialOffsetSet(context.model, Vector.ZERO);
     return out;
@@ -122,8 +128,17 @@ class RowAdapterPaletteImageNode extends BaseFrameRowAdapter<PaletteImageLayer, 
   }
 
   @Override
-  protected void setFrameInitialLength(
-    Context context, PaletteImageFrame frame, int length) {
+  protected void setPrelength(ChangeStepBuilder change, PaletteImageLayer node, int length) {
+    change.paletteImageLayer(node).prelengthSet(length);
+  }
+
+  @Override
+  protected int getPrelength(PaletteImageLayer node) {
+    return node.prelength();
+  }
+
+  @Override
+  protected void setFrameInitialLength(Context context, PaletteImageFrame frame, int length) {
     frame.initialLengthSet(context.model, length);
   }
 
@@ -138,8 +153,7 @@ class RowAdapterPaletteImageNode extends BaseFrameRowAdapter<PaletteImageLayer, 
   }
 
   @Override
-  protected PaletteImageFrame innerDuplicateFrame(
-    Context context, PaletteImageFrame source) {
+  protected PaletteImageFrame innerDuplicateFrame(Context context, PaletteImageFrame source) {
     PaletteImageFrame created = PaletteImageFrame.create(context.model);
     created.initialOffsetSet(context.model, source.offset());
     created.initialTilesPutAll(context.model, source.tiles());

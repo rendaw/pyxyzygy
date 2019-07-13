@@ -93,7 +93,7 @@ public class RowAdapterPreview extends RowAdapter {
   }
 
   @Override
-  public int updateTime(Context context, Window window) {
+  public int updateFrames(Context context, Window window) {
     return 0;
   }
 

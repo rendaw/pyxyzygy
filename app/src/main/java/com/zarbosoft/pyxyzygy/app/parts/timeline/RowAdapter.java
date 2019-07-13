@@ -41,7 +41,7 @@ public abstract class RowAdapter extends TreeItem<RowAdapter> {
    * @param window
    * @return Maximum frame in this row
    */
-  public abstract int updateTime(Context context, Window window);
+  public abstract int updateFrames(Context context, Window window);
 
   public abstract void updateFrameMarker(Context context, Window window);
 

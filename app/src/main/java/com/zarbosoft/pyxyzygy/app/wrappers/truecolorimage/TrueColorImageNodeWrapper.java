@@ -47,6 +47,11 @@ public class TrueColorImageNodeWrapper
   public static FrameFinder<TrueColorImageLayer, TrueColorImageFrame> frameFinder =
       new FrameFinder<TrueColorImageLayer, TrueColorImageFrame>() {
         @Override
+        public int prelength(TrueColorImageLayer node) {
+          return node.prelength();
+        }
+
+        @Override
         public TrueColorImageFrame frameGet(TrueColorImageLayer node, int i) {
           return node.framesGet(i);
         }
@@ -142,6 +147,18 @@ public class TrueColorImageNodeWrapper
   public Listener.ScalarSet<TrueColorImageFrame, Integer> addFrameLengthSetListener(
       TrueColorImageFrame frame, Listener.ScalarSet<TrueColorImageFrame, Integer> listener) {
     return frame.addLengthSetListeners(listener);
+  }
+
+  @Override
+  public Listener.ScalarSet<TrueColorImageLayer, Integer> addPrelengthSetListener(
+    TrueColorImageLayer node, Listener.ScalarSet<TrueColorImageLayer, Integer> listener
+  ) {
+    return node.addPrelengthSetListeners(listener);
+  }
+
+  @Override
+  public void removePrelengthSetListener(Listener.ScalarSet<TrueColorImageLayer, Integer> listener) {
+
   }
 
   @Override
@@ -254,11 +271,5 @@ public class TrueColorImageNodeWrapper
   @Override
   public void clear(Context context, TrueColorImage image, Vector offset, Vector span) {
     image.clear(offset.x, offset.y, span.x, span.y);
-  }
-
-  @Override
-  public void removeFrameOffsetListener(
-      TrueColorImageFrame frame, Listener.ScalarSet<TrueColorImageFrame, Vector> listener) {
-    frame.removeOffsetSetListeners(listener);
   }
 }

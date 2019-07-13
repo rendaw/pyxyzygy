@@ -24,11 +24,11 @@
 
 * **5** / Frames
 
-   The rounded square indicates a frame.  Click on a frame to select/deselect it.  The currently selected frame affects operations in the toolbar, but things like painting always affect the currently shown frame (not the selected frame).
+   The rounded square indicates a frame.  Click on a frame to select/deselect it.  Drag a frame to move it.  Buttons in the toolbar affect the currently selected frame (or the shown frame if none are selected).  Tools (paiting, layer moving) always affect the currently shown frame (not the selected frame).
 
 * **6** / Add frame
 
-   This creates a new empty frame at the current time.  If there's already a frame at the current time, this creates a frame at the current time and pushes the current frame back.
+   This creates a new empty frame at the current time.  If there's already a frame at the current time, this creates a frame 1 time unit later and pushes back any frames that were already there.
 
 * **7** / Duplicate frame
 
@@ -46,8 +46,8 @@
 
 * **12** **13** / Toggle previous/next frame ghost
 
-   Also called onion skin by those with lower aesthetic sense.
+   Also called onion skin by those with a fondness for aromatic vegetables, this shows a faded version of the previous or next frame.
 
 * **14** / Change frame offset
 
-   Move a frame - you can use this to adjust the horizontal and vertical offset of a frame relative to the others.
+   Use this to adjust the horizontal and vertical offset of a frame relative to the others.

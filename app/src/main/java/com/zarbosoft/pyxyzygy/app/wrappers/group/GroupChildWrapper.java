@@ -18,6 +18,7 @@ import com.zarbosoft.rendaw.common.Assertion;
 import javafx.beans.property.SimpleObjectProperty;
 
 import static com.zarbosoft.pyxyzygy.app.Global.NO_INNER;
+import static com.zarbosoft.pyxyzygy.app.Global.NO_LOOP;
 
 public class GroupChildWrapper extends Wrapper {
   private final Wrapper parent;
@@ -40,9 +41,19 @@ public class GroupChildWrapper extends Wrapper {
         public int frameLength(GroupPositionFrame frame) {
           return frame.length();
         }
+
+        @Override
+        public int prelength(GroupChild node) {
+          return node.positionPrelength();
+        }
       };
   public static final FrameFinder<GroupChild, GroupTimeFrame> timeFrameFinder =
       new FrameFinder<GroupChild, GroupTimeFrame>() {
+        @Override
+        public int prelength(GroupChild node) {
+          return node.timePrelength();
+        }
+
         @Override
         public GroupTimeFrame frameGet(GroupChild node, int i) {
           return node.timeFramesGet(i);
@@ -85,7 +96,7 @@ public class GroupChildWrapper extends Wrapper {
     if (time == NO_INNER) return NO_INNER;
     FrameFinder.Result<GroupTimeFrame> result = timeFrameFinder.findFrame(node, time);
     int offset = (time - result.at);
-    if (result.frame.innerLoop() != 0) offset = offset % result.frame.innerLoop();
+    if (result.frame.innerLoop() != NO_LOOP) offset = offset % result.frame.innerLoop();
     if (result.frame.innerOffset() == NO_INNER) return NO_INNER;
     int innerFrame = result.frame.innerOffset() + offset;
     return innerFrame;
