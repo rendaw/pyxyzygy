@@ -13,6 +13,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static com.zarbosoft.pyxyzygy.app.Global.NO_INNER;
+import static com.zarbosoft.pyxyzygy.app.Global.NO_LENGTH;
+import static com.zarbosoft.rendaw.common.Common.last;
 import static com.zarbosoft.rendaw.common.Common.sublist;
 
 public class RowFramesWidget extends Pane {
@@ -66,17 +69,19 @@ public class RowFramesWidget extends Pane {
     int outerAt = 0;
 
     final int time = timeline.time.get();
-    int previous = -1; // if main row only
-    int next = -1; // if main row only
+    int previous = NO_INNER; // if main row only
+    int next = NO_INNER; // if main row only
 
     for (FrameMapEntry outer : window.timeMap) {
-      if (outer.innerOffset != -1) {
+      if (outer.innerOffset != NO_INNER) {
         int previousInnerAt = 0;
         int innerAt = 0;
         for (RowAdapterFrame inner : frameAdapters) {
           int offset = innerAt - outer.innerOffset;
           if (offset >= 0) {
-            if (outer.length != -1 && offset >= outer.length) break;
+            if (outer.length != NO_LENGTH && offset >= outer.length) {
+              break;
+            }
             FrameWidget frame;
             int useFrameIndex = frameIndex++;
             if (frames.size() <= useFrameIndex) {
@@ -87,7 +92,7 @@ public class RowFramesWidget extends Pane {
             }
             int innerLeft = Math.max(previousInnerAt + 1, outer.innerOffset);
             int absStart = outerAt + innerLeft - outer.innerOffset;
-            int absEnd = outer.length == -1 ? -1 : outerAt + outer.length;
+            int absEnd = outer.length == NO_LENGTH ? NO_LENGTH : outerAt + outer.length;
             int minLength = innerLeft - previousInnerAt;
             int offset1 = innerAt - innerLeft;
             frame.set(timeline.zoom, useFrameIndex, inner, absStart, absEnd, minLength, offset1);
@@ -99,7 +104,7 @@ public class RowFramesWidget extends Pane {
               if (frame.at.get() < time) {
                 previous = abs;
               }
-              if (next == -1 && frame.at.get() > time) {
+              if (next == NO_LENGTH && frame.at.get() > time) {
                 next = abs;
               }
             }
@@ -108,7 +113,7 @@ public class RowFramesWidget extends Pane {
           innerAt += inner.length();
         }
       }
-      if (outer.length != -1) outerAt += outer.length;
+      outerAt += outer.length;
     }
 
     if (adapter.isMain()) {
@@ -126,7 +131,7 @@ public class RowFramesWidget extends Pane {
       remove.clear();
     }
 
-    return outerAt;
+    return last(frames).at.get();
   }
 
   public void updateFrameMarker(Window window) {

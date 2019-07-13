@@ -102,6 +102,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.zarbosoft.automodel.lib.Logger.logger;
+import static com.zarbosoft.pyxyzygy.app.Global.NO_INNER;
 import static com.zarbosoft.pyxyzygy.app.Global.localization;
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
@@ -964,17 +965,15 @@ public class Timeline {
               int at = 0;
               int outerRemaining = outer.length;
               for (GroupTimeFrame inner : innerFrames) {
+                // Skip frames that come before outer frame window
                 if (inner.length() != Global.NO_LENGTH
                     && at + inner.length() <= outer.innerOffset) {
                   at += inner.length();
                   continue;
                 }
 
-                int innerOffset = inner.innerOffset();
-                if (innerOffset != Global.NO_INNER && at < outer.innerOffset)
-                  innerOffset += outer.innerOffset - at;
-
-                // Find out how much of the outer frame to fill up with this frame's overlap
+                // Find the lesser of the remaining space in the outer frame, the length of the
+                // inner frame (chopped if there's start overlap)
                 int maxLength = outerRemaining;
                 if (inner.length() != Global.NO_LENGTH) {
                   int effectiveFrameLength = inner.length();
@@ -983,48 +982,59 @@ public class Timeline {
                     maxLength = effectiveFrameLength;
                 }
 
-                // Find out how much a single frame can use of that space (or if multiple frames
-                // will be
-                // needed)
-                int useLength = maxLength;
-                if (inner.innerLoop() != Global.NO_LOOP) {
-                  innerOffset = innerOffset % inner.innerLoop();
-                  int effectiveLoop = inner.innerLoop();
-                  if (at < outer.innerOffset) {
-                    effectiveLoop -= outer.innerOffset - at;
-                    effectiveLoop = Math.floorMod((effectiveLoop - 1), inner.innerLoop()) + 1;
-                  }
-                  if (useLength == Global.NO_LENGTH || effectiveLoop < useLength) {
-                    useLength = effectiveLoop;
-                  }
-                }
-
-                // Create the paint frames to fill up the designated range
-                if (useLength == Global.NO_LENGTH) {
-                  subMap.add(new FrameMapEntry(Global.NO_LENGTH, innerOffset));
-                  break;
+                if (inner.innerOffset() == NO_INNER) {
+                  subMap.add(new FrameMapEntry(maxLength, NO_INNER));
+                  if (outerRemaining != Global.NO_LENGTH) outerRemaining -= maxLength;
                 } else {
-                  // Find out how much of the outer frame to practically fill up - maxLength is
-                  // actually the ideal fill
-                  int endAt = Math.max(outer.innerOffset, at);
-                  if (maxLength == Global.NO_LENGTH) {
-                    // If looping and last map entry, only draw 5 loops
-                    endAt += useLength + inner.innerLoop() * 4;
-                  } else {
-                    endAt += maxLength;
+                  // If inner frame starts before outer frame window, chop the initial inner offset
+                  // by the overlap
+                  int innerOffsetAdjust = 0;
+                  if (at < outer.innerOffset) innerOffsetAdjust += outer.innerOffset - at;
+
+                  // Find out how much a single rep can use of that space (or if multiple frames
+                  // will be needed)
+                  int repLength = maxLength;
+                  if (inner.innerLoop() != Global.NO_LOOP) {
+                    innerOffsetAdjust = innerOffsetAdjust % inner.innerLoop();
+                    int effectiveLoop = inner.innerLoop();
+                    if (at < outer.innerOffset) {
+                      effectiveLoop -= outer.innerOffset - at;
+                      effectiveLoop = Math.floorMod((effectiveLoop - 1), inner.innerLoop()) + 1;
+                    }
+                    if (repLength == Global.NO_LENGTH || effectiveLoop < repLength) {
+                      repLength = effectiveLoop;
+                    }
                   }
 
-                  // Make paint frames for each loop + a cap if unbounded
-                  while (at < endAt) {
-                    subMap.add(new FrameMapEntry(useLength, innerOffset));
-                    if (outerRemaining != Global.NO_LENGTH) outerRemaining -= useLength;
-                    if (at < outer.innerOffset) at = outer.innerOffset;
-                    at += useLength;
-                    useLength = Math.min(inner.innerLoop(), endAt - at);
-                    innerOffset = inner.innerOffset();
+                  int innerOffset = innerOffsetAdjust + inner.innerOffset();
+
+                  // Create the output frames to fill up the designated range
+                  if (repLength == Global.NO_LENGTH) {
+                    subMap.add(new FrameMapEntry(Global.NO_LENGTH, innerOffset));
+                    break;
+                  } else {
+                    // Find out how much of the outer frame to practically fill up - maxLength is
+                    // actually the ideal fill
+                    int endAt = Math.max(outer.innerOffset, at);
+                    if (maxLength == Global.NO_LENGTH) {
+                      // If looping and last map entry, only draw 5 loops
+                      endAt += repLength + inner.innerLoop() * 4;
+                    } else {
+                      endAt += maxLength;
+                    }
+
+                    // Make paint frames for each loop + a cap if unbounded
+                    while (at < endAt) {
+                      subMap.add(new FrameMapEntry(repLength, innerOffset));
+                      if (outerRemaining != Global.NO_LENGTH) outerRemaining -= repLength;
+                      if (at < outer.innerOffset) at = outer.innerOffset;
+                      at += repLength;
+                      repLength = Math.min(inner.innerLoop(), endAt - at);
+                      innerOffset = inner.innerOffset();
+                    }
+                    if (maxLength == Global.NO_LENGTH)
+                      subMap.add(new FrameMapEntry(inner.innerLoop(), innerOffset));
                   }
-                  if (maxLength == Global.NO_LENGTH)
-                    subMap.add(new FrameMapEntry(inner.innerLoop(), innerOffset));
                 }
 
                 if (outerRemaining == 0) break;
