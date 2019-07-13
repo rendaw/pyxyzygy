@@ -10,6 +10,7 @@ import com.zarbosoft.pyxyzygy.app.Hotkeys;
 import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.Wrapper;
 import com.zarbosoft.pyxyzygy.app.config.NodeConfig;
+import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupChildWrapper;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ReadOnlyObjectProperty;
@@ -35,6 +36,8 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Rectangle;
 
+import java.util.function.Consumer;
+
 import static com.zarbosoft.pyxyzygy.app.Global.localization;
 
 public class Editor {
@@ -47,6 +50,8 @@ public class Editor {
   private final ReadOnlyObjectProperty<Bounds> sizeProperty;
   public final SimpleIntegerProperty positiveZoom = new SimpleIntegerProperty(1);
   public final SimpleDoubleProperty zoomFactor = new SimpleDoubleProperty(1);
+  @SuppressWarnings("unused")
+  private final BinderRoot editOriginRoot;
 
   private Hotkeys.Action[] actions =
       new Hotkeys.Action[] {
@@ -494,8 +499,25 @@ public class Editor {
           if (context.hotkeys.event(context, window, Hotkeys.Scope.CANVAS, e)) e.consume();
         });
 
-    Origin origin = new Origin(window, this, 20);
+    Origin origin = new Origin(this, 20);
     origin.visibleProperty().bind(GUILaunch.profileConfig.showOrigin);
+    editOriginRoot =
+      window.selectedForEditOriginBinder.addListener(new Consumer<EditHandle>() {
+        private Group overlay = null;
+
+        @Override
+        public void accept(EditHandle newValue) {
+          if (overlay != null) {
+            overlay.getChildren().remove(origin);
+            overlay = null;
+          }
+
+          if (newValue != null) {
+            overlay = newValue.getCanvas().overlay;
+            overlay.getChildren().addAll(origin);
+          }
+        }
+      });
   }
 
   public Node getWidget() {

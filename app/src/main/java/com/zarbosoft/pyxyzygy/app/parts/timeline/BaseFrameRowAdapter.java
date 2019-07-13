@@ -25,30 +25,44 @@ public abstract class BaseFrameRowAdapter<N, F> extends RowAdapter {
 
   public abstract FrameFinder<N, F> getFrameFinder();
 
+  private int viewTimeToInner(Window window, int atView) {
+    int mapFrameStart = 0;
+    for (FrameMapEntry e : window.timeMap) {
+      do {
+        if (e.length == NO_LENGTH || atView < mapFrameStart + e.length) {
+          if (e.innerOffset == NO_INNER) return NO_INNER; // Can't drag into a void time map
+          int newAt = atView - mapFrameStart + e.innerOffset;
+          return newAt;
+        }
+      } while (false);
+      mapFrameStart += e.length;
+    }
+    return NO_INNER;
+  }
+
   @Override
   public final boolean duplicateFrame(
       Context context, Window window, ChangeStepBuilder change, int outer) {
-    int inner = window.timeToInner(outer);
+    int inner = viewTimeToInner(window, outer);
     if (inner == NO_INNER) return false;
     FrameFinder.Result<F> previous = getFrameFinder().findFrame(getNode(), inner);
     F source = null;
     if (timeline.selectedFrame.get() != null)
       source = getFrameFinder().frameGet(getNode(), timeline.selectedFrame.get().index);
     if (source == null) source = getFrameFinder().findFrame(getNode(), inner).frame;
+    if (source == null) return false;
     F newFrame = innerDuplicateFrame(context, source);
-    if (previous.at != inner) return createFrame(context, change, inner, previous, newFrame);
-    else return createFrame(context, change, inner + 1, previous, newFrame);
+    return createFrame(context, change, inner, previous, newFrame);
   }
 
   @Override
   public final boolean createFrame(
       Context context, Window window, ChangeStepBuilder change, int outer) {
-    int inner = window.timeToInner(outer);
+    int inner = viewTimeToInner(window, outer);
     if (inner == NO_INNER) return false;
     FrameFinder.Result<F> previous = getFrameFinder().findFrame(getNode(), inner);
     F newFrame = innerCreateFrame(context, previous.frame);
-    if (previous.at != inner) return createFrame(context, change, inner, previous, newFrame);
-    else return createFrame(context, change, inner + 1, previous, newFrame);
+    return createFrame(context, change, inner, previous, newFrame);
   }
 
   protected abstract F innerDuplicateFrame(Context context, F source);
@@ -59,17 +73,24 @@ public abstract class BaseFrameRowAdapter<N, F> extends RowAdapter {
       int inner,
       FrameFinder.Result<F> previous,
       F newFrame) {
+    if (previous.frame != null && inner == previous.at) inner += 1;
     int offset = inner - previous.at;
-    if (offset <= 0) throw new Assertion();
+    if (offset < 0) throw new Assertion();
     timeline.select(null);
-    if (getFrameLength(previous.frame) == NO_LENGTH) {
+    if (previous.frame != null && getFrameLength(previous.frame) == NO_LENGTH) {
       setFrameInitialLength(context, newFrame, NO_LENGTH);
     } else {
       setFrameInitialLength(
-          context, newFrame, Math.max(1, getFrameLength(previous.frame) - offset));
+          context,
+          newFrame,
+          Math.max(
+              1,
+              (previous.frame == null ? getPrelength(getNode()) : getFrameLength(previous.frame))
+                  - offset));
     }
-    setFrameLength(change, previous.frame, offset);
-    addFrame(change, previous.frameIndex + 1, newFrame);
+    if (previous.frame == null) setPrelength(change, getNode(), offset);
+    else setFrameLength(change, previous.frame, offset);
+    addFrame(change, previous == null ? 0 : previous.frameIndex + 1, newFrame);
     row.ifPresent(
         r ->
             r.frames.stream()
@@ -95,7 +116,7 @@ public abstract class BaseFrameRowAdapter<N, F> extends RowAdapter {
 
   @Override
   public final boolean frameAt(Window window, int outer) {
-    final int inner = window.timeToInner(outer);
+    int inner = viewTimeToInner(window, outer);
     if (inner == NO_INNER) return false;
     FrameFinder.Result<F> previous = getFrameFinder().findFrame(getNode(), inner);
     return previous.at == inner;
@@ -132,31 +153,22 @@ public abstract class BaseFrameRowAdapter<N, F> extends RowAdapter {
 
     @Override
     public void setAt(Context context, Window window, int newAtView) {
-      int mapFrameStart = 0;
-      for (FrameMapEntry e : window.timeMap) {
-        do {
-          if (e.length == NO_LENGTH || newAtView < mapFrameStart + e.length) {
-            if (e.innerOffset == NO_INNER) break; // Can't drag into a void time map
-            int newAt = newAtView - mapFrameStart + e.innerOffset;
-            if (i == 0) {
-              context.change(
-                  new History.Tuple(getData(), "frame"),
-                  c -> {
-                    setPrelength(c, getNode(), newAt);
-                  });
-            } else {
-              F prior = getFrameFinder().frameGet(getNode(), i - 1);
-              int priorAt = getFrameFinder().frameTime(getNode(), i - 1);
-              context.change(
-                  new History.Tuple(getData(), "frame"),
-                  c -> {
-                    setFrameLength(c, prior, newAt - priorAt);
-                  });
-            }
-            return;
-          }
-        } while (false);
-        mapFrameStart += e.length;
+      int newAt = viewTimeToInner(window, newAtView);
+      if (newAt == NO_INNER) return;
+      if (i == 0) {
+        context.change(
+            new History.Tuple(getData(), "frame"),
+            c -> {
+              setPrelength(c, getNode(), newAt);
+            });
+      } else {
+        F prior = getFrameFinder().frameGet(getNode(), i - 1);
+        int priorAt = getFrameFinder().frameTime(getNode(), i - 1);
+        context.change(
+            new History.Tuple(getData(), "frame"),
+            c -> {
+              setFrameLength(c, prior, newAt - priorAt);
+            });
       }
     }
 

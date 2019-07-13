@@ -830,23 +830,6 @@ public class Window {
                 });
   }
 
-  public Pair<Integer, FrameMapEntry> findTimeMapEntry(int outer) {
-    int outerAt = 0;
-    for (FrameMapEntry outerFrame : timeMap) {
-      if (outer >= outerAt && (outerFrame.length == -1 || outer < outerAt + outerFrame.length)) {
-        return new Pair<>(outerAt, outerFrame);
-      }
-      outerAt += outerFrame.length;
-    }
-    throw new Assertion();
-  }
-
-  public int timeToInner(int outer) {
-    Pair<Integer, FrameMapEntry> entry = findTimeMapEntry(outer);
-    if (entry.second.innerOffset == -1) return -1;
-    return entry.second.innerOffset + outer - entry.first;
-  }
-
   public static List<CanvasHandle> getAncestorsOutward(CanvasHandle start, CanvasHandle target) {
     List<CanvasHandle> ancestors = new ArrayList<>();
     start = start.getParent(); // Loop check is exclusive of start, so go above the stated start

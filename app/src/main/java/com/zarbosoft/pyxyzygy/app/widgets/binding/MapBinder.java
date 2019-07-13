@@ -40,6 +40,7 @@ public class MapBinder<T, U> implements HalfBinder<U>, Consumer<T> {
   public void accept(T t) {
     Optional<U> v = forward.apply(t);
     if (!v.isPresent()) return;
+    if (v.equals(last)) return;
     last = v;
     listeners.forEach(l -> l.accept(unopt(v)));
   }

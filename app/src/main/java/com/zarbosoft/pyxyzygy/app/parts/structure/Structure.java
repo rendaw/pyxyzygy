@@ -447,7 +447,6 @@ public class Structure {
     MenuItem addImage = new MenuItem(localization.getString("add.true.color.layer"));
     addImage.setOnAction(
         e -> {
-          System.out.format("z1\n");
           TrueColorImageLayer image = TrueColorImageLayer.create(context.model);
           image.initialOffsetSet(context.model, Vector.ZERO);
           image.initialNameSet(
@@ -456,13 +455,10 @@ public class Structure {
           frame.initialLengthSet(context.model, -1);
           frame.initialOffsetSet(context.model, new Vector(0, 0));
           image.initialFramesAdd(context.model, ImmutableList.of(frame));
-          System.out.format("z2\n");
           context.change(
               null,
               c -> {
-                System.out.format("z3\n");
                 addNew(image, c);
-                System.out.format("z4\n");
               });
         });
     MenuItem addPalette = new MenuItem(localization.getString("add.palette.layer"));
@@ -1068,7 +1064,6 @@ public class Structure {
       index = placeAt.parentIndex + 1;
       placeAt = placeAt.getParent();
     }
-    System.out.format("top add new node %s\n", node.name());
     change.project(context.project).topAdd(node);
   }
 

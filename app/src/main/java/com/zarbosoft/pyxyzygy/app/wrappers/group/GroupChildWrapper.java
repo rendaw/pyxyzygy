@@ -71,8 +71,7 @@ public class GroupChildWrapper extends Wrapper {
       };
   protected GroupChildCanvasHandle canvasHandle;
 
-  public GroupChildWrapper(
-    Context context, Wrapper parent, int parentIndex, GroupChild node) {
+  public GroupChildWrapper(Context context, Wrapper parent, int parentIndex, GroupChild node) {
     this.parent = parent;
     this.parentIndex = parentIndex;
     this.node = node;
@@ -96,10 +95,13 @@ public class GroupChildWrapper extends Wrapper {
     if (time == NO_INNER) return NO_INNER;
     FrameFinder.Result<GroupTimeFrame> result = timeFrameFinder.findFrame(node, time);
     int offset = (time - result.at);
-    if (result.frame.innerLoop() != NO_LOOP) offset = offset % result.frame.innerLoop();
-    if (result.frame.innerOffset() == NO_INNER) return NO_INNER;
-    int innerFrame = result.frame.innerOffset() + offset;
-    return innerFrame;
+    if (result.frame == null) {
+      return offset;
+    } else {
+      if (result.frame.innerLoop() != NO_LOOP) offset = offset % result.frame.innerLoop();
+      if (result.frame.innerOffset() == NO_INNER) return NO_INNER;
+      return result.frame.innerOffset() + offset;
+    }
   }
 
   @Override

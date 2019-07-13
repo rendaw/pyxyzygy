@@ -25,12 +25,14 @@ import javafx.util.Callback;
 import static com.zarbosoft.pyxyzygy.app.Global.NO_INNER;
 import static com.zarbosoft.pyxyzygy.app.Global.localization;
 import static com.zarbosoft.pyxyzygy.app.Misc.noopConsumer;
-import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.pyxyzygy.app.Misc.unopt;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.centerCursor;
 
 public class ToolLayerMove extends Tool {
   private final GroupNodeEditHandle editHandle;
+  private final BinderRoot offsetRoot;
+  private final Runnable mirrorRoot;
+  private final BinderRoot selectionRoot;
   private BinderRoot originCleanup;
   protected DoubleVector markStart;
   private Vector markStartOffset;
@@ -41,8 +43,9 @@ public class ToolLayerMove extends Tool {
 
   public ToolLayerMove(Window window, GroupNodeWrapper wrapper, GroupNodeEditHandle editHandle) {
     this.wrapper = wrapper;
-    origin = new Origin(window, window.editor, 10);
     this.editHandle = editHandle;
+    origin = new Origin(window.editor, 10);
+    editHandle.getCanvas().overlay.getChildren().add(origin);
     window.editorCursor.set(this, centerCursor("cursor-move32.png"));
     layerList = new ListView<>();
     layerList.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
@@ -64,28 +67,33 @@ public class ToolLayerMove extends Tool {
           }
         });
     ObservableList<GroupChild> children = FXCollections.observableArrayList();
-    wrapper.node.mirrorChildren(children, c -> c, noopConsumer(), noopConsumer());
+    mirrorRoot = wrapper.node.mirrorChildren(children, c -> c, noopConsumer(), noopConsumer());
     layerList.setItems(children);
 
-    CustomBinding.bindBidirectional(
-        wrapper.specificChild, new SelectionModelBinder<>(layerList.getSelectionModel()));
-    CustomBinding.bind(origin.visibleProperty(), wrapper.specificChild.map(s -> opt(s != null)));
-    new DoubleHalfBinder<>(wrapper.specificChild,wrapper.canvasHandle.time.asObject())
-        .addListener(
-            (select, time) -> {
-              if (originCleanup != null) {
-                originCleanup.destroy();
-                originCleanup = null;
-              }
-              if (time == NO_INNER) return;
-              if (select == null) return;
-              pos =
-                  GroupChildWrapper.positionFrameFinder.findFrame(
-                          select, wrapper.canvasHandle.time.get())
-                      .frame;
-              originCleanup =
-                  CustomBinding.bind(origin.offset, new ScalarHalfBinder<Vector>(pos, "offset"));
-            });
+    selectionRoot =
+        CustomBinding.bindBidirectional(
+            wrapper.specificChild, new SelectionModelBinder<>(layerList.getSelectionModel()));
+    offsetRoot =
+        new DoubleHalfBinder<>(wrapper.specificChild, wrapper.canvasHandle.time.asObject())
+            .addListener(
+                (select, time) -> {
+                  if (originCleanup != null) {
+                    originCleanup.destroy();
+                    originCleanup = null;
+                  }
+                  origin.setVisible(false);
+                  if (time == NO_INNER) return;
+                  if (select == null) return;
+                  pos =
+                      GroupChildWrapper.positionFrameFinder.findFrame(
+                              select, wrapper.canvasHandle.time.get())
+                          .frame;
+                  if (pos == null) return;
+                  originCleanup =
+                      CustomBinding.bind(
+                          origin.offset, new ScalarHalfBinder<Vector>(pos, "offset"));
+                  origin.setVisible(true);
+                });
     if (!layerList.getItems().isEmpty() && layerList.getSelectionModel().getSelectedItem() == null)
       layerList.getSelectionModel().select(0);
     editHandle.toolPropReplacer.set(
@@ -101,13 +109,14 @@ public class ToolLayerMove extends Tool {
 
   @Override
   public void markStart(
-    Context context, Window window, DoubleVector start, DoubleVector globalStart) {
+      Context context, Window window, DoubleVector start, DoubleVector globalStart) {
     GroupChild specificLayer = unopt(wrapper.specificChild.get());
     if (specificLayer == null) return;
     pos =
         GroupChildWrapper.positionFrameFinder.findFrame(
                 specificLayer, wrapper.canvasHandle.time.get())
             .frame;
+    if (pos == null) return;
     this.markStart = globalStart;
     this.markStartOffset = pos.offset();
   }
@@ -120,6 +129,7 @@ public class ToolLayerMove extends Tool {
       DoubleVector end,
       DoubleVector globalStart,
       DoubleVector globalEnd) {
+    if (pos == null) return;
     context.change(
         new History.Tuple(wrapper, "move-layer"),
         c ->
@@ -130,7 +140,11 @@ public class ToolLayerMove extends Tool {
   @Override
   public void remove(Context context, Window window) {
     window.editorCursor.clear(this);
+    editHandle.getCanvas().overlay.getChildren().remove(origin);
     editHandle.toolPropReplacer.clear(this);
+    offsetRoot.destroy();
+    mirrorRoot.run();
+    selectionRoot.destroy();
     origin.remove();
     if (originCleanup != null) {
       originCleanup.destroy();

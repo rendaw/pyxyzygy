@@ -142,7 +142,7 @@ public class ToolStamp extends Tool {
                         1.0 / wrapper.canvasHandle.positiveZoom.get(),
                         1.0 / wrapper.canvasHandle.positiveZoom.get())));
     overlayGroup.getChildren().addAll(stampOverlayImage);
-    editHandle.overlay.getChildren().add(overlayGroup);
+    editHandle.getCanvas().overlay.getChildren().add(overlayGroup);
     Runnable updateStampImage =
         () -> {
           stampOverlayImage.setImage(null);
@@ -224,7 +224,7 @@ public class ToolStamp extends Tool {
 
   @Override
   public void remove(Context context, Window window) {
-    editHandle.overlay.getChildren().remove(overlayGroup);
+    editHandle.getCanvas().overlay.getChildren().remove(overlayGroup);
     mirror.remove(context);
     window.editorCursor.clear(this);
     editHandle.toolPropReplacer.clear(this);

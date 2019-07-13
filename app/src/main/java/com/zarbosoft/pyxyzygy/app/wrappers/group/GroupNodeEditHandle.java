@@ -37,17 +37,10 @@ public class GroupNodeEditHandle extends EditHandle {
   protected List<BinderRoot> cleanup2 = new ArrayList<>();
   Tool tool = null;
 
-  Group overlay;
-
   public GroupNodeWrapper wrapper;
 
   public GroupNodeEditHandle(Context context, Window window, final GroupNodeWrapper wrapper) {
     this.wrapper = wrapper;
-
-    // Canvas overlay
-    overlay = new Group();
-    wrapper.canvasHandle.overlay.getChildren().add(overlay);
-
     TitledPane toolProps = new TitledPane(null, null);
     toolProps.visibleProperty().bind(toolProps.contentProperty().isNotNull());
     this.toolPropReplacer =
@@ -152,7 +145,6 @@ public class GroupNodeEditHandle extends EditHandle {
       tool.remove(context, window);
       tool = null;
     }
-    if (wrapper.canvasHandle != null) wrapper.canvasHandle.overlay.getChildren().remove(overlay);
     cleanup.forEach(c -> c.run());
     cleanup2.forEach(c -> c.destroy());
     window.layerTabContent.clear(this);

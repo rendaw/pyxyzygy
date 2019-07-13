@@ -18,15 +18,15 @@ import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 public class Origin extends Group {
   private final Line originVert = new Line();
   private final Line originHoriz = new Line();
-  private final BinderRoot selectedForEditCleanup;
-  private Group overlay;
+  private final BinderRoot xRoot;
+  private final BinderRoot yRoot;
 
   public final SimpleObjectProperty<Vector> offset = new SimpleObjectProperty<Vector>(Vector.ZERO);
 
-  public Origin(Window window, Editor editor, double size) {
-    CustomBinding.bind(
+  public Origin(Editor editor, double size) {
+    xRoot = CustomBinding.bind(
         layoutXProperty(), new PropertyHalfBinder<>(offset).map(o -> opt((double) o.x)));
-    CustomBinding.bind(
+    yRoot = CustomBinding.bind(
         layoutYProperty(), new PropertyHalfBinder<>(offset).map(o -> opt((double) o.y)));
     originHoriz.setStroke(Color.GRAY);
     originVert.setStroke(Color.GRAY);
@@ -47,25 +47,10 @@ public class Origin extends Group {
     originVert.endXProperty().bind(scale.multiply(0.5));
 
     setBlendMode(BlendMode.DIFFERENCE);
-
-    this.selectedForEditCleanup =
-        window.selectedForEditOriginBinder.addListener(
-            newValue -> {
-              if (overlay != null) {
-                overlay.getChildren().remove(Origin.this);
-                overlay = null;
-              }
-
-              if (newValue != null) {
-                overlay = newValue.getCanvas().overlay;
-                overlay.getChildren().addAll(Origin.this);
-              }
-            });
   }
 
   public void remove() {
-    overlay.getChildren().remove(Origin.this);
-    overlay = null;
-    selectedForEditCleanup.destroy();
+    xRoot.destroy();
+    yRoot.destroy();
   }
 }

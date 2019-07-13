@@ -145,6 +145,9 @@ public class Timeline {
   @SuppressWarnings("unused")
   private final BinderRoot rootPlaying; // GC root
 
+  @SuppressWarnings("unused")
+  private final BinderRoot specificChildRoot;
+
   public double zoom = 16;
 
   VBox foreground = new VBox();
@@ -499,7 +502,7 @@ public class Timeline {
           }
         });
     tree.getColumns().addAll(nameColumn, framesColumn);
-    CustomBinding.bindBidirectional(
+    specificChildRoot = CustomBinding.bindBidirectional(
         new IndirectBinder<>(
             window.selectedForEditPlayingBinder,
             e -> {
@@ -963,7 +966,7 @@ public class Timeline {
               if (outer.innerOffset == Global.NO_INNER) return Stream.of(outer);
               List<FrameMapEntry> subMap = new ArrayList<>();
               if (prelength > 0) {
-                subMap.add(new FrameMapEntry(prelength,NO_INNER));
+                subMap.add(new FrameMapEntry(prelength, 0));
               }
               int at = prelength;
               int outerRemaining = outer.length;

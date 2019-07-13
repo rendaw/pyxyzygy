@@ -104,8 +104,8 @@ public class CLIMain {
     public String output;
 
     @Configuration(optional = true)
-    @Command.Argument(description = "Frame to render")
-    public int frame = 0;
+    @Command.Argument(description = "Time to render")
+    public int time = 0;
 
     @Override
     public void runImpl(Context context) {
@@ -119,10 +119,10 @@ public class CLIMain {
                 ((Camera) found).width(),
                 ((Camera) found).height());
       } else {
-        bounds = Render.findBounds(context, frame, found);
+        bounds = Render.bounds(context, found, time);
       }
       TrueColorImage out = TrueColorImage.create(bounds.width, bounds.height);
-      Render.render(context, found, out, frame, bounds, 1);
+      Render.render(context, found, out, time, bounds, 1);
       out.serialize(output);
       new RawWriter(System.out)
           .primitive(Integer.toString(bounds.x))

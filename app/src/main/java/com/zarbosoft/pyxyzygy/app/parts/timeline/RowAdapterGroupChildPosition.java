@@ -118,6 +118,7 @@ public class RowAdapterGroupChildPosition
   @Override
   protected GroupPositionFrame innerCreateFrame(Context context, GroupPositionFrame previousFrame) {
     GroupPositionFrame newFrame = GroupPositionFrame.create(context.model);
+    if (previousFrame != null)
     newFrame.initialOffsetSet(context.model, previousFrame.offset());
     return newFrame;
   }

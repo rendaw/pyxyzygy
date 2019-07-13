@@ -147,12 +147,12 @@ public class BaseImageCanvasHandle<
   }
 
   public void updateViewedTime(Context context) {
-    if (time.get() != NO_INNER && time.get() >= wrapper.frameFinder.prelength(wrapper.node)) {
-      F oldFrame = frame;
+    if (time.get() != NO_INNER) {
       FrameFinder.Result<F> found = wrapper.frameFinder.findFrame(wrapper.node, time.get());
-      frame = found.frame;
-      if (oldFrame != frame) {
+      F newFrame = found.frame;
+      if (frame != newFrame) {
         detachTiles();
+        frame = newFrame;
         attachTiles(context);
       }
     } else {

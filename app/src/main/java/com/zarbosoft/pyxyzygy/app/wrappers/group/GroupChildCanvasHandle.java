@@ -246,6 +246,7 @@ public class GroupChildCanvasHandle extends CanvasHandle {
   private void updatePosition(Context context) {
     if (time.get() == NO_INNER) return;
     GroupPositionFrame pos = findPosition();
+    if (pos == null) return;
     if (bounds.get() == null) return;
     DoubleRectangle newBounds = bounds.get().minus(pos.offset());
     paint.setLayoutX(pos.offset().x);

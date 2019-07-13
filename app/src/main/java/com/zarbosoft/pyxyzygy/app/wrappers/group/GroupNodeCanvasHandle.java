@@ -22,6 +22,8 @@ import static com.zarbosoft.pyxyzygy.app.Misc.unopt;
 public class GroupNodeCanvasHandle extends CanvasHandle {
   private final Runnable layerListenCleanup;
   private final ObservableList<CanvasHandle> childHandles = FXCollections.observableArrayList();
+  private final Runnable childrenRoot;
+  private final Runnable overlayRoot;
   private CanvasHandle parent;
   final SimpleIntegerProperty positiveZoom = new SimpleIntegerProperty(0);
   private final Listener.ScalarSet<ProjectLayer, Vector> offsetListener;
@@ -41,7 +43,7 @@ public class GroupNodeCanvasHandle extends CanvasHandle {
             },
             h -> h.remove(context, null),
             noopConsumer());
-    mirror(
+    childrenRoot = mirror(
         childHandles,
         paint.getChildren(),
         h -> {
@@ -49,7 +51,7 @@ public class GroupNodeCanvasHandle extends CanvasHandle {
         },
         noopConsumer(),
         noopConsumer());
-    mirror(
+    overlayRoot = mirror(
         childHandles,
         overlay.getChildren(),
         h -> {
@@ -92,6 +94,8 @@ public class GroupNodeCanvasHandle extends CanvasHandle {
     childHandles.forEach(c -> c.remove(context, excludeSubtree));
     wrapper.node.removeOffsetSetListeners(offsetListener);
     layerListenCleanup.run();
+    overlayRoot.run();
+    childrenRoot.run();
   }
 
   @Override

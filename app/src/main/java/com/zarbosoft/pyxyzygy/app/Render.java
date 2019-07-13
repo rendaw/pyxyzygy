@@ -10,7 +10,6 @@ import com.zarbosoft.pyxyzygy.core.PaletteImage;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.pyxyzygy.core.model.latest.GroupChild;
 import com.zarbosoft.pyxyzygy.core.model.latest.GroupLayer;
-import com.zarbosoft.pyxyzygy.core.model.latest.GroupPositionFrame;
 import com.zarbosoft.pyxyzygy.core.model.latest.PaletteImageFrame;
 import com.zarbosoft.pyxyzygy.core.model.latest.PaletteImageLayer;
 import com.zarbosoft.pyxyzygy.core.model.latest.PaletteTile;
@@ -21,56 +20,19 @@ import com.zarbosoft.pyxyzygy.seed.Rectangle;
 import com.zarbosoft.pyxyzygy.seed.Vector;
 import com.zarbosoft.rendaw.common.Assertion;
 
+import java.util.Optional;
+
 import static com.zarbosoft.pyxyzygy.app.Global.NO_INNER;
 import static com.zarbosoft.pyxyzygy.app.Global.opacityMax;
 
 public class Render {
-
-  public static Rectangle findBounds(Context context, int frame, ProjectObject node1) {
-    BoundsBuilder out = new BoundsBuilder();
-    if (false) {
-      throw new Assertion();
-    } else if (node1 instanceof GroupLayer) {
-      GroupLayer node = (GroupLayer) node1;
-      for (GroupChild layer : node.children()) {
-        Rectangle childBounds = findBounds(context, frame, layer);
-        out.point(childBounds.corner());
-        out.point(childBounds.corner().plus(childBounds.span()));
-      }
-    } else if (node1 instanceof GroupChild) {
-      GroupChild node = (GroupChild) node1;
-      GroupPositionFrame pos = GroupChildWrapper.positionFrameFinder.findFrame(node, frame).frame;
-      int frame1 = GroupChildWrapper.toInnerTime(node, frame);
-      if (node.inner() != null) {
-        Rectangle childBounds = findBounds(context, frame1, node.inner());
-        out.point(childBounds.corner().plus(pos.offset()));
-        out.point(childBounds.corner().plus(childBounds.span()).plus(pos.offset()));
-      }
-    } else if (node1 instanceof TrueColorImageLayer) {
-      TrueColorImageLayer node = (TrueColorImageLayer) node1;
-      TrueColorImageFrame frame1 =
-          TrueColorImageNodeWrapper.frameFinder.findFrame(node, frame).frame;
-      frame1
-          .tiles()
-          .forEach(
-              (key, tile) -> {
-                Vector corner = Vector.from1D(key);
-                out.point(corner);
-                out.point(corner.plus(new Vector(context.project.tileSize(), context.project.tileSize())));
-              });
-    } else {
-      throw new Assertion();
-    }
-    return out.buildInt();
-  }
-
   public static Rectangle renderTrueColorImageLayer(
-    Context context,
-    TrueColorImage gc,
-    TrueColorImageLayer node,
-    TrueColorImageFrame frame,
-    Rectangle crop,
-    double opacity) {
+      Context context,
+      TrueColorImage gc,
+      TrueColorImageLayer node,
+      TrueColorImageFrame frame,
+      Rectangle crop,
+      double opacity) {
     crop = crop.unshift(node.offset()).unshift(frame.offset());
     Rectangle tileBounds = crop.divideContains(context.project.tileSize());
     for (int x = 0; x < tileBounds.width; ++x) {
@@ -87,12 +49,12 @@ public class Render {
   }
 
   public static Rectangle renderPaletteImageLayer(
-    Context context,
-    TrueColorImage gc,
-    PaletteImageLayer node,
-    PaletteImageFrame frame,
-    Rectangle crop,
-    double opacity) {
+      Context context,
+      TrueColorImage gc,
+      PaletteImageLayer node,
+      PaletteImageFrame frame,
+      Rectangle crop,
+      double opacity) {
     crop = crop.unshift(node.offset()).unshift(frame.offset());
     PaletteColors colors = PaletteWrapper.getPaletteColors(node.palette());
     Rectangle tileBounds = crop.divideContains(context.project.tileSize());
@@ -118,12 +80,12 @@ public class Render {
    * @param opacity opacity of this subtree
    */
   public static void render(
-    Context context,
-    ProjectObject node1,
-    TrueColorImage out,
-    int frame,
-    Rectangle crop,
-    double opacity) {
+      Context context,
+      ProjectObject node1,
+      TrueColorImage out,
+      int frame,
+      Rectangle crop,
+      double opacity) {
     if (frame == NO_INNER) return;
     if (false) {
       throw new Assertion();
@@ -134,29 +96,27 @@ public class Render {
     } else if (node1 instanceof GroupChild) {
       GroupChild node = (GroupChild) node1;
       if (node.enabled() && node.inner() != null) {
-        GroupPositionFrame pos = GroupChildWrapper.positionFrameFinder.findFrame(node, frame).frame;
+        Vector offset =
+            Optional.ofNullable(GroupChildWrapper.positionFrameFinder.findFrame(node, frame).frame)
+                .map(f -> f.offset())
+                .orElse(Vector.ZERO);
         int frame1 = GroupChildWrapper.toInnerTime(node, frame);
         double useOpacity = opacity * ((double) node.opacity() / opacityMax);
-        render(context, node.inner(), out, frame1, crop.unshift(pos.offset()), useOpacity);
+        render(context, node.inner(), out, frame1, crop.unshift(offset), useOpacity);
       }
     } else if (node1 instanceof TrueColorImageLayer) {
       TrueColorImageLayer node = (TrueColorImageLayer) node1;
-      renderTrueColorImageLayer(
-          context,
-          out,
-          node,
-          TrueColorImageNodeWrapper.frameFinder.findFrame(node, frame).frame,
-          crop,
-          opacity);
+      TrueColorImageFrame frame1 =
+          TrueColorImageNodeWrapper.frameFinder.findFrame(node, frame).frame;
+      if (frame1 != null) {
+        renderTrueColorImageLayer(context, out, node, frame1, crop, opacity);
+      }
     } else if (node1 instanceof PaletteImageLayer) {
       PaletteImageLayer node = (PaletteImageLayer) node1;
-      renderPaletteImageLayer(
-          context,
-          out,
-          node,
-          PaletteImageNodeWrapper.frameFinder.findFrame(node, frame).frame,
-          crop,
-          opacity);
+      PaletteImageFrame frame1 = PaletteImageNodeWrapper.frameFinder.findFrame(node, frame).frame;
+      if (frame1 != null) {
+        renderPaletteImageLayer(context, out, node, frame1, crop, opacity);
+      }
     } else {
       throw new Assertion();
     }
@@ -172,31 +132,38 @@ public class Render {
         out = out.expand(bounds(context, layer, frame)).shift(node.offset());
     } else if (node1 instanceof GroupChild) {
       GroupChild node = (GroupChild) node1;
+      Vector offset =
+          Optional.ofNullable(GroupChildWrapper.positionFrameFinder.findFrame(node, frame).frame)
+              .map(f -> f.offset())
+              .orElse(Vector.ZERO);
       int frame1 = GroupChildWrapper.toInnerTime(node, frame);
-      if (node.inner() != null) out = out.expand(bounds(context, node.inner(), frame1));
+      if (node.inner() != null)
+        out = out.expand(bounds(context, node.inner(), frame1).shift(offset));
     } else if (node1 instanceof TrueColorImageLayer) {
       TrueColorImageLayer node = (TrueColorImageLayer) node1;
       TrueColorImageFrame frame1 =
           TrueColorImageNodeWrapper.frameFinder.findFrame(node, frame).frame;
-      for (Long address : frame1.tiles().keySet()) {
-        Vector v = Vector.from1D(address).multiply(context.project.tileSize());
-        out =
-            out.expand(
-                new Rectangle(v.x, v.y, context.project.tileSize(), context.project.tileSize())
-                    .shift(node.offset())
-                    .shift(frame1.offset()));
-      }
+      if (frame1 != null)
+        for (Long address : frame1.tiles().keySet()) {
+          Vector v = Vector.from1D(address).multiply(context.project.tileSize());
+          out =
+              out.expand(
+                  new Rectangle(v.x, v.y, context.project.tileSize(), context.project.tileSize())
+                      .shift(node.offset())
+                      .shift(frame1.offset()));
+        }
     } else if (node1 instanceof PaletteImageLayer) {
       PaletteImageLayer node = (PaletteImageLayer) node1;
       PaletteImageFrame frame1 = PaletteImageNodeWrapper.frameFinder.findFrame(node, frame).frame;
-      for (Long address : frame1.tiles().keySet()) {
-        Vector v = Vector.from1D(address).multiply(context.project.tileSize());
-        out =
-            out.expand(
-                new Rectangle(v.x, v.y, context.project.tileSize(), context.project.tileSize())
-                    .shift(node.offset())
-                    .shift(frame1.offset()));
-      }
+      if (frame1 != null)
+        for (Long address : frame1.tiles().keySet()) {
+          Vector v = Vector.from1D(address).multiply(context.project.tileSize());
+          out =
+              out.expand(
+                  new Rectangle(v.x, v.y, context.project.tileSize(), context.project.tileSize())
+                      .shift(node.offset())
+                      .shift(frame1.offset()));
+        }
     } else {
       throw new Assertion();
     }
