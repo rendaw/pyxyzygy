@@ -133,7 +133,7 @@ public class TestTimeMapCalc {
             7,
             ImmutableList.of(inner(10, 0, NO_LOOP), inner(NO_LENGTH, 0, NO_LOOP))),
         ImmutableList.of(
-            new FrameMapEntry(7, NO_INNER),
+            new FrameMapEntry(7, 0),
             new FrameMapEntry(10, 0),
             new FrameMapEntry(NO_LENGTH, 0)));
   }
