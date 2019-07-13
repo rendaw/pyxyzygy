@@ -1121,9 +1121,9 @@ public class Structure {
     if (pasteParent != null) {
       int dest;
       if (reference != null) {
-        dest = reference.parentIndex + (before ? -1 : 1);
+        dest = reference.parentIndex + (before ? 0 : 1);
       } else {
-        dest = before ? 0 : -1;
+        dest = 0;
       }
       List<GroupChild> children = new ArrayList<>();
       for (Wrapper wrapper : placable) {
@@ -1150,10 +1150,9 @@ public class Structure {
     } else {
       int dest;
       if (reference != null) {
-        dest = reference.parentIndex + (before ? -1 : 1);
+        dest = reference.parentIndex + (before ? 0 : 1);
       } else {
-        if (before) dest = 0;
-        else dest = context.project.topLength();
+        dest = 0;
       }
       List<ProjectLayer> children = new ArrayList<>();
       for (Wrapper wrapper : placable) {
