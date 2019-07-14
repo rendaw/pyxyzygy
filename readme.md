@@ -20,7 +20,7 @@ Read the illustrated [user guide](docs/userguide.md)!
 
 **itch.io**アプリで**pyxyzygy**を使用することにおすすめします。
 
-日本語の[ユーザーガイド](ldocs/ja/userguide.md)を！
+日本語の[ユーザーガイド](ldocs/ja/userguide.md)をご参考ください！
 
 # Automation
 
