@@ -1,7 +1,6 @@
 package com.zarbosoft.pyxyzygy.app;
 
 import com.zarbosoft.appdirsj.AppDirs;
-import com.zarbosoft.automodel.lib.Logger;
 import javafx.application.Platform;
 import javafx.scene.input.KeyCode;
 
@@ -72,14 +71,14 @@ public class Global {
   }
 
   public static String getPaletteName() {
-    return localization.getString("palette");
+    return localization.getString("palette.default.name");
   }
 
   public static String getPaletteLayerName() {
-    return localization.getString("palette.layer");
+    return localization.getString("palette.layer.default.name");
   }
 
   public static String getGroupLayerName() {
-    return localization.getString("group");
+    return localization.getString("group.default.name");
   }
 }

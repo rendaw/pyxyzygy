@@ -116,12 +116,12 @@ public class GroupNodeEditHandle extends EditHandle {
         new Wrapper.ToolToggle(
             wrapper,
             "cursor-move16.png",
-            localization.getString("move"),
+            localization.getString("move.group"),
             GroupNodeConfig.TOOL_MOVE),
         new Wrapper.ToolToggle(
             wrapper,
             "cursor-layer-move.png",
-            localization.getString("move.layer"),
+            localization.getString("move.child"),
             GroupNodeConfig.TOOL_LAYER_MOVE) {
           @Override
           public void fire() {

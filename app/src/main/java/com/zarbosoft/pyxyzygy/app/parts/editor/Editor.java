@@ -189,7 +189,7 @@ public class Editor {
         new Hotkeys.Action(
             Hotkeys.Scope.CANVAS,
             "play-toggle",
-            localization.getString("play.pause"),
+            localization.getString("play.stop"),
             Hotkeys.Hotkey.create(KeyCode.SPACE, false, false, false)) {
           @Override
           public void run(Context context, Window window) {

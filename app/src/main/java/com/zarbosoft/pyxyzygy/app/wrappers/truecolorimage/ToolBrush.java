@@ -50,7 +50,7 @@ public class ToolBrush extends BaseToolBrush<TrueColorImageFrame, TrueColorImage
         this,
         pad(
             new WidgetFormBuilder()
-                .text(localization.getString("name"), t -> t.textProperty().bindBidirectional(brush.name))
+                .text(localization.getString("brush.name"), t -> t.textProperty().bindBidirectional(brush.name))
                 .span(
                     () -> {
                       return colorPicker;
@@ -100,7 +100,7 @@ public class ToolBrush extends BaseToolBrush<TrueColorImageFrame, TrueColorImage
                               });
                     })
                 .custom(
-                  localization.getString("size"),
+                  localization.getString("brush.size"),
                     () -> {
                       Pair<Node, SimpleObjectProperty<Integer>> brushSize =
                           HelperJFX.nonlinearSlider(10, 2000, 1, 10);

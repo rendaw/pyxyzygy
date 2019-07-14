@@ -290,12 +290,12 @@ public class CameraEditHandle extends GroupNodeEditHandle {
         new Wrapper.ToolToggle(
             wrapper,
             "cursor-move16.png",
-            localization.getString("move.layer"),
+            localization.getString("move.camera"),
             GroupNodeConfig.TOOL_MOVE),
         new Wrapper.ToolToggle(
             wrapper,
             "resize.png",
-            localization.getString("resize.viewport"),
+            localization.getString("resize.camera.viewport"),
             CameraNodeConfig.TOOL_VIEWPORT),
         new Wrapper.ToolToggle(
             wrapper, "stamper16.png", localization.getString("stamp"), GroupNodeConfig.TOOL_STAMP));

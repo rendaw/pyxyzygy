@@ -98,7 +98,7 @@ public class ToolLayerMove extends Tool {
       layerList.getSelectionModel().select(0);
     editHandle.toolPropReplacer.set(
         this,
-        localization.getString("move.layer"),
+        localization.getString("move.child"),
         new WidgetFormBuilder()
             .span(
                 () -> {

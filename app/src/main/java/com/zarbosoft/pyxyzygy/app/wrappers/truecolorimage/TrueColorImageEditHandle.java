@@ -196,7 +196,7 @@ public class TrueColorImageEditHandle extends EditHandle {
     menuNew.setOnAction(
         e -> {
           TrueColorBrush brush = new TrueColorBrush();
-          brush.name.set(context.namer.uniqueName(localization.getString("new.brush")));
+          brush.name.set(context.namer.uniqueName(localization.getString("new.brush.default.name")));
           brush.useColor.set(true);
           brush.color.set(TrueColor.rgba(0, 0, 0, 255));
           brush.blend.set(1000);

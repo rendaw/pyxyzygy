@@ -212,7 +212,7 @@ public class GUILaunch extends Application {
         newProfile.setOnAction(
             e -> {
               RootGlobalConfig.Profile profile1 = new RootGlobalConfig.Profile();
-              profile1.name.set(profileNames.uniqueName(localization.getString("new.profile1")));
+              profile1.name.set(profileNames.uniqueName(localization.getString("new.profile.default.name")));
               profile1.id = globalConfig.nextId++;
               list.getItems().add(profile1);
               list.getSelectionModel().clearSelection();
@@ -241,7 +241,7 @@ public class GUILaunch extends Application {
               }
               list.getItems().remove(profile1);
             });
-        Button moveUpButton = HelperJFX.button("arrow-up.png", localization.getString("move.up"));
+        Button moveUpButton = HelperJFX.button("arrow-up.png", localization.getString("move.profile.up"));
         rootMoveUp =
             CustomBinding.bind(
                 moveUpButton.disableProperty(), listIndexBinder.map(i -> opt(i.intValue() < 1)));
@@ -254,7 +254,7 @@ public class GUILaunch extends Application {
               list.getSelectionModel().clearAndSelect(i - 1);
             });
         Button moveDownButton =
-            HelperJFX.button("arrow-down.png", localization.getString("move.down"));
+            HelperJFX.button("arrow-down.png", localization.getString("move.profile.down"));
         rootMoveDown =
             CustomBinding.bind(
                 moveDownButton.disableProperty(),
@@ -433,7 +433,7 @@ public class GUILaunch extends Application {
                     e,
                     localization.getString("error.opening.project"),
                     localization.getString(
-                        "an.error.occurred.while.trying.to.open.the.project.n.nmake.sure.you.have.permission.to.read.and.write.to.the.project.directory.and.all.the.files.within"));
+                        "an.error.occurred.while.trying.to.create.the.project.n.nmake.sure.you.have.permission.to.write.to.the.project.directory"));
               }
             };
         Runnable defaultActSelection =
@@ -549,8 +549,8 @@ public class GUILaunch extends Application {
         VBox listLayout = new VBox();
         listLayout.getChildren().addAll(toolbar, list);
 
-        RadioButton newNormal = new RadioButton(localization.getString("normal"));
-        RadioButton newPixel = new RadioButton(localization.getString("pixel"));
+        RadioButton newNormal = new RadioButton(localization.getString("normal.project"));
+        RadioButton newPixel = new RadioButton(localization.getString("pixel.project"));
         new ToggleGroup() {
           BinderRoot toggleRoot;
 
@@ -607,14 +607,14 @@ public class GUILaunch extends Application {
         };
         Button create =
             new Button(
-                localization.getString("new"), new ImageView(icon("folder-plus-outline.png")));
+                localization.getString("new.project"), new ImageView(icon("folder-plus-outline.png")));
         create.setOnAction(
             ev -> {
               newResolvedPath.run();
             });
         Button open =
             new Button(
-                localization.getString("open"), new ImageView(icon("folder-open-outline.png")));
+                localization.getString("open.project"), new ImageView(icon("folder-open-outline.png")));
         open.setOnAction(
             ev -> {
               openResolvedPath.run();
@@ -714,7 +714,7 @@ public class GUILaunch extends Application {
     Thread.currentThread()
         .setUncaughtExceptionHandler(
             (thread, e) -> {
-              logger.writeException(e, localization.getString("uncaught.error"));
+              logger.writeException(e, localization.getString("unexpected.error"));
               HelperJFX.exceptionPopup(
                   primaryStage,
                   e,
@@ -1001,7 +1001,7 @@ public class GUILaunch extends Application {
     if (deserializeResult.model.needsMigrate()) {
       Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
       confirm.initOwner(primaryStage);
-      confirm.setTitle(localization.getString("clear.project.history"));
+      confirm.setTitle(localization.getString("clear.undo.redo"));
       confirm.setHeaderText(
           localization.getString("opening.this.project.will.clear.it.s.history.undo.redo.data"));
       confirm.setContentText(localization.getString("back.up.your.project.before.proceeding"));

@@ -62,7 +62,7 @@ public class Misc {
         }
 
         builder.text(
-            localization.getString("name"),
+            localization.getString("layer.name"),
             t -> {
               this.nameCleanup =
                   CustomBinding.bindBidirectional(

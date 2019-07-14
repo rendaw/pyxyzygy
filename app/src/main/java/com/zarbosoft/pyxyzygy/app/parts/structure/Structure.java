@@ -643,7 +643,7 @@ public class Structure {
                 duplicate(c);
               });
         });
-    Button removeButton = HelperJFX.button("minus.png", localization.getString("remove"));
+    Button removeButton = HelperJFX.button("minus.png", localization.getString("remove.layer"));
     removeButton
         .disableProperty()
         .bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedIndices()));
@@ -655,7 +655,7 @@ public class Structure {
                 delete(context, c);
               });
         });
-    Button moveUpButton = HelperJFX.button("arrow-up.png", localization.getString("move.up"));
+    Button moveUpButton = HelperJFX.button("arrow-up.png", localization.getString("move.layer.up"));
     moveUpButton
         .disableProperty()
         .bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedItems()));
@@ -686,7 +686,7 @@ public class Structure {
                 }
               });
         });
-    Button moveDownButton = HelperJFX.button("arrow-down.png", localization.getString("move.down"));
+    Button moveDownButton = HelperJFX.button("arrow-down.png", localization.getString("move.layer.down"));
     moveDownButton
         .disableProperty()
         .bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedItems()));

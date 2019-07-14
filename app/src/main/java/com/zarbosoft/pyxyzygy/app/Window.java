@@ -413,7 +413,7 @@ public class Window {
               textArea.setWrapText(true);
               textArea.setMaxWidth(Double.MAX_VALUE);
               textArea.setMaxHeight(Double.MAX_VALUE);
-              dialog(localization.getString("an.unexpected.error.occurred1"))
+              dialog(localization.getString("an.unexpected.error.occurred"))
                   .addContent(new TitledPane(localization.getString("trace"), textArea))
                   .addAction(ButtonType.OK, true, () -> true)
                   .go();
@@ -708,7 +708,7 @@ public class Window {
                           scope.setCellValueFactory(
                               param -> new SimpleStringProperty(param.getValue().scope.name()));
                           TableColumn<Hotkeys.Action, String> description =
-                              new TableColumn(localization.getString("description"));
+                              new TableColumn(localization.getString("hotkey.description"));
                           description.setCellValueFactory(
                               param -> new SimpleStringProperty(param.getValue().description));
                           TableColumn<Hotkeys.Action, String> key =

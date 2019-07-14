@@ -250,7 +250,7 @@ public class Timeline {
         };
     scrub.addEventFilter(MouseEvent.MOUSE_CLICKED, mouseEventEventHandler);
     scrub.addEventFilter(MouseEvent.MOUSE_DRAGGED, mouseEventEventHandler);
-    add = HelperJFX.button("plus.png", localization.getString("add"));
+    add = HelperJFX.button("plus.png", localization.getString("add.frame"));
     BooleanBinding hasNoFrames =
         Bindings.createBooleanBinding(
             () -> {
@@ -298,7 +298,7 @@ public class Timeline {
                     .findFirst();
               });
         });
-    remove = HelperJFX.button("minus.png", localization.getString("remove"));
+    remove = HelperJFX.button("minus.png", localization.getString("remove.frame"));
     remove
         .disableProperty()
         .bind(

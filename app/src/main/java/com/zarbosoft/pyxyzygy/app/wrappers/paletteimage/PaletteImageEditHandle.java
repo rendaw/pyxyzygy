@@ -57,7 +57,6 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
-import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
@@ -70,7 +69,6 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -392,7 +390,7 @@ public class PaletteImageEditHandle extends EditHandle {
     menuNew.setOnAction(
         e -> {
           PaletteBrush brush = new PaletteBrush();
-          brush.name.set(context.namer.uniqueName(localization.getString("new.brush")));
+          brush.name.set(context.namer.uniqueName(localization.getString("new.brush.default.name")));
           brush.size.set(20);
           GUILaunch.profileConfig.paletteBrushes.add(brush);
           if (GUILaunch.profileConfig.paletteBrushes.size() == 1) {
@@ -618,7 +616,7 @@ public class PaletteImageEditHandle extends EditHandle {
                         bb ->
                             bb.button(
                                     b -> {
-                                      b.setText(localization.getString("layer"));
+                                      b.setText(localization.getString("unlink.layer"));
                                       b.setGraphic(new ImageView(icon("link-off.png")));
                                       b.setTooltip(
                                           new Tooltip(localization.getString("make.layer.unique")));
@@ -629,7 +627,7 @@ public class PaletteImageEditHandle extends EditHandle {
                                     })
                                 .button(
                                     b -> {
-                                      b.setText(localization.getString("palette"));
+                                      b.setText(localization.getString("unlink.palette"));
                                       b.setGraphic(new ImageView(icon("link-off.png")));
                                       b.setTooltip(
                                           new Tooltip(
@@ -684,7 +682,7 @@ public class PaletteImageEditHandle extends EditHandle {
                 localization.getString("palette"),
                 new WidgetFormBuilder()
                     .text(
-                        localization.getString("name"),
+                        localization.getString("palette.default.name"),
                         t -> {
                           cleanup2.add(
                               CustomBinding.bindBidirectional(
@@ -787,10 +785,10 @@ public class PaletteImageEditHandle extends EditHandle {
                               };
                           merge.setTooltip(new Tooltip(localization.getString("merge.colors")));
                           Button moveUp =
-                              HelperJFX.button("arrow-up.png", localization.getString("move.back"));
+                              HelperJFX.button("arrow-up.png", localization.getString("move.color.back"));
                           Button moveDown =
                               HelperJFX.button(
-                                  "arrow-down.png", localization.getString("move.next"));
+                                  "arrow-down.png", localization.getString("move.color.next"));
 
                           VBox tools = new VBox();
                           tools.setSpacing(3);

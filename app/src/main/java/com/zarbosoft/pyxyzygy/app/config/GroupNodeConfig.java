@@ -2,7 +2,6 @@ package com.zarbosoft.pyxyzygy.app.config;
 
 import com.zarbosoft.interface1.Configuration;
 import com.zarbosoft.pyxyzygy.app.Context;
-import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeCanvasHandle;
 import javafx.beans.property.SimpleLongProperty;
 
 @Configuration(name = "group")
