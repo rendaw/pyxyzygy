@@ -50,6 +50,7 @@ import static com.zarbosoft.pyxyzygy.app.Global.pasteHotkey;
 import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.pyxyzygy.app.Misc.separateFormField;
 import static com.zarbosoft.pyxyzygy.app.config.NodeConfig.TOOL_MOVE;
+import static com.zarbosoft.pyxyzygy.app.config.TrueColorImageNodeConfig.TOOL_BRUSH;
 import static com.zarbosoft.pyxyzygy.app.config.TrueColorImageNodeConfig.TOOL_FRAME_MOVE;
 import static com.zarbosoft.pyxyzygy.app.config.TrueColorImageNodeConfig.TOOL_SELECT;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.pad;
@@ -88,7 +89,7 @@ public class TrueColorImageEditHandle extends EditHandle {
   }
 
   public TrueColorImageEditHandle(
-    Context context, Window window, final TrueColorImageNodeWrapper wrapper) {
+      Context context, Window window, final TrueColorImageNodeWrapper wrapper) {
     this.wrapper = wrapper;
 
     positiveZoom.bind(wrapper.canvasHandle.zoom);
@@ -96,16 +97,21 @@ public class TrueColorImageEditHandle extends EditHandle {
     actions =
         Streams.concat(
                 Stream.of(
-                    new Hotkeys.Action(Hotkeys.Scope.CANVAS, "paste", localization.getString("paste"), pasteHotkey) {
+                    new Hotkeys.Action(
+                        Hotkeys.Scope.CANVAS,
+                        "paste",
+                        localization.getString("paste"),
+                        pasteHotkey) {
                       @Override
                       public void run(Context context, Window window) {
-                        wrapper.config.tool.set(TOOL_SELECT);
+                        manualSetTool(window, TOOL_SELECT);
                         ((ToolSelect) tool).paste(context, window);
                       }
                     },
                     new Hotkeys.Action(
                         Hotkeys.Scope.CANVAS,
-                        "last-brush", localization.getString("last.brush"),
+                        "last-brush",
+                        localization.getString("last.brush"),
                         Hotkeys.Hotkey.create(KeyCode.SPACE, false, false, false)) {
                       @Override
                       public void run(Context context, Window window) {
@@ -115,22 +121,24 @@ public class TrueColorImageEditHandle extends EditHandle {
                                   >= GUILaunch.profileConfig.trueColorBrushes.size()) return;
                           setBrush(wrapper.config.lastBrush);
                         } else {
-                          wrapper.config.tool.set(TrueColorImageNodeConfig.TOOL_BRUSH);
+                          manualSetTool(window, TOOL_BRUSH);
                         }
                       }
                     },
                     new Hotkeys.Action(
                         Hotkeys.Scope.CANVAS,
-                        "select", localization.getString("select"),
+                        "select",
+                        localization.getString("select"),
                         Hotkeys.Hotkey.create(KeyCode.S, false, false, false)) {
                       @Override
                       public void run(Context context, Window window) {
-                        wrapper.config.tool.set(TOOL_SELECT);
+                        manualSetTool(window, TOOL_SELECT);
                       }
                     },
                     new Hotkeys.Action(
                         Hotkeys.Scope.CANVAS,
-                        "move", localization.getString("move.layer"),
+                        "move",
+                        localization.getString("move.layer"),
                         Hotkeys.Hotkey.create(KeyCode.M, false, false, false)) {
                       @Override
                       public void run(Context context, Window window) {
@@ -139,7 +147,8 @@ public class TrueColorImageEditHandle extends EditHandle {
                     },
                     new Hotkeys.Action(
                         Hotkeys.Scope.CANVAS,
-                        "move-frame", localization.getString("move.frame.contents"),
+                        "move-frame",
+                        localization.getString("move.frame.contents"),
                         Hotkeys.Hotkey.create(KeyCode.F, false, false, false)) {
                       @Override
                       public void run(Context context, Window window) {
@@ -181,22 +190,34 @@ public class TrueColorImageEditHandle extends EditHandle {
     wrapper.canvasHandle.overlay.getChildren().add(overlay);
 
     Wrapper.ToolToggle move =
-        new Wrapper.ToolToggle(wrapper, "cursor-move16.png", localization.getString("move.layer"), TOOL_MOVE);
+        new Wrapper.ToolToggle(
+            wrapper, "cursor-move16.png", localization.getString("move.layer"), TOOL_MOVE);
     Wrapper.ToolToggle select =
-        new Wrapper.ToolToggle(wrapper, "select.png", localization.getString("select"), TOOL_SELECT);
+        new Wrapper.ToolToggle(
+            wrapper, "select.png", localization.getString("select"), TOOL_SELECT) {
+          @Override
+          public void fire() {
+            super.fire();
+            manualSetTool(window, TOOL_SELECT);
+          }
+        };
 
     window.timeline.toolBoxContents.set(
         this,
         ImmutableList.of(
             new Wrapper.ToolToggle(
-                wrapper, "cursor-frame-move.png", localization.getString("move.frame.contents"), TOOL_FRAME_MOVE)));
+                wrapper,
+                "cursor-frame-move.png",
+                localization.getString("move.frame.contents"),
+                TOOL_FRAME_MOVE)));
 
     // Brushes
     MenuItem menuNew = new MenuItem(localization.getString("new.brush"));
     menuNew.setOnAction(
         e -> {
           TrueColorBrush brush = new TrueColorBrush();
-          brush.name.set(context.namer.uniqueName(localization.getString("new.brush.default.name")));
+          brush.name.set(
+              context.namer.uniqueName(localization.getString("new.brush.default.name")));
           brush.useColor.set(true);
           brush.color.set(TrueColor.rgba(0, 0, 0, 255));
           brush.blend.set(1000);
@@ -271,8 +292,8 @@ public class TrueColorImageEditHandle extends EditHandle {
                   wrapper.brushBinder.map(b1 -> opt(b1 == b))) {
                 @Override
                 public void selectBrush() {
-                  wrapper.config.tool.set(TrueColorImageNodeConfig.TOOL_BRUSH);
                   wrapper.config.brush.set(GUILaunch.profileConfig.trueColorBrushes.indexOf(b));
+                  manualSetTool(window, TOOL_BRUSH);
                 }
               };
             },
@@ -287,7 +308,7 @@ public class TrueColorImageEditHandle extends EditHandle {
         .getChildren()
         .addAll(
             new TitledPane(
-              localization.getString("layer"),
+                localization.getString("layer"),
                 new WidgetFormBuilder()
                     .apply(b -> cleanup.add(Misc.nodeFormFields(context, b, wrapper)))
                     .apply(b -> separateFormField(context, b, wrapper))
@@ -317,21 +338,21 @@ public class TrueColorImageEditHandle extends EditHandle {
               brushesListener = null;
             }
             if (TrueColorImageNodeConfig.TOOL_MOVE.equals(newValue)) {
-              setTool(
+              initializeTool(
                   context,
                   window,
                   () -> {
                     return new ToolMove(window, wrapper);
                   });
             } else if (TOOL_FRAME_MOVE.equals(newValue)) {
-              setTool(
+              initializeTool(
                   context,
                   window,
                   () -> {
                     return new ToolFrameMove(window, wrapper);
                   });
             } else if (TOOL_SELECT.equals(newValue)) {
-              setTool(
+              initializeTool(
                   context,
                   window,
                   () -> {
@@ -350,7 +371,7 @@ public class TrueColorImageEditHandle extends EditHandle {
                       if (!Range.closedOpen(0, GUILaunch.profileConfig.trueColorBrushes.size())
                           .contains(i)) return;
                       TrueColorBrush brush = GUILaunch.profileConfig.trueColorBrushes.get(i);
-                      setTool(
+                      initializeTool(
                           context,
                           window,
                           () ->
@@ -372,7 +393,12 @@ public class TrueColorImageEditHandle extends EditHandle {
         });
   }
 
-  private void setTool(Context context, Window window, Supplier<Tool> newTool) {
+  private void manualSetTool(Window window, String tool) {
+    wrapper.config.tool.set(tool);
+    window.showLayerTab();
+  }
+
+  private void initializeTool(Context context, Window window, Supplier<Tool> newTool) {
     if (tool != null) {
       tool.remove(context, window);
       tool = null;

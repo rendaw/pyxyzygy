@@ -81,6 +81,12 @@ A project is stored on disk as a directory with a `project.luxem` file.  You can
 * [True color](true_color_layer.md) layers
 * [Camera](camera_layer.md) layers
 
+## Tools
+
+* The [Select](select.md) tool
+* [Palette layer brush](palette_brush_settings.md) tool
+* [True color layer brush](true_color_brush_settings.md) tool
+
 ## Additional mouse hotkeys
 
 * `ctrl + click` - sample color from current node
