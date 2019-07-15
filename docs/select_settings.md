@@ -4,11 +4,11 @@
 
 The select tool has multiple states.  The select tool starts in the "nothing selected" state.
 
-If you have image data on the clipboard, you can place `ctrl+v` at any time in the editor and the clipboard contents will be turned into a "lifted" selection automatically.
+If you have image data on the clipboard, you can press `ctrl+v` at any time in the editor and the clipboard contents will be turned into a "lifted" selection automatically.
 
 ## When nothing's lifted
 
-Indicate a selection region by clicking and dragging in the editor.
+Click and drag in the editor to indicate a selection region.
 
 The indicated region will have handles on each side for adjusting the region's size, and the region can be dragged to move it elsewhere.
 
