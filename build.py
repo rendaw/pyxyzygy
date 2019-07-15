@@ -5,6 +5,7 @@ def main():
     from pathlib import Path
     import shutil
     import argparse
+    import glob
 
     import toml
 
@@ -78,6 +79,28 @@ def main():
         cxx = 'x86_64-w64-mingw32-g++'
         c_include = '/usr/x86_64-w64-mingw32/sys-root/mingw/include/c++'
         c_lib = '/usr/x86_64-w64-mingw32/sys-root/mingw/lib'
+    elif args.platform == 'mac':
+        for p in [
+            '/Library/',
+            '/Library/Java/',
+            '/Library/Java/JavaVirtualMachines/',
+            '/Library/Java/JavaVirtualMachines/adoptopenjdk-*/',
+            '/Library/Java/JavaVirtualMachines/adoptopenjdk-*/Contents/',
+            '/Library/Java/JavaVirtualMachines/adoptopenjdk-*/Contents/Home/',
+            '/Library/Java/JavaVirtualMachines/adoptopenjdk-*/Contents/Home/include/',
+        ]:
+            print(p, '---', glob.glob(p))
+        java_toolchain = glob.glob(
+            '/Library/Java/JavaVirtualMachines/adoptopenjdk-11*/Contents/Home'
+        )[0]
+        java_platform = 'darwin'
+        jfx_platform = 'macosx'
+        itch_platform = 'osx'
+        exe_ext = ''
+        so_ext = 'dylib'
+        cxx = 'g++'
+        c_include = '/usr/local/include'
+        c_lib = '/usr/local/lib'
     else:
         raise AssertionError
 

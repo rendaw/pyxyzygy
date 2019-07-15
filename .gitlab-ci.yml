@@ -1,3 +1,4 @@
+---
 image: registry.gitlab.com/rendaw/pyxyzygy-builenv
 
 stages:

@@ -1,0 +1,30 @@
+---
+os: osx
+
+branches:
+  only:
+    - experimental
+    - stable
+
+cache:
+  directories:
+    - $HOME/.m2
+
+addons:
+  homebrew:
+    taps:
+      - AdoptOpenJDK/homebrew-openjdk
+    packages:
+      - maven
+      - adoptopenjdk11
+      - gcc
+      - swig
+      - python
+      - zlib
+      - libpng
+    casks:
+      - inkscape
+
+install:
+  - python3 -m pip install toml
+  - ./build.py mac ${TRAVIS_COMMIT}
