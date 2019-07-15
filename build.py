@@ -5,7 +5,6 @@ def main():
     from pathlib import Path
     import shutil
     import argparse
-    import glob
 
     import toml
 
@@ -16,6 +15,48 @@ def main():
     parser.add_argument('channel')
     args = parser.parse_args()
 
+    # More variables
+    if False:
+        pass
+    elif args.platform == 'linux':
+        java_path = '/usr/lib/jvm/java-11-openjdk'
+        java_toolchain = java_path
+        java_platform = 'linux'
+        jfx_platform = 'linux'
+        itch_platform = 'linux'
+        exe_ext = ''
+        so_ext = 'so'
+        cxx = 'g++'
+        c_include = '/usr/include'
+        c_lib = '/usr/lib'
+        butler_root = Path('/')
+    elif args.platform == 'windows':
+        java_path = '/usr/lib/jvm/java-11-openjdk'
+        java_toolchain = '/jdk-11.0.2'
+        java_platform = 'win32'
+        jfx_platform = 'win'
+        itch_platform = 'windows'
+        exe_ext = '.exe'
+        so_ext = 'dll'
+        cxx = 'x86_64-w64-mingw32-g++'
+        c_include = '/usr/x86_64-w64-mingw32/sys-root/mingw/include/c++'
+        c_lib = '/usr/x86_64-w64-mingw32/sys-root/mingw/lib'
+        butler_root = Path('/')
+    elif args.platform == 'mac':
+        java_path = '/Library/Java/JavaVirtualMachines/adoptopenjdk-11.jdk/Contents/Home'  # noqa
+        java_toolchain = java_path
+        java_platform = 'darwin'
+        jfx_platform = 'mac'
+        itch_platform = 'osx'
+        exe_ext = ''
+        so_ext = 'dylib'
+        cxx = 'g++-8'
+        c_include = '/usr/local/include'
+        c_lib = '/usr/local/lib'
+        butler_root = Path.cwd()
+    else:
+        raise AssertionError
+
     # Tools
     def c(*pargs, **kwargs):
         print(pargs, kwargs)
@@ -25,8 +66,6 @@ def main():
             env.update(env_source)
             kwargs['env'] = env
         subprocess.check_call(*pargs, **kwargs)
-
-    java_path = '/usr/lib/jvm/java-11-openjdk'
 
     def mvn(*extra):
         c([
@@ -54,55 +93,8 @@ def main():
     shutil.rmtree(path, ignore_errors=True)
     path.mkdir(parents=True, exist_ok=True)
 
-    os.makedirs('/root/.m2', exist_ok=True)
-
-    # More variables
-    if False:
-        pass
-    elif args.platform == 'linux':
-        java_toolchain = java_path
-        java_platform = 'linux'
-        jfx_platform = 'linux'
-        itch_platform = 'linux'
-        exe_ext = ''
-        so_ext = 'so'
-        cxx = 'g++'
-        c_include = '/usr/include'
-        c_lib = '/usr/lib'
-    elif args.platform == 'windows':
-        java_toolchain = '/jdk-11.0.2'
-        java_platform = 'win32'
-        jfx_platform = 'win'
-        itch_platform = 'windows'
-        exe_ext = '.exe'
-        so_ext = 'dll'
-        cxx = 'x86_64-w64-mingw32-g++'
-        c_include = '/usr/x86_64-w64-mingw32/sys-root/mingw/include/c++'
-        c_lib = '/usr/x86_64-w64-mingw32/sys-root/mingw/lib'
-    elif args.platform == 'mac':
-        for p in [
-            '/Library/',
-            '/Library/Java/',
-            '/Library/Java/JavaVirtualMachines/',
-            '/Library/Java/JavaVirtualMachines/adoptopenjdk-*/',
-            '/Library/Java/JavaVirtualMachines/adoptopenjdk-*/Contents/',
-            '/Library/Java/JavaVirtualMachines/adoptopenjdk-*/Contents/Home/',
-            '/Library/Java/JavaVirtualMachines/adoptopenjdk-*/Contents/Home/include/',
-        ]:
-            print(p, '---', glob.glob(p))
-        java_toolchain = glob.glob(
-            '/Library/Java/JavaVirtualMachines/adoptopenjdk-11*/Contents/Home'
-        )[0]
-        java_platform = 'darwin'
-        jfx_platform = 'macosx'
-        itch_platform = 'osx'
-        exe_ext = ''
-        so_ext = 'dylib'
-        cxx = 'g++'
-        c_include = '/usr/local/include'
-        c_lib = '/usr/local/lib'
-    else:
-        raise AssertionError
+    if args.platform != 'mac':
+        os.makedirs('/root/.m2', exist_ok=True)
 
     # Build
     template('build/toolchains.xml', 'build/toolchains.xml', dict(
@@ -179,7 +171,7 @@ def main():
         for f in fs:
             print(b, f)
     c([
-        '/butler/butler', 'validate',
+        butler_root / 'butler/butler', 'validate',
         '--platform', itch_platform,
         '--arch', 'amd64',
         path,
@@ -189,7 +181,7 @@ def main():
         for f in fs:
             print(Path(base) / f)
     c([
-        '/butler/butler', 'push',
+        butler_root / 'butler/butler', 'push',
         path,
         f'rendaw/pyxyzygy:{itch_platform}-{args.channel}',
     ])

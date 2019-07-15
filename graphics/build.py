@@ -51,7 +51,7 @@ for category in [
         size = str(size)
         c([
             'inkscape',
-            icon,
+            icon.resolve(),
             '-z',
             '-e', dest / (name + '.png'),
             '-w', size, '-h', size,

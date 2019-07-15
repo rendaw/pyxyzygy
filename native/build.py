@@ -58,9 +58,10 @@ def main():
         f'-I{args.include}',
         f'-I{args.java_home}/include',
         f'-I{args.java_home}/include/{args.java_platform}',
-    ] + (['-static'] if args.java_platform == 'win32' else []) + [
+    ] + (['-static'] if args.java_platform == 'win32' else []) + ([
         '-static-libgcc',
         '-static-libstdc++',
+    ] if args.java_platform != 'darwin' else []) + [
         '-o', java_resource_dest / output,
         'header_wrap.cxx',
         'implementation.cxx',

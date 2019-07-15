@@ -1,5 +1,6 @@
 ---
 os: osx
+osx_image: xcode11
 
 branches:
   only:
@@ -15,16 +16,26 @@ addons:
     taps:
       - AdoptOpenJDK/homebrew-openjdk
     packages:
-      - maven
-      - adoptopenjdk11
-      - gcc
+      - gcc@8
       - swig
       - python
       - zlib
       - libpng
+      - curl
+      - unzip
     casks:
       - inkscape
+      - adoptopenjdk11
 
 install:
+  - curl -L https://broth.itch.ovh/butler/darwin-amd64/15.15.0/archive/default -o butler.zip
+  - echo '152a69b0bf42c0dd8fd0f6da5c142e50e3a17786d9082fbe38bb279332696b86 butler.zip' | sha256sum -c -
+  - unzip -d butler butler.zip
   - python3 -m pip install toml
-  - ./build.py mac ${TRAVIS_COMMIT}
+
+script:
+  - ./build.py mac ${TRAVIS_BRANCH}
+
+after_script:
+  - sleep 10
+  - echo done
