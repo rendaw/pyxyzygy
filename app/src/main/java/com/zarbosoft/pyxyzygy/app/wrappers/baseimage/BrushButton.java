@@ -20,6 +20,7 @@ import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 public abstract class BrushButton extends ToggleButton implements Garb {
   private final BinderRoot cleanupSelected;
   private final BinderRoot cleanupColor;
+  private final BinderRoot sizeTextRoot;
 
   public BrushButton(
       Property<Integer> size, HalfBinder<Color> color, HalfBinder<Boolean> selected) {
@@ -28,9 +29,10 @@ public abstract class BrushButton extends ToggleButton implements Garb {
     ColorSwatch swatch = new ColorSwatch(1);
 
     Label label = new Label();
-    CustomBinding.bind(
-        label.textProperty(),
-        new PropertyHalfBinder<>(size).map(v -> opt(String.format("%.1f", v / 10.0))));
+    sizeTextRoot =
+        CustomBinding.bind(
+            label.textProperty(),
+            new PropertyHalfBinder<>(size).map(v -> opt(String.format("%.1f", v / 10.0))));
     label.setAlignment(Pos.CENTER);
 
     StackPane stack = new StackPane();

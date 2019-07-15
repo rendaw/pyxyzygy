@@ -38,10 +38,10 @@ public class ToolBrush extends BaseToolBrush<TrueColorImageFrame, TrueColorImage
   private final TrueColorImageEditHandle editHandle;
 
   public ToolBrush(
-    Context context,
-    Window window,
-    TrueColorImageEditHandle trueColorImageEditHandle,
-    TrueColorBrush brush) {
+      Context context,
+      Window window,
+      TrueColorImageEditHandle trueColorImageEditHandle,
+      TrueColorBrush brush) {
     super(window, trueColorImageEditHandle.wrapper, brush);
     this.editHandle = trueColorImageEditHandle;
     this.brush = brush;
@@ -50,13 +50,15 @@ public class ToolBrush extends BaseToolBrush<TrueColorImageFrame, TrueColorImage
         this,
         pad(
             new WidgetFormBuilder()
-                .text(localization.getString("brush.name"), t -> t.textProperty().bindBidirectional(brush.name))
+                .text(
+                    localization.getString("brush.name"),
+                    t -> t.textProperty().bindBidirectional(brush.name))
                 .span(
                     () -> {
                       return colorPicker;
                     })
                 .check(
-                  localization.getString("use.brush.color"),
+                    localization.getString("use.brush.color"),
                     widget -> {
                       widget.selectedProperty().bindBidirectional(brush.useColor);
                       widget
@@ -100,7 +102,7 @@ public class ToolBrush extends BaseToolBrush<TrueColorImageFrame, TrueColorImage
                               });
                     })
                 .custom(
-                  localization.getString("brush.size"),
+                    localization.getString("brush.size"),
                     () -> {
                       Pair<Node, SimpleObjectProperty<Integer>> brushSize =
                           HelperJFX.nonlinearSlider(10, 2000, 1, 10);
@@ -108,19 +110,19 @@ public class ToolBrush extends BaseToolBrush<TrueColorImageFrame, TrueColorImage
                       return brushSize.first;
                     })
                 .slider(
-                  localization.getString("blend"),
+                    localization.getString("blend"),
                     1,
                     1000,
                     s -> {
                       s.valueProperty().bindBidirectional(brush.blend);
                     })
                 .check(
-                  localization.getString("hard"),
+                    localization.getString("hard"),
                     checkBox -> {
                       checkBox.selectedProperty().bindBidirectional(brush.hard);
                     })
                 .check(
-                  localization.getString("aligned"),
+                    localization.getString("aligned"),
                     checkBox -> {
                       checkBox.selectedProperty().bindBidirectional(brush.aligned);
                     })
@@ -137,12 +139,12 @@ public class ToolBrush extends BaseToolBrush<TrueColorImageFrame, TrueColorImage
 
   @Override
   protected void stroke(
-    Context context,
-    TrueColorImage canvas,
-    DoubleVector start,
-    double startRadius,
-    DoubleVector end,
-    double endRadius) {
+      Context context,
+      TrueColorImage canvas,
+      DoubleVector start,
+      double startRadius,
+      DoubleVector end,
+      double endRadius) {
     TrueColor color = brush.useColor.get() ? brush.color.get() : context.config.trueColor.get();
     if (brush.hard.get())
       canvas.strokeHard(

@@ -57,6 +57,12 @@ import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.rendaw.common.Common.getResource;
 
 public class HelperJFX {
+  @SuppressWarnings("unused")
+  private static BinderRoot sliderValueRoot;
+
+  @SuppressWarnings("unused")
+  private static BinderRoot valueTextRoot;
+
   public static Node pad(Node node) {
     VBox out = new VBox();
     out.setPadding(new Insets(3));
@@ -104,26 +110,28 @@ public class HelperJFX {
     double range = max - min;
     SimpleObjectProperty<Integer> value = new SimpleObjectProperty<>(0);
 
-    CustomBinding.bindBidirectional(
-        new PropertyBinder<>(value),
-        new PropertyBinder<>(slider.valueProperty())
-            .<Integer>bimap(
-                n -> opt(n).map(v1 -> (int) (Math.pow(v1.doubleValue(), 2) * range + min)),
-                v2 -> opt(Math.pow((v2 - min) / range, 0.5))));
+    sliderValueRoot =
+        CustomBinding.bindBidirectional(
+            new PropertyBinder<>(value),
+            new PropertyBinder<>(slider.valueProperty())
+                .<Integer>bimap(
+                    n -> opt(n).map(v1 -> (int) (Math.pow(v1.doubleValue(), 2) * range + min)),
+                    v2 -> opt(Math.pow((v2 - min) / range, 0.5))));
     DecimalFormat textFormat = new DecimalFormat();
     textFormat.setMaximumFractionDigits(precision);
-    CustomBinding.bindBidirectional(
-        new PropertyBinder<>(value),
-        new PropertyBinder<>(text.textProperty())
-            .bimap(
-                v -> {
-                  try {
-                    return opt((int) (Double.parseDouble(v) * divide));
-                  } catch (NumberFormatException e) {
-                    return Optional.empty();
-                  }
-                },
-                v -> opt(textFormat.format((double) v.intValue() / divide))));
+    valueTextRoot =
+        CustomBinding.bindBidirectional(
+            new PropertyBinder<>(value),
+            new PropertyBinder<>(text.textProperty())
+                .bimap(
+                    v -> {
+                      try {
+                        return opt((int) (Double.parseDouble(v) * divide));
+                      } catch (NumberFormatException e) {
+                        return Optional.empty();
+                      }
+                    },
+                    v -> opt(textFormat.format((double) v.intValue() / divide))));
 
     return new Pair<>(out, value);
   }

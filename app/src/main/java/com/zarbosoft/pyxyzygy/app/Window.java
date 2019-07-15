@@ -170,6 +170,9 @@ public class Window {
   @SuppressWarnings("unused")
   private BinderRoot rootCanUndo;
 
+  @SuppressWarnings("unused")
+  private BinderRoot zoomSpinRoot;
+
   public static HalfBinder<Number> effectiveWidthBinder(Node node) {
     return new PropertyHalfBinder<Bounds>(node.layoutBoundsProperty())
         .map(b -> opt(node.minWidth(0)));
@@ -513,11 +516,12 @@ public class Window {
       spinner.setPrefWidth(60);
       spinner.setEditable(true);
       spinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(-10, 50));
-      CustomBinding.bindBidirectional(
-          new IndirectBinder<>(
-              selectedForViewZoomControlBinder,
-              v -> opt(v == null ? null : v.getWrapper().getConfig().zoom)),
-          new PropertyBinder<Integer>(spinner.getValueFactory().valueProperty()));
+      zoomSpinRoot =
+          CustomBinding.bindBidirectional(
+              new IndirectBinder<>(
+                  selectedForViewZoomControlBinder,
+                  v -> opt(v == null ? null : v.getWrapper().getConfig().zoom)),
+              new PropertyBinder<Integer>(spinner.getValueFactory().valueProperty()));
       final ImageView imageView = new ImageView(icon("zoom.png"));
       zoomBox.getChildren().addAll(imageView, spinner);
     }

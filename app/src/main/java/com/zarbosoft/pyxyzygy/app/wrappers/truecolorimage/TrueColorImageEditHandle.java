@@ -219,7 +219,7 @@ public class TrueColorImageEditHandle extends EditHandle {
     menuDelete.disableProperty().bind(brushNotSelected);
     menuDelete.setOnAction(
         e -> {
-          int index = GUILaunch.profileConfig.trueColorBrushes.indexOf(wrapper.config.brush.get());
+          int index = wrapper.config.brush.get();
           GUILaunch.profileConfig.trueColorBrushes.remove(index);
           if (GUILaunch.profileConfig.trueColorBrushes.isEmpty()) {
             setBrush(0);
