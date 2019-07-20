@@ -102,7 +102,7 @@ public class RowFramesWidget extends Pane {
               foundSelectedFrame = frame;
             }
             if (adapter.isMain()) {
-              if (frameAt < time) {
+              if (frameAt < time || previous == NO_INNER) {
                 previous = frameAt;
               }
               if (next == NO_LENGTH && frame.at.get() > time) {
@@ -119,6 +119,7 @@ public class RowFramesWidget extends Pane {
 
     if (adapter.isMain()) {
       timeline.previousFrame.set(previous);
+      if (next == NO_INNER) next = prelength;
       timeline.nextFrame.set(next);
     }
 
@@ -144,7 +145,7 @@ public class RowFramesWidget extends Pane {
       int next = -1;
       for (FrameWidget frame : frames) {
         int at = frame.at.get();
-        if (frame.at.get() < time) {
+        if (frame.at.get() < time || previous == NO_INNER) {
           previous = at;
         }
         if (frame.at.get() > time) {
@@ -153,6 +154,7 @@ public class RowFramesWidget extends Pane {
         }
       }
       timeline.previousFrame.set(previous);
+      if (next == NO_INNER && !frames.isEmpty()) next = frames.get(0).at.get();
       timeline.nextFrame.set(next);
     }
   }

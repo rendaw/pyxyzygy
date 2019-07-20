@@ -8,6 +8,8 @@ def main():
 
     import toml
 
+    import version
+
     root = (Path(__file__).parent).resolve()
 
     parser = argparse.ArgumentParser()
@@ -184,6 +186,7 @@ def main():
         butler_root / 'butler/butler', 'push',
         path,
         f'rendaw/pyxyzygy:{itch_platform}-{args.channel}',
+        '--userversion', version.version,
     ])
 
 
