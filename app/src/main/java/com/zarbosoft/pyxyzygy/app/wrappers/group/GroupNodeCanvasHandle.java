@@ -7,7 +7,6 @@ import com.zarbosoft.pyxyzygy.app.DoubleRectangle;
 import com.zarbosoft.pyxyzygy.app.DoubleVector;
 import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.Wrapper;
-import com.zarbosoft.pyxyzygy.core.model.latest.GroupChild;
 import com.zarbosoft.pyxyzygy.core.model.latest.ProjectLayer;
 import com.zarbosoft.pyxyzygy.seed.Vector;
 import javafx.beans.property.SimpleIntegerProperty;
@@ -17,7 +16,6 @@ import javafx.scene.control.ToolBar;
 
 import static com.zarbosoft.pyxyzygy.app.Misc.mirror;
 import static com.zarbosoft.pyxyzygy.app.Misc.noopConsumer;
-import static com.zarbosoft.pyxyzygy.app.Misc.unopt;
 
 public class GroupNodeCanvasHandle extends CanvasHandle {
   private final Runnable layerListenCleanup;
@@ -85,7 +83,7 @@ public class GroupNodeCanvasHandle extends CanvasHandle {
   @Override
   public void setViewedTime(Context context, int outerTime) {
     this.time.set(outerTime);
-    childHandles.forEach(c -> c.setViewedTime(context, toInnerTime(outerTime)));
+    childHandles.forEach(c -> c.setViewedTime(context, outerTime));
   }
 
   @Override
@@ -111,10 +109,5 @@ public class GroupNodeCanvasHandle extends CanvasHandle {
   @Override
   public DoubleVector toInnerPosition(DoubleVector outerPosition) {
     return outerPosition.minus(wrapper.node.offset());
-  }
-
-  @Override
-  public int toInnerTime(int outerTime) {
-    return outerTime;
   }
 }

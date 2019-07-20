@@ -100,9 +100,11 @@ public class GroupChildCanvasHandle extends CanvasHandle {
                 });
 
     // Don't need clear listeners because clear should never happen (1 frame must always be left)
-    positionPrelengthListener = wrapper.node.addPositionPrelengthSetListeners(((target, value) -> {
-      updatePosition(context);
-    }));
+    positionPrelengthListener =
+        wrapper.node.addPositionPrelengthSetListeners(
+            ((target, value) -> {
+              updatePosition(context);
+            }));
     positionAddListener =
         wrapper.node.addPositionFramesAddListeners(
             (target, at, value) -> {
@@ -142,9 +144,11 @@ public class GroupChildCanvasHandle extends CanvasHandle {
               updatePosition(context);
               moveTo(positionCleanup, source, count, dest);
             });
-    timePrelengthListener = wrapper.node.addTimePrelengthSetListeners(((target, value) -> {
-      updateTime(context);
-    }));
+    timePrelengthListener =
+        wrapper.node.addTimePrelengthSetListeners(
+            ((target, value) -> {
+              updateTime(context);
+            }));
     timeAddListener =
         wrapper.node.addTimeFramesAddListeners(
             (target, at, value) -> {
@@ -212,7 +216,7 @@ public class GroupChildCanvasHandle extends CanvasHandle {
 
   private void updateTime(Context context) {
     if (childCanvas != null)
-      childCanvas.setViewedTime(context, time.get());
+      childCanvas.setViewedTime(context, GroupChildWrapper.toInnerTime(wrapper.node, time.get()));
   }
 
   @Override
@@ -258,7 +262,7 @@ public class GroupChildCanvasHandle extends CanvasHandle {
 
   @Override
   public void setViewedTime(Context context, int outerTime) {
-    this.time.set(toInnerTime(outerTime));
+    this.time.set(outerTime);
     updateTime(context);
     updatePosition(context);
   }
@@ -267,11 +271,6 @@ public class GroupChildCanvasHandle extends CanvasHandle {
   public DoubleVector toInnerPosition(DoubleVector outerPosition) {
     GroupPositionFrame pos = findPosition();
     return outerPosition.minus(pos.offset());
-  }
-
-  @Override
-  public int toInnerTime(int outerTime) {
-    return GroupChildWrapper.toInnerTime(wrapper.node,outerTime);
   }
 
   @Override

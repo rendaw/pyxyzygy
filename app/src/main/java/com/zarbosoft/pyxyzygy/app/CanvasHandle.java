@@ -21,13 +21,6 @@ public abstract class CanvasHandle {
    */
   public abstract DoubleVector toInnerPosition(DoubleVector outerPosition);
 
-  /**
-   * Convert time in parent timespace to local time
-   * @param outerTime
-   * @return
-   */
-  public abstract int toInnerTime(int outerTime);
-
   public final Group paint = new Group();
   public final Group overlay = new Group();
 

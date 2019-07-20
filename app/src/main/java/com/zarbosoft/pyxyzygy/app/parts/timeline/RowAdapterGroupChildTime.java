@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.zarbosoft.pyxyzygy.app.Global.NO_LOOP;
+import static com.zarbosoft.pyxyzygy.app.Global.localization;
 
 public class RowAdapterGroupChildTime extends BaseFrameRowAdapter<GroupChild, GroupTimeFrame> {
   // TODO setup listeners for paint subtree to keep track of the max paint frame (?)
@@ -42,7 +43,7 @@ public class RowAdapterGroupChildTime extends BaseFrameRowAdapter<GroupChild, Gr
     return new ObservableValueBase<String>() {
       @Override
       public String getValue() {
-        return "Time";
+        return localization.getString("time");
       }
     };
   }

@@ -257,9 +257,4 @@ public class BaseImageCanvasHandle<
   public DoubleVector toInnerPosition(DoubleVector outerPosition) {
     return outerPosition;
   }
-
-  @Override
-  public int toInnerTime(int outerTime) {
-    return outerTime;
-  }
 }

@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static com.zarbosoft.pyxyzygy.app.Global.localization;
 import static com.zarbosoft.pyxyzygy.app.parts.timeline.Timeline.emptyStateImage;
 
 public class RowAdapterGroupChildPosition
@@ -92,7 +93,7 @@ public class RowAdapterGroupChildPosition
     return new ObservableValueBase<String>() {
       @Override
       public String getValue() {
-        return "Position";
+        return localization.getString("position");
       }
     };
   }
