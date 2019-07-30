@@ -117,7 +117,6 @@ public class PaletteImageEditHandle extends EditHandle {
   List<BinderRoot> cleanup2 = new ArrayList<>();
 
   private final Runnable brushesCleanup;
-  Group overlay;
   private final Hotkeys.Action[] actions;
   Tool tool = null;
   ContentReplacer<Node> toolProperties =
@@ -365,9 +364,6 @@ public class PaletteImageEditHandle extends EditHandle {
                             }))
             .toArray(Hotkeys.Action[]::new);
     for (Hotkeys.Action action : actions) context.hotkeys.register(action);
-
-    // Overlay
-    overlay = wrapper.canvasHandle.overlay;
 
     Wrapper.ToolToggle move =
         new Wrapper.ToolToggle(

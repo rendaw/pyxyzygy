@@ -75,15 +75,17 @@ public class ToolBrush extends BaseToolBrush<PaletteImageFrame, PaletteImage> {
                 },
                 editHandle.mouseY,
                 brush.size));
-    this.editHandle.overlay.getChildren().add(alignedCursor);
+    this.editHandle.getCanvas().overlay.getChildren().add(alignedCursor);
 
     editHandle.toolProperties.set(
         this,
         pad(
             new WidgetFormBuilder()
-                .text(localization.getString("brush.name"), t -> t.textProperty().bindBidirectional(brush.name))
+                .text(
+                    localization.getString("brush.name"),
+                    t -> t.textProperty().bindBidirectional(brush.name))
                 .custom(
-                  localization.getString("brush.size"),
+                    localization.getString("brush.size"),
                     () -> {
                       Pair<Node, SimpleObjectProperty<Integer>> brushSize =
                           HelperJFX.nonlinearSlider(10, 2000, 1, 10);
@@ -91,7 +93,7 @@ public class ToolBrush extends BaseToolBrush<PaletteImageFrame, PaletteImage> {
                       return brushSize.first;
                     })
                 .check(
-                  localization.getString("use.brush.color"),
+                    localization.getString("use.brush.color"),
                     widget -> {
                       widget.selectedProperty().bindBidirectional(brush.useColor);
                     })
@@ -100,7 +102,7 @@ public class ToolBrush extends BaseToolBrush<PaletteImageFrame, PaletteImage> {
 
   @Override
   public void markStart(
-    Context context, Window window, DoubleVector start, DoubleVector globalStart) {}
+      Context context, Window window, DoubleVector start, DoubleVector globalStart) {}
 
   private void setColor(int index) {
     editHandle.wrapper.node.palette().entries().stream()
@@ -126,12 +128,12 @@ public class ToolBrush extends BaseToolBrush<PaletteImageFrame, PaletteImage> {
 
   @Override
   protected void stroke(
-    Context context,
-    PaletteImage canvas,
-    DoubleVector start,
-    double startRadius,
-    DoubleVector end,
-    double endRadius) {
+      Context context,
+      PaletteImage canvas,
+      DoubleVector start,
+      double startRadius,
+      DoubleVector end,
+      double endRadius) {
     ProjectObject paletteSelection = unopt(editHandle.wrapper.paletteSelectionBinder.get());
     if (paletteSelection == null || !(paletteSelection instanceof PaletteColor)) return;
     canvas.stroke(
@@ -163,14 +165,18 @@ public class ToolBrush extends BaseToolBrush<PaletteImageFrame, PaletteImage> {
       } else {
         Vector intEnd = end.toInt();
         Vector tileCorner = quantizedCorner.multiply(context.project.tileSize());
-        setColor(PaletteTileHelp.getData(context, tile).getPixel(intEnd.x - tileCorner.x, intEnd.y - tileCorner.y));
+        setColor(
+            PaletteTileHelp.getData(context, tile)
+                .getPixel(intEnd.x - tileCorner.x, intEnd.y - tileCorner.y));
       }
     } else super.mark(context, window, start, end, globalStart, globalEnd);
   }
 
   @Override
   public void remove(Context context, Window window) {
-    editHandle.overlay.getChildren().removeAll(alignedCursor);
+    if (editHandle.getCanvas() != null) {
+      editHandle.getCanvas().overlay.getChildren().removeAll(alignedCursor);
+    }
     editHandle.toolProperties.clear(this);
     super.remove(context, window);
   }

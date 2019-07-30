@@ -140,7 +140,9 @@ public class ToolLayerMove extends Tool {
   @Override
   public void remove(Context context, Window window) {
     window.editorCursor.clear(this);
-    editHandle.getCanvas().overlay.getChildren().remove(origin);
+    if (editHandle.getCanvas() != null) {
+      editHandle.getCanvas().overlay.getChildren().remove(origin);
+    }
     editHandle.toolPropReplacer.clear(this);
     offsetRoot.destroy();
     mirrorRoot.run();

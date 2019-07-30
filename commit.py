@@ -15,7 +15,7 @@ def cc(args):
 
 
 def co(args):
-    subprocess.check_output(args).decode('utf-8').strip()
+    return subprocess.check_output(args).decode('utf-8').strip()
 
 
 def write_version(major, minor, patch):
@@ -23,12 +23,14 @@ def write_version(major, minor, patch):
         dest.write(f'version = \'{major}.{minor}.{patch}\'\n')
 
 
-branch = co(['git', 'symbolic-ref', 'HEAD'])
+branch = co(['git', 'symbolic-ref', 'HEAD']).split('/')[-1]
 major, minor, patch = map(int, version.split('.'))
 if branch == 'experimental':
     write_version(major, minor, patch + 1)
 elif branch == 'stable':
     write_version(major, minor + 1, 0)
+else:
+    print('Feature branch, no version change')
 
 try:
     cc(['git', 'commit'] + sys.argv[1:])

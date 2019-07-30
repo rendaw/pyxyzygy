@@ -224,7 +224,9 @@ public class ToolStamp extends Tool {
 
   @Override
   public void remove(Context context, Window window) {
-    editHandle.getCanvas().overlay.getChildren().remove(overlayGroup);
+    if (editHandle.getCanvas() != null) {
+      editHandle.getCanvas().overlay.getChildren().remove(overlayGroup);
+    }
     mirror.remove(context);
     window.editorCursor.clear(this);
     editHandle.toolPropReplacer.clear(this);

@@ -69,12 +69,13 @@ public class ToolSelect extends BaseToolSelect<PaletteImageFrame, PaletteImage> 
 
   @Override
   protected void overlayAdd(Node... nodes) {
-    editHandle.overlay.getChildren().addAll(nodes);
+    editHandle.getCanvas().overlay.getChildren().addAll(nodes);
   }
 
   @Override
   protected void overlayRemove(Node... nodes) {
-    editHandle.overlay.getChildren().removeAll(nodes);
+    if (editHandle.getCanvas() != null)
+      editHandle.getCanvas().overlay.getChildren().removeAll(nodes);
   }
 
   @Override
