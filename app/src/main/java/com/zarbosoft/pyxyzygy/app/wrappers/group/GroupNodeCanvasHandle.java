@@ -12,6 +12,7 @@ import com.zarbosoft.pyxyzygy.seed.Vector;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.scene.Group;
 import javafx.scene.control.ToolBar;
 
 import static com.zarbosoft.pyxyzygy.app.Misc.mirror;
@@ -25,6 +26,7 @@ public class GroupNodeCanvasHandle extends CanvasHandle {
   private CanvasHandle parent;
   final SimpleIntegerProperty positiveZoom = new SimpleIntegerProperty(0);
   private final Listener.ScalarSet<ProjectLayer, Vector> offsetListener;
+  public final Group innerOverlay = new Group();
 
   ToolBar toolBar = new ToolBar();
   private GroupNodeWrapper wrapper;
@@ -51,7 +53,7 @@ public class GroupNodeCanvasHandle extends CanvasHandle {
         noopConsumer());
     overlayRoot = mirror(
         childHandles,
-        overlay.getChildren(),
+        innerOverlay.getChildren(),
         h -> {
           return h.getOverlayWidget();
         },
@@ -62,9 +64,10 @@ public class GroupNodeCanvasHandle extends CanvasHandle {
             (target, offset) -> {
               paint.setLayoutX(offset.x);
               paint.setLayoutY(offset.y);
-              overlay.setLayoutX(offset.x);
-              overlay.setLayoutY(offset.y);
+              innerOverlay.setLayoutX(offset.x);
+              innerOverlay.setLayoutY(offset.y);
             });
+    overlay.getChildren().add(innerOverlay);
     this.wrapper = wrapper;
   }
 

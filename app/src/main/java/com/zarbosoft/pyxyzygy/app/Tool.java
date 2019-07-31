@@ -5,8 +5,8 @@ public abstract class Tool {
   /**
    * @param context
    * @param window
-   * @param start local coords
-   * @param globalStart local coords
+   * @param start local coords (including frame/layer offsets)
+   * @param globalStart global coords
    */
   public abstract void markStart(
     Context context, Window window, DoubleVector start, DoubleVector globalStart);
@@ -14,9 +14,9 @@ public abstract class Tool {
   /**
    * @param context
    * @param window
-   * @param start local coords
+   * @param start local coords (including frame/layer offsets)
    * @param end
-   * @param globalStart local coords
+   * @param globalStart global coords
    * @param globalEnd
    */
   public abstract void mark(
@@ -32,7 +32,7 @@ public abstract class Tool {
   /**
    * @param context
    * @param window
-   * @param position local coords
+   * @param position relative to edit origin (not factoring in frame/layer offsets)
    */
   public abstract void cursorMoved(Context context, Window window, DoubleVector position);
 }

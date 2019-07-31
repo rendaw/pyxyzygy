@@ -75,7 +75,7 @@ public class ToolBrush extends BaseToolBrush<PaletteImageFrame, PaletteImage> {
                 },
                 editHandle.mouseY,
                 brush.size));
-    this.editHandle.getCanvas().overlay.getChildren().add(alignedCursor);
+    this.editHandle.wrapper.canvasHandle.innerOverlay.getChildren().add(alignedCursor);
 
     editHandle.toolProperties.set(
         this,
@@ -174,8 +174,8 @@ public class ToolBrush extends BaseToolBrush<PaletteImageFrame, PaletteImage> {
 
   @Override
   public void remove(Context context, Window window) {
-    if (editHandle.getCanvas() != null) {
-      editHandle.getCanvas().overlay.getChildren().removeAll(alignedCursor);
+    if (editHandle.wrapper.canvasHandle != null) {
+      editHandle.wrapper.canvasHandle.innerOverlay.getChildren().removeAll(alignedCursor);
     }
     editHandle.toolProperties.clear(this);
     super.remove(context, window);

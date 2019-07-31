@@ -83,6 +83,8 @@ public class OnionSkin {
   private void render(Context context) {
     int frame = frameProp.get();
     boolean on = this.on.get().get();
+    System.out.format("os render: frame %s on %s bounds %s; lastOn %s lastFrame %s lastColor/color %s %s inbounds %s\n",frame,on,bounds.get(),lastOn, lastFrame, lastColor, colorProperty.get(), (triggerBounds.contains(bounds.get().corner())
+            && triggerBounds.contains(bounds.get().corner().plus(bounds.get().span()))));
     if (frame < 0 || bounds.get() == null || !on) {
       if (!on) lastOn = false;
       widget.setImage(null);

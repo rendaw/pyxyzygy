@@ -54,12 +54,13 @@ public class ToolSelect extends BaseToolSelect<TrueColorImageFrame, TrueColorIma
 
   @Override
   protected void overlayAdd(Node... nodes) {
-    editHandle.overlay.getChildren().addAll(nodes);
+    editHandle.wrapper.canvasHandle.innerOverlay.getChildren().addAll(nodes);
   }
 
   @Override
   protected void overlayRemove(Node... nodes) {
-    editHandle.overlay.getChildren().removeAll(nodes);
+    if (editHandle.wrapper.canvasHandle != null)
+      editHandle.wrapper.canvasHandle.innerOverlay.getChildren().removeAll(nodes);
   }
 
   @Override

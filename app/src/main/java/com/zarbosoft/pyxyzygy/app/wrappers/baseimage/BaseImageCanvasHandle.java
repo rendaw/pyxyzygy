@@ -17,6 +17,7 @@ import com.zarbosoft.pyxyzygy.core.model.latest.ProjectLayer;
 import com.zarbosoft.pyxyzygy.seed.Rectangle;
 import com.zarbosoft.pyxyzygy.seed.Vector;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.scene.Group;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -40,6 +41,7 @@ public class BaseImageCanvasHandle<
   private Listener.MapPutAll<F, Long, T> tilesPutListener;
   private Listener.Clear<F> tilesClearListener;
   private BinderRoot offsetCleanup;
+  public final Group innerOverlay = new Group();
 
   public BaseImageCanvasHandle(Context context, BaseImageNodeWrapper<N, F, T, L> wrapper) {
     this.wrapper = wrapper;
@@ -69,6 +71,7 @@ public class BaseImageCanvasHandle<
             at -> {
               updateViewedTime(context);
             });
+    overlay.getChildren().add(innerOverlay);
 
     attachTiles(context);
   }
@@ -209,8 +212,8 @@ public class BaseImageCanvasHandle<
                 p -> {
                   paint.setLayoutX(p.first.x + p.second.x);
                   paint.setLayoutY(p.first.y + p.second.y);
-                  overlay.setLayoutX(p.first.x + p.second.x);
-                  overlay.setLayoutY(p.first.y + p.second.y);
+                  innerOverlay.setLayoutX(p.first.x + p.second.x);
+                  innerOverlay.setLayoutY(p.first.y + p.second.y);
                 });
   }
 

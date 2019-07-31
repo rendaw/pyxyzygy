@@ -32,7 +32,6 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
 import javafx.geometry.Pos;
-import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.control.MenuItem;
 import javafx.scene.input.KeyCode;
@@ -62,7 +61,6 @@ public class TrueColorImageEditHandle extends EditHandle {
   List<Runnable> cleanup = new ArrayList<>();
 
   private final Runnable brushesCleanup;
-  Group overlay;
   private final Hotkeys.Action[] actions;
   Tool tool = null;
   ContentReplacer<Node> toolProperties =
@@ -184,10 +182,6 @@ public class TrueColorImageEditHandle extends EditHandle {
                             }))
             .toArray(Hotkeys.Action[]::new);
     for (Hotkeys.Action action : actions) context.hotkeys.register(action);
-
-    // Overlay
-    overlay = new Group();
-    wrapper.canvasHandle.overlay.getChildren().add(overlay);
 
     Wrapper.ToolToggle move =
         new Wrapper.ToolToggle(
@@ -378,6 +372,9 @@ public class TrueColorImageEditHandle extends EditHandle {
                               new ToolBrush(context, window, TrueColorImageEditHandle.this, brush));
                     }
                   };
+              wrapper.config.brush.set(
+                  Math.min(
+                      wrapper.config.brush.get(), GUILaunch.profileConfig.trueColorBrushes.size() - 1));
               wrapper.config.brush.addListener((observable1, oldValue1, newValue1) -> update.run());
               GUILaunch.profileConfig.trueColorBrushes.addListener(
                   brushesListener = c -> update.run());
@@ -412,7 +409,6 @@ public class TrueColorImageEditHandle extends EditHandle {
       tool.remove(context, window);
       tool = null;
     }
-    if (wrapper.canvasHandle != null) wrapper.canvasHandle.overlay.getChildren().remove(overlay);
     brushesCleanup.run();
     cleanup.forEach(Runnable::run);
     for (Hotkeys.Action action : actions) context.hotkeys.unregister(action);

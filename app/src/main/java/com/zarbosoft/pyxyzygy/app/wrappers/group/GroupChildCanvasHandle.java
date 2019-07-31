@@ -252,12 +252,13 @@ public class GroupChildCanvasHandle extends CanvasHandle {
     GroupPositionFrame pos = findPosition();
     if (pos == null) return;
     if (bounds.get() == null) return;
-    DoubleRectangle newBounds = bounds.get().minus(pos.offset());
     paint.setLayoutX(pos.offset().x);
     paint.setLayoutY(pos.offset().y);
-    overlay.setLayoutX(pos.offset().x);
-    overlay.setLayoutY(pos.offset().y);
-    if (childCanvas != null) childCanvas.setViewport(context, newBounds, zoom);
+    if (childCanvas != null) {
+      childCanvas.overlay.setLayoutX(pos.offset().x);
+      childCanvas.overlay.setLayoutY(pos.offset().y);
+      childCanvas.setViewport(context, bounds.get().minus(pos.offset()), zoom);
+    }
   }
 
   @Override

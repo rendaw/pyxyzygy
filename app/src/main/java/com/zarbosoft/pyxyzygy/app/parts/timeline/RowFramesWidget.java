@@ -15,7 +15,6 @@ import java.util.Optional;
 
 import static com.zarbosoft.pyxyzygy.app.Global.NO_INNER;
 import static com.zarbosoft.pyxyzygy.app.Global.NO_LENGTH;
-import static com.zarbosoft.rendaw.common.Common.last;
 import static com.zarbosoft.rendaw.common.Common.lastOpt;
 import static com.zarbosoft.rendaw.common.Common.sublist;
 
@@ -59,7 +58,8 @@ public class RowFramesWidget extends Pane {
    * @param prelength
    * @return max frame encountered
    */
-  public int updateFrames(Context context, Window window, int prelength, List<RowAdapterFrame> frameAdapters) {
+  public int updateFrames(
+      Context context, Window window, int prelength, List<RowAdapterFrame> frameAdapters) {
     FrameWidget foundSelectedFrame = null;
     Object selectedId =
         Optional.ofNullable(timeline.selectedFrame.get())
@@ -72,7 +72,9 @@ public class RowFramesWidget extends Pane {
 
     final int time = timeline.time.get();
     int previous = NO_INNER; // if main row only
+    int prePrevious = NO_INNER; // if main row only
     int next = NO_INNER; // if main row only
+    int last = NO_INNER; // if main row only
 
     for (FrameMapEntry outer : window.timeMap) {
       if (outer.innerOffset != NO_INNER) {
@@ -102,12 +104,14 @@ public class RowFramesWidget extends Pane {
               foundSelectedFrame = frame;
             }
             if (adapter.isMain()) {
-              if (frameAt < time || previous == NO_INNER) {
-                previous = frameAt;
+              if (frameAt <= time) {
+                previous = prePrevious;
+                prePrevious = frameAt;
               }
               if (next == NO_LENGTH && frame.at.get() > time) {
                 next = frameAt;
               }
+              last = frameAt;
             }
           }
           previousInnerAt = innerAt;
@@ -118,6 +122,8 @@ public class RowFramesWidget extends Pane {
     }
 
     if (adapter.isMain()) {
+      System.out.format("pn %s %s %s\n", last, previous, next);
+      if (previous == NO_INNER) previous = last;
       timeline.previousFrame.set(previous);
       if (next == NO_INNER) next = prelength;
       timeline.nextFrame.set(next);
@@ -133,7 +139,7 @@ public class RowFramesWidget extends Pane {
       remove.clear();
     }
 
-    return lastOpt(frames).map(f ->f.at.get()).orElse(0);
+    return lastOpt(frames).map(f -> f.at.get()).orElse(0);
   }
 
   public void updateFrameMarker(Window window) {
@@ -141,18 +147,24 @@ public class RowFramesWidget extends Pane {
     int time = timeline.time.get();
     frameMarker.setLayoutX(time * timeline.zoom);
     if (adapter.isMain()) {
-      int previous = -1;
-      int next = -1;
+      int prePrevious = NO_INNER;
+      int previous = NO_INNER;
+      int next = NO_INNER;
+      int last = NO_INNER;
       for (FrameWidget frame : frames) {
         int at = frame.at.get();
-        if (frame.at.get() < time || previous == NO_INNER) {
-          previous = at;
+        last = at;
+        if (frame.at.get() <= time) {
+          previous = prePrevious;
+          prePrevious = at;
         }
         if (frame.at.get() > time) {
           next = at;
           break;
         }
       }
+      System.out.format("pn2 %s %s %s\n", last, previous, next);
+      if (previous == NO_INNER) previous = last;
       timeline.previousFrame.set(previous);
       if (next == NO_INNER && !frames.isEmpty()) next = frames.get(0).at.get();
       timeline.nextFrame.set(next);
