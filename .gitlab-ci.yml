@@ -1,5 +1,7 @@
 ---
 image: registry.gitlab.com/rendaw/pyxyzygy-builenv
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
 
 stages:
   - world
