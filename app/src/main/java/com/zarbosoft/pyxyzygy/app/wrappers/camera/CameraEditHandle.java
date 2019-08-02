@@ -87,9 +87,11 @@ public class CameraEditHandle extends GroupNodeEditHandle {
                                   new PropertyBinder<Integer>(
                                       s.getValueFactory().valueProperty())));
                         })
-                  .check(localization.getString("show.border"), c -> {
-                    c.selectedProperty().bindBidirectional(wrapper.config.showBorder);
-                  })
+                    .check(
+                        localization.getString("show.border"),
+                        c -> {
+                          c.selectedProperty().bindBidirectional(wrapper.config.showBorder);
+                        })
                     .build()),
             new TitledPane(
                 localization.getString("render"),
@@ -292,6 +294,17 @@ public class CameraEditHandle extends GroupNodeEditHandle {
             "cursor-move16.png",
             localization.getString("move.camera"),
             GroupNodeConfig.TOOL_MOVE),
+        new Wrapper.ToolToggle(
+            wrapper,
+            "cursor-layer-move.png",
+            localization.getString("move.child"),
+            GroupNodeConfig.TOOL_LAYER_MOVE) {
+          @Override
+          public void fire() {
+            super.fire();
+            window.showLayerTab();
+          }
+        },
         new Wrapper.ToolToggle(
             wrapper,
             "resize.png",

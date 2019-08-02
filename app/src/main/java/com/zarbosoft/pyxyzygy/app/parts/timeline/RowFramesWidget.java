@@ -122,7 +122,6 @@ public class RowFramesWidget extends Pane {
     }
 
     if (adapter.isMain()) {
-      System.out.format("pn %s %s %s\n", last, previous, next);
       if (previous == NO_INNER) previous = last;
       timeline.previousFrame.set(previous);
       if (next == NO_INNER) next = prelength;
@@ -163,7 +162,6 @@ public class RowFramesWidget extends Pane {
           break;
         }
       }
-      System.out.format("pn2 %s %s %s\n", last, previous, next);
       if (previous == NO_INNER) previous = last;
       timeline.previousFrame.set(previous);
       if (next == NO_INNER && !frames.isEmpty()) next = frames.get(0).at.get();
