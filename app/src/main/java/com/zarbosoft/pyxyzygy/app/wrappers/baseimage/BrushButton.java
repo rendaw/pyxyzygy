@@ -1,13 +1,13 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.baseimage;
 
+import com.zarbosoft.javafxbinders.BinderRoot;
+import com.zarbosoft.javafxbinders.CustomBinding;
+import com.zarbosoft.javafxbinders.HalfBinder;
+import com.zarbosoft.javafxbinders.PropertyHalfBinder;
 import com.zarbosoft.pyxyzygy.app.Context;
 import com.zarbosoft.pyxyzygy.app.Garb;
 import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.widgets.ColorSwatch;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.CustomBinding;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.HalfBinder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyHalfBinder;
 import javafx.beans.property.Property;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
@@ -15,15 +15,16 @@ import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 
-import static com.zarbosoft.pyxyzygy.app.Misc.opt;
+import static com.zarbosoft.javafxbinders.Helper.opt;
 
 public abstract class BrushButton extends ToggleButton implements Garb {
   private final BinderRoot cleanupSelected;
   private final BinderRoot cleanupColor;
+  @SuppressWarnings("unused")
   private final BinderRoot sizeTextRoot;
 
   public BrushButton(
-      Property<Integer> size, HalfBinder<Color> color, HalfBinder<Boolean> selected) {
+    Property<Integer> size, HalfBinder<Color> color, HalfBinder<Boolean> selected) {
     getStyleClass().add("brush-button");
 
     ColorSwatch swatch = new ColorSwatch(1);

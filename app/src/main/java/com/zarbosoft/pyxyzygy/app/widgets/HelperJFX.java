@@ -1,13 +1,12 @@
 package com.zarbosoft.pyxyzygy.app.widgets;
 
 import com.google.common.base.Throwables;
+import com.zarbosoft.javafxbinders.BinderRoot;
+import com.zarbosoft.javafxbinders.CustomBinding;
+import com.zarbosoft.javafxbinders.PropertyBinder;
 import com.zarbosoft.pyxyzygy.app.Context;
 import com.zarbosoft.pyxyzygy.app.GUILaunch;
 import com.zarbosoft.pyxyzygy.app.Global;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.CustomBinding;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.HalfBinder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyBinder;
 import com.zarbosoft.pyxyzygy.core.PaletteColors;
 import com.zarbosoft.pyxyzygy.core.PaletteImage;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
@@ -52,8 +51,8 @@ import java.nio.IntBuffer;
 import java.text.DecimalFormat;
 import java.util.Optional;
 
+import static com.zarbosoft.javafxbinders.Helper.opt;
 import static com.zarbosoft.pyxyzygy.app.Global.localization;
-import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.rendaw.common.Common.getResource;
 
 public class HelperJFX {
@@ -428,15 +427,6 @@ public class HelperJFX {
     textArea.setMaxHeight(Double.MAX_VALUE);
     alert.getDialogPane().setExpandableContent(textArea);
     alert.showAndWait();
-  }
-
-  public static BinderRoot bindStyle(Node node, String styleClass, HalfBinder<Boolean> source) {
-    return source.addListener(
-        b -> {
-          if (b) {
-            if (!node.getStyleClass().contains(styleClass)) node.getStyleClass().add(styleClass);
-          } else node.getStyleClass().remove(styleClass);
-        });
   }
 
   public static void switchStage(

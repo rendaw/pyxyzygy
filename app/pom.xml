@@ -52,6 +52,11 @@
             <artifactId>javafx-swing</artifactId>
             <version>11.0.2</version>
         </dependency>
+        <dependency>
+            <groupId>com.zarbosoft</groupId>
+            <artifactId>javafxbinders</artifactId>
+            <version>0.0.1</version>
+        </dependency>
     </dependencies>
     <properties>
         <modulesOutput>${project.build.directory}/modules</modulesOutput>

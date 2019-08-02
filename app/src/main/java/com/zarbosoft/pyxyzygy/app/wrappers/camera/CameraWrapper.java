@@ -1,6 +1,12 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.camera;
 
 import com.zarbosoft.automodel.lib.History;
+import com.zarbosoft.javafxbinders.AnyHalfBinder;
+import com.zarbosoft.javafxbinders.BinderRoot;
+import com.zarbosoft.javafxbinders.CustomBinding;
+import com.zarbosoft.javafxbinders.DoubleHalfBinder;
+import com.zarbosoft.javafxbinders.PropertyBinder;
+import com.zarbosoft.javafxbinders.PropertyHalfBinder;
 import com.zarbosoft.pyxyzygy.app.CanvasHandle;
 import com.zarbosoft.pyxyzygy.app.Context;
 import com.zarbosoft.pyxyzygy.app.EditHandle;
@@ -9,13 +15,7 @@ import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.Wrapper;
 import com.zarbosoft.pyxyzygy.app.config.CameraNodeConfig;
 import com.zarbosoft.pyxyzygy.app.config.GroupNodeConfig;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.AnyHalfBinder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.CustomBinding;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.DoubleHalfBinder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyBinder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyHalfBinder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.ScalarBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binders.ScalarBinder;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeCanvasHandle;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeWrapper;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
@@ -35,8 +35,8 @@ import javafx.scene.shape.StrokeType;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 
+import static com.zarbosoft.javafxbinders.Helper.opt;
 import static com.zarbosoft.pyxyzygy.app.Global.localization;
-import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.pyxyzygy.app.config.CameraNodeConfig.TOOL_VIEWPORT;
 import static com.zarbosoft.pyxyzygy.app.config.NodeConfig.TOOL_MOVE;
 
@@ -87,7 +87,8 @@ public class CameraWrapper extends GroupNodeWrapper {
   public CanvasHandle buildCanvas(Context context, Window window, CanvasHandle parent) {
     if (canvasHandle == null) {
       class CameraCanvasHandle extends GroupNodeCanvasHandle {
-        private final BinderRoot showBorderRoot; // GC root
+        @SuppressWarnings("unused")
+        private final BinderRoot showBorderRoot;
         private Rectangle cameraBorder;
 
         public CameraCanvasHandle(Context context, Window window, GroupNodeWrapper wrapper) {

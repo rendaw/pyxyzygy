@@ -1,5 +1,8 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage;
 
+import com.zarbosoft.javafxbinders.BinderRoot;
+import com.zarbosoft.javafxbinders.CustomBinding;
+import com.zarbosoft.javafxbinders.PropertyBinder;
 import com.zarbosoft.pyxyzygy.app.Context;
 import com.zarbosoft.pyxyzygy.app.DoubleVector;
 import com.zarbosoft.pyxyzygy.app.Render;
@@ -8,9 +11,6 @@ import com.zarbosoft.pyxyzygy.app.config.TrueColorBrush;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.app.widgets.TrueColorPicker;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.CustomBinding;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyBinder;
 import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.BaseToolBrush;
 import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.WrapTile;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
@@ -29,8 +29,8 @@ import javafx.scene.paint.Color;
 
 import java.util.Optional;
 
+import static com.zarbosoft.javafxbinders.Helper.opt;
 import static com.zarbosoft.pyxyzygy.app.Global.localization;
-import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.pad;
 
 public class ToolBrush extends BaseToolBrush<TrueColorImageFrame, TrueColorImage> {

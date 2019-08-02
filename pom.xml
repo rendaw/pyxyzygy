@@ -7,11 +7,12 @@
     <packaging>pom</packaging>
     <modules>
         <module>seed</module>
-        <module>automodel</module>
+	<module>vendor/automodel</module>
         <module>generate</module>
         <module>core</module>
         <module>nearestneighborimageview</module>
         <module>nearestneighborimageviewagent</module>
+	<module>vendor/binders</module>
         <module>app</module>
     </modules>
 </project>

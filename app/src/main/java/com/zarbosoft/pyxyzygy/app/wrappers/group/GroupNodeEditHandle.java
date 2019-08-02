@@ -1,6 +1,7 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.group;
 
 import com.google.common.collect.ImmutableList;
+import com.zarbosoft.javafxbinders.BinderRoot;
 import com.zarbosoft.pyxyzygy.app.CanvasHandle;
 import com.zarbosoft.pyxyzygy.app.Context;
 import com.zarbosoft.pyxyzygy.app.DoubleVector;
@@ -12,13 +13,11 @@ import com.zarbosoft.pyxyzygy.app.config.GroupNodeConfig;
 import com.zarbosoft.pyxyzygy.app.widgets.ContentReplacer;
 import com.zarbosoft.pyxyzygy.app.widgets.TitledPane;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
 import com.zarbosoft.pyxyzygy.app.wrappers.ToolMove;
 import com.zarbosoft.pyxyzygy.seed.Vector;
 import com.zarbosoft.rendaw.common.Assertion;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
-import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.layout.VBox;
 

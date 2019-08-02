@@ -27,8 +27,8 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.StrokeType;
 
+import static com.zarbosoft.javafxbinders.Helper.unopt;
 import static com.zarbosoft.pyxyzygy.app.Global.localization;
-import static com.zarbosoft.pyxyzygy.app.Misc.unopt;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.pad;
 
 public class ToolBrush extends BaseToolBrush<PaletteImageFrame, PaletteImage> {

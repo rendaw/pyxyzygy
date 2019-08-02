@@ -1,6 +1,7 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.group;
 
 import com.zarbosoft.automodel.lib.ProjectObject;
+import com.zarbosoft.javafxbinders.VariableBinder;
 import com.zarbosoft.pyxyzygy.app.CanvasHandle;
 import com.zarbosoft.pyxyzygy.app.Context;
 import com.zarbosoft.pyxyzygy.app.EditHandle;
@@ -9,7 +10,6 @@ import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.Wrapper;
 import com.zarbosoft.pyxyzygy.app.config.GroupNodeConfig;
 import com.zarbosoft.pyxyzygy.app.config.NodeConfig;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.VariableBinder;
 import com.zarbosoft.pyxyzygy.core.model.latest.ChangeStepBuilder;
 import com.zarbosoft.pyxyzygy.core.model.latest.GroupChild;
 import com.zarbosoft.pyxyzygy.core.model.latest.GroupLayer;

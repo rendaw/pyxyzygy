@@ -1,9 +1,9 @@
 package com.zarbosoft.pyxyzygy.app.wrappers;
 
 import com.zarbosoft.automodel.lib.Listener;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.HalfBinder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.SimpleBinderRoot;
+import com.zarbosoft.javafxbinders.BinderRoot;
+import com.zarbosoft.javafxbinders.HalfBinder;
+import com.zarbosoft.javafxbinders.SimpleBinderRoot;
 import com.zarbosoft.pyxyzygy.core.PaletteColors;
 import com.zarbosoft.pyxyzygy.core.model.latest.Palette;
 import com.zarbosoft.pyxyzygy.core.model.latest.PaletteColor;
@@ -19,7 +19,7 @@ import java.util.Optional;
 import java.util.WeakHashMap;
 import java.util.function.Consumer;
 
-import static com.zarbosoft.pyxyzygy.app.Misc.opt;
+import static com.zarbosoft.javafxbinders.Helper.opt;
 
 public class PaletteWrapper {
   private static WeakHashMap<Palette, PaletteWrapper> wrapperLookup = new WeakHashMap<>();

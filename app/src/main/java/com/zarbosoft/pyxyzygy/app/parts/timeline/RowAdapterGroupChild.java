@@ -1,12 +1,12 @@
 package com.zarbosoft.pyxyzygy.app.parts.timeline;
 
 import com.zarbosoft.automodel.lib.Listener;
+import com.zarbosoft.javafxbinders.BinderRoot;
+import com.zarbosoft.javafxbinders.CustomBinding;
+import com.zarbosoft.javafxbinders.HalfBinder;
 import com.zarbosoft.pyxyzygy.app.Context;
 import com.zarbosoft.pyxyzygy.app.WidgetHandle;
 import com.zarbosoft.pyxyzygy.app.Window;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.CustomBinding;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.HalfBinder;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeWrapper;
 import com.zarbosoft.pyxyzygy.core.model.latest.ChangeStepBuilder;
 import com.zarbosoft.pyxyzygy.core.model.latest.GroupChild;
@@ -18,7 +18,7 @@ import javafx.beans.value.ObservableObjectValue;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.image.Image;
 
-import static com.zarbosoft.pyxyzygy.app.Misc.opt;
+import static com.zarbosoft.javafxbinders.Helper.opt;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 
 public class RowAdapterGroupChild extends RowAdapter {

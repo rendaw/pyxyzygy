@@ -3,6 +3,7 @@ package com.zarbosoft.pyxyzygy.app.wrappers.group;
 import com.google.common.collect.ImmutableList;
 import com.zarbosoft.automodel.lib.Listener;
 import com.zarbosoft.automodel.lib.ProjectObject;
+import com.zarbosoft.javafxbinders.PropertyHalfBinder;
 import com.zarbosoft.pyxyzygy.app.Context;
 import com.zarbosoft.pyxyzygy.app.DoubleVector;
 import com.zarbosoft.pyxyzygy.app.Global;
@@ -18,7 +19,6 @@ import com.zarbosoft.pyxyzygy.app.modelmirror.MirrorTrueColorImageNode;
 import com.zarbosoft.pyxyzygy.app.modelmirror.ObjectMirror;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyHalfBinder;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.pyxyzygy.core.model.latest.GroupChild;
 import com.zarbosoft.pyxyzygy.core.model.latest.GroupLayer;
@@ -44,6 +44,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.zarbosoft.javafxbinders.CustomBinding.bindStyle;
 import static com.zarbosoft.pyxyzygy.app.Global.localization;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.centerCursor;
 
@@ -77,7 +78,7 @@ public class ToolStamp extends Tool {
               Runnable cleanup;
 
               {
-                HelperJFX.bindStyle(this, "disable", new PropertyHalfBinder<>(disableProperty()));
+                bindStyle(this, "disable", new PropertyHalfBinder<>(disableProperty()));
               }
 
               @Override

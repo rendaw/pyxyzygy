@@ -1,14 +1,17 @@
-package com.zarbosoft.pyxyzygy.app.widgets.binding;
+package com.zarbosoft.pyxyzygy.app.widgets.binders;
 
 import com.zarbosoft.automodel.lib.Listener;
 import com.zarbosoft.automodel.lib.ProjectObject;
+import com.zarbosoft.javafxbinders.BinderRoot;
+import com.zarbosoft.javafxbinders.HalfBinder;
+import com.zarbosoft.javafxbinders.SimpleBinderRoot;
 import com.zarbosoft.rendaw.common.Assertion;
 
 import java.lang.reflect.Method;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import static com.zarbosoft.pyxyzygy.app.Misc.opt;
+import static com.zarbosoft.javafxbinders.Helper.opt;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 
 public class ScalarHalfBinder<T> implements HalfBinder<T> {

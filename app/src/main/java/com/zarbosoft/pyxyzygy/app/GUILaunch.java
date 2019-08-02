@@ -8,6 +8,15 @@ import com.zarbosoft.automodel.lib.Logger;
 import com.zarbosoft.automodel.lib.ModelBase;
 import com.zarbosoft.automodel.lib.PeekVersion;
 import com.zarbosoft.interface1.TypeInfo;
+import com.zarbosoft.javafxbinders.Binder;
+import com.zarbosoft.javafxbinders.BinderRoot;
+import com.zarbosoft.javafxbinders.CustomBinding;
+import com.zarbosoft.javafxbinders.DoubleHalfBinder;
+import com.zarbosoft.javafxbinders.ListPropertyHalfBinder;
+import com.zarbosoft.javafxbinders.PropertyBinder;
+import com.zarbosoft.javafxbinders.PropertyHalfBinder;
+import com.zarbosoft.javafxbinders.SelectionModelBinder;
+import com.zarbosoft.javafxbinders.SimpleBinderRoot;
 import com.zarbosoft.luxem.Luxem;
 import com.zarbosoft.luxem.tree.Typed;
 import com.zarbosoft.luxem.write.TreeWriter;
@@ -18,15 +27,6 @@ import com.zarbosoft.pyxyzygy.app.config.RootProfileConfig;
 import com.zarbosoft.pyxyzygy.app.config.TrueColorBrush;
 import com.zarbosoft.pyxyzygy.app.widgets.ClosableScene;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.Binder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.CustomBinding;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.DoubleHalfBinder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.ListPropertyHalfBinder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyBinder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyHalfBinder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.SelectionModelBinder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.SimpleBinderRoot;
 import com.zarbosoft.pyxyzygy.core.model.ModelVersions;
 import com.zarbosoft.pyxyzygy.core.model.latest.GroupChild;
 import com.zarbosoft.pyxyzygy.core.model.latest.GroupLayer;
@@ -98,6 +98,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.zarbosoft.automodel.lib.Logger.logger;
+import static com.zarbosoft.javafxbinders.Helper.opt;
 import static com.zarbosoft.pyxyzygy.app.Global.NO_LENGTH;
 import static com.zarbosoft.pyxyzygy.app.Global.NO_LOOP;
 import static com.zarbosoft.pyxyzygy.app.Global.appDirs;
@@ -109,7 +110,6 @@ import static com.zarbosoft.pyxyzygy.app.Global.getNameHuman;
 import static com.zarbosoft.pyxyzygy.app.Global.localization;
 import static com.zarbosoft.pyxyzygy.app.Global.opacityMax;
 import static com.zarbosoft.pyxyzygy.app.Global.shutdown;
-import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 import static com.zarbosoft.pyxyzygy.core.mynative.get_allocated;
 import static com.zarbosoft.rendaw.common.Common.atomicWrite;
@@ -149,7 +149,9 @@ public class GUILaunch extends Application {
 
   public static void selectProfile(Stage primaryStage) {
     class ProfileDialog extends ClosableScene {
+      @SuppressWarnings("unused")
       private final BinderRoot rootMoveUp; // GC root
+      @SuppressWarnings("unused")
       private final BinderRoot rootMoveDown; // GC root
       private final ListView<RootGlobalConfig.Profile> list;
 
@@ -360,6 +362,7 @@ public class GUILaunch extends Application {
               selectProfile(primaryStage);
             };
     class ProjectDialog extends ClosableScene {
+      @SuppressWarnings("unused")
       private final BinderRoot rootChoice; // GC root
 
       public Image directoryImage = icon("folder.png");

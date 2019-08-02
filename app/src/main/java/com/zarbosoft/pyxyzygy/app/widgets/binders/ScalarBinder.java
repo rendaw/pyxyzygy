@@ -1,7 +1,8 @@
-package com.zarbosoft.pyxyzygy.app.widgets.binding;
+package com.zarbosoft.pyxyzygy.app.widgets.binders;
 
 import com.zarbosoft.automodel.lib.Listener;
 import com.zarbosoft.automodel.lib.ProjectObject;
+import com.zarbosoft.javafxbinders.Binder;
 
 import java.util.function.Consumer;
 

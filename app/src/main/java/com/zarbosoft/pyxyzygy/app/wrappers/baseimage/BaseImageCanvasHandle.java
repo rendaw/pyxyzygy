@@ -2,14 +2,14 @@ package com.zarbosoft.pyxyzygy.app.wrappers.baseimage;
 
 import com.zarbosoft.automodel.lib.Listener;
 import com.zarbosoft.automodel.lib.ProjectObject;
+import com.zarbosoft.javafxbinders.BinderRoot;
+import com.zarbosoft.javafxbinders.DoubleHalfBinder;
 import com.zarbosoft.pyxyzygy.app.CanvasHandle;
 import com.zarbosoft.pyxyzygy.app.Context;
 import com.zarbosoft.pyxyzygy.app.DoubleRectangle;
 import com.zarbosoft.pyxyzygy.app.DoubleVector;
 import com.zarbosoft.pyxyzygy.app.Wrapper;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.DoubleHalfBinder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.ScalarHalfBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binders.ScalarHalfBinder;
 import com.zarbosoft.pyxyzygy.app.wrappers.FrameFinder;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.pyxyzygy.core.model.latest.ChangeStepBuilder;

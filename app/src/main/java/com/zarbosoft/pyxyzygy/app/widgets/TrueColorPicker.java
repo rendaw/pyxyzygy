@@ -1,8 +1,8 @@
 package com.zarbosoft.pyxyzygy.app.widgets;
 
-import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.DoubleHalfBinder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyHalfBinder;
+import com.zarbosoft.javafxbinders.BinderRoot;
+import com.zarbosoft.javafxbinders.DoubleHalfBinder;
+import com.zarbosoft.javafxbinders.PropertyHalfBinder;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
@@ -26,16 +26,25 @@ import javafx.scene.paint.CycleMethod;
 import javafx.scene.paint.LinearGradient;
 import javafx.scene.paint.Stop;
 
-import static com.zarbosoft.pyxyzygy.app.Misc.opt;
+import static com.zarbosoft.javafxbinders.CustomBinding.bindStyle;
+import static com.zarbosoft.javafxbinders.Helper.opt;
 
 public class TrueColorPicker extends GridPane {
   public final DoubleProperty hue = new SimpleDoubleProperty(0);
   public final DoubleProperty sat = new SimpleDoubleProperty(0);
   public final DoubleProperty bright = new SimpleDoubleProperty(0);
   public final DoubleProperty alpha = new SimpleDoubleProperty(1);
+
+  @SuppressWarnings("unused")
   private final BinderRoot hueBarBackgroundRoot; // GC root
+
+  @SuppressWarnings("unused")
   private final BinderRoot alphaBarBackgroundRoot; // GC root
+
+  @SuppressWarnings("unused")
   private final BinderRoot bindStyleTrueDisabledRoot; // GC root
+
+  @SuppressWarnings("unused")
   private final BinderRoot bindStyleEmptyRoot; // GC root
 
   public boolean suppressProxyListeners;
@@ -51,12 +60,11 @@ public class TrueColorPicker extends GridPane {
         new DoubleHalfBinder<>(disableBinder, colorBinder);
 
     bindStyleTrueDisabledRoot =
-        HelperJFX.bindStyle(
+        bindStyle(
             this,
             "true-disabled",
             colorDisableBinder.map((disable, color) -> opt(disable || color == null)));
-    bindStyleEmptyRoot =
-        HelperJFX.bindStyle(this, "empty", colorBinder.map(color -> opt(color == null)));
+    bindStyleEmptyRoot = bindStyle(this, "empty", colorBinder.map(color -> opt(color == null)));
 
     ColorSwatch newColorDisplay = new ColorSwatch(1);
     newColorDisplay.colorProperty.bind(colorProxyProperty);

@@ -2,6 +2,9 @@ package com.zarbosoft.pyxyzygy.app.wrappers.truecolorimage;
 
 import com.zarbosoft.automodel.lib.Listener;
 import com.zarbosoft.automodel.lib.ProjectObject;
+import com.zarbosoft.javafxbinders.DoubleHalfBinder;
+import com.zarbosoft.javafxbinders.HalfBinder;
+import com.zarbosoft.javafxbinders.ListPropertyHalfBinder;
 import com.zarbosoft.pyxyzygy.app.Context;
 import com.zarbosoft.pyxyzygy.app.EditHandle;
 import com.zarbosoft.pyxyzygy.app.GUILaunch;
@@ -12,9 +15,6 @@ import com.zarbosoft.pyxyzygy.app.config.NodeConfig;
 import com.zarbosoft.pyxyzygy.app.config.TrueColorBrush;
 import com.zarbosoft.pyxyzygy.app.config.TrueColorImageNodeConfig;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.DoubleHalfBinder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.HalfBinder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.ListPropertyHalfBinder;
 import com.zarbosoft.pyxyzygy.app.wrappers.FrameFinder;
 import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.BaseImageNodeWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.WrapTile;
@@ -35,8 +35,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.zarbosoft.javafxbinders.Helper.opt;
 import static com.zarbosoft.pyxyzygy.app.GUILaunch.CACHE_OBJECT;
-import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.pyxyzygy.app.config.TrueColorImageNodeConfig.TOOL_BRUSH;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 

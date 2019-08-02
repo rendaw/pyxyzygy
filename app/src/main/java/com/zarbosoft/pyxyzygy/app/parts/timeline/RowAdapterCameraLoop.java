@@ -1,13 +1,13 @@
 package com.zarbosoft.pyxyzygy.app.parts.timeline;
 
 import com.zarbosoft.automodel.lib.History;
+import com.zarbosoft.javafxbinders.BinderRoot;
+import com.zarbosoft.javafxbinders.CustomBinding;
+import com.zarbosoft.javafxbinders.PropertyBinder;
 import com.zarbosoft.pyxyzygy.app.Context;
 import com.zarbosoft.pyxyzygy.app.WidgetHandle;
 import com.zarbosoft.pyxyzygy.app.Window;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.CustomBinding;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyBinder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.ScalarBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binders.ScalarBinder;
 import com.zarbosoft.pyxyzygy.core.model.latest.Camera;
 import com.zarbosoft.pyxyzygy.core.model.latest.ChangeStepBuilder;
 import javafx.beans.property.SimpleStringProperty;

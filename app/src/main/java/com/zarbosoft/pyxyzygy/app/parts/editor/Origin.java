@@ -1,9 +1,8 @@
 package com.zarbosoft.pyxyzygy.app.parts.editor;
 
-import com.zarbosoft.pyxyzygy.app.Window;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.CustomBinding;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyHalfBinder;
+import com.zarbosoft.javafxbinders.BinderRoot;
+import com.zarbosoft.javafxbinders.CustomBinding;
+import com.zarbosoft.javafxbinders.PropertyHalfBinder;
 import com.zarbosoft.pyxyzygy.seed.Vector;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.DoubleBinding;
@@ -13,7 +12,7 @@ import javafx.scene.effect.BlendMode;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 
-import static com.zarbosoft.pyxyzygy.app.Misc.opt;
+import static com.zarbosoft.javafxbinders.Helper.opt;
 
 public class Origin extends Group {
   private final Line originVert = new Line();
@@ -24,10 +23,12 @@ public class Origin extends Group {
   public final SimpleObjectProperty<Vector> offset = new SimpleObjectProperty<Vector>(Vector.ZERO);
 
   public Origin(Editor editor, double size) {
-    xRoot = CustomBinding.bind(
-        layoutXProperty(), new PropertyHalfBinder<>(offset).map(o -> opt((double) o.x)));
-    yRoot = CustomBinding.bind(
-        layoutYProperty(), new PropertyHalfBinder<>(offset).map(o -> opt((double) o.y)));
+    xRoot =
+        CustomBinding.bind(
+            layoutXProperty(), new PropertyHalfBinder<>(offset).map(o -> opt((double) o.x)));
+    yRoot =
+        CustomBinding.bind(
+            layoutYProperty(), new PropertyHalfBinder<>(offset).map(o -> opt((double) o.y)));
     originHoriz.setStroke(Color.GRAY);
     originVert.setStroke(Color.GRAY);
     getChildren().addAll(originHoriz, originVert);

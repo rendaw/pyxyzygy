@@ -1,0 +1,6 @@
+[submodule "vendor/binders"]
+	path = vendor/binders
+	url = https://gitlab.com/rendaw/javafx-binders.git
+[submodule "vendor/automodel"]
+	path = vendor/automodel
+	url = https://gitlab.com/rendaw/java-automodel.git

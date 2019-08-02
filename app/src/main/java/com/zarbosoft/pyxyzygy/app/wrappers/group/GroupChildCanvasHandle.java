@@ -1,18 +1,18 @@
 package com.zarbosoft.pyxyzygy.app.wrappers.group;
 
 import com.zarbosoft.automodel.lib.Listener;
+import com.zarbosoft.javafxbinders.BinderRoot;
+import com.zarbosoft.javafxbinders.CustomBinding;
+import com.zarbosoft.javafxbinders.DoubleHalfBinder;
+import com.zarbosoft.javafxbinders.IndirectHalfBinder;
+import com.zarbosoft.javafxbinders.PropertyHalfBinder;
 import com.zarbosoft.pyxyzygy.app.CanvasHandle;
 import com.zarbosoft.pyxyzygy.app.Context;
 import com.zarbosoft.pyxyzygy.app.DoubleRectangle;
 import com.zarbosoft.pyxyzygy.app.DoubleVector;
 import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.Wrapper;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.CustomBinding;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.DoubleHalfBinder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.IndirectHalfBinder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyHalfBinder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.ScalarHalfBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binders.ScalarHalfBinder;
 import com.zarbosoft.pyxyzygy.core.model.latest.GroupChild;
 import com.zarbosoft.pyxyzygy.core.model.latest.GroupPositionFrame;
 import com.zarbosoft.pyxyzygy.core.model.latest.GroupTimeFrame;
@@ -22,10 +22,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.zarbosoft.javafxbinders.Helper.opt;
 import static com.zarbosoft.pyxyzygy.app.Global.NO_INNER;
 import static com.zarbosoft.pyxyzygy.app.Global.opacityMax;
 import static com.zarbosoft.pyxyzygy.app.Misc.moveTo;
-import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 
 public class GroupChildCanvasHandle extends CanvasHandle {
   private final BinderRoot opacityRoot;

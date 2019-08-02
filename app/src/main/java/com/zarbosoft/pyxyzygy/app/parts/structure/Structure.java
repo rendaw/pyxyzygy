@@ -5,6 +5,14 @@ import com.google.common.collect.ImmutableMap;
 import com.zarbosoft.automodel.lib.History;
 import com.zarbosoft.automodel.lib.Listener;
 import com.zarbosoft.automodel.lib.ProjectObject;
+import com.zarbosoft.javafxbinders.BinderRoot;
+import com.zarbosoft.javafxbinders.CustomBinding;
+import com.zarbosoft.javafxbinders.DoubleHalfBinder;
+import com.zarbosoft.javafxbinders.HalfBinder;
+import com.zarbosoft.javafxbinders.IndirectBinder;
+import com.zarbosoft.javafxbinders.IndirectHalfBinder;
+import com.zarbosoft.javafxbinders.PropertyBinder;
+import com.zarbosoft.javafxbinders.PropertyHalfBinder;
 import com.zarbosoft.pyxyzygy.app.CanvasHandle;
 import com.zarbosoft.pyxyzygy.app.Context;
 import com.zarbosoft.pyxyzygy.app.EditHandle;
@@ -15,16 +23,8 @@ import com.zarbosoft.pyxyzygy.app.TrueColorTileHelp;
 import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.Wrapper;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.CustomBinding;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.DoubleHalfBinder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.HalfBinder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.IndirectBinder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.IndirectHalfBinder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyBinder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyHalfBinder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.ScalarBinder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.ScalarHalfBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binders.ScalarBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binders.ScalarHalfBinder;
 import com.zarbosoft.pyxyzygy.app.wrappers.PaletteWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupChildWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeWrapper;
@@ -91,13 +91,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.zarbosoft.automodel.lib.Logger.logger;
+import static com.zarbosoft.javafxbinders.CustomBinding.bindStyle;
+import static com.zarbosoft.javafxbinders.Helper.opt;
 import static com.zarbosoft.pyxyzygy.app.Global.localization;
 import static com.zarbosoft.pyxyzygy.app.Global.opacityMax;
 import static com.zarbosoft.pyxyzygy.app.Misc.moveTo;
-import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.pyxyzygy.app.Misc.separate;
 import static com.zarbosoft.pyxyzygy.app.Wrapper.TakesChildren.NONE;
-import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.bindStyle;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.pad;
 import static com.zarbosoft.rendaw.common.Common.last;
@@ -404,7 +404,7 @@ public class Structure {
               }
               if (item != null)
                 cleanup =
-                    HelperJFX.bindStyle(
+                    bindStyle(
                         this,
                         "link-selected",
                         new PropertyHalfBinder<>(item.getConfig().selectedSomewhere));

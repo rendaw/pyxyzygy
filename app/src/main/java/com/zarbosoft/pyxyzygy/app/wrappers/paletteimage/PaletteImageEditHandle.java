@@ -6,6 +6,15 @@ import com.google.common.collect.Streams;
 import com.zarbosoft.automodel.lib.History;
 import com.zarbosoft.automodel.lib.Listener;
 import com.zarbosoft.automodel.lib.ProjectObject;
+import com.zarbosoft.javafxbinders.BinderRoot;
+import com.zarbosoft.javafxbinders.ConstHalfBinder;
+import com.zarbosoft.javafxbinders.CustomBinding;
+import com.zarbosoft.javafxbinders.DoubleHalfBinder;
+import com.zarbosoft.javafxbinders.DoubleIndirectHalfBinder;
+import com.zarbosoft.javafxbinders.IndirectBinder;
+import com.zarbosoft.javafxbinders.IndirectHalfBinder;
+import com.zarbosoft.javafxbinders.ListHalfBinder;
+import com.zarbosoft.javafxbinders.PropertyBinder;
 import com.zarbosoft.pyxyzygy.app.CanvasHandle;
 import com.zarbosoft.pyxyzygy.app.Context;
 import com.zarbosoft.pyxyzygy.app.DoubleVector;
@@ -26,17 +35,8 @@ import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.app.widgets.TitledPane;
 import com.zarbosoft.pyxyzygy.app.widgets.TrueColorPicker;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.ConstHalfBinder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.CustomBinding;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.DoubleHalfBinder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.DoubleIndirectHalfBinder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.IndirectBinder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.IndirectHalfBinder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.ListHalfBinder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyBinder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.ScalarBinder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.ScalarHalfBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binders.ScalarBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binders.ScalarHalfBinder;
 import com.zarbosoft.pyxyzygy.app.wrappers.PaletteWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.ToolMove;
 import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.BrushButton;
@@ -60,7 +60,6 @@ import javafx.collections.ListChangeListener;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
-import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.MenuItem;
@@ -87,11 +86,12 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.zarbosoft.javafxbinders.CustomBinding.bindStyle;
+import static com.zarbosoft.javafxbinders.Helper.opt;
+import static com.zarbosoft.javafxbinders.Helper.unopt;
 import static com.zarbosoft.pyxyzygy.app.Global.localization;
 import static com.zarbosoft.pyxyzygy.app.Global.pasteHotkey;
-import static com.zarbosoft.pyxyzygy.app.Misc.opt;
 import static com.zarbosoft.pyxyzygy.app.Misc.separate;
-import static com.zarbosoft.pyxyzygy.app.Misc.unopt;
 import static com.zarbosoft.pyxyzygy.app.config.NodeConfig.TOOL_MOVE;
 import static com.zarbosoft.pyxyzygy.app.config.PaletteImageNodeConfig.TOOL_BRUSH;
 import static com.zarbosoft.pyxyzygy.app.config.PaletteImageNodeConfig.TOOL_FRAME_MOVE;
@@ -177,7 +177,7 @@ public class PaletteImageEditHandle extends EditHandle {
       setPadding(new Insets(10));
       getStyleClass().addAll("palette-separator");
       cleanupBorder =
-          HelperJFX.bindStyle(
+          bindStyle(
               this,
               "selected",
               wrapper.paletteSelectionBinder.map(
@@ -228,7 +228,7 @@ public class PaletteImageEditHandle extends EditHandle {
                     colorProperty.set(c);
                   });
       cleanupBorder =
-          HelperJFX.bindStyle(
+          bindStyle(
               this,
               "selected",
               wrapper.paletteSelectionBinder.map(

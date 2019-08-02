@@ -18,4 +18,5 @@ open module com.zarbosoft.pyxyzygy.app {
   requires gifencoder;
   requires jcodec;
   requires com.zarbosoft.automodel.lib;
+  requires com.zarbosoft.javafxbinders;
 }

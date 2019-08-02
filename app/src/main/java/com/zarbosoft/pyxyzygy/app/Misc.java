@@ -1,11 +1,11 @@
 package com.zarbosoft.pyxyzygy.app;
 
 import com.zarbosoft.automodel.lib.History;
+import com.zarbosoft.javafxbinders.BinderRoot;
+import com.zarbosoft.javafxbinders.CustomBinding;
+import com.zarbosoft.javafxbinders.PropertyBinder;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.CustomBinding;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyBinder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.ScalarBinder;
+import com.zarbosoft.pyxyzygy.app.widgets.binders.ScalarBinder;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupChildWrapper;
 import com.zarbosoft.pyxyzygy.core.model.latest.ChangeStepBuilder;
 import com.zarbosoft.pyxyzygy.core.model.latest.GroupChild;
@@ -23,6 +23,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.zarbosoft.javafxbinders.Helper.opt;
 import static com.zarbosoft.pyxyzygy.app.Global.localization;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 
@@ -195,18 +196,5 @@ public class Misc {
 
   public static <T> Consumer<T> noopConsumer() {
     return noopConsumer;
-  }
-
-  private static Object notReallyNull = new Object();
-
-  public static <T> Optional<T> opt(T v) {
-    if (v == null) return (Optional<T>) Optional.of(notReallyNull);
-    else return Optional.of(v);
-  }
-
-  public static <T> T unopt(Optional<T> v) {
-    Object out = v.get();
-    if (out == notReallyNull) return null;
-    else return (T) out;
   }
 }

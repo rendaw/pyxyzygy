@@ -1,5 +1,6 @@
 package com.zarbosoft.pyxyzygy.app.parts.editor;
 
+import com.zarbosoft.javafxbinders.BinderRoot;
 import com.zarbosoft.pyxyzygy.app.CanvasHandle;
 import com.zarbosoft.pyxyzygy.app.Context;
 import com.zarbosoft.pyxyzygy.app.DoubleRectangle;
@@ -10,7 +11,6 @@ import com.zarbosoft.pyxyzygy.app.Hotkeys;
 import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.Wrapper;
 import com.zarbosoft.pyxyzygy.app.config.NodeConfig;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupChildWrapper;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ReadOnlyObjectProperty;

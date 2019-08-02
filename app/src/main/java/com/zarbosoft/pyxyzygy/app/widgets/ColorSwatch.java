@@ -1,9 +1,9 @@
 package com.zarbosoft.pyxyzygy.app.widgets;
 
-import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.DoubleHalfBinder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.HalfBinder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.PropertyHalfBinder;
+import com.zarbosoft.javafxbinders.BinderRoot;
+import com.zarbosoft.javafxbinders.DoubleHalfBinder;
+import com.zarbosoft.javafxbinders.HalfBinder;
+import com.zarbosoft.javafxbinders.PropertyHalfBinder;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -11,22 +11,32 @@ import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.effect.ColorAdjust;
-import javafx.scene.layout.*;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.CornerRadii;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 
 import java.util.Optional;
 
-import static com.zarbosoft.pyxyzygy.app.Misc.opt;
+import static com.zarbosoft.javafxbinders.CustomBinding.bindStyle;
+import static com.zarbosoft.javafxbinders.Helper.opt;
 
 public class ColorSwatch extends StackPane {
   public final double gapScaler;
   public final SimpleObjectProperty<Color> colorProperty = new SimpleObjectProperty<>();
+
+  @SuppressWarnings("unused")
   private final BinderRoot bindStyleRoot; // GC root
 
   private Node createClip() {
     class ClipRectangle extends Rectangle {
+      @SuppressWarnings("unused")
       private final BinderRoot rootLayout; // GC root
+
+      @SuppressWarnings("unused")
       private final BinderRoot rootArc; // GC root
 
       ClipRectangle() {
@@ -77,8 +87,7 @@ public class ColorSwatch extends StackPane {
   public ColorSwatch(double gapScaler) {
     PropertyHalfBinder<Color> colorBinder = new PropertyHalfBinder<>(colorProperty);
 
-    bindStyleRoot =
-        HelperJFX.bindStyle(this, "empty", colorBinder.map(color -> opt(color == null)));
+    bindStyleRoot = bindStyle(this, "empty", colorBinder.map(color -> opt(color == null)));
 
     this.gapScaler = gapScaler;
     getStyleClass().addAll("color-swatch");

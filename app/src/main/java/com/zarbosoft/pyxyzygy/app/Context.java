@@ -2,10 +2,10 @@ package com.zarbosoft.pyxyzygy.app;
 
 import com.zarbosoft.automodel.lib.History;
 import com.zarbosoft.interface1.TypeInfo;
+import com.zarbosoft.javafxbinders.BinderRoot;
+import com.zarbosoft.javafxbinders.HalfBinder;
+import com.zarbosoft.javafxbinders.SimpleBinderRoot;
 import com.zarbosoft.pyxyzygy.app.config.RootProjectConfig;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.BinderRoot;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.HalfBinder;
-import com.zarbosoft.pyxyzygy.app.widgets.binding.SimpleBinderRoot;
 import com.zarbosoft.pyxyzygy.core.model.latest.ChangeStepBuilder;
 import com.zarbosoft.pyxyzygy.core.model.latest.Model;
 import com.zarbosoft.pyxyzygy.core.model.latest.Palette;
@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import static com.zarbosoft.pyxyzygy.app.Misc.opt;
+import static com.zarbosoft.javafxbinders.Helper.opt;
 
 public class Context {
   public final Model model;
