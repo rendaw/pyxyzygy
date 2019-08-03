@@ -1,6 +1,8 @@
 [submodule "vendor/binders"]
 	path = vendor/binders
 	url = https://gitlab.com/rendaw/javafx-binders.git
+	ignore = untracked
 [submodule "vendor/automodel"]
 	path = vendor/automodel
 	url = https://gitlab.com/rendaw/java-automodel.git
+	ignore = untracked

@@ -2,7 +2,7 @@
 
 # Group layer
 
-A group layer combines other layers.  Within a group layers can be moved around and in animations they can be individually looped and translated.
+A group layer combines other layers.  Within a group, layers can be moved around and in animations they can be individually looped and translated.
 
 ## Toolbar
 
@@ -52,10 +52,12 @@ Each layer in a group has it's own frames.
 
    A time frame allows you to offset, add/remove time loops, or disable a child layer for a time period.  Use this for looping backgrounds, for example.
 
+   When you select a time frame, the time controls for that frame will expand below the frame.
+
    Drag the bar with the X (**3**) to change the start time of the child layer from this frame.  The start time is indicated by the number above.  If you drag to the X, the child layer will be hidden during this frame.
 
-   Drag the loop handle (**4**) to change the duration of the loop.  By default the handle is aligned with the start of the time period and indicates that there is no loop (time increases continuously from the start).
+   Drag the loop handle (**4**) to change the duration of the loop.  By default the handle is aligned with the start of the time period and indicates that there is no loop (time increases continuously from the start).  If you drag the handle to, for example, 10 frames, the 10 frames starting from **3** will repeat until the next time frame (or forever if there are no more frames).
 
 * **5** / Position frames
 
-   A position frame allows you to give a child layer different offsets at different times.  Use the move frame (**6**) tool to change the offset for the visible frame.
+   A position frame allows you to give a child layer different offsets at different times.  Use the move frame tool (**14** at [this page](timeline_section.md)) to change the offset for the visible frame.
