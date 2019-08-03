@@ -109,7 +109,8 @@ public class ToolLayerMove extends Tool {
 
   @Override
   public void markStart(
-      Context context, Window window, DoubleVector start, DoubleVector globalStart) {
+    Context context, Window window, DoubleVector localStart, DoubleVector localStartWithOffset, DoubleVector globalStart
+  ) {
     GroupChild specificLayer = unopt(wrapper.specificChild.get());
     if (specificLayer == null) return;
     pos =
@@ -123,12 +124,15 @@ public class ToolLayerMove extends Tool {
 
   @Override
   public void mark(
-      Context context,
-      Window window,
-      DoubleVector start,
-      DoubleVector end,
-      DoubleVector globalStart,
-      DoubleVector globalEnd) {
+    Context context,
+    Window window,
+    DoubleVector localStart,
+    DoubleVector localEnd,
+    DoubleVector localStartWithOffset,
+    DoubleVector localEndWithOffset,
+    DoubleVector globalStart,
+    DoubleVector globalEnd
+  ) {
     if (pos == null) return;
     context.change(
         new History.Tuple(wrapper, "move-layer"),

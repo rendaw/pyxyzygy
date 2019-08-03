@@ -176,16 +176,19 @@ public class ToolBrush extends BaseToolBrush<TrueColorImageFrame, TrueColorImage
 
   @Override
   public void mark(
-      Context context,
-      Window window,
-      DoubleVector start,
-      DoubleVector end,
-      DoubleVector globalStart,
-      DoubleVector globalEnd) {
+    Context context,
+    Window window,
+    DoubleVector localStart,
+    DoubleVector localEnd,
+    DoubleVector localStartWithOffset,
+    DoubleVector localEndWithOffset,
+    DoubleVector globalStart,
+    DoubleVector globalEnd
+  ) {
     if (false) {
       throw new Assertion();
     } else if (window.pressed.contains(KeyCode.CONTROL) && window.pressed.contains(KeyCode.SHIFT)) {
-      DoubleVector outer = Window.toGlobal(editHandle.wrapper.canvasHandle, end);
+      DoubleVector outer = Window.toGlobal(editHandle.wrapper.canvasHandle, localEndWithOffset);
       TrueColorImage out = TrueColorImage.create(1, 1);
       Render.render(
           context,
@@ -196,12 +199,12 @@ public class ToolBrush extends BaseToolBrush<TrueColorImageFrame, TrueColorImage
           1);
       setColor(context, HelperJFX.toImage(out).getPixelReader().getColor(0, 0));
     } else if (window.pressed.contains(KeyCode.CONTROL)) {
-      Vector quantizedCorner = end.divide(context.project.tileSize()).toInt();
+      Vector quantizedCorner = localEndWithOffset.divide(context.project.tileSize()).toInt();
       WrapTile tile = wrapper.canvasHandle.wrapTiles.get(quantizedCorner.to1D());
       if (tile == null) {
         setColor(context, Color.TRANSPARENT);
       } else {
-        Vector intEnd = end.toInt();
+        Vector intEnd = localEndWithOffset.toInt();
         Vector tileCorner = quantizedCorner.multiply(context.project.tileSize());
         setColor(
             context,
@@ -210,7 +213,11 @@ public class ToolBrush extends BaseToolBrush<TrueColorImageFrame, TrueColorImage
                 .getPixelReader()
                 .getColor(intEnd.x - tileCorner.x, intEnd.y - tileCorner.y));
       }
-    } else super.mark(context, window, start, end, globalStart, globalEnd);
+    } else super.mark(context, window,
+      localStart,
+      localEnd,
+      localStartWithOffset,
+      localEndWithOffset, globalStart, globalEnd);
   }
 
   @Override

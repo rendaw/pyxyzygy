@@ -736,19 +736,23 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
 
   @Override
   public void markStart(
-    Context context, Window window, DoubleVector start, DoubleVector globalStart) {
-    state.markStart(context, window, start);
+    Context context, Window window, DoubleVector localStart, DoubleVector localStartWithOffset, DoubleVector globalStart
+  ) {
+    state.markStart(context, window, localStartWithOffset);
   }
 
   @Override
   public void mark(
-      Context context,
-      Window window,
-      DoubleVector start,
-      DoubleVector end,
-      DoubleVector globalStart,
-      DoubleVector globalEnd) {
-    state.mark(context, start, end);
+    Context context,
+    Window window,
+    DoubleVector localStart,
+    DoubleVector localEnd,
+    DoubleVector localStartWithOffset,
+    DoubleVector localEndWithOffset,
+    DoubleVector globalStart,
+    DoubleVector globalEnd
+  ) {
+    state.mark(context, localStartWithOffset, localEndWithOffset);
   }
 
   @Override

@@ -1047,11 +1047,9 @@ public class PaletteImageEditHandle extends EditHandle {
   public void markStart(Context context, Window window, DoubleVector start) {
     if (getCanvas().time.get() == -1) return;
     if (tool == null) return;
-    tool.markStart(
-        context,
-        window,
-        Window.toLocal(window.getSelectedForView(), wrapper.canvasHandle, start).minus(offset()),
-        start);
+    DoubleVector localStart =
+        Window.toLocal(window.getSelectedForView(), wrapper.canvasHandle, start);
+    tool.markStart(context, window, localStart, localStart.minus(offset()), start);
   }
 
   @Override
@@ -1064,11 +1062,16 @@ public class PaletteImageEditHandle extends EditHandle {
     if (getCanvas().time.get() == -1) return;
     if (tool == null) return;
     Vector offset = offset();
+    DoubleVector localStart =
+        Window.toLocal(window.getSelectedForView(), wrapper.canvasHandle, start);
+    DoubleVector localEnd = Window.toLocal(window.getSelectedForView(), wrapper.canvasHandle, end);
     tool.mark(
         context,
         window,
-        Window.toLocal(window.getSelectedForView(), wrapper.canvasHandle, start).minus(offset),
-        Window.toLocal(window.getSelectedForView(), wrapper.canvasHandle, end).minus(offset),
+        localStart,
+        localEnd,
+        localStart.minus(offset),
+        localEnd.minus(offset),
         start,
         end);
   }

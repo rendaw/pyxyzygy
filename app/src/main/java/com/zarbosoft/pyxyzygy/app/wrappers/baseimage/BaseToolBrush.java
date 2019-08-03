@@ -33,22 +33,26 @@ public abstract class BaseToolBrush<F extends ProjectObject, L> extends Tool {
 
   @Override
   public void markStart(
-    Context context, Window window, DoubleVector start, DoubleVector globalStart) {}
+    Context context, Window window, DoubleVector localStart, DoubleVector localStartWithOffset, DoubleVector globalStart
+  ) {}
 
   @Override
   public void mark(
-      Context context,
-      Window window,
-      DoubleVector start,
-      DoubleVector end,
-      DoubleVector globalStart,
-      DoubleVector globalEnd) {
+    Context context,
+    Window window,
+    DoubleVector localStart,
+    DoubleVector localEnd,
+    DoubleVector localStartWithOffset,
+    DoubleVector localEndWithOffset,
+    DoubleVector globalStart,
+    DoubleVector globalEnd
+  ) {
     if (false) {
       throw new Assertion();
     } else if (window.pressed.contains(KeyCode.SHIFT)) {
-      if (lastEnd == null) lastEnd = end;
-      strokeInner(context, null, lastEnd, end);
-    } else strokeInner(context, new History.Tuple(brush, "stroke"), start, end);
+      if (lastEnd == null) lastEnd = localEndWithOffset;
+      strokeInner(context, null, lastEnd, localEndWithOffset);
+    } else strokeInner(context, new History.Tuple(brush, "stroke"), localStartWithOffset, localEndWithOffset);
   }
 
   private void strokeInner(

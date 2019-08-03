@@ -46,9 +46,13 @@ public class ToolViewport extends Tool {
 
   @Override
   public void markStart(
-    Context context, Window window, DoubleVector start, DoubleVector globalStart) {
+      Context context,
+      Window window,
+      DoubleVector localStart,
+      DoubleVector localStartWithOffset,
+      DoubleVector globalStart) {
     Camera node = (Camera) wrapper.node;
-    markStart = start;
+    markStart = localStart;
     Quadrant quadrant = calculateQuadrant(markStart);
     adjustHorizontal = quadrant.horizontal;
     adjustPositive = quadrant.positive;
@@ -63,15 +67,17 @@ public class ToolViewport extends Tool {
   public void mark(
       Context context,
       Window window,
-      DoubleVector start,
-      DoubleVector end,
+      DoubleVector localStart,
+      DoubleVector localEnd,
+      DoubleVector localStartWithOffset,
+      DoubleVector localEndWithOffset,
       DoubleVector globalStart,
       DoubleVector globalEnd) {
     double negative = adjustPositive ? 2 : -2;
     if (adjustHorizontal) {
-      wrapper.width.set((int) (startValue + (end.x - markStart.x) * negative));
+      wrapper.width.set((int) (startValue + (localEnd.x - markStart.x) * negative));
     } else {
-      wrapper.height.set((int) (startValue + (end.y - markStart.y) * negative));
+      wrapper.height.set((int) (startValue + (localEnd.y - markStart.y) * negative));
     }
   }
 

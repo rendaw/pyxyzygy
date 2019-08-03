@@ -102,7 +102,8 @@ public class ToolBrush extends BaseToolBrush<PaletteImageFrame, PaletteImage> {
 
   @Override
   public void markStart(
-      Context context, Window window, DoubleVector start, DoubleVector globalStart) {}
+    Context context, Window window, DoubleVector localStart, DoubleVector localStartWithOffset, DoubleVector globalStart
+  ) {}
 
   private void setColor(int index) {
     editHandle.wrapper.node.palette().entries().stream()
@@ -148,28 +149,35 @@ public class ToolBrush extends BaseToolBrush<PaletteImageFrame, PaletteImage> {
 
   @Override
   public void mark(
-      Context context,
-      Window window,
-      DoubleVector start,
-      DoubleVector end,
-      DoubleVector globalStart,
-      DoubleVector globalEnd) {
+    Context context,
+    Window window,
+    DoubleVector localStart,
+    DoubleVector localEnd,
+    DoubleVector localStartWithOffset,
+    DoubleVector localEndWithOffset,
+    DoubleVector globalStart,
+    DoubleVector globalEnd
+  ) {
     if (false) {
       throw new Assertion();
     } else if (window.pressed.contains(KeyCode.CONTROL)) {
-      Vector quantizedCorner = end.divide(context.project.tileSize()).toInt();
+      Vector quantizedCorner = localEndWithOffset.divide(context.project.tileSize()).toInt();
       PaletteTile tile =
           (PaletteTile) editHandle.wrapper.canvasHandle.frame.tilesGet(quantizedCorner.to1D());
       if (tile == null) {
         setColor(0);
       } else {
-        Vector intEnd = end.toInt();
+        Vector intEnd = localEndWithOffset.toInt();
         Vector tileCorner = quantizedCorner.multiply(context.project.tileSize());
         setColor(
             PaletteTileHelp.getData(context, tile)
                 .getPixel(intEnd.x - tileCorner.x, intEnd.y - tileCorner.y));
       }
-    } else super.mark(context, window, start, end, globalStart, globalEnd);
+    } else super.mark(context, window,
+      localStart,
+      localEnd,
+      localStartWithOffset,
+      localEndWithOffset, globalStart, globalEnd);
   }
 
   @Override
