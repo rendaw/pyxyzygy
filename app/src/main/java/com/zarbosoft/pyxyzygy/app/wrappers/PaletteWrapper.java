@@ -48,6 +48,8 @@ public class PaletteWrapper {
           return opt(PaletteWrapper.this);
         }
       };
+  @SuppressWarnings("unused")
+  private Runnable mirrorRoot;
 
   public static void addPaletteUser(PaletteImageLayer image) {
     getPaletteWrapper(image.palette()).users.add(image);
@@ -60,7 +62,7 @@ public class PaletteWrapper {
           PaletteWrapper out = new PaletteWrapper();
           out.colors = new PaletteColors();
           out.updatedAt = Instant.now();
-          palette.mirrorEntries(
+          out.mirrorRoot = palette.mirrorEntries(
               out.cleanup,
               v -> {
                 out.updatedAt = Instant.now();
