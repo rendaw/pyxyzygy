@@ -5,6 +5,7 @@ import com.zarbosoft.pyxyzygy.app.ConfigBase;
 import com.zarbosoft.pyxyzygy.app.Hotkeys;
 import com.zarbosoft.pyxyzygy.seed.TrueColor;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -35,7 +36,10 @@ public class RootProfileConfig extends ConfigBase {
   @Configuration public Map<String, Hotkeys.Hotkey> hotkeys = new HashMap<>();
 
   @Configuration(optional = true)
-  public SimpleObjectProperty<CreateMode> newProjectNormalMode = new SimpleObjectProperty<>(CreateMode.normal);
+  public SimpleObjectProperty<InitialLayers> newProjectInitialLayers = new SimpleObjectProperty<>(InitialLayers.BOTH);
+
+  @Configuration(optional = true)
+  public SimpleIntegerProperty defaultZoom = new SimpleIntegerProperty(0);
 
   @Configuration(optional = true)
   public final SimpleBooleanProperty showOrigin = new SimpleBooleanProperty(false);

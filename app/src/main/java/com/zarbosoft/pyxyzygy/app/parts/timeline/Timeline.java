@@ -20,7 +20,6 @@ import com.zarbosoft.pyxyzygy.app.EditHandle;
 import com.zarbosoft.pyxyzygy.app.FrameMapEntry;
 import com.zarbosoft.pyxyzygy.app.Global;
 import com.zarbosoft.pyxyzygy.app.Hotkeys;
-import com.zarbosoft.pyxyzygy.app.Misc;
 import com.zarbosoft.pyxyzygy.app.WidgetHandle;
 import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.Wrapper;
@@ -43,6 +42,7 @@ import com.zarbosoft.pyxyzygy.core.model.latest.ProjectLayer;
 import com.zarbosoft.pyxyzygy.core.model.latest.TrueColorImageFrame;
 import com.zarbosoft.pyxyzygy.core.model.latest.TrueColorImageLayer;
 import com.zarbosoft.rendaw.common.Assertion;
+import com.zarbosoft.rendaw.common.Common;
 import com.zarbosoft.rendaw.common.Pair;
 import javafx.application.Platform;
 import javafx.beans.Observable;
@@ -102,7 +102,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.zarbosoft.automodel.lib.Logger.logger;
-import static com.zarbosoft.javafxbinders.Helper.opt;
+import static com.zarbosoft.rendaw.common.Common.opt;
 import static com.zarbosoft.pyxyzygy.app.Global.NO_INNER;
 import static com.zarbosoft.pyxyzygy.app.Global.localization;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
@@ -812,8 +812,8 @@ public class Timeline {
                     groupTreeItemLookup.put(childRowAdapter, child);
                     return childRowAdapter;
                   },
-                  this::cleanItemSubtree,
-                  Misc.noopConsumer()));
+                  this::cleanItemSubtree, Common.noopConsumer
+              ));
       RowAdapter loop;
       if (edit instanceof CameraWrapper) {
         loop = new RowAdapterCameraLoop(this, (Camera) ((CameraWrapper) edit).node);

@@ -26,12 +26,6 @@ You can skip this screen by adding `--profile-id` with the profile id of the pro
 
 A project is a collection of related images and palettes.
 
-There are two types of projects: normal and pixel projects.  The only difference between the two is how large the image memory chunks are.  This means:
-
-A **normal** project is optimized for screen resolution drawing - if you use it for pixel art the project will use slightly more space.
-
-A **pixel** project is optimized for small (pixel-wise) strokes.  If you use it for screen resolution drawing it might be slightly sluggish.
-
 A project is stored on disk as a directory with a `project.luxem` file.  You can move and back-up project folders as long as you don't delete or modify any of the files within.
 
 ![Project selection](newproject.jpg)
@@ -50,13 +44,11 @@ A project is stored on disk as a directory with a `project.luxem` file.  You can
 
 * **7** / A subdirectory
 
-* **8** **9** / Create a normal or pixel optimized project
+* **8** / Create a new project with the name in **2**
 
-* **10** / Create a new project with the name in **2**
+* **9** / Open the selected project
 
-* **11** / Open the selected project
-
-* **12** / Exit project selection
+* **10** / Exit project selection
 
 ## The main window
 

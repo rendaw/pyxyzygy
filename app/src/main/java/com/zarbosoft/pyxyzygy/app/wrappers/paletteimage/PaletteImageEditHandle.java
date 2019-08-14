@@ -13,7 +13,6 @@ import com.zarbosoft.javafxbinders.DoubleHalfBinder;
 import com.zarbosoft.javafxbinders.DoubleIndirectHalfBinder;
 import com.zarbosoft.javafxbinders.IndirectBinder;
 import com.zarbosoft.javafxbinders.IndirectHalfBinder;
-import com.zarbosoft.javafxbinders.ListHalfBinder;
 import com.zarbosoft.javafxbinders.PropertyBinder;
 import com.zarbosoft.pyxyzygy.app.CanvasHandle;
 import com.zarbosoft.pyxyzygy.app.Context;
@@ -35,6 +34,7 @@ import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.app.widgets.TitledPane;
 import com.zarbosoft.pyxyzygy.app.widgets.TrueColorPicker;
 import com.zarbosoft.pyxyzygy.app.widgets.WidgetFormBuilder;
+import com.zarbosoft.pyxyzygy.app.widgets.binders.ListHalfBinder;
 import com.zarbosoft.pyxyzygy.app.widgets.binders.ScalarBinder;
 import com.zarbosoft.pyxyzygy.app.widgets.binders.ScalarHalfBinder;
 import com.zarbosoft.pyxyzygy.app.wrappers.PaletteWrapper;
@@ -49,6 +49,7 @@ import com.zarbosoft.pyxyzygy.core.model.latest.PaletteSeparator;
 import com.zarbosoft.pyxyzygy.seed.TrueColor;
 import com.zarbosoft.pyxyzygy.seed.Vector;
 import com.zarbosoft.rendaw.common.Assertion;
+import com.zarbosoft.rendaw.common.Common;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.SimpleDoubleProperty;
@@ -87,8 +88,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.zarbosoft.javafxbinders.CustomBinding.bindStyle;
-import static com.zarbosoft.javafxbinders.Helper.opt;
-import static com.zarbosoft.javafxbinders.Helper.unopt;
 import static com.zarbosoft.pyxyzygy.app.Global.localization;
 import static com.zarbosoft.pyxyzygy.app.Global.pasteHotkey;
 import static com.zarbosoft.pyxyzygy.app.Misc.separate;
@@ -100,6 +99,8 @@ import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.pad;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.topCenterCursor;
 import static com.zarbosoft.rendaw.common.Common.enumerate;
+import static com.zarbosoft.rendaw.common.Common.opt;
+import static com.zarbosoft.rendaw.common.Common.unopt;
 
 public class PaletteImageEditHandle extends EditHandle {
   final PaletteImageNodeWrapper wrapper;
@@ -483,7 +484,7 @@ public class PaletteImageEditHandle extends EditHandle {
                   }
                 },
             button -> ((BrushButton) button).destroy(context, window),
-            Misc.noopConsumer());
+            Common.noopConsumer);
 
     window.toolBarChildren.set(this, ImmutableList.of(move, select, brushesBox));
 

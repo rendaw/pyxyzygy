@@ -13,6 +13,7 @@ import com.zarbosoft.javafxbinders.ListPropertyHalfBinder;
 import com.zarbosoft.javafxbinders.ManualHalfBinder;
 import com.zarbosoft.javafxbinders.PropertyBinder;
 import com.zarbosoft.javafxbinders.PropertyHalfBinder;
+import com.zarbosoft.pyxyzygy.app.config.InitialLayers;
 import com.zarbosoft.pyxyzygy.app.config.NodeConfig;
 import com.zarbosoft.pyxyzygy.app.parts.editor.Editor;
 import com.zarbosoft.pyxyzygy.app.parts.structure.Structure;
@@ -36,6 +37,7 @@ import com.zarbosoft.pyxyzygy.core.model.latest.PaletteImageLayer;
 import com.zarbosoft.pyxyzygy.core.model.latest.TrueColorImageLayer;
 import com.zarbosoft.pyxyzygy.seed.TrueColor;
 import com.zarbosoft.rendaw.common.Assertion;
+import com.zarbosoft.rendaw.common.DeadCode;
 import com.zarbosoft.rendaw.common.Pair;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleStringProperty;
@@ -95,14 +97,14 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.zarbosoft.automodel.lib.Logger.logger;
-import static com.zarbosoft.javafxbinders.Helper.opt;
-import static com.zarbosoft.javafxbinders.Helper.unopt;
 import static com.zarbosoft.pyxyzygy.app.Global.localization;
 import static com.zarbosoft.pyxyzygy.app.Global.nameHuman;
 import static com.zarbosoft.pyxyzygy.app.parts.structure.Structure.findNode;
 import static com.zarbosoft.pyxyzygy.app.parts.structure.Structure.getPath;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.pad;
+import static com.zarbosoft.rendaw.common.Common.opt;
+import static com.zarbosoft.rendaw.common.Common.unopt;
 
 public class Window {
   public List<FrameMapEntry>
@@ -459,38 +461,35 @@ public class Window {
     this.rootTabWidth =
         CustomBinding.bind(
             leftTabs.minWidthProperty(),
-            new IndirectHalfBinder<>(
-                new ListPropertyHalfBinder<>(leftTabs.getTabs())
-                    .<List<HalfBinder<Pair<Node, Bounds>>>>map(
-                        l ->
-                            opt(
+            new ListPropertyHalfBinder<>(leftTabs.getTabs())
+                .<List<Pair<Node, Bounds>>>indirectMap(
+                    l ->
+                        opt(
+                            new ListElementsHalfBinder<>(
                                 l.stream()
                                     .map(
                                         t ->
                                             new DoubleHalfBinder<Node, Bounds>(
                                                 t.contentProperty(),
-                                                new IndirectHalfBinder<
-                                                    Bounds>( // Ignored but included to trigger
-                                                    // updates
+                                                new IndirectHalfBinder<Bounds>(
+                                                    /* Ignored but included to trigger updates */
                                                     t.contentProperty(),
                                                     c ->
                                                         opt(
                                                             c == null
                                                                 ? null
                                                                 : c.layoutBoundsProperty()))))
-                                    .collect(Collectors.toList()))),
-                l ->
-                    opt(
-                        new ListElementsHalfBinder<Double>(
-                            l,
-                            s -> {
-                              double out =
-                                  s.filter(t -> t.first != null)
-                                      .mapToDouble(t -> t.first.minWidth(-1))
-                                      .max()
-                                      .orElse(0);
-                              return opt(out);
-                            }))));
+                                    .collect(Collectors.toList()))))
+                .map(
+                    l -> {
+                      double out =
+                          l.stream()
+                              .filter(t -> t.first != null)
+                              .mapToDouble(t -> t.first.minWidth(-1))
+                              .max()
+                              .orElse(0);
+                      return opt(out);
+                    }));
 
     structure = new Structure(context, this, main);
     structureTab.setContent(structure.getWidget());
@@ -636,6 +635,37 @@ public class Window {
                                   GUILaunch.profileConfig.ghostNextColor.set(
                                       TrueColor.fromJfx(newValue)));
                           return w;
+                        })
+                    .enumDropDown(
+                        localization.getString("default.layers"),
+                        InitialLayers.class,
+                        v -> {
+                          switch (v) {
+                            case BOTH:
+                              return localization.getString("initial.layers.both");
+                            case TRUE_COLOR:
+                              return localization.getString("true.color.layer");
+                            case PIXEL:
+                              return localization.getString("pixel.layer");
+                            default:
+                              throw new DeadCode();
+                          }
+                        },
+                        GUILaunch.profileConfig.newProjectInitialLayers)
+                    .intSpinner(
+                        localization.getString("default.zoom"),
+                        -20,
+                        20,
+                        spinner -> {
+                          spinner
+                              .getValueFactory()
+                              .setValue(GUILaunch.profileConfig.defaultZoom.get());
+                          spinner
+                              .getValueFactory()
+                              .valueProperty()
+                              .addListener(
+                                  (observable, oldValue, newValue) ->
+                                      GUILaunch.profileConfig.defaultZoom.set(newValue));
                         })
                     .intSpinner(
                         localization.getString("max.undo"),

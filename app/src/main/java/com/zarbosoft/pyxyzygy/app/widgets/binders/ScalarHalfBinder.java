@@ -11,7 +11,7 @@ import java.lang.reflect.Method;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import static com.zarbosoft.javafxbinders.Helper.opt;
+import static com.zarbosoft.rendaw.common.Common.opt;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 
 public class ScalarHalfBinder<T> implements HalfBinder<T> {

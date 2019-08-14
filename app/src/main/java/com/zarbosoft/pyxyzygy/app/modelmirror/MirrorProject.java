@@ -3,6 +3,7 @@ package com.zarbosoft.pyxyzygy.app.modelmirror;
 import com.zarbosoft.automodel.lib.ProjectObject;
 import com.zarbosoft.pyxyzygy.app.Misc;
 import com.zarbosoft.pyxyzygy.core.model.latest.Project;
+import com.zarbosoft.rendaw.common.Common;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.TreeItem;
@@ -42,9 +43,8 @@ public class MirrorProject extends ObjectMirror {
                 tree.get().getChildren().set(child.parentIndex, newValue);
               });
           return child.tree.get();
-        },
-        Misc.noopConsumer(),
-        Misc.noopConsumer());
+        }, Common.noopConsumer, Common.noopConsumer
+    );
   }
 
   @Override

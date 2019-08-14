@@ -1,6 +1,10 @@
 package com.zarbosoft.pyxyzygy.app.widgets;
 
+import com.zarbosoft.javafxbinders.CustomBinding;
+import com.zarbosoft.javafxbinders.PropertyBinder;
+import com.zarbosoft.javafxbinders.SelectionModelBinder;
 import javafx.beans.binding.Bindings;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.HPos;
 import javafx.geometry.Pos;
@@ -9,6 +13,9 @@ import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
+import javafx.scene.control.SelectionModel;
 import javafx.scene.control.Slider;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
@@ -19,9 +26,11 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.stage.DirectoryChooser;
+import javafx.util.Callback;
 
 import java.io.File;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static com.zarbosoft.pyxyzygy.app.Global.localization;
@@ -205,5 +214,36 @@ public class WidgetFormBuilder {
     cb.accept(widget);
     gridPane.addRow(row++, fieldLabel(name), widget);
     return this;
+  }
+
+  public <T> WidgetFormBuilder enumDropDown(
+      String name, Class<T> e, Function<T, String> converter, SimpleObjectProperty<T> value) {
+    return dropDown(
+        name,
+        cb -> {
+          cb.setCellFactory(
+              new Callback<ListView<Object>, ListCell<Object>>() {
+                @Override
+                public ListCell<Object> call(ListView<Object> param) {
+                  return new ListCell<>() {
+                    @Override
+                    protected void updateItem(Object item, boolean empty) {
+                      if (empty || item == null) {
+                        setText(null);
+                      } else {
+                        setText(converter.apply((T) item));
+                      }
+                      super.updateItem(item, empty);
+                    }
+                  };
+                }
+              });
+          cb.setButtonCell(cb.getCellFactory().call(null));
+          cb.getItems().addAll(e.getEnumConstants());
+          cb.setUserData(
+              CustomBinding.bindBidirectional(
+                  new PropertyBinder<>(value),
+                  new SelectionModelBinder<T>((SelectionModel<T>) cb.getSelectionModel())));
+        });
   }
 }

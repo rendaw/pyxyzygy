@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.zarbosoft.javafxbinders.Helper.opt;
+import static com.zarbosoft.rendaw.common.Common.opt;
 import static com.zarbosoft.pyxyzygy.app.Global.NO_INNER;
 import static com.zarbosoft.pyxyzygy.app.Global.opacityMax;
 import static com.zarbosoft.pyxyzygy.app.Misc.moveTo;

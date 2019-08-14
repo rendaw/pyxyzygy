@@ -35,7 +35,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static com.zarbosoft.javafxbinders.Helper.opt;
+import static com.zarbosoft.rendaw.common.Common.opt;
 import static com.zarbosoft.pyxyzygy.app.GUILaunch.CACHE_OBJECT;
 import static com.zarbosoft.pyxyzygy.app.config.TrueColorImageNodeConfig.TOOL_BRUSH;
 import static com.zarbosoft.rendaw.common.Common.uncheck;

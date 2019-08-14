@@ -16,7 +16,7 @@ import javafx.scene.Group;
 import javafx.scene.control.ToolBar;
 
 import static com.zarbosoft.pyxyzygy.app.Misc.mirror;
-import static com.zarbosoft.pyxyzygy.app.Misc.noopConsumer;
+import static com.zarbosoft.rendaw.common.Common.noopConsumer;
 
 public class GroupNodeCanvasHandle extends CanvasHandle {
   private final Runnable layerListenCleanup;
@@ -41,24 +41,22 @@ public class GroupNodeCanvasHandle extends CanvasHandle {
               canvasHandle.setViewport(context, bounds.get(), positiveZoom.get());
               return canvasHandle;
             },
-            h -> h.remove(context, null),
-            noopConsumer());
+            h -> h.remove(context, null), noopConsumer
+        );
     childrenRoot = mirror(
         childHandles,
         paint.getChildren(),
         h -> {
           return h.getPaintWidget();
-        },
-        noopConsumer(),
-        noopConsumer());
+        }, noopConsumer, noopConsumer
+    );
     overlayRoot = mirror(
         childHandles,
         innerOverlay.getChildren(),
         h -> {
           return h.getOverlayWidget();
-        },
-        noopConsumer(),
-        noopConsumer());
+        }, noopConsumer, noopConsumer
+    );
     offsetListener =
         wrapper.node.addOffsetSetListeners(
             (target, offset) -> {

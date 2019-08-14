@@ -7,7 +7,6 @@ import com.zarbosoft.javafxbinders.DoubleHalfBinder;
 import com.zarbosoft.javafxbinders.HalfBinder;
 import com.zarbosoft.javafxbinders.IndirectBinder;
 import com.zarbosoft.javafxbinders.IndirectHalfBinder;
-import com.zarbosoft.javafxbinders.ListHalfBinder;
 import com.zarbosoft.javafxbinders.ListPropertyHalfBinder;
 import com.zarbosoft.pyxyzygy.app.CanvasHandle;
 import com.zarbosoft.pyxyzygy.app.Context;
@@ -20,6 +19,7 @@ import com.zarbosoft.pyxyzygy.app.config.NodeConfig;
 import com.zarbosoft.pyxyzygy.app.config.PaletteBrush;
 import com.zarbosoft.pyxyzygy.app.config.PaletteImageNodeConfig;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
+import com.zarbosoft.pyxyzygy.app.widgets.binders.ListHalfBinder;
 import com.zarbosoft.pyxyzygy.app.widgets.binders.ScalarHalfBinder;
 import com.zarbosoft.pyxyzygy.app.wrappers.FrameFinder;
 import com.zarbosoft.pyxyzygy.app.wrappers.PaletteWrapper;
@@ -46,9 +46,9 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static com.zarbosoft.javafxbinders.Helper.opt;
 import static com.zarbosoft.pyxyzygy.app.GUILaunch.CACHE_OBJECT;
 import static com.zarbosoft.pyxyzygy.app.config.PaletteImageNodeConfig.TOOL_BRUSH;
+import static com.zarbosoft.rendaw.common.Common.opt;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 
 public class PaletteImageNodeWrapper

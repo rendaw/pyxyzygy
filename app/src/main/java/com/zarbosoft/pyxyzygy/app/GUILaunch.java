@@ -8,7 +8,6 @@ import com.zarbosoft.automodel.lib.Logger;
 import com.zarbosoft.automodel.lib.ModelBase;
 import com.zarbosoft.automodel.lib.PeekVersion;
 import com.zarbosoft.interface1.TypeInfo;
-import com.zarbosoft.javafxbinders.Binder;
 import com.zarbosoft.javafxbinders.BinderRoot;
 import com.zarbosoft.javafxbinders.CustomBinding;
 import com.zarbosoft.javafxbinders.DoubleHalfBinder;
@@ -16,11 +15,10 @@ import com.zarbosoft.javafxbinders.ListPropertyHalfBinder;
 import com.zarbosoft.javafxbinders.PropertyBinder;
 import com.zarbosoft.javafxbinders.PropertyHalfBinder;
 import com.zarbosoft.javafxbinders.SelectionModelBinder;
-import com.zarbosoft.javafxbinders.SimpleBinderRoot;
 import com.zarbosoft.luxem.Luxem;
 import com.zarbosoft.luxem.tree.Typed;
 import com.zarbosoft.luxem.write.TreeWriter;
-import com.zarbosoft.pyxyzygy.app.config.CreateMode;
+import com.zarbosoft.pyxyzygy.app.config.InitialLayers;
 import com.zarbosoft.pyxyzygy.app.config.PaletteBrush;
 import com.zarbosoft.pyxyzygy.app.config.RootGlobalConfig;
 import com.zarbosoft.pyxyzygy.app.config.RootProfileConfig;
@@ -38,11 +36,11 @@ import com.zarbosoft.pyxyzygy.core.model.latest.PaletteColor;
 import com.zarbosoft.pyxyzygy.core.model.latest.PaletteImageFrame;
 import com.zarbosoft.pyxyzygy.core.model.latest.PaletteImageLayer;
 import com.zarbosoft.pyxyzygy.core.model.latest.Project;
+import com.zarbosoft.pyxyzygy.core.model.latest.ProjectLayer;
 import com.zarbosoft.pyxyzygy.core.model.latest.TrueColorImageFrame;
 import com.zarbosoft.pyxyzygy.core.model.latest.TrueColorImageLayer;
 import com.zarbosoft.pyxyzygy.seed.TrueColor;
 import com.zarbosoft.pyxyzygy.seed.Vector;
-import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.ChainComparator;
 import com.zarbosoft.rendaw.common.Common;
 import javafx.application.Application;
@@ -62,11 +60,8 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.OverrunStyle;
-import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
-import javafx.scene.control.Toggle;
-import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.ToolBar;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -86,6 +81,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -93,12 +89,12 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.zarbosoft.automodel.lib.Logger.logger;
-import static com.zarbosoft.javafxbinders.Helper.opt;
+import static com.zarbosoft.rendaw.common.Common.opt;
 import static com.zarbosoft.pyxyzygy.app.Global.NO_LENGTH;
 import static com.zarbosoft.pyxyzygy.app.Global.NO_LOOP;
 import static com.zarbosoft.pyxyzygy.app.Global.appDirs;
@@ -151,8 +147,10 @@ public class GUILaunch extends Application {
     class ProfileDialog extends ClosableScene {
       @SuppressWarnings("unused")
       private final BinderRoot rootMoveUp; // GC root
+
       @SuppressWarnings("unused")
       private final BinderRoot rootMoveDown; // GC root
+
       private final ListView<RootGlobalConfig.Profile> list;
 
       ProfileDialog() {
@@ -214,7 +212,8 @@ public class GUILaunch extends Application {
         newProfile.setOnAction(
             e -> {
               RootGlobalConfig.Profile profile1 = new RootGlobalConfig.Profile();
-              profile1.name.set(profileNames.uniqueName(localization.getString("new.profile.default.name")));
+              profile1.name.set(
+                  profileNames.uniqueName(localization.getString("new.profile.default.name")));
               profile1.id = globalConfig.nextId++;
               list.getItems().add(profile1);
               list.getSelectionModel().clearSelection();
@@ -243,7 +242,8 @@ public class GUILaunch extends Application {
               }
               list.getItems().remove(profile1);
             });
-        Button moveUpButton = HelperJFX.button("arrow-up.png", localization.getString("move.profile.up"));
+        Button moveUpButton =
+            HelperJFX.button("arrow-up.png", localization.getString("move.profile.up"));
         rootMoveUp =
             CustomBinding.bind(
                 moveUpButton.disableProperty(), listIndexBinder.map(i -> opt(i.intValue() < 1)));
@@ -404,8 +404,6 @@ public class GUILaunch extends Application {
                 },
                 resolvedPath);
 
-        SimpleObjectProperty<CreateMode> createMode = profileConfig.newProjectNormalMode;
-
         Runnable enterPath =
             () -> {
               if (!Files.isDirectory(resolvedPath.get())) return;
@@ -414,7 +412,7 @@ public class GUILaunch extends Application {
         Runnable newResolvedPath =
             () -> {
               try {
-                newProject(primaryStage, resolvedPath.get(), createMode.get());
+                newProject(primaryStage, resolvedPath.get());
               } catch (Exception e) {
                 logger.writeException(e, "Error creating new project");
                 HelperJFX.exceptionPopup(
@@ -552,72 +550,18 @@ public class GUILaunch extends Application {
         VBox listLayout = new VBox();
         listLayout.getChildren().addAll(toolbar, list);
 
-        RadioButton newNormal = new RadioButton(localization.getString("normal.project"));
-        RadioButton newPixel = new RadioButton(localization.getString("pixel.project"));
-        new ToggleGroup() {
-          BinderRoot toggleRoot;
-
-          {
-            getToggles().addAll(newNormal, newPixel);
-            toggleRoot =
-                CustomBinding.bindBidirectional(
-                    new PropertyBinder<>(createMode),
-                    new Binder<CreateMode>() {
-                      public CreateMode convert(Toggle v) {
-                        if (v == newNormal) return CreateMode.normal;
-                        if (v == newPixel) return CreateMode.pixel;
-                        if (v == null) return null;
-                        throw new Assertion();
-                      }
-
-                      @Override
-                      public BinderRoot addListener(Consumer<CreateMode> listener) {
-                        final ChangeListener<Toggle> inner =
-                            (observable, oldValue, newValue) -> {
-                              listener.accept(convert(newValue));
-                            };
-                        selectedToggleProperty().addListener(inner);
-                        inner.changed(null, null, selectedToggleProperty().getValue());
-                        return new SimpleBinderRoot(this, inner);
-                      }
-
-                      @Override
-                      public void removeRoot(Object key) {
-                        selectedToggleProperty()
-                            .removeListener((ChangeListener<? super Toggle>) key);
-                      }
-
-                      @Override
-                      public Optional<CreateMode> get() {
-                        return Optional.ofNullable(convert(selectedToggleProperty().get()));
-                      }
-
-                      @Override
-                      public void set(CreateMode v) {
-                        switch (v) {
-                          case normal:
-                            selectToggle(newNormal);
-                            break;
-                          case pixel:
-                            selectToggle(newPixel);
-                            break;
-                          default:
-                            throw new Assertion();
-                        }
-                      }
-                    });
-          }
-        };
         Button create =
             new Button(
-                localization.getString("new.project"), new ImageView(icon("folder-plus-outline.png")));
+                localization.getString("new.project"),
+                new ImageView(icon("folder-plus-outline.png")));
         create.setOnAction(
             ev -> {
               newResolvedPath.run();
             });
         Button open =
             new Button(
-                localization.getString("open.project"), new ImageView(icon("folder-open-outline.png")));
+                localization.getString("open.project"),
+                new ImageView(icon("folder-open-outline.png")));
         open.setOnAction(
             ev -> {
               openResolvedPath.run();
@@ -630,7 +574,7 @@ public class GUILaunch extends Application {
         HBox buttonLayout = new HBox();
         buttonLayout.setSpacing(3);
         buttonLayout.setAlignment(Pos.CENTER_RIGHT);
-        buttonLayout.getChildren().addAll(newNormal, newPixel, create, open, cancel);
+        buttonLayout.getChildren().addAll(create, open, cancel);
 
         VBox top = (VBox) getRoot();
         top.setFillWidth(true);
@@ -666,8 +610,6 @@ public class GUILaunch extends Application {
             Bindings.createObjectBinding(
                 () -> cwd.get().resolve(text.getText()), cwd, text.textProperty()));
         here.textProperty().bind(cwd.asString().concat("/"));
-        newNormal.disableProperty().bind(pathExists);
-        newPixel.disableProperty().bind(pathExists);
         create.disableProperty().bind(pathExists);
         open.disableProperty().bind(pathIsProject.not());
         list.getSelectionModel().clearSelection();
@@ -780,7 +722,7 @@ public class GUILaunch extends Application {
             }
           };
       cacheStatsTimer.scheduleAtFixedRate(cacheStatsTask, 0, 1000 * 60 * 5);
-      //cacheStatsTimer.scheduleAtFixedRate(cacheStatsTask, 0, 1000);
+      // cacheStatsTimer.scheduleAtFixedRate(cacheStatsTask, 0, 1000);
       shutdown.add(
           () -> {
             cacheStatsTimer.cancel();
@@ -818,9 +760,7 @@ public class GUILaunch extends Application {
                           String.format("Directory is not a project", path));
                     }
                   } else {
-                    CreateMode createMode =
-                        CreateMode.valueOf(this.getParameters().getUnnamed().get(1));
-                    newProject(primaryStage, path, createMode);
+                    newProject(primaryStage, path);
                   }
                 }
               },
@@ -876,81 +816,83 @@ public class GUILaunch extends Application {
             });
   }
 
-  public static void newProject(Stage primaryStage, Path path, CreateMode createMode) {
+  public static void newProject(Stage primaryStage, Path path) {
     profileConfig.lastDir = path.getParent().toString();
     Model model =
         ModelVersions.create(
             path,
             profileConfig.maxUndo,
-            createMode.tileSize(),
+            64,
             context -> {
-              GroupChild groupChild = GroupChild.create(context);
-              groupChild.initialOpacitySet(context, opacityMax);
-              groupChild.initialEnabledSet(context, true);
+              Function<ProjectLayer, GroupChild> createChild =
+                  l -> {
+                    GroupChild groupChild = GroupChild.create(context);
+                    groupChild.initialOpacitySet(context, opacityMax);
+                    groupChild.initialEnabledSet(context, true);
 
-              GroupPositionFrame groupPositionFrame = GroupPositionFrame.create(context);
-              groupPositionFrame.initialLengthSet(context, NO_LENGTH);
-              groupPositionFrame.initialOffsetSet(context, Vector.ZERO);
-              groupChild.initialPositionFramesAdd(context, ImmutableList.of(groupPositionFrame));
+                    GroupPositionFrame groupPositionFrame = GroupPositionFrame.create(context);
+                    groupPositionFrame.initialLengthSet(context, NO_LENGTH);
+                    groupPositionFrame.initialOffsetSet(context, Vector.ZERO);
+                    groupChild.initialPositionFramesAdd(
+                        context, ImmutableList.of(groupPositionFrame));
 
-              GroupTimeFrame groupTimeFrame = GroupTimeFrame.create(context);
-              groupTimeFrame.initialLengthSet(context, NO_LENGTH);
-              groupTimeFrame.initialInnerOffsetSet(context, 0);
-              groupTimeFrame.initialInnerLoopSet(context, NO_LOOP);
-              groupChild.initialTimeFramesAdd(context, ImmutableList.of(groupTimeFrame));
+                    GroupTimeFrame groupTimeFrame = GroupTimeFrame.create(context);
+                    groupTimeFrame.initialLengthSet(context, NO_LENGTH);
+                    groupTimeFrame.initialInnerOffsetSet(context, 0);
+                    groupTimeFrame.initialInnerLoopSet(context, NO_LOOP);
+                    groupChild.initialTimeFramesAdd(context, ImmutableList.of(groupTimeFrame));
 
-              switch (createMode) {
-                case normal:
-                  {
-                    TrueColorImageLayer trueColorImageNode = TrueColorImageLayer.create(context);
-                    trueColorImageNode.initialNameSet(context, Global.getTrueColorLayerName());
-                    trueColorImageNode.initialOffsetSet(context, Vector.ZERO);
-                    TrueColorImageFrame trueColorImageFrame = TrueColorImageFrame.create(context);
-                    trueColorImageFrame.initialLengthSet(context, -1);
-                    trueColorImageFrame.initialOffsetSet(context, Vector.ZERO);
-                    trueColorImageNode.initialFramesAdd(
-                        context, ImmutableList.of(trueColorImageFrame));
-                    groupChild.initialInnerSet(context, trueColorImageNode);
-                    break;
-                  }
-                case pixel:
-                  {
-                    Palette palette = Palette.create(context);
-                    palette.initialNameSet(context, Global.getPaletteName());
-                    palette.initialNextIdSet(context, 2);
-                    PaletteColor transparent = PaletteColor.create(context);
-                    transparent.initialIndexSet(context, 0);
-                    transparent.initialColorSet(context, TrueColor.fromJfx(Color.TRANSPARENT));
-                    PaletteColor black = PaletteColor.create(context);
-                    black.initialIndexSet(context, 1);
-                    black.initialColorSet(context, TrueColor.fromJfx(Color.BLACK));
-                    palette.initialEntriesAdd(context, ImmutableList.of(transparent, black));
-                    ((Project) context.root).initialPalettesAdd(context, ImmutableList.of(palette));
+                    groupChild.initialInnerSet(context, l);
 
-                    PaletteImageLayer paletteImageNode = PaletteImageLayer.create(context);
-                    paletteImageNode.initialPaletteSet(context, palette);
-                    paletteImageNode.initialNameSet(context, Global.getPaletteLayerName());
-                    paletteImageNode.initialOffsetSet(context, Vector.ZERO);
-                    PaletteImageFrame paletteImageFrame = PaletteImageFrame.create(context);
-                    paletteImageFrame.initialLengthSet(context, -1);
-                    paletteImageFrame.initialOffsetSet(context, Vector.ZERO);
-                    paletteImageNode.initialFramesAdd(context, ImmutableList.of(paletteImageFrame));
-                    groupChild.initialInnerSet(context, paletteImageNode);
-                    break;
-                  }
-                default:
-                  throw new Assertion();
+                    return groupChild;
+                  };
+
+              List<GroupChild> children = new ArrayList<>();
+              if (profileConfig.newProjectInitialLayers.get() == InitialLayers.BOTH
+                  || profileConfig.newProjectInitialLayers.get() == InitialLayers.TRUE_COLOR) {
+                TrueColorImageLayer trueColorImageNode = TrueColorImageLayer.create(context);
+                trueColorImageNode.initialNameSet(context, Global.getTrueColorLayerName());
+                trueColorImageNode.initialOffsetSet(context, Vector.ZERO);
+                TrueColorImageFrame trueColorImageFrame = TrueColorImageFrame.create(context);
+                trueColorImageFrame.initialLengthSet(context, -1);
+                trueColorImageFrame.initialOffsetSet(context, Vector.ZERO);
+                trueColorImageNode.initialFramesAdd(context, ImmutableList.of(trueColorImageFrame));
+                children.add(createChild.apply(trueColorImageNode));
+              }
+              if (profileConfig.newProjectInitialLayers.get() == InitialLayers.BOTH
+                  || profileConfig.newProjectInitialLayers.get() == InitialLayers.PIXEL) {
+                Palette palette = Palette.create(context);
+                palette.initialNameSet(context, Global.getPaletteName());
+                palette.initialNextIdSet(context, 2);
+                PaletteColor transparent = PaletteColor.create(context);
+                transparent.initialIndexSet(context, 0);
+                transparent.initialColorSet(context, TrueColor.fromJfx(Color.TRANSPARENT));
+                PaletteColor black = PaletteColor.create(context);
+                black.initialIndexSet(context, 1);
+                black.initialColorSet(context, TrueColor.fromJfx(Color.BLACK));
+                palette.initialEntriesAdd(context, ImmutableList.of(transparent, black));
+                ((Project) context.root).initialPalettesAdd(context, ImmutableList.of(palette));
+
+                PaletteImageLayer paletteImageNode = PaletteImageLayer.create(context);
+                paletteImageNode.initialPaletteSet(context, palette);
+                paletteImageNode.initialNameSet(context, Global.getPaletteLayerName());
+                paletteImageNode.initialOffsetSet(context, Vector.ZERO);
+                PaletteImageFrame paletteImageFrame = PaletteImageFrame.create(context);
+                paletteImageFrame.initialLengthSet(context, -1);
+                paletteImageFrame.initialOffsetSet(context, Vector.ZERO);
+                paletteImageNode.initialFramesAdd(context, ImmutableList.of(paletteImageFrame));
+                children.add(createChild.apply(paletteImageNode));
               }
 
               GroupLayer groupNode = GroupLayer.create(context);
               groupNode.initialNameSet(context, getGroupLayerName());
               groupNode.initialOffsetSet(context, Vector.ZERO);
-              groupNode.initialChildrenAdd(context, ImmutableList.of(groupChild));
+              groupNode.initialChildrenAdd(context, children);
 
               ((Project) context.root).initialTopAdd(context, ImmutableList.of(groupNode));
             });
     Context context = new Context(model);
-    context.config.defaultZoom = createMode.defaultZoom();
+    context.config.defaultZoom = profileConfig.defaultZoom.get();
     context.config.viewPath = ImmutableList.of(0);
     context.config.editPath = ImmutableList.of(0, 0);
     new Window().start(context, primaryStage, true);

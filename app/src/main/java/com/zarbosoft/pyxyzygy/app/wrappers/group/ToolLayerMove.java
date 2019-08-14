@@ -22,10 +22,10 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.SelectionMode;
 import javafx.util.Callback;
 
-import static com.zarbosoft.javafxbinders.Helper.unopt;
+import static com.zarbosoft.rendaw.common.Common.unopt;
 import static com.zarbosoft.pyxyzygy.app.Global.NO_INNER;
 import static com.zarbosoft.pyxyzygy.app.Global.localization;
-import static com.zarbosoft.pyxyzygy.app.Misc.noopConsumer;
+import static com.zarbosoft.rendaw.common.Common.noopConsumer;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.centerCursor;
 
 public class ToolLayerMove extends Tool {
@@ -67,7 +67,7 @@ public class ToolLayerMove extends Tool {
           }
         });
     ObservableList<GroupChild> children = FXCollections.observableArrayList();
-    mirrorRoot = wrapper.node.mirrorChildren(children, c -> c, noopConsumer(), noopConsumer());
+    mirrorRoot = wrapper.node.mirrorChildren(children, c -> c, noopConsumer, noopConsumer);
     layerList.setItems(children);
 
     selectionRoot =

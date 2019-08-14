@@ -27,7 +27,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.StrokeType;
 
-import static com.zarbosoft.javafxbinders.Helper.unopt;
+import static com.zarbosoft.rendaw.common.Common.unopt;
 import static com.zarbosoft.pyxyzygy.app.Global.localization;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.pad;
 

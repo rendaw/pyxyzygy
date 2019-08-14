@@ -35,7 +35,7 @@ import javafx.scene.shape.StrokeType;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 
-import static com.zarbosoft.javafxbinders.Helper.opt;
+import static com.zarbosoft.rendaw.common.Common.opt;
 import static com.zarbosoft.pyxyzygy.app.Global.localization;
 import static com.zarbosoft.pyxyzygy.app.config.CameraNodeConfig.TOOL_VIEWPORT;
 import static com.zarbosoft.pyxyzygy.app.config.NodeConfig.TOOL_MOVE;

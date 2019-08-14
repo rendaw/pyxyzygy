@@ -22,7 +22,7 @@ import javafx.scene.shape.Rectangle;
 import java.util.Optional;
 
 import static com.zarbosoft.javafxbinders.CustomBinding.bindStyle;
-import static com.zarbosoft.javafxbinders.Helper.opt;
+import static com.zarbosoft.rendaw.common.Common.opt;
 
 public class ColorSwatch extends StackPane {
   public final double gapScaler;

@@ -15,7 +15,7 @@ import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 
-import static com.zarbosoft.javafxbinders.Helper.opt;
+import static com.zarbosoft.rendaw.common.Common.opt;
 
 public abstract class BrushButton extends ToggleButton implements Garb {
   private final BinderRoot cleanupSelected;

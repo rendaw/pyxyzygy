@@ -27,7 +27,7 @@ import javafx.scene.paint.LinearGradient;
 import javafx.scene.paint.Stop;
 
 import static com.zarbosoft.javafxbinders.CustomBinding.bindStyle;
-import static com.zarbosoft.javafxbinders.Helper.opt;
+import static com.zarbosoft.rendaw.common.Common.opt;
 
 public class TrueColorPicker extends GridPane {
   public final DoubleProperty hue = new SimpleDoubleProperty(0);

@@ -12,7 +12,7 @@ import javafx.scene.effect.BlendMode;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 
-import static com.zarbosoft.javafxbinders.Helper.opt;
+import static com.zarbosoft.rendaw.common.Common.opt;
 
 public class Origin extends Group {
   private final Line originVert = new Line();

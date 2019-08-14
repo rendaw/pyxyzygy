@@ -18,7 +18,7 @@ import javafx.beans.value.ObservableObjectValue;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.image.Image;
 
-import static com.zarbosoft.javafxbinders.Helper.opt;
+import static com.zarbosoft.rendaw.common.Common.opt;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 
 public class RowAdapterGroupChild extends RowAdapter {

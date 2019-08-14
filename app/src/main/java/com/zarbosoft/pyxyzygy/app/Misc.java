@@ -23,7 +23,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static com.zarbosoft.javafxbinders.Helper.opt;
+import static com.zarbosoft.rendaw.common.Common.opt;
 import static com.zarbosoft.pyxyzygy.app.Global.localization;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 
@@ -192,9 +192,4 @@ public class Misc {
     };
   }
 
-  public static Consumer noopConsumer = t -> {};
-
-  public static <T> Consumer<T> noopConsumer() {
-    return noopConsumer;
-  }
 }

@@ -16,6 +16,7 @@ import com.zarbosoft.pyxyzygy.core.model.latest.GroupLayer;
 import com.zarbosoft.pyxyzygy.core.model.latest.GroupPositionFrame;
 import com.zarbosoft.pyxyzygy.core.model.latest.GroupTimeFrame;
 import com.zarbosoft.pyxyzygy.core.model.latest.ProjectLayer;
+import com.zarbosoft.rendaw.common.Common;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.TreeItem;
@@ -63,8 +64,8 @@ public class GroupNodeWrapper extends Wrapper {
               });
           return child.tree.get();
         },
-        c -> {},
-        Misc.noopConsumer());
+        c -> {}, Common.noopConsumer
+    );
   }
 
   protected GroupNodeConfig initConfig(Context context, long id) {

@@ -24,7 +24,7 @@ import javafx.scene.Group;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
-import static com.zarbosoft.javafxbinders.Helper.opt;
+import static com.zarbosoft.rendaw.common.Common.opt;
 
 public class OnionSkin {
   final ImageView widget = NearestNeighborImageView.create();

@@ -19,7 +19,7 @@ import java.util.Optional;
 import java.util.WeakHashMap;
 import java.util.function.Consumer;
 
-import static com.zarbosoft.javafxbinders.Helper.opt;
+import static com.zarbosoft.rendaw.common.Common.opt;
 
 public class PaletteWrapper {
   private static WeakHashMap<Palette, PaletteWrapper> wrapperLookup = new WeakHashMap<>();

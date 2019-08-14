@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import static com.zarbosoft.javafxbinders.Helper.opt;
+import static com.zarbosoft.rendaw.common.Common.opt;
 
 public class Context {
   public final Model model;

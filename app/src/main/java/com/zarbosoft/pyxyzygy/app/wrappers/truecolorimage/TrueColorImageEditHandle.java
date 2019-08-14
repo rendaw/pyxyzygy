@@ -24,6 +24,7 @@ import com.zarbosoft.pyxyzygy.app.wrappers.baseimage.BrushButton;
 import com.zarbosoft.pyxyzygy.seed.TrueColor;
 import com.zarbosoft.pyxyzygy.seed.Vector;
 import com.zarbosoft.rendaw.common.Assertion;
+import com.zarbosoft.rendaw.common.Common;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.SimpleDoubleProperty;
@@ -43,7 +44,7 @@ import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import static com.zarbosoft.javafxbinders.Helper.opt;
+import static com.zarbosoft.rendaw.common.Common.opt;
 import static com.zarbosoft.pyxyzygy.app.Global.NO_INNER;
 import static com.zarbosoft.pyxyzygy.app.Global.localization;
 import static com.zarbosoft.pyxyzygy.app.Global.pasteHotkey;
@@ -290,9 +291,8 @@ public class TrueColorImageEditHandle extends EditHandle {
                   manualSetTool(window, TOOL_BRUSH);
                 }
               };
-            },
-            Misc.noopConsumer(),
-            Misc.noopConsumer());
+            }, Common.noopConsumer, Common.noopConsumer
+        );
 
     window.toolBarChildren.set(this, ImmutableList.of(move, select, brushesBox));
 

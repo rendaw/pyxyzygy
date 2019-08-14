@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import com.zarbosoft.interface1.TypeInfo;
 import com.zarbosoft.luxem.Luxem;
 import com.zarbosoft.luxem.read.ReadTypeGrammar;
+import com.zarbosoft.luxem.read.TreeReader;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ScanResult;
 import javafx.application.Platform;
@@ -23,6 +24,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -80,12 +82,20 @@ public class ConfigBase {
         uncheck(
             () -> {
               Files.createDirectories(configPath.getParent());
+              List tree;
               try (InputStream source = Files.newInputStream(configPath)) {
-                return (T)
-                    Luxem.parse(scan, configType).map(configTypeMap).from(source).findFirst().get();
+                tree = new TreeReader().read(source);
               } catch (NoSuchFileException e) {
                 return create.get();
               }
+
+              // Migrations
+              Map root = (Map) tree.get(0);
+              root.remove("newProjectNormalMode");
+
+              // Parse from tree
+              return (T)
+                Luxem.parse(scan, configType).map(configTypeMap).fromTree(tree).findFirst().get();
             });
     out.start();
     out.path = configPath;
