@@ -41,22 +41,26 @@ public class GroupNodeCanvasHandle extends CanvasHandle {
               canvasHandle.setViewport(context, bounds.get(), positiveZoom.get());
               return canvasHandle;
             },
-            h -> h.remove(context, null), noopConsumer
-        );
-    childrenRoot = mirror(
-        childHandles,
-        paint.getChildren(),
-        h -> {
-          return h.getPaintWidget();
-        }, noopConsumer, noopConsumer
-    );
-    overlayRoot = mirror(
-        childHandles,
-        innerOverlay.getChildren(),
-        h -> {
-          return h.getOverlayWidget();
-        }, noopConsumer, noopConsumer
-    );
+            h -> h.remove(context, null),
+            noopConsumer);
+    childrenRoot =
+        mirror(
+            childHandles,
+            paint.getChildren(),
+            h -> {
+              return h.getPaintWidget();
+            },
+            noopConsumer,
+            noopConsumer);
+    overlayRoot =
+        mirror(
+            childHandles,
+            innerOverlay.getChildren(),
+            h -> {
+              return h.getOverlayWidget();
+            },
+            noopConsumer,
+            noopConsumer);
     offsetListener =
         wrapper.node.addOffsetSetListeners(
             (target, offset) -> {

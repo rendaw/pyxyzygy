@@ -15,10 +15,10 @@ public class MirrorGroupNode extends ObjectMirror {
   private final Runnable childrenListenCleanup;
 
   public MirrorGroupNode(
-    com.zarbosoft.pyxyzygy.app.Context context,
-    Context mirrorContext,
-    ObjectMirror parent,
-    GroupLayer node) {
+      com.zarbosoft.pyxyzygy.app.Context context,
+      Context mirrorContext,
+      ObjectMirror parent,
+      GroupLayer node) {
     this.parentIndex = -1;
     this.parent = parent;
     this.node = node;
@@ -33,7 +33,7 @@ public class MirrorGroupNode extends ObjectMirror {
               return mirrorContext.create(context, this, child);
             },
             child -> child.remove(context),
-            at -> {
+            (at, end) -> {
               for (int i = at; i < children.size(); ++i) children.get(i).setParentIndex(i);
             });
     Misc.mirror(
@@ -45,8 +45,9 @@ public class MirrorGroupNode extends ObjectMirror {
                 tree.get().getChildren().set(child.parentIndex, newValue);
               });
           return child.tree.get();
-        }, Common.noopConsumer, Common.noopConsumer
-    );
+        },
+        Common.noopConsumer,
+        Common.noopConsumer);
   }
 
   @Override

@@ -16,6 +16,7 @@ public abstract class CanvasHandle {
 
   /**
    * Convert vector in parent space to local space at the current time
+   *
    * @param outerPosition
    * @return
    */

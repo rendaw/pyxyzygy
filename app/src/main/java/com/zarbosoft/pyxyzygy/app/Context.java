@@ -15,6 +15,7 @@ import com.zarbosoft.pyxyzygy.seed.TrueColor;
 import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -51,13 +52,14 @@ public class Context {
               return config;
             });
     this.project = (Project) model.root;
+    project.setTileDir(model.path.resolve("tiles"));
     canUndo =
         new HalfBinder<Boolean>() {
           @Override
           public BinderRoot addListener(Consumer<Boolean> listener) {
             Consumer<Integer> inner;
             model.addUndoSizeListener(inner = i -> listener.accept(i > 0));
-            return new SimpleBinderRoot(this,inner);
+            return new SimpleBinderRoot(this, inner);
           }
 
           @Override
@@ -71,24 +73,24 @@ public class Context {
           }
         };
     canRedo =
-      new HalfBinder<Boolean>() {
-        @Override
-        public BinderRoot addListener(Consumer<Boolean> listener) {
-          Consumer<Integer> inner;
-          model.addRedoSizeListener(inner = i -> listener.accept(i > 0));
-          return new SimpleBinderRoot(this,inner);
-        }
+        new HalfBinder<Boolean>() {
+          @Override
+          public BinderRoot addListener(Consumer<Boolean> listener) {
+            Consumer<Integer> inner;
+            model.addRedoSizeListener(inner = i -> listener.accept(i > 0));
+            return new SimpleBinderRoot(this, inner);
+          }
 
-        @Override
-        public void removeRoot(Object key) {
-          model.removeRedoSizeListener((Consumer<Integer>) key);
-        }
+          @Override
+          public void removeRoot(Object key) {
+            model.removeRedoSizeListener((Consumer<Integer>) key);
+          }
 
-        @Override
-        public Optional<Boolean> get() {
-          return opt(model.redoSize() != 0);
-        }
-      };
+          @Override
+          public Optional<Boolean> get() {
+            return opt(model.redoSize() != 0);
+          }
+        };
   }
 
   public void change(History.Tuple unique, Consumer<ChangeStepBuilder> consumer) {

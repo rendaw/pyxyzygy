@@ -42,7 +42,6 @@ import com.zarbosoft.pyxyzygy.core.model.latest.ProjectLayer;
 import com.zarbosoft.pyxyzygy.core.model.latest.TrueColorImageFrame;
 import com.zarbosoft.pyxyzygy.core.model.latest.TrueColorImageLayer;
 import com.zarbosoft.rendaw.common.Assertion;
-import com.zarbosoft.rendaw.common.Common;
 import com.zarbosoft.rendaw.common.Pair;
 import javafx.application.Platform;
 import javafx.beans.Observable;
@@ -102,11 +101,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.zarbosoft.automodel.lib.Logger.logger;
-import static com.zarbosoft.rendaw.common.Common.opt;
 import static com.zarbosoft.pyxyzygy.app.Global.NO_INNER;
 import static com.zarbosoft.pyxyzygy.app.Global.localization;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 import static com.zarbosoft.pyxyzygy.app.wrappers.camera.CameraWrapper.getActualFrameTimeMs;
+import static com.zarbosoft.rendaw.common.Common.noopBiConsumer;
+import static com.zarbosoft.rendaw.common.Common.opt;
 import static com.zarbosoft.rendaw.common.Common.sublist;
 
 public class Timeline {
@@ -502,33 +502,34 @@ public class Timeline {
           }
         });
     tree.getColumns().addAll(nameColumn, framesColumn);
-    specificChildRoot = CustomBinding.bindBidirectional(
-        new IndirectBinder<>(
-            window.selectedForEditPlayingBinder,
-            e -> {
-              if (e.getWrapper() instanceof GroupNodeWrapper) {
-                return opt(((GroupNodeWrapper) e.getWrapper()).specificChild);
-              } else {
-                return Optional.empty();
-              }
-            }),
-        new SelectionModelBinder<>(tree.getSelectionModel())
-            .<GroupChild>bimap(
-                t -> {
-                  if (t == null) return Optional.empty();
-                  if (groupTreeItemLookup.containsKey(t)) {
-                    return opt(groupTreeItemLookup.get(t));
-                  } else if (groupTreeItemLookup.containsKey(t.getParent())) {
-                    return opt(groupTreeItemLookup.get(t.getParent()));
+    specificChildRoot =
+        CustomBinding.bindBidirectional(
+            new IndirectBinder<>(
+                window.selectedForEditPlayingBinder,
+                e -> {
+                  if (e.getWrapper() instanceof GroupNodeWrapper) {
+                    return opt(((GroupNodeWrapper) e.getWrapper()).specificChild);
+                  } else {
+                    return Optional.empty();
                   }
-                  return Optional.<GroupChild>empty();
-                },
-                c -> {
-                  if (groupTreeItemLookup.inverse().containsKey(c)) {
-                    return opt(groupTreeItemLookup.inverse().get(c));
-                  }
-                  return Optional.<TreeItem<RowAdapter>>empty();
-                }));
+                }),
+            new SelectionModelBinder<>(tree.getSelectionModel())
+                .<GroupChild>bimap(
+                    t -> {
+                      if (t == null) return Optional.empty();
+                      if (groupTreeItemLookup.containsKey(t)) {
+                        return opt(groupTreeItemLookup.get(t));
+                      } else if (groupTreeItemLookup.containsKey(t.getParent())) {
+                        return opt(groupTreeItemLookup.get(t.getParent()));
+                      }
+                      return Optional.<GroupChild>empty();
+                    },
+                    c -> {
+                      if (groupTreeItemLookup.inverse().containsKey(c)) {
+                        return opt(groupTreeItemLookup.inverse().get(c));
+                      }
+                      return Optional.<TreeItem<RowAdapter>>empty();
+                    }));
     framesColumn
         .prefWidthProperty()
         .bind(
@@ -812,8 +813,8 @@ public class Timeline {
                     groupTreeItemLookup.put(childRowAdapter, child);
                     return childRowAdapter;
                   },
-                  this::cleanItemSubtree, Common.noopConsumer
-              ));
+                  this::cleanItemSubtree,
+                  noopBiConsumer));
       RowAdapter loop;
       if (edit instanceof CameraWrapper) {
         loop = new RowAdapterCameraLoop(this, (Camera) ((CameraWrapper) edit).node);
@@ -1149,7 +1150,7 @@ public class Timeline {
                         };
                       },
                       c -> c.run(),
-                      at -> {
+                      (at, end) -> {
                         recalcTimes();
                       });
           suppressRecalc -= 1;

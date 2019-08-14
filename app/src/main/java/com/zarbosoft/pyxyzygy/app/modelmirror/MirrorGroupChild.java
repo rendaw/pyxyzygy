@@ -12,10 +12,10 @@ public class MirrorGroupChild extends ObjectMirror {
   private ObjectMirror child;
 
   public MirrorGroupChild(
-    com.zarbosoft.pyxyzygy.app.Context context,
-    Context mirrorContext,
-    ObjectMirror parent,
-    GroupChild node) {
+      com.zarbosoft.pyxyzygy.app.Context context,
+      Context mirrorContext,
+      ObjectMirror parent,
+      GroupChild node) {
     this.parent = parent;
     this.parentIndex = -1;
     this.node = node;

@@ -42,6 +42,7 @@ import javafx.scene.image.Image;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -197,7 +198,7 @@ public class PaletteImageNodeWrapper
       List<I> list,
       Function<PaletteImageFrame, I> create,
       Consumer<I> remove,
-      Consumer<Integer> change) {
+      BiConsumer<Integer, Integer> change) {
     return node.mirrorFrames(list, create, remove, change);
   }
 

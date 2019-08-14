@@ -291,8 +291,9 @@ public class TrueColorImageEditHandle extends EditHandle {
                   manualSetTool(window, TOOL_BRUSH);
                 }
               };
-            }, Common.noopConsumer, Common.noopConsumer
-        );
+            },
+            Common.noopConsumer,
+            Common.noopConsumer);
 
     window.toolBarChildren.set(this, ImmutableList.of(move, select, brushesBox));
 

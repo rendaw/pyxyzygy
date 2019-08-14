@@ -9,6 +9,8 @@ import com.zarbosoft.automodel.task.MapType;
 import com.zarbosoft.pyxyzygy.seed.TrueColor;
 import com.zarbosoft.pyxyzygy.seed.Vector;
 
+import java.nio.file.Path;
+
 public class GenerateModel extends TaskBase {
   @Override
   public void run() {
@@ -65,7 +67,7 @@ public class GenerateModel extends TaskBase {
                                   new MapType(AutoType.lon, version.obj("PaletteTile")),
                                   f -> f.versioned())),
                       f -> f.versioned())
-                  .field("prelength", AutoType.integer, f -> f.versioned().def("$L",0));
+                  .field("prelength", AutoType.integer, f -> f.versioned().def("$L", 0));
               version
                   .obj("TrueColorImageLayer")
                   .parent(projectLayer)
@@ -84,7 +86,7 @@ public class GenerateModel extends TaskBase {
                                   new MapType(AutoType.lon, version.obj("TrueColorTile")),
                                   f -> f.versioned())),
                       f -> f.versioned())
-                  .field("prelength", AutoType.integer, f -> f.versioned().def("$L",0));
+                  .field("prelength", AutoType.integer, f -> f.versioned().def("$L", 0));
 
               AutoObject groupLayer =
                   version
@@ -114,7 +116,10 @@ public class GenerateModel extends TaskBase {
                                                   AutoType.integer,
                                                   f -> f.versioned())),
                                       f1 -> f1.versioned())
-                                  .field("timePrelength", AutoType.integer, f -> f.versioned().def("$L",0))
+                                  .field(
+                                      "timePrelength",
+                                      AutoType.integer,
+                                      f -> f.versioned().def("$L", 0))
                                   .field(
                                       "positionFrames",
                                       new ListType(
@@ -126,7 +131,10 @@ public class GenerateModel extends TaskBase {
                                                   AutoType.of(Vector.class),
                                                   f -> f.versioned().def("$T.ZERO", Vector.class))),
                                       f1 -> f1.versioned())
-                                  .field("positionPrelength", AutoType.integer, f -> f.versioned().def("$L",0))
+                                  .field(
+                                      "positionPrelength",
+                                      AutoType.integer,
+                                      f -> f.versioned().def("$L", 0))
                                   .field("inner", projectLayer, f -> f.versioned())
                                   .field(
                                       "opacity",
@@ -148,7 +156,8 @@ public class GenerateModel extends TaskBase {
                   .rootObj("Project")
                   .field("tileSize", AutoType.integer, f -> f.persist())
                   .field("top", new ListType(projectLayer), f -> f.versioned())
-                  .field("palettes", new ListType(palette), f -> f.versioned());
+                  .field("palettes", new ListType(palette), f -> f.versioned())
+                  .field("tileDir", AutoType.of(Path.class), f -> f.mutable().def("null"));
             })
         .generate(path);
   }

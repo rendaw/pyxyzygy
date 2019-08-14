@@ -25,8 +25,7 @@ public abstract class Wrapper {
 
   public abstract NodeConfig getConfig();
 
-  public abstract CanvasHandle buildCanvas(
-    Context context, Window window, CanvasHandle parent);
+  public abstract CanvasHandle buildCanvas(Context context, Window window, CanvasHandle parent);
 
   public abstract EditHandle buildEditControls(Context context, Window window);
 

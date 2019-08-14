@@ -23,9 +23,9 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static com.zarbosoft.rendaw.common.Common.opt;
 import static com.zarbosoft.pyxyzygy.app.Global.localization;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
+import static com.zarbosoft.rendaw.common.Common.opt;
 
 public class Misc {
   public static void moveTo(List list, int source, int count, int dest) {
@@ -47,7 +47,7 @@ public class Misc {
   }
 
   public static Runnable nodeFormFields(
-    Context context, WidgetFormBuilder builder, Wrapper wrapper) {
+      Context context, WidgetFormBuilder builder, Wrapper wrapper) {
     return new Runnable() {
       private BinderRoot enabledCleanup;
       private BinderRoot opacityCleanup;
@@ -135,7 +135,7 @@ public class Misc {
   }
 
   public static void separateFormField(
-    Context context, WidgetFormBuilder builder, Wrapper wrapper) {
+      Context context, WidgetFormBuilder builder, Wrapper wrapper) {
     builder.buttons(
         build ->
             build.button(
@@ -191,5 +191,4 @@ public class Misc {
       }
     };
   }
-
 }

@@ -176,15 +176,14 @@ public class ToolBrush extends BaseToolBrush<TrueColorImageFrame, TrueColorImage
 
   @Override
   public void mark(
-    Context context,
-    Window window,
-    DoubleVector localStart,
-    DoubleVector localEnd,
-    DoubleVector localStartWithOffset,
-    DoubleVector localEndWithOffset,
-    DoubleVector globalStart,
-    DoubleVector globalEnd
-  ) {
+      Context context,
+      Window window,
+      DoubleVector localStart,
+      DoubleVector localEnd,
+      DoubleVector localStartWithOffset,
+      DoubleVector localEndWithOffset,
+      DoubleVector globalStart,
+      DoubleVector globalEnd) {
     if (false) {
       throw new Assertion();
     } else if (window.pressed.contains(KeyCode.CONTROL) && window.pressed.contains(KeyCode.SHIFT)) {
@@ -213,11 +212,16 @@ public class ToolBrush extends BaseToolBrush<TrueColorImageFrame, TrueColorImage
                 .getPixelReader()
                 .getColor(intEnd.x - tileCorner.x, intEnd.y - tileCorner.y));
       }
-    } else super.mark(context, window,
-      localStart,
-      localEnd,
-      localStartWithOffset,
-      localEndWithOffset, globalStart, globalEnd);
+    } else
+      super.mark(
+          context,
+          window,
+          localStart,
+          localEnd,
+          localStartWithOffset,
+          localEndWithOffset,
+          globalStart,
+          globalEnd);
   }
 
   @Override

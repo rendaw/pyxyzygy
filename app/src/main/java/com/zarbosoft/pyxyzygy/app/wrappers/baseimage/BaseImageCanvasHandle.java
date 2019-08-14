@@ -68,7 +68,7 @@ public class BaseImageCanvasHandle<
               };
             },
             cleanup -> cleanup.run(),
-            at -> {
+            (at, end) -> {
               updateViewedTime(context);
             });
     overlay.getChildren().add(innerOverlay);

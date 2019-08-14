@@ -10,8 +10,11 @@ public abstract class Tool {
    * @param globalStart global coords
    */
   public abstract void markStart(
-    Context context, Window window, DoubleVector localStart, DoubleVector localStartWithOffset, DoubleVector globalStart
-  );
+      Context context,
+      Window window,
+      DoubleVector localStart,
+      DoubleVector localStartWithOffset,
+      DoubleVector globalStart);
 
   /**
    * @param context
@@ -24,12 +27,14 @@ public abstract class Tool {
    * @param globalEnd
    */
   public abstract void mark(
-    Context context,
-    Window window, DoubleVector localStart, DoubleVector localEnd, DoubleVector localStartWithOffset,
-    DoubleVector localEndWithOffset,
-    DoubleVector globalStart,
-    DoubleVector globalEnd
-  );
+      Context context,
+      Window window,
+      DoubleVector localStart,
+      DoubleVector localEnd,
+      DoubleVector localStartWithOffset,
+      DoubleVector localEndWithOffset,
+      DoubleVector globalStart,
+      DoubleVector globalEnd);
 
   public abstract void remove(Context context, Window window);
 

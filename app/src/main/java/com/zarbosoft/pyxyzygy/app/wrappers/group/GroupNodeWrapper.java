@@ -33,8 +33,7 @@ public class GroupNodeWrapper extends Wrapper {
   public final VariableBinder<GroupChild> specificChild = new VariableBinder<>(null);
   public GroupNodeCanvasHandle canvasHandle;
 
-  public GroupNodeWrapper(
-    Context context, Wrapper parent, int parentIndex, GroupLayer node) {
+  public GroupNodeWrapper(Context context, Wrapper parent, int parentIndex, GroupLayer node) {
     this.parentIndex = parentIndex;
     this.parent = parent;
     this.node = node;
@@ -51,7 +50,7 @@ public class GroupNodeWrapper extends Wrapper {
             child -> {
               child.remove(context);
             },
-            at -> {
+            (at, end) -> {
               for (int i = at; i < children.size(); ++i) children.get(i).setParentIndex(i);
             });
     Misc.mirror(
@@ -64,8 +63,8 @@ public class GroupNodeWrapper extends Wrapper {
               });
           return child.tree.get();
         },
-        c -> {}, Common.noopConsumer
-    );
+        c -> {},
+        Common.noopConsumer);
   }
 
   protected GroupNodeConfig initConfig(Context context, long id) {
@@ -116,7 +115,8 @@ public class GroupNodeWrapper extends Wrapper {
                       child.positionFrames().stream()
                           .map(
                               frame -> {
-                                GroupPositionFrame newFrame = GroupPositionFrame.create(context.model);
+                                GroupPositionFrame newFrame =
+                                    GroupPositionFrame.create(context.model);
                                 newFrame.initialLengthSet(context.model, frame.length());
                                 newFrame.initialOffsetSet(context.model, frame.offset());
                                 return newFrame;

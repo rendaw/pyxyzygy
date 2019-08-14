@@ -22,6 +22,7 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.SelectionMode;
 import javafx.util.Callback;
 
+import static com.zarbosoft.rendaw.common.Common.noopBiConsumer;
 import static com.zarbosoft.rendaw.common.Common.unopt;
 import static com.zarbosoft.pyxyzygy.app.Global.NO_INNER;
 import static com.zarbosoft.pyxyzygy.app.Global.localization;
@@ -67,7 +68,7 @@ public class ToolLayerMove extends Tool {
           }
         });
     ObservableList<GroupChild> children = FXCollections.observableArrayList();
-    mirrorRoot = wrapper.node.mirrorChildren(children, c -> c, noopConsumer, noopConsumer);
+    mirrorRoot = wrapper.node.mirrorChildren(children, c -> c, noopConsumer, noopBiConsumer);
     layerList.setItems(children);
 
     selectionRoot =
@@ -109,8 +110,11 @@ public class ToolLayerMove extends Tool {
 
   @Override
   public void markStart(
-    Context context, Window window, DoubleVector localStart, DoubleVector localStartWithOffset, DoubleVector globalStart
-  ) {
+      Context context,
+      Window window,
+      DoubleVector localStart,
+      DoubleVector localStartWithOffset,
+      DoubleVector globalStart) {
     GroupChild specificLayer = unopt(wrapper.specificChild.get());
     if (specificLayer == null) return;
     pos =
@@ -124,15 +128,14 @@ public class ToolLayerMove extends Tool {
 
   @Override
   public void mark(
-    Context context,
-    Window window,
-    DoubleVector localStart,
-    DoubleVector localEnd,
-    DoubleVector localStartWithOffset,
-    DoubleVector localEndWithOffset,
-    DoubleVector globalStart,
-    DoubleVector globalEnd
-  ) {
+      Context context,
+      Window window,
+      DoubleVector localStart,
+      DoubleVector localEnd,
+      DoubleVector localStartWithOffset,
+      DoubleVector localEndWithOffset,
+      DoubleVector globalStart,
+      DoubleVector globalEnd) {
     if (pos == null) return;
     context.change(
         new History.Tuple(wrapper, "move-layer"),

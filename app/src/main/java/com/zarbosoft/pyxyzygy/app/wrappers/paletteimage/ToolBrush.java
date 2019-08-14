@@ -102,8 +102,11 @@ public class ToolBrush extends BaseToolBrush<PaletteImageFrame, PaletteImage> {
 
   @Override
   public void markStart(
-    Context context, Window window, DoubleVector localStart, DoubleVector localStartWithOffset, DoubleVector globalStart
-  ) {}
+      Context context,
+      Window window,
+      DoubleVector localStart,
+      DoubleVector localStartWithOffset,
+      DoubleVector globalStart) {}
 
   private void setColor(int index) {
     editHandle.wrapper.node.palette().entries().stream()
@@ -149,15 +152,14 @@ public class ToolBrush extends BaseToolBrush<PaletteImageFrame, PaletteImage> {
 
   @Override
   public void mark(
-    Context context,
-    Window window,
-    DoubleVector localStart,
-    DoubleVector localEnd,
-    DoubleVector localStartWithOffset,
-    DoubleVector localEndWithOffset,
-    DoubleVector globalStart,
-    DoubleVector globalEnd
-  ) {
+      Context context,
+      Window window,
+      DoubleVector localStart,
+      DoubleVector localEnd,
+      DoubleVector localStartWithOffset,
+      DoubleVector localEndWithOffset,
+      DoubleVector globalStart,
+      DoubleVector globalEnd) {
     if (false) {
       throw new Assertion();
     } else if (window.pressed.contains(KeyCode.CONTROL)) {
@@ -173,11 +175,16 @@ public class ToolBrush extends BaseToolBrush<PaletteImageFrame, PaletteImage> {
             PaletteTileHelp.getData(context, tile)
                 .getPixel(intEnd.x - tileCorner.x, intEnd.y - tileCorner.y));
       }
-    } else super.mark(context, window,
-      localStart,
-      localEnd,
-      localStartWithOffset,
-      localEndWithOffset, globalStart, globalEnd);
+    } else
+      super.mark(
+          context,
+          window,
+          localStart,
+          localEnd,
+          localStartWithOffset,
+          localEndWithOffset,
+          globalStart,
+          globalEnd);
   }
 
   @Override

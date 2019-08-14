@@ -15,10 +15,10 @@ public class MirrorProject extends ObjectMirror {
   private final Runnable topListenCleanup;
 
   public MirrorProject(
-    com.zarbosoft.pyxyzygy.app.Context context,
-    Context mirrorContext,
-    ObjectMirror parent,
-    Project object) {
+      com.zarbosoft.pyxyzygy.app.Context context,
+      Context mirrorContext,
+      ObjectMirror parent,
+      Project object) {
     this.parent = parent;
     this.object = object;
 
@@ -31,7 +31,7 @@ public class MirrorProject extends ObjectMirror {
               return mirrorContext.create(context, this, layer);
             },
             child -> child.remove(context),
-            at -> {
+            (at, end) -> {
               for (int i = at; i < children.size(); ++i) children.get(i).setParentIndex(i);
             });
     Misc.mirror(
@@ -43,8 +43,9 @@ public class MirrorProject extends ObjectMirror {
                 tree.get().getChildren().set(child.parentIndex, newValue);
               });
           return child.tree.get();
-        }, Common.noopConsumer, Common.noopConsumer
-    );
+        },
+        Common.noopConsumer,
+        Common.noopConsumer);
   }
 
   @Override

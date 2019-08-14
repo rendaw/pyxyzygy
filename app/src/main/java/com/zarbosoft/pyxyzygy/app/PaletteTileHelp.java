@@ -7,6 +7,7 @@ import com.zarbosoft.automodel.lib.Listener;
 import com.zarbosoft.automodel.lib.ModelBase;
 import com.zarbosoft.pyxyzygy.core.PaletteImage;
 import com.zarbosoft.pyxyzygy.core.model.latest.PaletteTile;
+import com.zarbosoft.pyxyzygy.core.model.latest.Project;
 
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
@@ -18,10 +19,10 @@ import static com.zarbosoft.rendaw.common.Common.uncheck;
 
 public class PaletteTileHelp {
   public static Cache<Long, TileData> cache =
-    CacheBuilder.newBuilder().concurrencyLevel(1).weakValues().build();
+      CacheBuilder.newBuilder().concurrencyLevel(1).weakValues().build();
 
   private static Path path(ModelBase context, PaletteTile tile) {
-    return context.tileDir.resolve(Objects.toString(tile.id()));
+    return ((Project) context.root).tileDir().resolve(Objects.toString(tile.id()));
   }
 
   public static class TileData implements Committable, Listener.Destroy<PaletteTile> {
@@ -43,13 +44,13 @@ public class PaletteTileHelp {
     @Override
     public void accept(com.zarbosoft.automodel.lib.ModelBase context, PaletteTile target) {
       uncheck(
-        () -> {
-          try {
-            Files.delete(path(context, target));
-          } catch (NoSuchFileException e) {
-            // nop
-          }
-        });
+          () -> {
+            try {
+              Files.delete(path(context, target));
+            } catch (NoSuchFileException e) {
+              // nop
+            }
+          });
     }
   }
 
@@ -68,7 +69,8 @@ public class PaletteTileHelp {
                 cache.get(
                     tile.id(),
                     () -> {
-                      PaletteImage data = PaletteImage.deserialize(path(context.model, tile).toString());
+                      PaletteImage data =
+                          PaletteImage.deserialize(path(context.model, tile).toString());
                       return new TileData(tile, data);
                     }))
         .data;

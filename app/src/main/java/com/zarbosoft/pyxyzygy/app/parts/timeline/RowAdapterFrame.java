@@ -19,7 +19,7 @@ public abstract class RowAdapterFrame {
   public abstract Object id();
 
   /**
-   *  @param context
+   * @param context
    * @param window
    * @param newAt New time of frame relative to view timeline
    */

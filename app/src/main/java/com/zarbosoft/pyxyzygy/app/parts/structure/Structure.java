@@ -686,7 +686,8 @@ public class Structure {
                 }
               });
         });
-    Button moveDownButton = HelperJFX.button("arrow-down.png", localization.getString("move.layer.down"));
+    Button moveDownButton =
+        HelperJFX.button("arrow-down.png", localization.getString("move.layer.down"));
     moveDownButton
         .disableProperty()
         .bind(Bindings.isEmpty(tree.getSelectionModel().getSelectedItems()));

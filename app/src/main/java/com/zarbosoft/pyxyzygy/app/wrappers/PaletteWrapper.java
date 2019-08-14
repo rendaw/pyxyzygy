@@ -48,6 +48,7 @@ public class PaletteWrapper {
           return opt(PaletteWrapper.this);
         }
       };
+
   @SuppressWarnings("unused")
   private Runnable mirrorRoot;
 
@@ -62,36 +63,37 @@ public class PaletteWrapper {
           PaletteWrapper out = new PaletteWrapper();
           out.colors = new PaletteColors();
           out.updatedAt = Instant.now();
-          out.mirrorRoot = palette.mirrorEntries(
-              out.cleanup,
-              v -> {
-                out.updatedAt = Instant.now();
-                if (v instanceof PaletteColor) {
-                  final Listener.ScalarSet<PaletteColor, TrueColor> colorChangeListener =
-                      (target, value) -> {
+          out.mirrorRoot =
+              palette.mirrorEntries(
+                  out.cleanup,
+                  v -> {
+                    out.updatedAt = Instant.now();
+                    if (v instanceof PaletteColor) {
+                      final Listener.ScalarSet<PaletteColor, TrueColor> colorChangeListener =
+                          (target, value) -> {
+                            out.updatedAt = Instant.now();
+                            out.colors.set(
+                                ((PaletteColor) v).index(), value.r, value.g, value.b, value.a);
+                            out.listeners.forEach(l -> l.run());
+                          };
+                      ((PaletteColor) v).addColorSetListeners(colorChangeListener);
+                      return () -> {
                         out.updatedAt = Instant.now();
                         out.colors.set(
-                            ((PaletteColor) v).index(), value.r, value.g, value.b, value.a);
-                        out.listeners.forEach(l -> l.run());
+                            ((PaletteColor) v).index(), (byte) 0, (byte) 0, (byte) 0, (byte) 0);
+                        ((PaletteColor) v).removeColorSetListeners(colorChangeListener);
                       };
-                  ((PaletteColor) v).addColorSetListeners(colorChangeListener);
-                  return () -> {
+                    } else if (v instanceof PaletteSeparator) {
+                      return () -> {};
+                    } else throw new Assertion();
+                  },
+                  r -> {
                     out.updatedAt = Instant.now();
-                    out.colors.set(
-                        ((PaletteColor) v).index(), (byte) 0, (byte) 0, (byte) 0, (byte) 0);
-                    ((PaletteColor) v).removeColorSetListeners(colorChangeListener);
-                  };
-                } else if (v instanceof PaletteSeparator) {
-                  return () -> {};
-                } else throw new Assertion();
-              },
-              r -> {
-                out.updatedAt = Instant.now();
-                r.run();
-              },
-              i -> {
-                out.listeners.forEach(l -> l.run());
-              });
+                    r.run();
+                  },
+                  (i, end) -> {
+                    out.listeners.forEach(l -> l.run());
+                  });
           return out;
         });
   }

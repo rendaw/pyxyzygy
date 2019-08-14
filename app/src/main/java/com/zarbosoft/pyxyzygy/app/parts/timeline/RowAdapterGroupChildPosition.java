@@ -66,7 +66,7 @@ public class RowAdapterGroupChildPosition
                 r -> {
                   r.run();
                 },
-                at -> {
+                (at, end) -> {
                   updateFrames(context, window);
                 });
         layout = new VBox();
@@ -119,8 +119,7 @@ public class RowAdapterGroupChildPosition
   @Override
   protected GroupPositionFrame innerCreateFrame(Context context, GroupPositionFrame previousFrame) {
     GroupPositionFrame newFrame = GroupPositionFrame.create(context.model);
-    if (previousFrame != null)
-    newFrame.initialOffsetSet(context.model, previousFrame.offset());
+    if (previousFrame != null) newFrame.initialOffsetSet(context.model, previousFrame.offset());
     return newFrame;
   }
 

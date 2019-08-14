@@ -328,7 +328,9 @@ public class RowTimeMapRangeWidget {
   public void set(TimeRangeAdapter adapter) {
     this.adapter = adapter;
 
-    outerA.layoutXProperty().bind(adapter.getOuterAt().subtract(adapter.getInnerStart()).multiply(timeline.zoom));
+    outerA
+        .layoutXProperty()
+        .bind(adapter.getOuterAt().subtract(adapter.getInnerStart()).multiply(timeline.zoom));
 
     inner.layoutXProperty().bind(adapter.getOuterAt().multiply(timeline.zoom));
     inBorder.draw(timeline, adapter.getInnerStart(), adapter.getInnerLength());

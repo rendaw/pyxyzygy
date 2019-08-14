@@ -18,6 +18,7 @@ import com.zarbosoft.rendaw.common.Assertion;
 import javafx.scene.control.TreeItem;
 
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -40,7 +41,11 @@ public abstract class BaseImageNodeWrapper<
   }
 
   public abstract <I> Runnable mirrorFrames(
-      N node, List<I> list, Function<F, I> create, Consumer<I> remove, Consumer<Integer> change);
+      N node,
+      List<I> list,
+      Function<F, I> create,
+      Consumer<I> remove,
+      BiConsumer<Integer, Integer> change);
 
   protected abstract Listener.ScalarSet<F, Vector> addFrameOffsetSetListener(
       F frame, Listener.ScalarSet<F, Vector> listener);
@@ -77,12 +82,11 @@ public abstract class BaseImageNodeWrapper<
   public TakesChildren takesChildren() {
     return TakesChildren.NONE;
   }
-  public abstract Listener.ScalarSet<N, Integer> addPrelengthSetListener(
-    N node, Listener.ScalarSet<N, Integer> listener);
 
-  public abstract void removePrelengthSetListener(
-    Listener.ScalarSet<N, Integer> listener
-  );
+  public abstract Listener.ScalarSet<N, Integer> addPrelengthSetListener(
+      N node, Listener.ScalarSet<N, Integer> listener);
+
+  public abstract void removePrelengthSetListener(Listener.ScalarSet<N, Integer> listener);
 
   public abstract void removeFrameOffsetSetListener(
       F frame, Listener.ScalarSet<F, Vector> listener);

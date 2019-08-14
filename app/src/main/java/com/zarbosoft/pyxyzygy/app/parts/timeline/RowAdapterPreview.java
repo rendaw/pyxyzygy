@@ -45,8 +45,7 @@ public class RowAdapterPreview extends RowAdapter {
   }
 
   @Override
-  public boolean createFrame(
-    Context context, Window window, ChangeStepBuilder change, int outer) {
+  public boolean createFrame(Context context, Window window, ChangeStepBuilder change, int outer) {
     return false;
   }
 
@@ -57,7 +56,7 @@ public class RowAdapterPreview extends RowAdapter {
 
   @Override
   public boolean duplicateFrame(
-    Context context, Window window, ChangeStepBuilder change, int outer) {
+      Context context, Window window, ChangeStepBuilder change, int outer) {
     return false;
   }
 

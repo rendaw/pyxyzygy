@@ -33,33 +33,34 @@ public abstract class BaseToolBrush<F extends ProjectObject, L> extends Tool {
 
   @Override
   public void markStart(
-    Context context, Window window, DoubleVector localStart, DoubleVector localStartWithOffset, DoubleVector globalStart
-  ) {}
+      Context context,
+      Window window,
+      DoubleVector localStart,
+      DoubleVector localStartWithOffset,
+      DoubleVector globalStart) {}
 
   @Override
   public void mark(
-    Context context,
-    Window window,
-    DoubleVector localStart,
-    DoubleVector localEnd,
-    DoubleVector localStartWithOffset,
-    DoubleVector localEndWithOffset,
-    DoubleVector globalStart,
-    DoubleVector globalEnd
-  ) {
+      Context context,
+      Window window,
+      DoubleVector localStart,
+      DoubleVector localEnd,
+      DoubleVector localStartWithOffset,
+      DoubleVector localEndWithOffset,
+      DoubleVector globalStart,
+      DoubleVector globalEnd) {
     if (false) {
       throw new Assertion();
     } else if (window.pressed.contains(KeyCode.SHIFT)) {
       if (lastEnd == null) lastEnd = localEndWithOffset;
       strokeInner(context, null, lastEnd, localEndWithOffset);
-    } else strokeInner(context, new History.Tuple(brush, "stroke"), localStartWithOffset, localEndWithOffset);
+    } else
+      strokeInner(
+          context, new History.Tuple(brush, "stroke"), localStartWithOffset, localEndWithOffset);
   }
 
   private void strokeInner(
-    Context context,
-    History.Tuple changeUnique,
-    DoubleVector start,
-    DoubleVector end) {
+      Context context, History.Tuple changeUnique, DoubleVector start, DoubleVector end) {
     final double startRadius = brush.size.get() / 20.0;
     final double endRadius = brush.size.get() / 20.0;
     final DoubleRectangle bounds =
@@ -80,12 +81,12 @@ public abstract class BaseToolBrush<F extends ProjectObject, L> extends Tool {
   }
 
   protected abstract void stroke(
-    Context context,
-    L canvas,
-    DoubleVector start,
-    double startRadius,
-    DoubleVector end,
-    double endRadius);
+      Context context,
+      L canvas,
+      DoubleVector start,
+      double startRadius,
+      DoubleVector end,
+      double endRadius);
 
   private void updateCursor(Window window) {
     double zoom = window.editor.zoomFactor.get();

@@ -20,6 +20,6 @@ public abstract class ObjectMirror {
 
   public abstract static class Context {
     public abstract ObjectMirror create(
-      com.zarbosoft.pyxyzygy.app.Context context, ObjectMirror parent, ProjectObject object);
+        com.zarbosoft.pyxyzygy.app.Context context, ObjectMirror parent, ProjectObject object);
   }
 }

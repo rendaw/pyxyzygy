@@ -10,7 +10,7 @@ public class ScalarBinder<T> extends ScalarHalfBinder<T> implements Binder<T> {
   private final Consumer<T> set;
 
   public ScalarBinder(
-    Consumer<Listener.ScalarSet> listen, Consumer<Listener.ScalarSet> unlisten, Consumer<T> set) {
+      Consumer<Listener.ScalarSet> listen, Consumer<Listener.ScalarSet> unlisten, Consumer<T> set) {
     super(listen, unlisten);
     this.set = set;
   }

@@ -44,9 +44,7 @@ public class OnionSkin {
   private DoubleRectangle triggerBounds = new DoubleRectangle(0, 0, 0, 0);
   private TrueColor lastColor = null;
 
-  public OnionSkin(
-    Context context, Timeline timeline, EditHandle editHandle, boolean previous
-  ) {
+  public OnionSkin(Context context, Timeline timeline, EditHandle editHandle, boolean previous) {
     this.editHandle = editHandle;
     frameProp = previous ? timeline.previousFrame : timeline.nextFrame;
     bounds = editHandle.getCanvas().bounds;

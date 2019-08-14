@@ -523,7 +523,7 @@ public class PaletteImageEditHandle extends EditHandle {
                         PaletteTile r = (PaletteTile) r0;
                         r.destroy(context, window);
                       },
-                      start -> {
+                      (start, end) -> {
                         paletteState.set(null);
                         for (int i = start; i < colors.getChildren().size(); ++i)
                           ((PaletteTile) colors.getChildren().get(i)).setIndex(i);

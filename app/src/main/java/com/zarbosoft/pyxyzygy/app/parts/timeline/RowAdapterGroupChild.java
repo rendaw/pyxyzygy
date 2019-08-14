@@ -33,9 +33,7 @@ public class RowAdapterGroupChild extends RowAdapter {
     this.child = child;
     this.selected = wrapper.specificChild.map(c -> opt(c == child));
     cleanIconBind =
-        CustomBinding.bind(
-            stateImage,
-            selected.map(s -> opt(s ? icon("editing.png") : null)));
+        CustomBinding.bind(stateImage, selected.map(s -> opt(s ? icon("editing.png") : null)));
   }
 
   @Override
@@ -95,14 +93,13 @@ public class RowAdapterGroupChild extends RowAdapter {
   }
 
   @Override
-  public boolean createFrame(
-    Context context, Window window, ChangeStepBuilder change, int outer) {
+  public boolean createFrame(Context context, Window window, ChangeStepBuilder change, int outer) {
     throw new Assertion();
   }
 
   @Override
   public boolean duplicateFrame(
-    Context context, Window window, ChangeStepBuilder change, int outer) {
+      Context context, Window window, ChangeStepBuilder change, int outer) {
     throw new Assertion();
   }
 

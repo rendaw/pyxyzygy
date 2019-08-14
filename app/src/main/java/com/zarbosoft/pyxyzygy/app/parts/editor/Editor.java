@@ -50,6 +50,7 @@ public class Editor {
   private final ReadOnlyObjectProperty<Bounds> sizeProperty;
   public final SimpleIntegerProperty positiveZoom = new SimpleIntegerProperty(1);
   public final SimpleDoubleProperty zoomFactor = new SimpleDoubleProperty(1);
+
   @SuppressWarnings("unused")
   private final BinderRoot editOriginRoot;
 
@@ -502,22 +503,23 @@ public class Editor {
     Origin origin = new Origin(this, 20);
     origin.visibleProperty().bind(GUILaunch.profileConfig.showOrigin);
     editOriginRoot =
-      window.selectedForEditOriginBinder.addListener(new Consumer<EditHandle>() {
-        private Group overlay = null;
+        window.selectedForEditOriginBinder.addListener(
+            new Consumer<EditHandle>() {
+              private Group overlay = null;
 
-        @Override
-        public void accept(EditHandle newValue) {
-          if (overlay != null) {
-            overlay.getChildren().remove(origin);
-            overlay = null;
-          }
+              @Override
+              public void accept(EditHandle newValue) {
+                if (overlay != null) {
+                  overlay.getChildren().remove(origin);
+                  overlay = null;
+                }
 
-          if (newValue != null) {
-            overlay = newValue.getCanvas().overlay;
-            overlay.getChildren().addAll(origin);
-          }
-        }
-      });
+                if (newValue != null) {
+                  overlay = newValue.getCanvas().overlay;
+                  overlay.getChildren().addAll(origin);
+                }
+              }
+            });
   }
 
   public Node getWidget() {

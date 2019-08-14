@@ -94,7 +94,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.zarbosoft.automodel.lib.Logger.logger;
-import static com.zarbosoft.rendaw.common.Common.opt;
 import static com.zarbosoft.pyxyzygy.app.Global.NO_LENGTH;
 import static com.zarbosoft.pyxyzygy.app.Global.NO_LOOP;
 import static com.zarbosoft.pyxyzygy.app.Global.appDirs;
@@ -109,6 +108,7 @@ import static com.zarbosoft.pyxyzygy.app.Global.shutdown;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 import static com.zarbosoft.pyxyzygy.core.mynative.get_allocated;
 import static com.zarbosoft.rendaw.common.Common.atomicWrite;
+import static com.zarbosoft.rendaw.common.Common.opt;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 
 public class GUILaunch extends Application {

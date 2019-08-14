@@ -186,11 +186,7 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
         };
 
     StateMove(
-      Context context,
-      Window window,
-      Rectangle originalBounds,
-      Rectangle bounds,
-      L lifted) {
+        Context context, Window window, Rectangle originalBounds, Rectangle bounds, L lifted) {
       this.originalBounds = originalBounds;
       this.bounds = bounds;
 
@@ -736,22 +732,24 @@ public abstract class BaseToolSelect<F extends ProjectObject, L> extends Tool {
 
   @Override
   public void markStart(
-    Context context, Window window, DoubleVector localStart, DoubleVector localStartWithOffset, DoubleVector globalStart
-  ) {
+      Context context,
+      Window window,
+      DoubleVector localStart,
+      DoubleVector localStartWithOffset,
+      DoubleVector globalStart) {
     state.markStart(context, window, localStartWithOffset);
   }
 
   @Override
   public void mark(
-    Context context,
-    Window window,
-    DoubleVector localStart,
-    DoubleVector localEnd,
-    DoubleVector localStartWithOffset,
-    DoubleVector localEndWithOffset,
-    DoubleVector globalStart,
-    DoubleVector globalEnd
-  ) {
+      Context context,
+      Window window,
+      DoubleVector localStart,
+      DoubleVector localEnd,
+      DoubleVector localStartWithOffset,
+      DoubleVector localEndWithOffset,
+      DoubleVector globalStart,
+      DoubleVector globalEnd) {
     state.mark(context, localStartWithOffset, localEndWithOffset);
   }
 

@@ -151,7 +151,7 @@ public class RowAdapterGroupChildTime extends BaseFrameRowAdapter<GroupChild, Gr
                   };
                 },
                 c -> c.run(),
-                at -> {
+                (at, end) -> {
                   updateFrames(context, window);
                 });
         selectedFrameListener =

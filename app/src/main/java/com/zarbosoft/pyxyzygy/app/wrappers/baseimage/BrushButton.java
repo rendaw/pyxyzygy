@@ -20,11 +20,12 @@ import static com.zarbosoft.rendaw.common.Common.opt;
 public abstract class BrushButton extends ToggleButton implements Garb {
   private final BinderRoot cleanupSelected;
   private final BinderRoot cleanupColor;
+
   @SuppressWarnings("unused")
   private final BinderRoot sizeTextRoot;
 
   public BrushButton(
-    Property<Integer> size, HalfBinder<Color> color, HalfBinder<Boolean> selected) {
+      Property<Integer> size, HalfBinder<Color> color, HalfBinder<Boolean> selected) {
     getStyleClass().add("brush-button");
 
     ColorSwatch swatch = new ColorSwatch(1);

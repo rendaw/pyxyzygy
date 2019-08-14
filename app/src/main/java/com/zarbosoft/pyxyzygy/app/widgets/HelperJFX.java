@@ -51,9 +51,9 @@ import java.nio.IntBuffer;
 import java.text.DecimalFormat;
 import java.util.Optional;
 
-import static com.zarbosoft.rendaw.common.Common.opt;
 import static com.zarbosoft.pyxyzygy.app.Global.localization;
 import static com.zarbosoft.rendaw.common.Common.getResource;
+import static com.zarbosoft.rendaw.common.Common.opt;
 
 public class HelperJFX {
   @SuppressWarnings("unused")

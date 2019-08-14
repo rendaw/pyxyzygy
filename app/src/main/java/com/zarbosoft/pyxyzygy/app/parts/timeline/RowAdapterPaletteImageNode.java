@@ -91,7 +91,7 @@ class RowAdapterPaletteImageNode extends BaseFrameRowAdapter<PaletteImageLayer, 
                   };
                 },
                 c -> c.run(),
-                at -> {
+                (at, end) -> {
                   updateFrames(context, window);
                 });
       }

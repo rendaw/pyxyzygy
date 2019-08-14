@@ -36,7 +36,8 @@ public class RootProfileConfig extends ConfigBase {
   @Configuration public Map<String, Hotkeys.Hotkey> hotkeys = new HashMap<>();
 
   @Configuration(optional = true)
-  public SimpleObjectProperty<InitialLayers> newProjectInitialLayers = new SimpleObjectProperty<>(InitialLayers.BOTH);
+  public SimpleObjectProperty<InitialLayers> newProjectInitialLayers =
+      new SimpleObjectProperty<>(InitialLayers.BOTH);
 
   @Configuration(optional = true)
   public SimpleIntegerProperty defaultZoom = new SimpleIntegerProperty(0);

@@ -31,13 +31,14 @@ import javafx.scene.image.Image;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static com.zarbosoft.rendaw.common.Common.opt;
 import static com.zarbosoft.pyxyzygy.app.GUILaunch.CACHE_OBJECT;
 import static com.zarbosoft.pyxyzygy.app.config.TrueColorImageNodeConfig.TOOL_BRUSH;
+import static com.zarbosoft.rendaw.common.Common.opt;
 import static com.zarbosoft.rendaw.common.Common.uncheck;
 
 public class TrueColorImageNodeWrapper
@@ -133,7 +134,7 @@ public class TrueColorImageNodeWrapper
       List<I> list,
       Function<TrueColorImageFrame, I> create,
       Consumer<I> remove,
-      Consumer<Integer> change) {
+      BiConsumer<Integer, Integer> change) {
     return node.mirrorFrames(list, create, remove, change);
   }
 
@@ -151,15 +152,13 @@ public class TrueColorImageNodeWrapper
 
   @Override
   public Listener.ScalarSet<TrueColorImageLayer, Integer> addPrelengthSetListener(
-    TrueColorImageLayer node, Listener.ScalarSet<TrueColorImageLayer, Integer> listener
-  ) {
+      TrueColorImageLayer node, Listener.ScalarSet<TrueColorImageLayer, Integer> listener) {
     return node.addPrelengthSetListeners(listener);
   }
 
   @Override
-  public void removePrelengthSetListener(Listener.ScalarSet<TrueColorImageLayer, Integer> listener) {
-
-  }
+  public void removePrelengthSetListener(
+      Listener.ScalarSet<TrueColorImageLayer, Integer> listener) {}
 
   @Override
   public void removeFrameOffsetSetListener(

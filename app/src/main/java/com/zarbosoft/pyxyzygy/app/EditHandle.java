@@ -18,8 +18,7 @@ public abstract class EditHandle {
    * @param start In flipped/zoomed coordinates relative to canvas global origin
    * @param end In flipped/zoomed coordinates relative to canvas global origin
    */
-  public abstract void mark(
-    Context context, Window window, DoubleVector start, DoubleVector end);
+  public abstract void mark(Context context, Window window, DoubleVector start, DoubleVector end);
 
   /**
    * @param context

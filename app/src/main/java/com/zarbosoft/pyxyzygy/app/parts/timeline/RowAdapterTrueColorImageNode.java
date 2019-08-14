@@ -72,7 +72,7 @@ class RowAdapterTrueColorImageNode
                   };
                 },
                 c -> c.run(),
-                at -> {
+                (at, end) -> {
                   updateFrames(context, window);
                 });
       }

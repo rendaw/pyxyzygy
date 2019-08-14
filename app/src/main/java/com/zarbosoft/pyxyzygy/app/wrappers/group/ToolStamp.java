@@ -58,10 +58,7 @@ public class ToolStamp extends Tool {
   private final Group overlayGroup;
 
   ToolStamp(
-    Context context,
-    Window window,
-    GroupNodeWrapper wrapper,
-    GroupNodeEditHandle editHandle) {
+      Context context, Window window, GroupNodeWrapper wrapper, GroupNodeEditHandle editHandle) {
     this.editHandle = editHandle;
     List<ProjectObject> parents = new ArrayList<>();
     {
@@ -110,7 +107,7 @@ public class ToolStamp extends Tool {
             new ObjectMirror.Context() {
               @Override
               public ObjectMirror create(
-                Context context, ObjectMirror parent, ProjectObject object) {
+                  Context context, ObjectMirror parent, ProjectObject object) {
                 ObjectMirror out;
                 if (false) {
                   throw new Assertion();
@@ -189,8 +186,11 @@ public class ToolStamp extends Tool {
 
   @Override
   public void markStart(
-    Context context, Window window, DoubleVector localStart, DoubleVector localStartWithOffset, DoubleVector globalStart
-  ) {
+      Context context,
+      Window window,
+      DoubleVector localStart,
+      DoubleVector localStartWithOffset,
+      DoubleVector globalStart) {
     if (stampSource == null) return;
     GroupChild layer = GroupChild.create(context.model);
     layer.initialInnerSet(context.model, stampSource);
@@ -199,7 +199,9 @@ public class ToolStamp extends Tool {
     GroupPositionFrame positionFrame = GroupPositionFrame.create(context.model);
     positionFrame.initialLengthSet(context.model, -1);
     positionFrame.initialOffsetSet(
-        context.model, new Vector((int) Math.floor(localStartWithOffset.x), (int) Math.floor(localStartWithOffset.y)));
+        context.model,
+        new Vector(
+            (int) Math.floor(localStartWithOffset.x), (int) Math.floor(localStartWithOffset.y)));
     layer.initialPositionFramesAdd(context.model, ImmutableList.of(positionFrame));
     GroupTimeFrame timeFrame = GroupTimeFrame.create(context.model);
     timeFrame.initialLengthSet(context.model, -1);
@@ -217,15 +219,14 @@ public class ToolStamp extends Tool {
 
   @Override
   public void mark(
-    Context context,
-    Window window,
-    DoubleVector localStart,
-    DoubleVector localEnd,
-    DoubleVector localStartWithOffset,
-    DoubleVector localEndWithOffset,
-    DoubleVector globalStart,
-    DoubleVector globalEnd
-  ) {}
+      Context context,
+      Window window,
+      DoubleVector localStart,
+      DoubleVector localEnd,
+      DoubleVector localStartWithOffset,
+      DoubleVector localEndWithOffset,
+      DoubleVector globalStart,
+      DoubleVector globalEnd) {}
 
   @Override
   public void remove(Context context, Window window) {

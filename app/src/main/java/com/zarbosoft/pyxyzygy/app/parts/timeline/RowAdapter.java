@@ -27,12 +27,12 @@ public abstract class RowAdapter extends TreeItem<RowAdapter> {
   public abstract boolean hasNormalFrames();
 
   public abstract boolean createFrame(
-    Context context, Window window, ChangeStepBuilder change, int outer);
+      Context context, Window window, ChangeStepBuilder change, int outer);
 
   public abstract ObservableObjectValue<Image> getStateImage();
 
   public abstract boolean duplicateFrame(
-    Context context, Window window, ChangeStepBuilder change, int outer);
+      Context context, Window window, ChangeStepBuilder change, int outer);
 
   public abstract WidgetHandle createRowWidget(Context context, Window window);
 
@@ -58,6 +58,7 @@ public abstract class RowAdapter extends TreeItem<RowAdapter> {
 
   /**
    * Currently means row is selected and should be used to decide previous/next frame
+   *
    * @return
    */
   public abstract boolean isMain();

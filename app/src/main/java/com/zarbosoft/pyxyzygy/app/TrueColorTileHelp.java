@@ -6,6 +6,7 @@ import com.zarbosoft.automodel.lib.Committable;
 import com.zarbosoft.automodel.lib.Listener;
 import com.zarbosoft.automodel.lib.ModelBase;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
+import com.zarbosoft.pyxyzygy.core.model.latest.Project;
 import com.zarbosoft.pyxyzygy.core.model.latest.TrueColorTile;
 
 import java.nio.file.Files;
@@ -18,10 +19,10 @@ import static com.zarbosoft.rendaw.common.Common.uncheck;
 
 public class TrueColorTileHelp {
   public static Cache<Long, TileData> cache =
-    CacheBuilder.newBuilder().concurrencyLevel(1).weakValues().build();
+      CacheBuilder.newBuilder().concurrencyLevel(1).weakValues().build();
 
   private static Path path(ModelBase context, TrueColorTile tile) {
-    return context.tileDir.resolve(Objects.toString(tile.id()));
+    return ((Project) context.root).tileDir().resolve(Objects.toString(tile.id()));
   }
 
   public static class TileData implements Committable, Listener.Destroy<TrueColorTile> {
@@ -41,15 +42,15 @@ public class TrueColorTileHelp {
     }
 
     @Override
-    public void accept(com.zarbosoft.automodel.lib.ModelBase context, TrueColorTile target) {
+    public void accept(ModelBase context, TrueColorTile target) {
       uncheck(
-        () -> {
-          try {
-            Files.delete(path(context, target));
-          } catch (NoSuchFileException e) {
-            // nop
-          }
-        });
+          () -> {
+            try {
+              Files.delete(path(context, target));
+            } catch (NoSuchFileException e) {
+              // nop
+            }
+          });
     }
   }
 
@@ -64,13 +65,14 @@ public class TrueColorTileHelp {
 
   public static TrueColorImage getData(Context context, TrueColorTile tile) {
     return uncheck(
-      () ->
-        cache.get(
-          tile.id(),
-          () -> {
-            TrueColorImage data = TrueColorImage.deserialize(path(context.model, tile).toString());
-            return new TileData(tile, data);
-          }))
-      .data;
+            () ->
+                cache.get(
+                    tile.id(),
+                    () -> {
+                      TrueColorImage data =
+                          TrueColorImage.deserialize(path(context.model, tile).toString());
+                      return new TileData(tile, data);
+                    }))
+        .data;
   }
 }

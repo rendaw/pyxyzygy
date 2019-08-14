@@ -89,6 +89,7 @@ public class CameraWrapper extends GroupNodeWrapper {
       class CameraCanvasHandle extends GroupNodeCanvasHandle {
         @SuppressWarnings("unused")
         private final BinderRoot showBorderRoot;
+
         private Rectangle cameraBorder;
 
         public CameraCanvasHandle(Context context, Window window, GroupNodeWrapper wrapper) {

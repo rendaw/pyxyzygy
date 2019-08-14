@@ -95,7 +95,7 @@ public class ConfigBase {
 
               // Parse from tree
               return (T)
-                Luxem.parse(scan, configType).map(configTypeMap).fromTree(tree).findFirst().get();
+                  Luxem.parse(scan, configType).map(configTypeMap).fromTree(tree).findFirst().get();
             });
     out.start();
     out.path = configPath;
