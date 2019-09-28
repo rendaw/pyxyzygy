@@ -16,7 +16,7 @@ public class GenerateModel extends TaskBase {
   public void run() {
     new AutoModel("com.zarbosoft.pyxyzygy.core.model")
         .version(
-            "v1",
+            "v2",
             version -> {
               AutoObject projectLayer =
                   version

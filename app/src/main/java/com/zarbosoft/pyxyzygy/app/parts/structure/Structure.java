@@ -92,7 +92,6 @@ import java.util.stream.Stream;
 
 import static com.zarbosoft.automodel.lib.Logger.logger;
 import static com.zarbosoft.javafxbinders.CustomBinding.bindStyle;
-import static com.zarbosoft.rendaw.common.Common.opt;
 import static com.zarbosoft.pyxyzygy.app.Global.localization;
 import static com.zarbosoft.pyxyzygy.app.Global.opacityMax;
 import static com.zarbosoft.pyxyzygy.app.Misc.moveTo;
@@ -101,6 +100,8 @@ import static com.zarbosoft.pyxyzygy.app.Wrapper.TakesChildren.NONE;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.pad;
 import static com.zarbosoft.rendaw.common.Common.last;
+import static com.zarbosoft.rendaw.common.Common.noopConsumer;
+import static com.zarbosoft.rendaw.common.Common.opt;
 import static com.zarbosoft.rendaw.common.Common.sublist;
 
 public class Structure {
@@ -488,6 +489,7 @@ public class Structure {
               .addAction(
                   ButtonType.OK,
                   true,
+                  noopConsumer,
                   () -> {
                     context.change(
                         null,
@@ -531,6 +533,7 @@ public class Structure {
               .addAction(
                   ButtonType.CANCEL,
                   false,
+                  noopConsumer,
                   () -> {
                     return true;
                   })

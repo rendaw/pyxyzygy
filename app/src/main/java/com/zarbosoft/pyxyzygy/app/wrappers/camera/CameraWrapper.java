@@ -35,6 +35,7 @@ import javafx.scene.shape.StrokeType;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 
+import static com.zarbosoft.rendaw.common.Common.noopConsumer;
 import static com.zarbosoft.rendaw.common.Common.opt;
 import static com.zarbosoft.pyxyzygy.app.Global.localization;
 import static com.zarbosoft.pyxyzygy.app.config.CameraNodeConfig.TOOL_VIEWPORT;
@@ -227,6 +228,7 @@ public class CameraWrapper extends GroupNodeWrapper {
         .addAction(
             ButtonType.CANCEL,
             true,
+            noopConsumer,
             () -> {
               cancel.set(true);
               return true;

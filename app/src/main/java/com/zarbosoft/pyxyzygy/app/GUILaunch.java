@@ -4,6 +4,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.Weigher;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.zarbosoft.automodel.lib.Logger;
 import com.zarbosoft.automodel.lib.ModelBase;
 import com.zarbosoft.automodel.lib.PeekVersion;
@@ -821,7 +822,6 @@ public class GUILaunch extends Application {
     Model model =
         ModelVersions.create(
             path,
-            profileConfig.maxUndo,
             64,
             context -> {
               Function<ProjectLayer, GroupChild> createChild =
@@ -871,7 +871,8 @@ public class GUILaunch extends Application {
                 black.initialIndexSet(context, 1);
                 black.initialColorSet(context, TrueColor.fromJfx(Color.BLACK));
                 palette.initialEntriesAdd(context, ImmutableList.of(transparent, black));
-                ((Project) context.root).initialPalettesAdd(context, ImmutableList.of(palette));
+                ((Project) context.current.root)
+                    .initialPalettesAdd(context, ImmutableList.of(palette));
 
                 PaletteImageLayer paletteImageNode = PaletteImageLayer.create(context);
                 paletteImageNode.initialPaletteSet(context, palette);
@@ -889,8 +890,9 @@ public class GUILaunch extends Application {
               groupNode.initialOffsetSet(context, Vector.ZERO);
               groupNode.initialChildrenAdd(context, children);
 
-              ((Project) context.root).initialTopAdd(context, ImmutableList.of(groupNode));
-            });
+              ((Project) context.current.root).initialTopAdd(context, ImmutableList.of(groupNode));
+            },
+            profileConfig.maxUndo);
     Context context = new Context(model);
     context.config.defaultZoom = profileConfig.defaultZoom.get();
     context.config.viewPath = ImmutableList.of(0);
@@ -915,6 +917,39 @@ public class GUILaunch extends Application {
                 ((Map) o.value).put("tileSize", tileSize);
               }
             }
+            atomicWrite(
+                ModelBase.projectPath(path),
+                dest -> {
+                  uncheck(() -> TreeWriter.write(dest, struct));
+                });
+          });
+    }
+    if ("v1".equals(PeekVersion.check(ModelBase.projectPath(path)))) {
+      uncheck(
+          () -> {
+            List struct;
+            try (InputStream source = Files.newInputStream(ModelBase.projectPath(path))) {
+              struct = Luxem.parse(source);
+            }
+            Typed root = (Typed) struct.get(0);
+            root.name = "v2";
+            Map rootMap = (Map) root.value;
+            String projectId = "0";
+            for (Object o1 : (List) rootMap.get("objects")) {
+              Typed o = (Typed) o1;
+              if ("Project".equals(o.name)) {
+                projectId = (String) ((Map) o.value).get("id");
+              }
+            }
+            rootMap.put(
+                "current",
+                ImmutableMap.builder()
+                    .put("id", projectId)
+                    .put("activeChange", rootMap.remove("activeChange"))
+                    .put("undo", rootMap.remove("undo"))
+                    .put("redo", rootMap.remove("redo"))
+                    .build());
+            rootMap.put("snapshots", new ArrayList<>());
             atomicWrite(
                 ModelBase.projectPath(path),
                 dest -> {

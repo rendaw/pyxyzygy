@@ -1,6 +1,8 @@
 package com.zarbosoft.pyxyzygy.app;
 
 import com.google.common.base.Throwables;
+import com.google.common.collect.Lists;
+import com.zarbosoft.automodel.lib.ModelSnapshot;
 import com.zarbosoft.automodel.lib.ProjectObject;
 import com.zarbosoft.javafxbinders.BinderRoot;
 import com.zarbosoft.javafxbinders.CustomBinding;
@@ -37,8 +39,10 @@ import com.zarbosoft.pyxyzygy.core.model.latest.PaletteImageLayer;
 import com.zarbosoft.pyxyzygy.core.model.latest.TrueColorImageLayer;
 import com.zarbosoft.pyxyzygy.seed.TrueColor;
 import com.zarbosoft.rendaw.common.Assertion;
+import com.zarbosoft.rendaw.common.Common;
 import com.zarbosoft.rendaw.common.DeadCode;
 import com.zarbosoft.rendaw.common.Pair;
+import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ChangeListener;
@@ -54,10 +58,14 @@ import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.DialogPane;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ScrollBar;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.SelectionMode;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
@@ -66,6 +74,7 @@ import javafx.scene.control.TabPane;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
 import javafx.scene.control.ToolBar;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
@@ -85,6 +94,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
+import javafx.util.Callback;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -92,6 +102,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -103,7 +114,10 @@ import static com.zarbosoft.pyxyzygy.app.parts.structure.Structure.findNode;
 import static com.zarbosoft.pyxyzygy.app.parts.structure.Structure.getPath;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.pad;
+import static com.zarbosoft.rendaw.common.Common.last;
+import static com.zarbosoft.rendaw.common.Common.noopConsumer;
 import static com.zarbosoft.rendaw.common.Common.opt;
+import static com.zarbosoft.rendaw.common.Common.uncheck;
 import static com.zarbosoft.rendaw.common.Common.unopt;
 
 public class Window {
@@ -420,7 +434,7 @@ public class Window {
               textArea.setMaxHeight(Double.MAX_VALUE);
               dialog(localization.getString("an.unexpected.error.occurred"))
                   .addContent(new TitledPane(localization.getString("trace"), textArea))
-                  .addAction(ButtonType.OK, true, () -> true)
+                  .addAction(ButtonType.OK, true, noopConsumer, () -> true)
                   .go();
             });
 
@@ -447,6 +461,16 @@ public class Window {
               @Override
               public void run(Context context, Window window) {
                 context.model.redo();
+              }
+            },
+            new Hotkeys.Action(
+                Hotkeys.Scope.GLOBAL,
+                "create-restore",
+                localization.getString("create.restore.point"),
+                Hotkeys.Hotkey.create(KeyCode.S, true, false, false)) {
+              @Override
+              public void run(Context context, Window window) {
+                snapshot(context);
               }
             })
         .forEach(context.hotkeys::register);
@@ -574,7 +598,108 @@ public class Window {
         e -> {
           context.model.redo();
         });
-    menuButton.getItems().addAll(undoButton, redoButton, new SeparatorMenuItem());
+    MenuItem snapshotButton = new MenuItem(localization.getString("create.restore.point"));
+    snapshotButton.setOnAction(
+        e -> {
+          snapshot(context);
+        });
+    MenuItem manageSnapshotsButton = new MenuItem(localization.getString("manage.restore.points"));
+    manageSnapshotsButton.setOnAction(
+        e -> {
+          ListView<ModelSnapshot> list = new ListView<>();
+          list.setCellFactory(
+              new Callback<ListView<ModelSnapshot>, ListCell<ModelSnapshot>>() {
+                @Override
+                public ListCell<ModelSnapshot> call(ListView<ModelSnapshot> param) {
+                  return new ListCell<>() {
+                    @Override
+                    protected void updateItem(ModelSnapshot item, boolean empty) {
+                      super.updateItem(item, empty);
+                      if (item == null || empty) {
+                        setText(null);
+                      } else {
+                        setText(item.name);
+                      }
+                    }
+                  };
+                }
+              });
+          list.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
+          list.getItems().addAll(Lists.reverse(context.model.snapshots));
+
+          Button rename = new Button(localization.getString("rename"));
+          rename.setMaxWidth(Double.MAX_VALUE);
+          rename.disableProperty().bind(list.getSelectionModel().selectedItemProperty().isNull());
+          rename.setOnAction(
+              e1 -> {
+                ModelSnapshot snapshot = list.getSelectionModel().getSelectedItem();
+                Common.Mutable<TextField> text = new Common.Mutable<>();
+                Node form =
+                    new WidgetFormBuilder()
+                        .text(
+                          localization.getString("new.name"),
+                            f -> {
+                              text.value = f;
+                            })
+                        .build();
+                dialog(localization.getString("rename.restore.point"))
+                    .addAction(
+                        ButtonType.OK,
+                        false,
+                        noopConsumer,
+                        () -> {
+                          snapshot.name = text.value.getText();
+                          context.markDirty();
+                          return true;
+                        })
+                    .addAction(ButtonType.CANCEL, true, noopConsumer, () -> true)
+                    .addContent(form)
+                    .go();
+              });
+          Button restore = new Button(localization.getString("restore"));
+          restore.setMaxWidth(Double.MAX_VALUE);
+          restore.disableProperty().bind(list.getSelectionModel().selectedItemProperty().isNull());
+          restore.setOnAction(
+              e1 -> {
+                ModelSnapshot snapshot = list.getSelectionModel().getSelectedItem();
+                context.model.restore(snapshot);
+                // TODO close all other windows?
+                new Window().start(new Context(context.model), primaryStage, true);
+              });
+          Button delete = new Button(localization.getString("delete"));
+          delete.setMaxWidth(Double.MAX_VALUE);
+          delete.disableProperty().bind(list.getSelectionModel().selectedItemProperty().isNull());
+          delete.setOnAction(
+              e1 -> {
+                ModelSnapshot snapshot = list.getSelectionModel().getSelectedItem();
+                confirm(
+                  localization.getString("delete.restore.point"),
+                    String.format(localization.getString("are.you.sure.you.want.to.delete.the.restore.point.s"), snapshot.name),
+                    () -> {
+                      context.model.deleteSnapshot(snapshot);
+                    });
+              });
+
+          VBox buttons = new VBox(rename, restore, delete);
+          buttons.setSpacing(3);
+
+          HBox content = new HBox(list, buttons);
+          content.setSpacing(3);
+
+          dialog(localization.getString("manage.snapshots"))
+              .addContent(content)
+              .addAction(ButtonType.CLOSE, true, noopConsumer, () -> true)
+              .go();
+        });
+    menuButton
+        .getItems()
+        .addAll(
+            undoButton,
+            redoButton,
+            new SeparatorMenuItem(),
+            snapshotButton,
+            manageSnapshotsButton,
+            new SeparatorMenuItem());
 
     toolBar = new ToolBar();
     toolBar.getItems().addAll(toolbarExtra, menuSpring, zoomBox, resetScroll, menuButton);
@@ -691,11 +816,12 @@ public class Window {
                                     .addAction(
                                         ButtonType.OK,
                                         false,
+                                        noopConsumer,
                                         () -> {
                                           context.model.clearHistory();
                                           return true;
                                         })
-                                    .addAction(ButtonType.CANCEL, true, () -> true)
+                                    .addAction(ButtonType.CANCEL, true, noopConsumer, () -> true)
                                     .go();
                               });
                         })
@@ -864,6 +990,11 @@ public class Window {
                 });
   }
 
+  private void snapshot(Context context) {
+    context.model.snapshot();
+    editor.notifyF("Restore point: %s", last(context.model.snapshots).name);
+  }
+
   public static List<CanvasHandle> getAncestorsOutward(CanvasHandle start, CanvasHandle target) {
     List<CanvasHandle> ancestors = new ArrayList<>();
     start = start.getParent(); // Loop check is exclusive of start, so go above the stated start
@@ -949,9 +1080,14 @@ public class Window {
       return this;
     }
 
-    public DialogBuilder addAction(ButtonType type, boolean isDefault, Supplier<Boolean> callback) {
+    public DialogBuilder addAction(
+        ButtonType type,
+        boolean isDefault,
+        Consumer<Button> configure,
+        Supplier<Boolean> callback) {
       content.getButtonTypes().add(type);
       Button button = (Button) content.lookupButton(type);
+      configure.accept(button);
       if (isDefault) {
         defaultNode = button;
         defaultAction = callback;
@@ -1019,6 +1155,11 @@ public class Window {
       content.addEventFilter(KeyEvent.KEY_PRESSED, keyEventEventHandler);
       if (defaultNode != null) defaultNode.requestFocus();
     }
+
+    public DialogBuilder focus(Node node) {
+      Platform.runLater(() -> node.requestFocus());
+      return this;
+    }
   }
 
   public DialogBuilder dialog(String title) {
@@ -1034,7 +1175,30 @@ public class Window {
     textArea.setMaxHeight(Double.MAX_VALUE);
     dialog(message)
         .addContent(new TitledPane(localization.getString("trace"), textArea))
-        .addAction(ButtonType.OK, true, () -> true)
+        .addAction(ButtonType.OK, true, noopConsumer, () -> true)
+        .go();
+  }
+
+  public void confirm(String title, String explanation, Common.UncheckedRunnable action) {
+    Label label = new Label(explanation);
+    label.setWrapText(true);
+    dialog(title)
+        .addContent(label)
+        .addAction(
+            ButtonType.OK,
+            false,
+            noopConsumer,
+            () -> {
+              uncheck(() -> action.run());
+              return true;
+            })
+        .addAction(
+            ButtonType.CANCEL,
+            true,
+            noopConsumer,
+            () -> {
+              return true;
+            })
         .go();
   }
 }

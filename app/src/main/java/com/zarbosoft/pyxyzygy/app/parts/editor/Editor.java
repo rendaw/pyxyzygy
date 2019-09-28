@@ -12,6 +12,8 @@ import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.Wrapper;
 import com.zarbosoft.pyxyzygy.app.config.NodeConfig;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupChildWrapper;
+import javafx.animation.PauseTransition;
+import javafx.animation.Transition;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.SimpleDoubleProperty;
@@ -22,6 +24,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
@@ -34,7 +37,9 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
+import javafx.util.Duration;
 
 import java.util.function.Consumer;
 
@@ -50,6 +55,9 @@ public class Editor {
   private final ReadOnlyObjectProperty<Bounds> sizeProperty;
   public final SimpleIntegerProperty positiveZoom = new SimpleIntegerProperty(1);
   public final SimpleDoubleProperty zoomFactor = new SimpleDoubleProperty(1);
+  private final Group notification = new Group();
+  private Transition notificationAnimation;
+  private final Label notificationText;
 
   @SuppressWarnings("unused")
   private final BinderRoot editOriginRoot;
@@ -201,6 +209,25 @@ public class Editor {
   private OnionSkin onionSkinPrevious;
   private OnionSkin onionSkinNext;
   private Runnable zoomListenerCleanup;
+
+  public void notify(String text) {
+    notify(text, 5000);
+  }
+
+  public void notifyF(String text, Object... args) {
+    notify(String.format(text, args), 5000);
+  }
+
+  public void notify(String text, double ms) {
+    notification.setVisible(true);
+    notificationText.setText(text);
+    if (notificationAnimation != null) {
+      notificationAnimation.stop();
+    }
+    notificationAnimation = new PauseTransition(Duration.millis(ms));
+    notificationAnimation.setOnFinished(e -> notification.setVisible(false));
+    notificationAnimation.play();
+  }
 
   public void selectedForEditChanged(Context context, EditHandle newValue) {
     if (onionSkinPrevious != null) {
@@ -365,7 +392,33 @@ public class Editor {
     ChangeListener<Number> onResize = (observable, oldValue, newValue) -> updateBounds(context);
     outerCanvas.widthProperty().addListener(onResize);
     outerCanvas.heightProperty().addListener(onResize);
-    outerCanvas.getChildren().addAll(canvas);
+
+    {
+      final double padding = 8;
+      notificationText = new Label();
+      notificationText.maxWidthProperty().bind(outerCanvas.widthProperty().multiply(0.5));
+      notificationText.setWrapText(true);
+      Rectangle notificationBox = new Rectangle();
+      notificationBox.setFill(Color.DARKGRAY);
+      notificationBox.setArcWidth(padding / 2);
+      notificationBox.setArcHeight(padding / 2);
+      notificationBox.widthProperty().bind(notificationText.widthProperty().add(padding * 2));
+      notificationBox.heightProperty().bind(notificationText.heightProperty().add(padding * 2));
+      notificationBox.layoutXProperty().bind(notificationBox.widthProperty().divide(-2.0));
+      notificationBox.layoutYProperty().bind(notificationBox.heightProperty().divide(-2.0));
+      notificationText.layoutXProperty().bind(notificationText.widthProperty().divide(-2.0));
+      notificationText.layoutYProperty().bind(notificationText.heightProperty().divide(-2.0));
+      notification.getChildren().addAll(notificationBox, notificationText);
+      notification.setMouseTransparent(true);
+      notification.layoutXProperty().bind(outerCanvas.widthProperty().divide(2.0));
+      notification
+          .layoutYProperty()
+          .bind(notificationBox.heightProperty().divide(2.0).add(padding));
+      notification.setManaged(false);
+      notification.setVisible(false);
+    }
+
+    outerCanvas.getChildren().addAll(canvas, notification);
     this.sizeProperty = outerCanvas.layoutBoundsProperty();
 
     layout = new VBox();

@@ -15,13 +15,17 @@ import com.zarbosoft.pyxyzygy.seed.TrueColor;
 import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 
 import static com.zarbosoft.rendaw.common.Common.opt;
+import static com.zarbosoft.rendaw.common.Common.uncheck;
 
 public class Context {
   public final Model model;
@@ -51,8 +55,10 @@ public class Context {
               config.trueColor.set(TrueColor.fromJfx(Color.BLACK));
               return config;
             });
-    this.project = (Project) model.root;
-    project.setTileDir(model.path.resolve("tiles"));
+    this.project = (Project) model.current.root;
+    Path tilesPath = model.path.resolve("tiles");
+    uncheck(() -> Files.createDirectories(tilesPath));
+    project.setTileDir(tilesPath);
     canUndo =
         new HalfBinder<Boolean>() {
           @Override
@@ -94,6 +100,15 @@ public class Context {
   }
 
   public void change(History.Tuple unique, Consumer<ChangeStepBuilder> consumer) {
-    model.change(unique, s -> consumer.accept(new ChangeStepBuilder(model, s)));
+    List<Runnable> postChange = new ArrayList<>();
+    model.change(
+        unique, postChange, s -> consumer.accept(new ChangeStepBuilder(model, s, postChange)));
+    for (Runnable runnable : postChange) {
+      runnable.run();
+    }
+  }
+
+  public void markDirty() {
+    model.setDirty(model);
   }
 }

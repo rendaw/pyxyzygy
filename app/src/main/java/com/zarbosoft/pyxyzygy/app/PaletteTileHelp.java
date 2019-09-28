@@ -22,7 +22,7 @@ public class PaletteTileHelp {
       CacheBuilder.newBuilder().concurrencyLevel(1).weakValues().build();
 
   private static Path path(ModelBase context, PaletteTile tile) {
-    return ((Project) context.root).tileDir().resolve(Objects.toString(tile.id()));
+    return ((Project) context.current.root).tileDir().resolve(Objects.toString(tile.id()));
   }
 
   public static class TileData implements Committable, Listener.Destroy<PaletteTile> {
