@@ -15,7 +15,7 @@ open module com.zarbosoft.pyxyzygy.app {
   requires com.zarbosoft.luxem;
   requires com.zarbosoft.pidgooncommand;
   requires com.zarbosoft.pyxyzygy.nearestneighborimageview;
-  requires gifencoder;
+  requires com.squareup.gifencoder;
   requires jcodec;
   requires com.zarbosoft.automodel.lib;
   requires com.zarbosoft.javafxbinders;

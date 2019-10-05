@@ -40,7 +40,7 @@
         <dependency>
             <groupId>com.squareup</groupId>
             <artifactId>gifencoder</artifactId>
-            <version>0.9.1</version>
+            <version>0.10.1</version>
         </dependency>
         <dependency>
             <groupId>org.jcodec</groupId>
@@ -243,17 +243,6 @@
                                     </artifact>
                                     <moduleInfo>
                                         <name>checker.qual</name>
-                                        <requires>*;</requires>
-                                    </moduleInfo>
-                                </module>
-                                <module>
-                                    <artifact>
-                                        <groupId>com.squareup</groupId>
-                                        <artifactId>gifencoder</artifactId>
-                                        <version>0.9.1</version>
-                                    </artifact>
-                                    <moduleInfo>
-                                        <name>gifencoder</name>
                                         <requires>*;</requires>
                                     </moduleInfo>
                                 </module>
