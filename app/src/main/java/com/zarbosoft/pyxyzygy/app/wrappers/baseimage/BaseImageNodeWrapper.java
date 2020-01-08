@@ -104,7 +104,7 @@ public abstract class BaseImageNodeWrapper<
 
   public abstract void removeFrameTilesClearListener(F frame, Listener.Clear<F> listener);
 
-  public abstract WrapTile<T> createWrapTile(int x, int y);
+  public abstract WrapTile createWrapTile(int x, int y);
 
   public abstract T tileGet(F frame, long key);
 

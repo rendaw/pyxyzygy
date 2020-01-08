@@ -21,9 +21,7 @@ def main():
     os.chdir(Path(__file__).parent)
     java_dest = Path() / '..' / 'core' / 'target' / 'src' / '/'.join(package)
     os.makedirs(java_dest, exist_ok=True)
-    java_resource_dest = (
-        Path() / '..' / 'core' / 'target' / 'resources' / '/'.join(package)
-    )
+    java_resource_dest = Path() / '..' / 'resources'
     os.makedirs(java_resource_dest, exist_ok=True)
 
     def c(*pargs, **kwargs):

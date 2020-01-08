@@ -38,7 +38,7 @@ public class DoubleRectangle {
         ceilDiv((int) Math.ceil(y + height), scale) - outY);
   }
 
-  public DoubleRectangle scale(double scale) {
+  public DoubleRectangle centeredScale(double scale) {
     return new DoubleRectangle(
         x - width * (scale - 1) / 2, y - height * (scale - 1) / 2, width * scale, height * scale);
   }

@@ -12,8 +12,7 @@ def c(*pargs, **kwargs):
 here = Path(__file__).parent
 print('Operating in {}'.format(here))
 
-resources = (
-    here / '../app/target/resources/com/zarbosoft/pyxyzygy/app').resolve()
+resources = (here / '../resources').resolve()
 
 for category in [
     dict(

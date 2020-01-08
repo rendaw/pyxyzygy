@@ -59,6 +59,19 @@ def main():
     else:
         raise AssertionError
 
+    # Debug
+    print('CWD', Path.cwd())
+    print('LS', list(Path.cwd().iterdir()))
+
+    # Set up directories
+    build = root / '_build'
+    shutil.rmtree(build, ignore_errors=True)
+    dist = build / 'dist'
+    dist.mkdir(parents=True, exist_ok=True)
+
+    if args.platform != 'mac':
+        os.makedirs('/root/.m2', exist_ok=True)
+
     # Tools
     def c(*pargs, **kwargs):
         print(pargs, kwargs)
@@ -76,7 +89,7 @@ def main():
             '-Dstyle.color=never',
             f'-Dmaven.repo.local={root / ".m2" / "repository"}',
             '-e',
-            '-global-toolchains', 'build/toolchains.xml',
+            '-global-toolchains', build / 'toolchains.xml',
         ], env=dict(JAVA_HOME=java_path))
 
     def template(source, dest, extra):
@@ -86,20 +99,8 @@ def main():
         with open(dest, 'w') as dest_:
             dest_.write(text)
 
-    # Debug
-    print('CWD', Path.cwd())
-    print('LS', list(Path.cwd().iterdir()))
-
-    # Set up directories
-    path = root / '_build'
-    shutil.rmtree(path, ignore_errors=True)
-    path.mkdir(parents=True, exist_ok=True)
-
-    if args.platform != 'mac':
-        os.makedirs('/root/.m2', exist_ok=True)
-
     # Build
-    template('build/toolchains.xml', 'build/toolchains.xml', dict(
+    template('build/toolchains.xml', build / 'toolchains.xml', dict(
         java_home=java_toolchain,
     ))
 
@@ -115,9 +116,10 @@ def main():
         c_lib
     ])
     c(['python3', 'graphics/build.py'])
+    os.rename('resources', dist / 'resources')
     mvn(
         'package',
-        f'-DimageOutput={path / "java"}',
+        f'-DimageOutput={dist / "java"}',
         f'-Djavafx.platform={jfx_platform}',
     )
     shutil.copy(
@@ -125,7 +127,7 @@ def main():
             root / 'nearestneighborimageviewagent' / 'target' /
             'nearestneighborimageviewagent-1.0.0.jar'
         ),
-        path / 'java',
+        dist / 'java',
     )
 
     # Prepare itch deploys + deploy
@@ -133,7 +135,7 @@ def main():
         c([
             'strip',
             '-p', '--strip-unneeded',
-            path / 'java/lib/server/libjvm.so'
+            dist / 'java/lib/server/libjvm.so'
         ])
     run_args = [
         '-p',
@@ -141,19 +143,21 @@ def main():
         '--add-opens',
         'javafx.graphics/com.sun.prism=com.zarbosoft.pyxyzygy.nearestneighborimageview',  # noqa
         '--add-exports=javafx.graphics/com.sun.javafx.sg.prism=com.zarbosoft.pyxyzygy.nearestneighborimageview',  # noqa
+        '--add-exports=javafx.graphics/com.sun.glass.ui=com.zarbosoft.pyxyzygy.app',  # for Image constructor # noqa
+        '--add-opens', 'javafx.graphics/javafx.scene.image=com.zarbosoft.pyxyzygy.app',  # for Image constructor # noqa
         '--add-opens', 'javafx.controls/javafx.scene.control=com.zarbosoft.pyxyzygy.app',  # noqa
         '--add-exports=javafx.graphics/com.sun.glass.ui=com.zarbosoft.pyxyzygy.app',  # noqa
         '--add-opens', 'gifencoder/com.squareup.gifencoder=com.zarbosoft.pyxyzygy.app',  # noqa
         f'-javaagent:..{os.sep}nearestneighborimageviewagent-1.0.0.jar',
         '-m', 'com.zarbosoft.pyxyzygy.app/com.zarbosoft.pyxyzygy.app.GUIMain'
     ]
-    with open(path / '.itch.toml', 'w') as out:
+    with open(dist / '.itch.toml', 'w') as out:
         toml.dump({'actions': [{
             'name': 'run',
             'path': f'java/bin/java{exe_ext}',
             'args': run_args
         }]}, out)
-    linux_run = path / 'run.sh'
+    linux_run = dist / 'run.sh'
     with open(linux_run, 'w') as out:
         out.write('#!/usr/bin/bash\n')
         out.write('cd java/bin\n')
@@ -162,29 +166,29 @@ def main():
             out.write(f' \\\n\t{arg}')
         out.write('\n')
     linux_run.chmod(0o755)
-    with open(path / 'run.bat', 'w', newline='\r\n') as out:
+    with open(dist / 'run.bat', 'w', newline='\r\n') as out:
         out.write('cd java\\bin\n')
         out.write(f'java{exe_ext}')
         for arg in run_args:
             out.write(f' ^\n\t\t{arg}')
         out.write('\n')
 
-    for b, ds, fs in os.walk(path):
+    for b, ds, fs in os.walk(dist):
         for f in fs:
             print(b, f)
     c([
         butler_root / 'butler/butler', 'validate',
         '--platform', itch_platform,
         '--arch', 'amd64',
-        path,
+        dist,
     ])
     print(f'Pushing {args.platform}')
-    for base, ds, fs in os.walk(path):
+    for base, ds, fs in os.walk(dist):
         for f in fs:
             print(Path(base) / f)
     c([
         butler_root / 'butler/butler', 'push',
-        path,
+        dist,
         f'rendaw/pyxyzygy:{itch_platform}-{args.channel}',
         '--userversion', version.version,
     ])

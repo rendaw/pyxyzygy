@@ -1,17 +1,14 @@
 package com.zarbosoft.pyxyzygy.app.widgets;
 
 import com.google.common.base.Throwables;
-import com.zarbosoft.javafxbinders.BinderRoot;
 import com.zarbosoft.javafxbinders.CustomBinding;
 import com.zarbosoft.javafxbinders.PropertyBinder;
 import com.zarbosoft.pyxyzygy.app.Context;
-import com.zarbosoft.pyxyzygy.app.GUILaunch;
 import com.zarbosoft.pyxyzygy.app.Global;
 import com.zarbosoft.pyxyzygy.core.PaletteColors;
 import com.zarbosoft.pyxyzygy.core.PaletteImage;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
 import com.zarbosoft.pyxyzygy.seed.TrueColor;
-import com.zarbosoft.rendaw.common.Assertion;
 import com.zarbosoft.rendaw.common.Pair;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.event.EventHandler;
@@ -33,10 +30,6 @@ import javafx.scene.control.ToggleButton;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.image.PixelFormat;
-import javafx.scene.image.PixelReader;
-import javafx.scene.image.WritableImage;
-import javafx.scene.image.WritablePixelFormat;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
@@ -44,23 +37,22 @@ import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 
-import java.io.InputStream;
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
+import java.lang.reflect.Constructor;
+import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.util.Optional;
 
 import static com.zarbosoft.pyxyzygy.app.Global.localization;
-import static com.zarbosoft.rendaw.common.Common.getResource;
 import static com.zarbosoft.rendaw.common.Common.opt;
+import static com.zarbosoft.rendaw.common.Common.uncheck;
 
 public class HelperJFX {
-  @SuppressWarnings("unused")
-  private static BinderRoot sliderValueRoot;
-
-  @SuppressWarnings("unused")
-  private static BinderRoot valueTextRoot;
+  public static Constructor<Image> imageConstructor;
+  static {
+    imageConstructor =
+      uncheck(() -> Image.class.getDeclaredConstructor(Object.class));
+    imageConstructor.setAccessible(true);
+  }
 
   public static Node pad(Node node) {
     VBox out = new VBox();
@@ -77,6 +69,11 @@ public class HelperJFX {
   public static Cursor centerCursor(String res) {
     Image image = icon(res);
     return new ImageCursor(image, image.getWidth() / 2, image.getHeight() / 2);
+  }
+
+  public static Image icon(String resource) {
+    return Context.iconCache.computeIfAbsent(
+        resource, r -> new Image(Paths.get("resources/icons/" + resource).toUri().toString()));
   }
 
   public static Cursor topCenterCursor(String res) {
@@ -109,16 +106,16 @@ public class HelperJFX {
     double range = max - min;
     SimpleObjectProperty<Integer> value = new SimpleObjectProperty<>(0);
 
-    sliderValueRoot =
+    slider.setUserData(
         CustomBinding.bindBidirectional(
             new PropertyBinder<>(value),
             new PropertyBinder<>(slider.valueProperty())
                 .<Integer>bimap(
                     n -> opt(n).map(v1 -> (int) (Math.pow(v1.doubleValue(), 2) * range + min)),
-                    v2 -> opt(Math.pow((v2 - min) / range, 0.5))));
+                    v2 -> opt(Math.pow((v2 - min) / range, 0.5)))));
     DecimalFormat textFormat = new DecimalFormat();
     textFormat.setMaximumFractionDigits(precision);
-    valueTextRoot =
+    text.setUserData(
         CustomBinding.bindBidirectional(
             new PropertyBinder<>(value),
             new PropertyBinder<>(text.textProperty())
@@ -130,15 +127,9 @@ public class HelperJFX {
                         return Optional.empty();
                       }
                     },
-                    v -> opt(textFormat.format((double) v.intValue() / divide))));
+                    v -> opt(textFormat.format((double) v.intValue() / divide)))));
 
     return new Pair<>(out, value);
-  }
-
-  public static Image icon(String resource) {
-    InputStream s = getResource(GUILaunch.class, "icons", resource);
-    if (s == null) throw new Assertion(String.format("Can't find resource %s", resource));
-    return Context.iconCache.computeIfAbsent(resource, r -> new Image(s));
   }
 
   public static MenuItem menuItem(String icon) {
@@ -155,131 +146,14 @@ public class HelperJFX {
     return out;
   }
 
-  private abstract static class NativeReader implements PixelReader {
-    private final int width;
-    private final int height;
-    byte[] premultipliedData;
-    byte[] data;
-
-    protected NativeReader(int width, int height) {
-      this.width = width;
-      this.height = height;
-    }
-
-    @Override
-    public PixelFormat getPixelFormat() {
-      return PixelFormat.getByteBgraInstance();
-    }
-
-    @Override
-    public int getArgb(int x, int y) {
-      throw new Assertion();
-    }
-
-    @Override
-    public Color getColor(int x, int y) {
-      throw new Assertion();
-    }
-
-    abstract byte[] getNativeDataPremultiplied();
-
-    abstract byte[] getNativeData();
-
-    @Override
-    public <T extends Buffer> void getPixels(
-        int x,
-        int y,
-        int w,
-        int h,
-        WritablePixelFormat<T> pixelformat,
-        T buffer,
-        int scanlineStride) {
-      if (scanlineStride != w * 4) throw new Assertion();
-      byte[] data =
-          pixelformat.isPremultiplied()
-              ? (premultipliedData == null
-                  ? premultipliedData = getNativeDataPremultiplied()
-                  : premultipliedData)
-              : (this.data == null ? this.data = getNativeData() : this.data);
-      if (w == width) {
-        if (x != 0) throw new Assertion();
-        ((ByteBuffer) buffer).put(data, y * width * 4, h * width * 4);
-      } else {
-        if (x + w > width) throw new Assertion();
-        if (y + h > height) throw new Assertion();
-        for (int i = y; i < y + h; ++i) {
-          ((ByteBuffer) buffer).put(data, (i * width + x) * 4, scanlineStride);
-        }
-      }
-    }
-
-    @Override
-    public void getPixels(
-        int x,
-        int y,
-        int w,
-        int h,
-        WritablePixelFormat<ByteBuffer> pixelformat,
-        byte[] buffer,
-        int offset,
-        int scanlineStride) {
-      if (scanlineStride != w * 4) throw new Assertion();
-      byte[] data =
-          pixelformat.isPremultiplied()
-              ? (premultipliedData == null
-                  ? premultipliedData = getNativeDataPremultiplied()
-                  : premultipliedData)
-              : (this.data == null ? this.data = getNativeData() : this.data);
-      if (w == width) {
-        if (x != 0) throw new Assertion();
-        System.arraycopy(data, y * width * 4, buffer, offset, h * width * 4);
-      } else {
-        if (x + w > width) throw new Assertion();
-        if (y + h > height) throw new Assertion();
-        for (int i = y; i < y + h; ++i) {
-          System.arraycopy(data, (i * width + x) * 4, buffer, offset + i * w * 4, scanlineStride);
-        }
-      }
-    }
-
-    @Override
-    public void getPixels(
-        int x,
-        int y,
-        int w,
-        int h,
-        WritablePixelFormat<IntBuffer> pixelformat,
-        int[] buffer,
-        int offset,
-        int scanlineStride) {
-      throw new Assertion();
-    }
-  }
-
   public static Image toImage(PaletteImage image, PaletteColors palette) {
     final int width = image.getWidth();
     final int height = image.getHeight();
-    return new WritableImage(
-        new NativeReader(width, height) {
-          @Override
-          byte[] getNativeDataPremultiplied() {
-            return image.dataPremultiplied(palette);
-          }
-
-          @Override
-          byte[] getNativeData() {
-            return image.data(palette);
-          }
-        },
-        width,
-        height);
-  }
-
-  public static class IconToggleButton extends ToggleButton {
-    public IconToggleButton(String icon, String hint) {
-      super(null, new ImageView(icon(icon)));
-      Tooltip.install(this, new Tooltip(hint));
-    }
+    return uncheck(
+        () ->
+            imageConstructor.newInstance(
+                com.sun.prism.Image.fromByteBgraPreData(
+                    image.dataPremultiplied(palette), width, height)));
   }
 
   public static Button button(String icon, String hint) {
@@ -294,123 +168,23 @@ public class HelperJFX {
     return out;
   }
 
-  public static WritableImage toImage(TrueColorImage image) {
+  public static Image toImage(TrueColorImage image) {
     final int width = image.getWidth();
     final int height = image.getHeight();
-    return new WritableImage(
-        new NativeReader(width, height) {
-          @Override
-          byte[] getNativeDataPremultiplied() {
-            return image.dataPremultiplied();
-          }
-
-          @Override
-          byte[] getNativeData() {
-            return image.data();
-          }
-        },
-        width,
-        height);
+    return uncheck(
+        () ->
+            imageConstructor.newInstance(
+                com.sun.prism.Image.fromByteBgraPreData(image.dataPremultiplied(), width, height)));
   }
 
-  public static WritableImage toImage(TrueColorImage image, TrueColor tint) {
+  public static Image toImage(TrueColorImage image, TrueColor tint) {
     final int width = image.getWidth();
     final int height = image.getHeight();
-    return new WritableImage(
-        new PixelReader() {
-          byte[] premultipliedData;
-          byte[] data;
-
-          @Override
-          public PixelFormat getPixelFormat() {
-            return PixelFormat.getByteBgraInstance();
-          }
-
-          @Override
-          public int getArgb(int x, int y) {
-            throw new Assertion();
-          }
-
-          @Override
-          public Color getColor(int x, int y) {
-            throw new Assertion();
-          }
-
-          @Override
-          public <T extends Buffer> void getPixels(
-              int x,
-              int y,
-              int w,
-              int h,
-              WritablePixelFormat<T> pixelformat,
-              T buffer,
-              int scanlineStride) {
-            if (scanlineStride != w * 4) throw new Assertion();
-            byte[] data = pixelformat.isPremultiplied() ? getPremultipliedData() : getData();
-            if (w == width) {
-              if (x != 0) throw new Assertion();
-              ((ByteBuffer) buffer).put(data, y * width * 4, h * width * 4);
-            } else {
-              if (x + w > width) throw new Assertion();
-              if (y + h > height) throw new Assertion();
-              for (int i = y; i < y + h; ++i) {
-                ((ByteBuffer) buffer).put(data, (i * width + x) * 4, scanlineStride);
-              }
-            }
-          }
-
-          protected byte[] getData() {
-            return this.data == null
-                ? this.data = image.dataTint(tint.r, tint.g, tint.b)
-                : this.data;
-          }
-
-          protected byte[] getPremultipliedData() {
-            return premultipliedData == null
-                ? premultipliedData = image.dataPremultipliedTint(tint.r, tint.g, tint.b)
-                : premultipliedData;
-          }
-
-          @Override
-          public void getPixels(
-              int x,
-              int y,
-              int w,
-              int h,
-              WritablePixelFormat<ByteBuffer> pixelformat,
-              byte[] buffer,
-              int offset,
-              int scanlineStride) {
-            if (scanlineStride != w * 4) throw new Assertion();
-            byte[] data = pixelformat.isPremultiplied() ? getPremultipliedData() : getData();
-            if (w == width) {
-              if (x != 0) throw new Assertion();
-              System.arraycopy(data, y * width * 4, buffer, offset, h * width * 4);
-            } else {
-              if (x + w > width) throw new Assertion();
-              if (y + h > height) throw new Assertion();
-              for (int i = y; i < y + h; ++i) {
-                System.arraycopy(
-                    data, (i * width + x) * 4, buffer, offset + i * w * 4, scanlineStride);
-              }
-            }
-          }
-
-          @Override
-          public void getPixels(
-              int x,
-              int y,
-              int w,
-              int h,
-              WritablePixelFormat<IntBuffer> pixelformat,
-              int[] buffer,
-              int offset,
-              int scanlineStride) {
-            throw new Assertion();
-          }
-        },
-        width,
-        height);
+    return uncheck(
+        () ->
+            imageConstructor.newInstance(
+                com.sun.prism.Image.fromByteBgraPreData(
+                    image.dataPremultipliedTint(tint.r, tint.g, tint.b), width, height)));
   }
 
   public static void exceptionPopup(
@@ -444,5 +218,12 @@ public class HelperJFX {
     primaryStage.show();
     primaryStage.setMaximized(max);
     primaryStage.sizeToScene();
+  }
+
+  public static class IconToggleButton extends ToggleButton {
+    public IconToggleButton(String icon, String hint) {
+      super(null, new ImageView(icon(icon)));
+      Tooltip.install(this, new Tooltip(hint));
+    }
   }
 }

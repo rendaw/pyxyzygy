@@ -199,8 +199,8 @@ public class TrueColorImageNodeWrapper
   }
 
   @Override
-  public WrapTile<TrueColorTile> createWrapTile(int x, int y) {
-    return new WrapTile<TrueColorTile>(x, y) {
+  public WrapTile createWrapTile(int x, int y) {
+    return new WrapTile(x, y) {
       @Override
       public Image getImage(Context context, ProjectObject tile) {
         return uncheck(

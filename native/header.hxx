@@ -170,7 +170,7 @@ class TrueColorImage {
 #ifdef SWIG
 %pragma(java) jniclasscode=%{
 	static {
-		System.load(com.zarbosoft.rendaw.common.Common.extractResource(mynative.class, "##OUTPUT##").toAbsolutePath().toString());
+		System.load(java.nio.file.Paths.get("resources/##OUTPUT##").toAbsolutePath().toString());
 	}
 %}
 #endif

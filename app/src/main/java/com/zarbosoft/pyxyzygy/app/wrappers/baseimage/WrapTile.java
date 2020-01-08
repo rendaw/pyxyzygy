@@ -6,7 +6,7 @@ import com.zarbosoft.pyxyzygy.nearestneighborimageview.NearestNeighborImageView;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
-public abstract class WrapTile<T> {
+public abstract class WrapTile {
 
   public final ImageView widget;
 

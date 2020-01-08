@@ -115,10 +115,7 @@ import static com.zarbosoft.rendaw.common.Common.uncheck;
 public class GUILaunch extends Application {
   public static RootProfileConfig profileConfig;
   public static RootGlobalConfig globalConfig;
-  public static final List<Image> appIcons =
-      Stream.of("appicon16.png", "appicon32.png", "appicon64.png")
-          .map(s -> icon(s))
-          .collect(Collectors.toList());
+  public static final List<Image> appIcons = new ArrayList<>();
 
   public static final int CACHE_OBJECT;
   public static Cache<Integer, Image> imageCache;
@@ -673,7 +670,9 @@ public class GUILaunch extends Application {
       new com.zarbosoft.pyxyzygy.core.mynativeJNI();
 
       // Set up stage
-      primaryStage.getIcons().addAll(GUILaunch.appIcons);
+      Stream.of("appicon16.png", "appicon32.png", "appicon64.png")
+          .map(s -> icon(s))
+          .forEach(appIcons::add);
 
       // Load global config
       globalConfig =

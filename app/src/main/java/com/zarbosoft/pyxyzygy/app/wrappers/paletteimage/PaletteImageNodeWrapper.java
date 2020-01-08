@@ -251,8 +251,8 @@ public class PaletteImageNodeWrapper
   }
 
   @Override
-  public WrapTile<PaletteTile> createWrapTile(int x, int y) {
-    return new WrapTile<PaletteTile>(x, y) {
+  public WrapTile createWrapTile(int x, int y) {
+    return new WrapTile(x, y) {
       @Override
       public Image getImage(Context context, ProjectObject tile) {
         return uncheck(

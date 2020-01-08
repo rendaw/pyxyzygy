@@ -106,8 +106,8 @@ public class BaseImageCanvasHandle<
     DoubleRectangle oldBounds1 = this.bounds.get();
     this.bounds.set(newBounds1);
 
-    Rectangle oldBounds = oldBounds1.scale(3).divideContains(context.project.tileSize());
-    Rectangle newBounds = newBounds1.scale(3).divideContains(context.project.tileSize());
+    Rectangle oldBounds = oldBounds1.centeredScale(3).divideContains(context.project.tileSize());
+    Rectangle newBounds = newBounds1.centeredScale(3).divideContains(context.project.tileSize());
 
     if (frame == null) return;
 
@@ -124,11 +124,11 @@ public class BaseImageCanvasHandle<
     for (int x = 0; x < newBounds.width; ++x) {
       for (int y = 0; y < newBounds.height; ++y) {
         Vector useIndexes = newBounds.corner().plus(x, y);
-        long key = useIndexes.to1D();
-        if (wrapTiles.containsKey(key)) {
+        long locationKey = useIndexes.to1D();
+        if (wrapTiles.containsKey(locationKey)) {
           continue;
         }
-        T tile = wrapper.tileGet(frame, key);
+        T tile = wrapper.tileGet(frame, locationKey);
         if (tile == null) {
           continue;
         }
@@ -137,7 +137,7 @@ public class BaseImageCanvasHandle<
                 useIndexes.x * context.project.tileSize(),
                 useIndexes.y * context.project.tileSize());
         wrapTile.update(wrapTile.getImage(context, tile)); // Image deserialization must be serial
-        wrapTiles.put(key, wrapTile);
+        wrapTiles.put(locationKey, wrapTile);
         paint.getChildren().add(wrapTile.widget);
       }
     }
@@ -175,7 +175,7 @@ public class BaseImageCanvasHandle<
                 if (old != null) paint.getChildren().remove(old.widget);
               }
               Rectangle checkBounds =
-                  bounds.get().scale(3).divideContains(context.project.tileSize());
+                  bounds.get().centeredScale(3).divideContains(context.project.tileSize());
               for (Map.Entry<Long, T> entry : put.entrySet()) {
                 long key = entry.getKey();
                 Vector indexes = Vector.from1D(key);
@@ -183,7 +183,7 @@ public class BaseImageCanvasHandle<
                   continue;
                 }
                 T value = entry.getValue();
-                WrapTile<T> wrap = wrapTiles.get(key);
+                WrapTile wrap = wrapTiles.get(key);
                 if (wrap == null) {
                   wrap =
                       wrapper.createWrapTile(

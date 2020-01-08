@@ -334,7 +334,7 @@ public class Editor {
     double height = sizeProperty.get().getHeight() / zoomFactor.get();
     viewHandle.setViewport(
         context,
-        new DoubleRectangle(scroll.x - width / 2, scroll.y - height / 2, width, height),
+        new DoubleRectangle(-scroll.x - width / 2, -scroll.y - height / 2, width, height),
         positiveZoom.get());
   }
 
