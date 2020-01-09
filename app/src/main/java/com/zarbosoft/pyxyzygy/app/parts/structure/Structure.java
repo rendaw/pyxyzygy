@@ -22,10 +22,14 @@ import com.zarbosoft.pyxyzygy.app.Hotkeys;
 import com.zarbosoft.pyxyzygy.app.TrueColorTileHelp;
 import com.zarbosoft.pyxyzygy.app.Window;
 import com.zarbosoft.pyxyzygy.app.Wrapper;
+import com.zarbosoft.pyxyzygy.app.config.CameraNodeConfig;
+import com.zarbosoft.pyxyzygy.app.widgets.DialogInterface;
+import com.zarbosoft.pyxyzygy.app.widgets.FileChooser;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.app.widgets.binders.ScalarBinder;
 import com.zarbosoft.pyxyzygy.app.widgets.binders.ScalarHalfBinder;
 import com.zarbosoft.pyxyzygy.app.wrappers.PaletteWrapper;
+import com.zarbosoft.pyxyzygy.app.wrappers.camera.CameraWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupChildWrapper;
 import com.zarbosoft.pyxyzygy.app.wrappers.group.GroupNodeWrapper;
 import com.zarbosoft.pyxyzygy.core.TrueColorImage;
@@ -80,9 +84,9 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.stage.FileChooser;
 
-import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -92,6 +96,8 @@ import java.util.stream.Stream;
 
 import static com.zarbosoft.automodel.lib.Logger.logger;
 import static com.zarbosoft.javafxbinders.CustomBinding.bindStyle;
+import static com.zarbosoft.pyxyzygy.app.Global.NO_LENGTH;
+import static com.zarbosoft.pyxyzygy.app.Global.NO_LOOP;
 import static com.zarbosoft.pyxyzygy.app.Global.localization;
 import static com.zarbosoft.pyxyzygy.app.Global.opacityMax;
 import static com.zarbosoft.pyxyzygy.app.Misc.moveTo;
@@ -542,40 +548,44 @@ public class Structure {
     MenuItem importImage = new MenuItem(localization.getString("import.png"));
     importImage.setOnAction(
         e -> {
-          FileChooser fileChooser = new FileChooser();
-          fileChooser.setInitialDirectory(new File(GUILaunch.profileConfig.importDir));
-          fileChooser
-              .getExtensionFilters()
-              .add(new FileChooser.ExtensionFilter(localization.getString("png.image"), "*.png"));
-          Optional.ofNullable(fileChooser.showOpenDialog(window.stage))
-              .map(f -> f.toPath())
-              .ifPresent(
+          new FileChooser(
+              Paths.get(GUILaunch.profileConfig.importDir),
+              null,
+              window.dialog("Import PNG"),
+              "Select a PNG") {
+
+            @Override
+            public boolean pathIsOpenable(Path path) {
+              return path.getFileName().toString().endsWith(".png");
+            }
+
+            @Override
+            public void concludeCancel() {}
+
+            @Override
+            public DialogInterface subdialog(String title) {
+              return window.dialog(title);
+            }
+          }.withOpen(
+            localization.getString("import"),
+                  icon("import.png"),
                   p -> {
                     TrueColorImage data = TrueColorImage.deserialize(p.toString());
-                    TrueColorImageLayer image = TrueColorImageLayer.create(context.model);
-                    image.initialOffsetSet(context.model, Vector.ZERO);
-                    image.initialNameSet(
-                        context.model, context.namer.uniqueName(p.getFileName().toString()));
+
                     TrueColorImageFrame frame = TrueColorImageFrame.create(context.model);
                     frame.initialLengthSet(context.model, -1);
                     frame.initialOffsetSet(context.model, Vector.ZERO);
-                    image.initialFramesAdd(context.model, ImmutableList.of(frame));
                     Rectangle base = new Rectangle(0, 0, data.getWidth(), data.getHeight());
-
                     Rectangle offset = base.shift(base.span().divide(2));
                     Rectangle unitBounds = offset.divideContains(context.project.tileSize());
-                    Vector localOffset =
-                        offset
-                            .corner()
-                            .minus(unitBounds.corner().multiply(context.project.tileSize()));
                     for (int x = 0; x < unitBounds.width; ++x) {
                       for (int y = 0; y < unitBounds.height; ++y) {
                         final int x0 = x;
                         final int y0 = y;
                         TrueColorImage cut =
                             data.copy(
-                                x0 * context.project.tileSize() - localOffset.x,
-                                y0 * context.project.tileSize() - localOffset.y,
+                                x0 * context.project.tileSize(),
+                                y0 * context.project.tileSize(),
                                 context.project.tileSize(),
                                 context.project.tileSize());
                         frame.initialTilesPutAll(
@@ -585,12 +595,56 @@ public class Structure {
                                 TrueColorTileHelp.create(context, cut)));
                       }
                     }
+
+                    TrueColorImageLayer image = TrueColorImageLayer.create(context.model);
+                    image.initialOffsetSet(context.model, Vector.ZERO);
+                    image.initialNameSet(
+                        context.model, context.namer.uniqueName(p.getFileName().toString()));
+                    image.initialFramesAdd(context.model, ImmutableList.of(frame));
+
+                    Vector localOffset =
+                        offset
+                            .corner()
+                            .minus(unitBounds.corner().multiply(context.project.tileSize()));
+                    GroupPositionFrame childPositionFrame =
+                        GroupPositionFrame.create(context.model);
+                    childPositionFrame.initialLengthSet(context.model, NO_LENGTH);
+                    childPositionFrame.initialOffsetSet(context.model, localOffset.multiply(-1));
+                    GroupTimeFrame childTimeFrame = GroupTimeFrame.create(context.model);
+                    childTimeFrame.initialLengthSet(context.model, NO_LENGTH);
+                    childTimeFrame.initialInnerOffsetSet(context.model, 0);
+                    childTimeFrame.initialInnerLoopSet(context.model, NO_LOOP);
+                    GroupChild cameraChild = GroupChild.create(context.model);
+                    cameraChild.initialInnerSet(context.model, image);
+                    cameraChild.initialPositionFramesAdd(
+                        context.model, ImmutableList.of(childPositionFrame));
+                    cameraChild.initialTimeFramesAdd(
+                        context.model, ImmutableList.of(childTimeFrame));
+                    cameraChild.initialEnabledSet(context.model, true);
+                    cameraChild.initialOpacitySet(context.model, opacityMax);
+
+                    Camera camera = Camera.create(context.model);
+                    camera.initialHeightSet(context.model, data.getHeight());
+                    camera.initialWidthSet(context.model, data.getWidth());
+                    camera.initialNameSet(
+                        context.model,
+                        context.namer.uniqueName(
+                            String.format(
+                                localization.getString("s.camera"), p.getFileName().toString())));
+                    camera.initialChildrenAdd(context.model, ImmutableList.of(cameraChild));
+                    CameraNodeConfig cameraConfig = CameraWrapper.getConfig(context, camera);
+                    cameraConfig.renderDir = p.getParent().toString();
+                    cameraConfig.renderName = p.getFileName().toString();
+
                     context.change(
                         null,
                         c -> {
-                          addNew(image, c);
+                          addNew(camera, c);
                         });
-                  });
+
+                    GUILaunch.profileConfig.importDir = p.getParent().toString();
+                  })
+              .go();
         });
     MenuItem duplicateButton =
         new MenuItem(

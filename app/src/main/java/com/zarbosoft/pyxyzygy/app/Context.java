@@ -74,7 +74,7 @@ public class Context {
           }
 
           @Override
-          public Optional<Boolean> get() {
+          public Optional<Boolean> asOpt() {
             return opt(model.undoSize() != 0);
           }
         };
@@ -93,7 +93,7 @@ public class Context {
           }
 
           @Override
-          public Optional<Boolean> get() {
+          public Optional<Boolean> asOpt() {
             return opt(model.redoSize() != 0);
           }
         };

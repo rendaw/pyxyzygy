@@ -44,7 +44,7 @@ public class PaletteWrapper {
         }
 
         @Override
-        public Optional<PaletteWrapper> get() {
+        public Optional<PaletteWrapper> asOpt() {
           return opt(PaletteWrapper.this);
         }
       };

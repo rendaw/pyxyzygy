@@ -79,7 +79,7 @@ public class OnionSkin {
 
   private void render(Context context) {
     int frame = frameProp.get();
-    boolean on = this.on.get().get();
+    boolean on = this.on.asOpt().get();
     if (frame < 0 || bounds.get() == null || !on) {
       if (!on) lastOn = false;
       widget.setImage(null);

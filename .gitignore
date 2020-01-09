@@ -2,3 +2,5 @@
 target/
 *.iml
 *.o
+resources/icons/*.png
+resources/*.so

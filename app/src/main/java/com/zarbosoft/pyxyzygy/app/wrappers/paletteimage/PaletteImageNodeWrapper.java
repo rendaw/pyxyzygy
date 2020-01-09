@@ -118,7 +118,7 @@ public class PaletteImageNodeWrapper
                     ? opt(null)
                     : opt(
                         (Boolean) b
-                            ? brushBinder.get().get().paletteOffset
+                            ? brushBinder.asOpt().get().paletteOffset
                             : config.paletteOffset));
     paletteSelOffsetFixedBinder =
         new DoubleHalfBinder<>(paletteSelOffsetBinder, paletteBinder)

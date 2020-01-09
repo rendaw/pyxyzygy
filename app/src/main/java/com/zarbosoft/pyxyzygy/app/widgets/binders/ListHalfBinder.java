@@ -96,7 +96,7 @@ public class ListHalfBinder<T> implements HalfBinder<List<T>> {
   }
 
   @Override
-  public Optional<List<T>> get() {
+  public Optional<List<T>> asOpt() {
     return opt(get.get());
   }
 }

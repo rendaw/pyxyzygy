@@ -108,7 +108,7 @@ public class RowAdapterGroupChildPosition
 
   @Override
   public boolean isMain() {
-    return childRowAdapter.selected.get().orElse(false);
+    return childRowAdapter.selected.asOpt().orElse(false);
   }
 
   @Override

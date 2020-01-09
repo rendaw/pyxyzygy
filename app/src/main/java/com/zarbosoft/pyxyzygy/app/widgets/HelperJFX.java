@@ -38,6 +38,7 @@ import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 
 import java.lang.reflect.Constructor;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.util.Optional;
@@ -48,9 +49,9 @@ import static com.zarbosoft.rendaw.common.Common.uncheck;
 
 public class HelperJFX {
   public static Constructor<Image> imageConstructor;
+
   static {
-    imageConstructor =
-      uncheck(() -> Image.class.getDeclaredConstructor(Object.class));
+    imageConstructor = uncheck(() -> Image.class.getDeclaredConstructor(Object.class));
     imageConstructor.setAccessible(true);
   }
 
@@ -71,9 +72,13 @@ public class HelperJFX {
     return new ImageCursor(image, image.getWidth() / 2, image.getHeight() / 2);
   }
 
+  public static Path resourcePath(String resource) {
+    return Paths.get("resources").resolve(resource);
+  }
+
   public static Image icon(String resource) {
     return Context.iconCache.computeIfAbsent(
-        resource, r -> new Image(Paths.get("resources/icons/" + resource).toUri().toString()));
+        resource, r -> new Image(resourcePath("icons/" + resource).toUri().toString()));
   }
 
   public static Cursor topCenterCursor(String res) {

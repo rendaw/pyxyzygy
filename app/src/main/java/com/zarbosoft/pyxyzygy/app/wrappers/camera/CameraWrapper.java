@@ -70,11 +70,14 @@ public class CameraWrapper extends GroupNodeWrapper {
             new PropertyBinder<>(height.asObject()));
   }
 
+  public static CameraNodeConfig getConfig(Context context, Camera camera) {
+    return (CameraNodeConfig)
+      context.config.nodes.computeIfAbsent(camera.id(), _id -> new CameraNodeConfig(context));
+  }
+
   @Override
   protected GroupNodeConfig initConfig(Context context, long id) {
-    return this.config =
-        (CameraNodeConfig)
-            context.config.nodes.computeIfAbsent(id, id1 -> new CameraNodeConfig(context));
+    return this.config = getConfig(context, (Camera) node);
   }
 
   @Override

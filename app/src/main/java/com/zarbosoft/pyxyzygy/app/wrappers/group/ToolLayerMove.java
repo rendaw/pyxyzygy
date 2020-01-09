@@ -115,7 +115,7 @@ public class ToolLayerMove extends Tool {
       DoubleVector localStart,
       DoubleVector localStartWithOffset,
       DoubleVector globalStart) {
-    GroupChild specificLayer = unopt(wrapper.specificChild.get());
+    GroupChild specificLayer = unopt(wrapper.specificChild.asOpt());
     if (specificLayer == null) return;
     pos =
         GroupChildWrapper.positionFrameFinder.findFrame(

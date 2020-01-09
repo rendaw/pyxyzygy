@@ -15,6 +15,7 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.OverrunStyle;
 import javafx.scene.control.SelectionModel;
 import javafx.scene.control.Slider;
 import javafx.scene.control.Spinner;
@@ -133,6 +134,7 @@ public class WidgetFormBuilder {
     Label pathLabel = new Label();
     pathLabel.setMinWidth(0);
     pathLabel.textProperty().bind(Bindings.concat(path));
+    pathLabel.setTextOverrun(OverrunStyle.LEADING_ELLIPSIS);
     HBox.setHgrow(pathLabel, Priority.ALWAYS);
     Button button = new Button(localization.getString("choose"));
     button.setOnAction(

@@ -28,8 +28,8 @@ public class Vector {
         .recordEnd();
   }
 
-  public Vector multiply(int tileSize) {
-    return new Vector(x * tileSize, y * tileSize);
+  public Vector multiply(int factor) {
+    return new Vector(x * factor, y * factor);
   }
 
   public Vector plus(Vector vector) {

@@ -247,7 +247,7 @@ public class GUILaunch extends Application {
                 moveUpButton.disableProperty(), listIndexBinder.map(i -> opt(i.intValue() < 1)));
         moveUpButton.setOnAction(
             e -> {
-              int i = listIndexBinder.get().get().intValue();
+              int i = listIndexBinder.asOpt().get().intValue();
               RootGlobalConfig.Profile profile = list.getItems().get(i);
               list.getItems().remove(i);
               list.getItems().add(i - 1, profile);
@@ -262,7 +262,7 @@ public class GUILaunch extends Application {
                     (list, i) -> opt(i.intValue() == -1 || i.intValue() == list.size() - 1)));
         moveDownButton.setOnAction(
             e -> {
-              int i = listIndexBinder.get().get().intValue();
+              int i = listIndexBinder.asOpt().get().intValue();
               RootGlobalConfig.Profile profile = list.getItems().get(i);
               list.getItems().remove(i);
               list.getItems().add(i + 1, profile);
@@ -673,6 +673,7 @@ public class GUILaunch extends Application {
       Stream.of("appicon16.png", "appicon32.png", "appicon64.png")
           .map(s -> icon(s))
           .forEach(appIcons::add);
+      primaryStage.getIcons().addAll(GUILaunch.appIcons);
 
       // Load global config
       globalConfig =

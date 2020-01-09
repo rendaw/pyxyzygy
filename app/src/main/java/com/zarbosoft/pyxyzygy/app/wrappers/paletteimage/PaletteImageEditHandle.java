@@ -767,10 +767,10 @@ public class PaletteImageEditHandle extends EditHandle {
                               new ToggleButton(null, new ImageView(icon("minus.png"))) {
                                 @Override
                                 public void fire() {
-                                  int index = wrapper.paletteSelOffsetBinder.get().get();
+                                  int index = wrapper.paletteSelOffsetBinder.asOpt().get();
                                   if (index < 0) throw new Assertion();
                                   if (paletteState.get() == null) {
-                                    ProjectObject sel = unopt(wrapper.paletteSelectionBinder.get());
+                                    ProjectObject sel = unopt(wrapper.paletteSelectionBinder.asOpt());
                                     if (sel instanceof PaletteColor) {
                                       paletteState.set(new MergeState(index));
                                     } else if (sel instanceof PaletteSeparator) {
@@ -810,7 +810,7 @@ public class PaletteImageEditHandle extends EditHandle {
                           add.setOnAction(
                               _e -> {
                                 ProjectObject selectedColor0 =
-                                    unopt(wrapper.paletteSelectionBinder.get());
+                                    unopt(wrapper.paletteSelectionBinder.asOpt());
                                 PaletteColor newColor = PaletteColor.create(context.model);
                                 if (selectedColor0 instanceof PaletteColor) {
                                   PaletteColor selectedColor = (PaletteColor) selectedColor0;
@@ -841,7 +841,7 @@ public class PaletteImageEditHandle extends EditHandle {
                               _e -> {
                                 Palette palette = wrapper.node.palette();
                                 PaletteColor selectedColor =
-                                    (PaletteColor) wrapper.paletteSelectionBinder.get().get();
+                                    (PaletteColor) wrapper.paletteSelectionBinder.asOpt().get();
                                 PaletteSeparator sep = PaletteSeparator.create(context.model);
                                 context.change(
                                     null,
@@ -869,7 +869,7 @@ public class PaletteImageEditHandle extends EditHandle {
                                       i -> opt(i == null || i <= 1)));
                           moveUp.setOnAction(
                               e -> {
-                                int index = unopt(wrapper.paletteSelOffsetBinder.get());
+                                int index = unopt(wrapper.paletteSelOffsetBinder.asOpt());
                                 int newOffset = index - 1;
                                 Palette palette = wrapper.node.palette();
                                 context.change(
@@ -888,7 +888,7 @@ public class PaletteImageEditHandle extends EditHandle {
                                                   || i >= colors.getChildren().size() - 1)));
                           moveDown.setOnAction(
                               e -> {
-                                int index = unopt(wrapper.paletteSelOffsetBinder.get());
+                                int index = unopt(wrapper.paletteSelOffsetBinder.asOpt());
                                 int newOffset = index + 1;
                                 Palette palette = wrapper.node.palette();
                                 context.change(

@@ -138,7 +138,7 @@ public class ToolBrush extends BaseToolBrush<PaletteImageFrame, PaletteImage> {
       double startRadius,
       DoubleVector end,
       double endRadius) {
-    ProjectObject paletteSelection = unopt(editHandle.wrapper.paletteSelectionBinder.get());
+    ProjectObject paletteSelection = unopt(editHandle.wrapper.paletteSelectionBinder.asOpt());
     if (paletteSelection == null || !(paletteSelection instanceof PaletteColor)) return;
     canvas.stroke(
         ((PaletteColor) paletteSelection).index(),

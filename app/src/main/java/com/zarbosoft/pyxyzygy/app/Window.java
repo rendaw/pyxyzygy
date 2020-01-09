@@ -23,6 +23,7 @@ import com.zarbosoft.pyxyzygy.app.parts.timeline.Timeline;
 import com.zarbosoft.pyxyzygy.app.widgets.ChildrenReplacer;
 import com.zarbosoft.pyxyzygy.app.widgets.ClosableScene;
 import com.zarbosoft.pyxyzygy.app.widgets.ContentReplacer;
+import com.zarbosoft.pyxyzygy.app.widgets.DialogInterface;
 import com.zarbosoft.pyxyzygy.app.widgets.HelperJFX;
 import com.zarbosoft.pyxyzygy.app.widgets.TitledPane;
 import com.zarbosoft.pyxyzygy.app.widgets.TrueColorPicker;
@@ -114,6 +115,7 @@ import static com.zarbosoft.pyxyzygy.app.parts.structure.Structure.findNode;
 import static com.zarbosoft.pyxyzygy.app.parts.structure.Structure.getPath;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.icon;
 import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.pad;
+import static com.zarbosoft.pyxyzygy.app.widgets.HelperJFX.resourcePath;
 import static com.zarbosoft.rendaw.common.Common.last;
 import static com.zarbosoft.rendaw.common.Common.noopConsumer;
 import static com.zarbosoft.rendaw.common.Common.opt;
@@ -637,7 +639,7 @@ public class Window {
                 Node form =
                     new WidgetFormBuilder()
                         .text(
-                          localization.getString("new.name"),
+                            localization.getString("new.name"),
                             f -> {
                               text.value = f;
                             })
@@ -673,8 +675,11 @@ public class Window {
               e1 -> {
                 ModelSnapshot snapshot = list.getSelectionModel().getSelectedItem();
                 confirm(
-                  localization.getString("delete.restore.point"),
-                    String.format(localization.getString("are.you.sure.you.want.to.delete.the.restore.point.s"), snapshot.name),
+                    localization.getString("delete.restore.point"),
+                    String.format(
+                        localization.getString(
+                            "are.you.sure.you.want.to.delete.the.restore.point.s"),
+                        snapshot.name),
                     () -> {
                       context.model.deleteSnapshot(snapshot);
                     });
@@ -713,6 +718,7 @@ public class Window {
     editorBox.getChildren().addAll(toolBar, editor.getWidget());
 
     SplitPane specificLayout = new SplitPane();
+    specificLayout.getStyleClass().add("pyx-drawer-split");
     specificLayout.setOrientation(Orientation.VERTICAL);
     specificLayout.getItems().addAll(editorBox);
     SplitPane.setResizableWithParent(timeline.getWidget(), false);
@@ -883,6 +889,7 @@ public class Window {
     configTab.setContent2(pad(configLayout));
 
     SplitPane generalLayout = new SplitPane();
+    generalLayout.getStyleClass().add("pyx-drawer-split");
     generalLayout.setOrientation(Orientation.HORIZONTAL);
     generalLayout.getItems().addAll(specificLayout);
     SplitPane.setResizableWithParent(leftTabs, false);
@@ -961,9 +968,9 @@ public class Window {
     scene
         .getStylesheets()
         .addAll(
-            getClass().getResource("widgets/style.css").toExternalForm(),
-            getClass().getResource("widgets/colorpicker/style.css").toExternalForm(),
-            getClass().getResource("widgets/brushbutton/style.css").toExternalForm());
+            "file:" + resourcePath("widgets/style.css").toString(),
+            "file:" + resourcePath("widgets/colorpicker/style.css").toString(),
+            "file:" + resourcePath("widgets/brushbutton/style.css").toString());
 
     structure.populate();
 
@@ -1053,7 +1060,30 @@ public class Window {
     } else throw new Assertion();
   }
 
-  public class DialogBuilder {
+  public void confirm(String title, String explanation, Common.UncheckedRunnable action) {
+    Label label = new Label(explanation);
+    label.setWrapText(true);
+    dialog(title)
+      .addContent(label)
+      .addAction(
+        ButtonType.OK,
+        false,
+        noopConsumer,
+        () -> {
+          uncheck(() -> action.run());
+          return true;
+        })
+      .addAction(
+        ButtonType.CANCEL,
+        true,
+        noopConsumer,
+        () -> {
+          return true;
+        })
+      .go();
+  }
+
+  public class DialogBuilder implements DialogInterface {
     private final String title;
     VBox layout = new VBox();
     HBox buttons = new HBox();
@@ -1081,10 +1111,10 @@ public class Window {
     }
 
     public DialogBuilder addAction(
-        ButtonType type,
-        boolean isDefault,
-        Consumer<Button> configure,
-        Supplier<Boolean> callback) {
+      ButtonType type,
+      boolean isDefault,
+      Consumer<Button> configure,
+      Supplier<Boolean> callback) {
       content.getButtonTypes().add(type);
       Button button = (Button) content.lookupButton(type);
       configure.accept(button);
@@ -1093,12 +1123,12 @@ public class Window {
         defaultAction = callback;
       }
       button.addEventHandler(
-          ActionEvent.ACTION,
-          ae -> {
-            if (callback.get()) {
-              close();
-            }
-          });
+        ActionEvent.ACTION,
+        ae -> {
+          if (callback.get()) {
+            close();
+          }
+        });
       return this;
     }
 
@@ -1114,48 +1144,49 @@ public class Window {
 
       content.setHeaderText(title);
       content.setBorder(
-          new Border(
-              new BorderStroke(
-                  Color.DARKGRAY,
-                  BorderStrokeStyle.SOLID,
-                  CornerRadii.EMPTY,
-                  new BorderWidths(2))));
+        new Border(
+          new BorderStroke(
+            Color.DARKGRAY,
+            BorderStrokeStyle.SOLID,
+            CornerRadii.EMPTY,
+            new BorderWidths(2))));
       content.setPadding(new Insets(5));
       content
-          .layoutXProperty()
-          .bind(stage.widthProperty().divide(2.0).subtract(content.widthProperty().divide(2.0)));
+        .layoutXProperty()
+        .bind(stage.widthProperty().divide(2.0).subtract(content.widthProperty().divide(2.0)));
       content
-          .layoutYProperty()
-          .bind(stage.heightProperty().divide(2.0).subtract(content.heightProperty().divide(2.0)));
+        .layoutYProperty()
+        .bind(stage.heightProperty().divide(2.0).subtract(content.heightProperty().divide(2.0)));
       content.setContent(layout);
 
       grey = new Pane();
       grey.setBackground(
-          new Background(
-              new BackgroundFill(new Color(0, 0, 0, 0.4), CornerRadii.EMPTY, Insets.EMPTY)));
+        new Background(
+          new BackgroundFill(new Color(0, 0, 0, 0.4), CornerRadii.EMPTY, Insets.EMPTY)));
       grey.minWidthProperty().bind(stage.widthProperty());
       grey.minHeightProperty().bind(stage.heightProperty());
       grey.getChildren().add(content);
 
       stack.getChildren().addAll(grey);
       EventHandler<KeyEvent> keyEventEventHandler =
-          e -> {
-            if (e.getCode() == KeyCode.ESCAPE) {
+        e -> {
+          if (e.getCode() == KeyCode.ESCAPE) {
+            close();
+          } else if (e.getCode() == KeyCode.ENTER) {
+            if (defaultAction != null && defaultAction.get()) {
               close();
-            } else if (e.getCode() == KeyCode.ENTER) {
-              if (defaultAction.get()) {
-                close();
-              }
-            } else {
-              return;
             }
-            e.consume();
-          };
+          } else {
+            return;
+          }
+          e.consume();
+        };
       grey.addEventFilter(KeyEvent.KEY_PRESSED, keyEventEventHandler);
       content.addEventFilter(KeyEvent.KEY_PRESSED, keyEventEventHandler);
       if (defaultNode != null) defaultNode.requestFocus();
     }
 
+    @Override
     public DialogBuilder focus(Node node) {
       Platform.runLater(() -> node.requestFocus());
       return this;
@@ -1174,31 +1205,8 @@ public class Window {
     textArea.setMaxWidth(Double.MAX_VALUE);
     textArea.setMaxHeight(Double.MAX_VALUE);
     dialog(message)
-        .addContent(new TitledPane(localization.getString("trace"), textArea))
-        .addAction(ButtonType.OK, true, noopConsumer, () -> true)
-        .go();
-  }
-
-  public void confirm(String title, String explanation, Common.UncheckedRunnable action) {
-    Label label = new Label(explanation);
-    label.setWrapText(true);
-    dialog(title)
-        .addContent(label)
-        .addAction(
-            ButtonType.OK,
-            false,
-            noopConsumer,
-            () -> {
-              uncheck(() -> action.run());
-              return true;
-            })
-        .addAction(
-            ButtonType.CANCEL,
-            true,
-            noopConsumer,
-            () -> {
-              return true;
-            })
-        .go();
+      .addContent(new TitledPane(localization.getString("trace"), textArea))
+      .addAction(ButtonType.OK, true, b -> {}, () -> true)
+      .go();
   }
 }

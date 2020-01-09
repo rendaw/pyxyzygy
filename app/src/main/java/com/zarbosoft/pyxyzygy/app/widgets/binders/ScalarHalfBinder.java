@@ -53,7 +53,7 @@ public class ScalarHalfBinder<T> implements HalfBinder<T> {
   }
 
   @Override
-  public Optional<T> get() {
+  public Optional<T> asOpt() {
     return opt(last);
   }
 }
