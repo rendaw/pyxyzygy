@@ -15,7 +15,7 @@ def main():
 
     last_version = re.search(
         "'(.*)'",
-        subprocess.check_output(["git", "show", "HEAD:./version.py"], cwd=root).decode(
+        subprocess.check_output(["git", "show", "HEAD~:./version.py"], cwd=root).decode(
             "utf-8"
         ),
     ).group(1)
