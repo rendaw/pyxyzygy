@@ -67,4 +67,16 @@ public class DoubleRectangle {
   public boolean contains(DoubleVector vector) {
     return vector.x >= x && vector.y >= y && vector.x < x + width && vector.y < y + height;
   }
+
+  /**
+   * Both rects must be well formed (w/h > 0)
+   * @param rect
+   * @return
+   */
+  public boolean contains(DoubleRectangle rect) {
+    return rect.x >= x
+        && rect.y >= y
+        && rect.x + rect.width < x + width
+        && rect.y + rect.height < y + height;
+  }
 }

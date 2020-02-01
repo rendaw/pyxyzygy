@@ -3,6 +3,8 @@ package com.zarbosoft.pyxyzygy.seed;
 import com.zarbosoft.luxem.read.StackReader;
 import com.zarbosoft.luxem.write.RawWriter;
 
+import java.util.Objects;
+
 public class Vector {
   public static final Vector ZERO = new Vector(0, 0);
   public final int x;
@@ -82,5 +84,20 @@ public class Vector {
   @Override
   public String toString() {
     return String.format("v[%s %s]", x, y);
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o)
+      return true;
+    if (o == null || getClass() != o.getClass())
+      return false;
+    Vector vector = (Vector) o;
+    return x == vector.x && y == vector.y;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(3894279, x, y);
   }
 }

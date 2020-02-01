@@ -24,7 +24,10 @@ import javafx.scene.Group;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
+import static com.zarbosoft.pyxyzygy.app.GUILaunch.CACHE_ONION_AFTER;
+import static com.zarbosoft.pyxyzygy.app.GUILaunch.CACHE_ONION_BEFORE;
 import static com.zarbosoft.rendaw.common.Common.opt;
+import static com.zarbosoft.rendaw.common.Common.uncheck;
 
 public class OnionSkin {
   final ImageView widget = NearestNeighborImageView.create();
@@ -37,14 +40,14 @@ public class OnionSkin {
   private final HalfBinder<Boolean> on;
   private final Group overlay;
   private final SimpleObjectProperty<TrueColor> colorProperty;
+  private final boolean previous;
 
   // Own
-  private boolean lastOn = false;
-  private int lastFrame = -1;
   private DoubleRectangle triggerBounds = new DoubleRectangle(0, 0, 0, 0);
-  private TrueColor lastColor = null;
+  private int lastState = 0;
 
   public OnionSkin(Context context, Timeline timeline, EditHandle editHandle, boolean previous) {
+    this.previous = previous;
     this.editHandle = editHandle;
     frameProp = previous ? timeline.previousFrame : timeline.nextFrame;
     bounds = editHandle.getCanvas().bounds;
@@ -57,7 +60,18 @@ public class OnionSkin {
                 new PropertyHalfBinder<>(timeline.playingProperty))
             .map((on0, playing) -> opt(on0 && !playing));
     frameProp.addListener((observable, oldValue, newValue) -> render(context));
-    bounds.addListener((observable, oldValue, newValue) -> render(context));
+    bounds.addListener(
+        (observable, oldValue, newValue) -> {
+          if (!triggerBounds.contains(bounds.get())) {
+            final DoubleVector span = bounds.get().span();
+            triggerBounds =
+                new BoundsBuilder()
+                    .point(bounds.get().corner().minus(span.multiply(0.5)))
+                    .point(bounds.get().corner().plus(span.multiply(1.5)))
+                    .build();
+          }
+          render(context);
+        });
     colorProperty =
         previous
             ? GUILaunch.profileConfig.ghostPreviousColor
@@ -80,50 +94,58 @@ public class OnionSkin {
   private void render(Context context) {
     int frame = frameProp.get();
     boolean on = this.on.asOpt().get();
+
+    // Noop if off/invalid state
     if (frame < 0 || bounds.get() == null || !on) {
-      if (!on) lastOn = false;
       widget.setImage(null);
       return;
     }
+    if (bounds.get().height == 0 || bounds.get().width == 0) return;
+
+    // Noop if no change in state since last state
     TrueColor color = colorProperty.get();
-    if (lastOn == on
-        && frame == lastFrame
-        && (triggerBounds.contains(bounds.get().corner())
-            && triggerBounds.contains(bounds.get().corner().plus(bounds.get().span())))
-        && Objects.equal(color, lastColor)) return;
-    lastOn = true;
-    lastFrame = frameProp.get();
-    lastColor = color;
+    int state =
+        Objects.hashCode(
+            previous ? CACHE_ONION_BEFORE : CACHE_ONION_AFTER,
+            color,
+            frame,
+            triggerBounds,
+            editHandle.getWrapper().getValue().myHash());
+    if (state == lastState) return;
+    lastState = state;
+
+    // Render
     final DoubleVector span = bounds.get().span();
-    triggerBounds =
+    final Rectangle paddedBounds =
         new BoundsBuilder()
-            .point(bounds.get().corner().minus(span.multiply(0.5)))
-            .point(bounds.get().corner().plus(span.multiply(1.5)))
-            .build();
-    final Rectangle renderBounds =
-        new BoundsBuilder()
-            .point(bounds.get().corner().minus(span))
-            .point(bounds.get().corner().plus(span.multiply(2)))
+            .point(triggerBounds.corner().minus(span.multiply(0.5)))
+            .point(triggerBounds.corner().plus(span.multiply(3)))
             .build()
             .divideContains(1);
-    if (renderBounds.height == 0 || renderBounds.width == 0) return;
-    Image image;
-    final TrueColorImage buffer = TrueColorImage.create(renderBounds.width, renderBounds.height);
-    try {
-      Render.render(
-          context,
-          editHandle.getWrapper().getValue(),
-          buffer,
-          frame,
-          renderBounds.divideContains(1),
-          1);
-      image = HelperJFX.toImage(buffer, color);
-    } finally {
-      buffer.delete();
-    }
+    Image image =
+        uncheck(
+            () ->
+                GUILaunch.imageCache.get(
+                    state,
+                    () -> {
+                      final TrueColorImage buffer =
+                          TrueColorImage.create(paddedBounds.width, paddedBounds.height);
+                      try {
+                        Render.render(
+                            context,
+                            editHandle.getWrapper().getValue(),
+                            buffer,
+                            frame,
+                            paddedBounds.divideContains(1),
+                            1);
+                        return HelperJFX.toImage(buffer, color);
+                      } finally {
+                        buffer.delete();
+                      }
+                    }));
     widget.setImage(image);
     widget.setOpacity(color.toJfx().getOpacity());
-    widget.setX(renderBounds.x);
-    widget.setY(renderBounds.y);
+    widget.setX(paddedBounds.x);
+    widget.setY(paddedBounds.y);
   }
 }

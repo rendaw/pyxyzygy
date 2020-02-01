@@ -16,7 +16,10 @@ import javafx.collections.ObservableList;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.ImageView;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;

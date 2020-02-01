@@ -109,6 +109,7 @@ import static com.zarbosoft.rendaw.common.Common.last;
 import static com.zarbosoft.rendaw.common.Common.noopConsumer;
 import static com.zarbosoft.rendaw.common.Common.opt;
 import static com.zarbosoft.rendaw.common.Common.sublist;
+import static com.zarbosoft.rendaw.common.Common.substr;
 
 public class Structure {
   private final Context context;
@@ -567,7 +568,7 @@ public class Structure {
               return window.dialog(title);
             }
           }.withOpen(
-            localization.getString("import"),
+                  localization.getString("import"),
                   icon("import.png"),
                   p -> {
                     TrueColorImage data = TrueColorImage.deserialize(p.toString());
@@ -576,7 +577,7 @@ public class Structure {
                     frame.initialLengthSet(context.model, -1);
                     frame.initialOffsetSet(context.model, Vector.ZERO);
                     Rectangle base = new Rectangle(0, 0, data.getWidth(), data.getHeight());
-                    Rectangle offset = base.shift(base.span().divide(2));
+                    Rectangle offset = base.shift(base.span().divide(2).multiply(-1));
                     Rectangle unitBounds = offset.divideContains(context.project.tileSize());
                     for (int x = 0; x < unitBounds.width; ++x) {
                       for (int y = 0; y < unitBounds.height; ++y) {
@@ -634,7 +635,10 @@ public class Structure {
                     camera.initialChildrenAdd(context.model, ImmutableList.of(cameraChild));
                     CameraNodeConfig cameraConfig = CameraWrapper.getConfig(context, camera);
                     cameraConfig.renderDir = p.getParent().toString();
-                    cameraConfig.renderName = p.getFileName().toString();
+                    cameraConfig.renderName =
+                        substr(p.getFileName().toString(), 0, -".png".length());
+                    cameraConfig.previewStart.set(0);
+                    cameraConfig.previewLength.set(1);
 
                     context.change(
                         null,

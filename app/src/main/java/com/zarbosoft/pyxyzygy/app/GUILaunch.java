@@ -118,12 +118,16 @@ public class GUILaunch extends Application {
   public static final List<Image> appIcons = new ArrayList<>();
 
   public static final int CACHE_OBJECT;
+  public static final int CACHE_ONION_BEFORE;
+  public static final int CACHE_ONION_AFTER;
   public static Cache<Integer, Image> imageCache;
 
   static {
     int index = 0;
-    //noinspection UnusedAssignment
     CACHE_OBJECT = index++;
+    CACHE_ONION_BEFORE = index++;
+    //noinspection UnusedAssignment
+    CACHE_ONION_AFTER = index++;
   }
 
   public GUILaunch() {
