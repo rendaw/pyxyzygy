@@ -901,6 +901,7 @@ public class GUILaunch extends Application {
     context.config.defaultZoom = profileConfig.defaultZoom.get();
     context.config.viewPath = ImmutableList.of(0);
     context.config.editPath = ImmutableList.of(0, 0);
+    imageCache.invalidateAll();
     new Window().start(context, primaryStage, true);
   }
 
@@ -999,6 +1000,7 @@ public class GUILaunch extends Application {
     } else {
       context = (Model) deserializeResult.model;
     }
+    imageCache.invalidateAll();
     new Window().start(new Context(context), primaryStage, true);
   }
 }
