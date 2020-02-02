@@ -265,6 +265,15 @@ public class Window {
     selectForView(context, wrapper, false);
   }
 
+  public static boolean isAncestor(Wrapper base, Wrapper target) {
+    Wrapper at = target;
+    while (at != null) {
+      if (at == base) return true;
+      at = at.getParent();
+    }
+    return false;
+  }
+
   public void selectForView(Context context, Wrapper wrapper, boolean fromEdit) {
     Wrapper oldViewWrapper = selectedForView == null ? null : selectedForView.getWrapper();
     if (oldViewWrapper == wrapper) return;
@@ -272,29 +281,13 @@ public class Window {
       // Delete old canvas handles--
 
       // Case: Old parent of new - delete with exclude subtree
-      {
-        Wrapper at = wrapper;
-        while (at != null) {
-          if (at == oldViewWrapper) break;
-          at = at.getParent();
-        }
-        if (at == oldViewWrapper) {
-          if (selectedForView != null) selectedForView.remove(context, wrapper);
-          break;
-        }
+      if (isAncestor(oldViewWrapper, wrapper)) {
+        if (selectedForView != null) selectedForView.remove(context, wrapper);
+        break;
       }
 
       // Case: New parent of old - no delete
-      {
-        Wrapper at = oldViewWrapper;
-        while (at != null) {
-          if (at == wrapper) break;
-          at = at.getParent();
-        }
-        if (at == wrapper) {
-          break;
-        }
-      }
+      if (isAncestor(wrapper, oldViewWrapper)) break;
 
       // Case: Neither - delete old no exclude
       {
@@ -1064,23 +1057,23 @@ public class Window {
     Label label = new Label(explanation);
     label.setWrapText(true);
     dialog(title)
-      .addContent(label)
-      .addAction(
-        ButtonType.OK,
-        false,
-        noopConsumer,
-        () -> {
-          uncheck(() -> action.run());
-          return true;
-        })
-      .addAction(
-        ButtonType.CANCEL,
-        true,
-        noopConsumer,
-        () -> {
-          return true;
-        })
-      .go();
+        .addContent(label)
+        .addAction(
+            ButtonType.OK,
+            false,
+            noopConsumer,
+            () -> {
+              uncheck(() -> action.run());
+              return true;
+            })
+        .addAction(
+            ButtonType.CANCEL,
+            true,
+            noopConsumer,
+            () -> {
+              return true;
+            })
+        .go();
   }
 
   public class DialogBuilder implements DialogInterface {
@@ -1111,10 +1104,10 @@ public class Window {
     }
 
     public DialogBuilder addAction(
-      ButtonType type,
-      boolean isDefault,
-      Consumer<Button> configure,
-      Supplier<Boolean> callback) {
+        ButtonType type,
+        boolean isDefault,
+        Consumer<Button> configure,
+        Supplier<Boolean> callback) {
       content.getButtonTypes().add(type);
       Button button = (Button) content.lookupButton(type);
       configure.accept(button);
@@ -1123,12 +1116,12 @@ public class Window {
         defaultAction = callback;
       }
       button.addEventHandler(
-        ActionEvent.ACTION,
-        ae -> {
-          if (callback.get()) {
-            close();
-          }
-        });
+          ActionEvent.ACTION,
+          ae -> {
+            if (callback.get()) {
+              close();
+            }
+          });
       return this;
     }
 
@@ -1144,43 +1137,43 @@ public class Window {
 
       content.setHeaderText(title);
       content.setBorder(
-        new Border(
-          new BorderStroke(
-            Color.DARKGRAY,
-            BorderStrokeStyle.SOLID,
-            CornerRadii.EMPTY,
-            new BorderWidths(2))));
+          new Border(
+              new BorderStroke(
+                  Color.DARKGRAY,
+                  BorderStrokeStyle.SOLID,
+                  CornerRadii.EMPTY,
+                  new BorderWidths(2))));
       content.setPadding(new Insets(5));
       content
-        .layoutXProperty()
-        .bind(stage.widthProperty().divide(2.0).subtract(content.widthProperty().divide(2.0)));
+          .layoutXProperty()
+          .bind(stage.widthProperty().divide(2.0).subtract(content.widthProperty().divide(2.0)));
       content
-        .layoutYProperty()
-        .bind(stage.heightProperty().divide(2.0).subtract(content.heightProperty().divide(2.0)));
+          .layoutYProperty()
+          .bind(stage.heightProperty().divide(2.0).subtract(content.heightProperty().divide(2.0)));
       content.setContent(layout);
 
       grey = new Pane();
       grey.setBackground(
-        new Background(
-          new BackgroundFill(new Color(0, 0, 0, 0.4), CornerRadii.EMPTY, Insets.EMPTY)));
+          new Background(
+              new BackgroundFill(new Color(0, 0, 0, 0.4), CornerRadii.EMPTY, Insets.EMPTY)));
       grey.minWidthProperty().bind(stage.widthProperty());
       grey.minHeightProperty().bind(stage.heightProperty());
       grey.getChildren().add(content);
 
       stack.getChildren().addAll(grey);
       EventHandler<KeyEvent> keyEventEventHandler =
-        e -> {
-          if (e.getCode() == KeyCode.ESCAPE) {
-            close();
-          } else if (e.getCode() == KeyCode.ENTER) {
-            if (defaultAction != null && defaultAction.get()) {
+          e -> {
+            if (e.getCode() == KeyCode.ESCAPE) {
               close();
+            } else if (e.getCode() == KeyCode.ENTER) {
+              if (defaultAction != null && defaultAction.get()) {
+                close();
+              }
+            } else {
+              return;
             }
-          } else {
-            return;
-          }
-          e.consume();
-        };
+            e.consume();
+          };
       grey.addEventFilter(KeyEvent.KEY_PRESSED, keyEventEventHandler);
       content.addEventFilter(KeyEvent.KEY_PRESSED, keyEventEventHandler);
       if (defaultNode != null) defaultNode.requestFocus();
@@ -1205,8 +1198,8 @@ public class Window {
     textArea.setMaxWidth(Double.MAX_VALUE);
     textArea.setMaxHeight(Double.MAX_VALUE);
     dialog(message)
-      .addContent(new TitledPane(localization.getString("trace"), textArea))
-      .addAction(ButtonType.OK, true, b -> {}, () -> true)
-      .go();
+        .addContent(new TitledPane(localization.getString("trace"), textArea))
+        .addAction(ButtonType.OK, true, b -> {}, () -> true)
+        .go();
   }
 }

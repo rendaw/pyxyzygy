@@ -736,7 +736,7 @@ public class Structure {
           context.change(
               new History.Tuple("struct_move"),
               c -> {
-                if (parent.getValue() != null) {
+                if (parent != null) {
                   GroupLayer realParent = (GroupLayer) parent.getValue();
                   GroupChild realChild = (GroupChild) selected1.getValue();
                   c.groupLayer(realParent).childrenRemove(index, 1);
@@ -769,7 +769,7 @@ public class Structure {
           context.change(
               new History.Tuple("struct_move"),
               c -> {
-                if (parent.getValue() != null) {
+                if (parent != null) {
                   GroupLayer realParent = (GroupLayer) parent.getValue();
                   GroupChild realChild = (GroupChild) selected1.getValue();
                   c.groupLayer(realParent).childrenRemove(index, 1);
@@ -981,15 +981,33 @@ public class Structure {
         context.project.addTopRemoveListeners(
             (target, at, count) -> {
               List<TreeItem<Wrapper>> temp = tree.getRoot().getChildren().subList(at, at + count);
+              if (temp.stream()
+                  .anyMatch(
+                      i ->
+                          Window.isAncestor(
+                              i.getValue(), window.getSelectedForView().getWrapper()))) {
+                tree.getSelectionModel().clearSelection();
+                if (target.topLength() == 0) {
+                  window.selectForView(context, null);
+                  window.selectForEdit(context, null);
+                } else if (at + count < tree.getRoot().getChildren().size()) {
+                  TreeItem<Wrapper> treeItem = tree.getRoot().getChildren().get(at + count);
+                  Wrapper wrapper = treeItem.getValue();
+                  window.selectForView(context, wrapper);
+                  window.selectForEdit(context, wrapper);
+                  tree.getSelectionModel().select(treeItem);
+                } else {
+                  TreeItem<Wrapper> treeItem = tree.getRoot().getChildren().get(at - 1);
+                  Wrapper wrapper = treeItem.getValue();
+                  window.selectForView(context, wrapper);
+                  window.selectForEdit(context, wrapper);
+                  tree.getSelectionModel().select(treeItem);
+                }
+              }
               temp.forEach(i -> i.getValue().remove(context));
               temp.clear();
               for (int i = at; i < tree.getRoot().getChildren().size(); ++i) {
                 tree.getRoot().getChildren().get(i).getValue().setParentIndex(at + i);
-              }
-              if (target.topLength() == 0) {
-                tree.getSelectionModel().clearSelection();
-                window.selectForView(context, null);
-                window.selectForEdit(context, null);
               }
             });
     topMoveToRoot =
